@@ -1,0 +1,2 @@
+C:\msys64\mingw64\bin\ar.exe qc libtinyobjloader.a CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj
+C:\msys64\mingw64\bin\ranlib.exe libtinyobjloader.a

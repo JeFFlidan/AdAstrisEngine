@@ -1,0 +1,13 @@
+# Hashes of file build rules.
+aa51232eaa84bacb6ed56ae962bddf25 CMakeFiles/Shaders
+36adc19888565aa9b95403de15ec539a shaders/colored_triangle.frag.spv
+eac2683464bea5e00e5cfe7fc56661dd shaders/colored_triangle.vert.spv
+bf1aa12743ace12c519bb6c08b1bbef6 shaders/default_lit.frag.spv
+1278004e48ee0dedd4704443ee2789c5 shaders/monkey.frag.spv
+bdb09f5162d1e02309aa080276b786e6 shaders/monkey.vert.spv
+d3af695eebccfc53b350fcf4825d948b shaders/output_quad.frag.spv
+171b6cb16614169c11920404745b78ce shaders/output_quad.vert.spv
+ac5e5fe39a6b75c531cfa3963d71a58d shaders/textured_lit.frag.spv
+652b4f55c6c923a289c05ca479e1f2c3 shaders/tri_mesh.vert.spv
+765c54313486ccfac2486d48e0739bc4 shaders/triangle.frag.spv
+8bd6453adc81e858d42ee1bdfda266e7 shaders/triangle.vert.spv

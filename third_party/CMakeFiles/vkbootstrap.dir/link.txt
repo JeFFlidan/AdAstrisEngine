@@ -1,0 +1,2 @@
+C:\msys64\mingw64\bin\ar.exe qc libvkbootstrap.a CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.obj
+C:\msys64\mingw64\bin\ranlib.exe libvkbootstrap.a

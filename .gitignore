@@ -1,0 +1,12 @@
+/build
+/bin
+/src/*.*~
+/src/.cache
+logger_test.cpp
+logger_test.exe
+/third_party/*.*~
+/assetlib/.*
+/assetlib/#*.*#*
+/assetlib/*.*~
+/.cache
+/asset_baker/*.*~

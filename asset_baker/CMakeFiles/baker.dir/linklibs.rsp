@@ -1,0 +1,1 @@
+ ../third_party/liblz4.a ../assetlib/libassetlib.a ../third_party/libtinyobjloader.a ../third_party/libfmt_lib.a ../third_party/liblz4.a -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 

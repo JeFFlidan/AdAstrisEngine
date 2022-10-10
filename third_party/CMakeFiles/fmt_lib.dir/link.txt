@@ -1,0 +1,2 @@
+C:\msys64\mingw64\bin\ar.exe qc libfmt_lib.a CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.obj CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.obj
+C:\msys64\mingw64\bin\ranlib.exe libfmt_lib.a
