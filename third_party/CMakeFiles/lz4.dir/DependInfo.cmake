@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "E:/VulkanEngine/third_party/lz4/lz4.c" "third_party/CMakeFiles/lz4.dir/lz4/lz4.c.obj" "gcc" "third_party/CMakeFiles/lz4.dir/lz4/lz4.c.obj.d"
+  "C:/Users/zaver/projects/VulkanEngine/third_party/lz4/lz4.c" "third_party/CMakeFiles/lz4.dir/lz4/lz4.c.obj" "gcc" "third_party/CMakeFiles/lz4.dir/lz4/lz4.c.obj.d"
   )
 
 # Targets to which this target links.

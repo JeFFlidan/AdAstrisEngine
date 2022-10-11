@@ -3,7 +3,7 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
-set(CMAKE_CXX_COMPILER C:/msys64/mingw64/bin/g++.exe "")
+set(CMAKE_CXX_COMPILER C:/cd 64/mingw64/bin/g++.exe)
 
 project ("vulkan_guide")
 

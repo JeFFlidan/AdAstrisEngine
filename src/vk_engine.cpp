@@ -39,6 +39,7 @@
 #include <cmath>
 #include <fstream>
 #include <chrono>
+#include <filesystem>
 
 #define VK_CHECK(x)													 \
 	do																 \
@@ -59,7 +60,7 @@ std::vector<std::string> get_supported_vulkan_instance_extension()
 	vkEnumerateInstanceExtensionProperties(nullptr, &count, extensions.data());
 	std::vector<std::string> result;
 	for (auto& extension : extensions)
-	{
+	{	    
 		result.push_back(extension.extensionName);
 	}
 	
@@ -663,7 +664,7 @@ void VulkanEngine::init_descriptors()
 void VulkanEngine::init_pipelines()
 {
 	VkShaderModule meshVertShader;
-	if (!load_shader_module("E:/VulkanEngine/shaders/tri_mesh.vert.spv", &meshVertShader))
+	if (!load_shader_module("/shaders/tri_mesh.vert.spv", &meshVertShader))
 	{
 		LOG_ERROR("Error when building the mesh triangle vertex shader module");
 	}
@@ -673,7 +674,7 @@ void VulkanEngine::init_pipelines()
 	}
 
 	VkShaderModule coloredShader;
-	if (!load_shader_module("E:/VulkanEngine/shaders/colored_triangle.frag.spv", &coloredShader))
+	if (!load_shader_module("/shaders/colored_triangle.frag.spv", &coloredShader))
 	{
 		LOG_ERROR("Error when building the mesh triangle vertex shader module");
 	}
@@ -683,7 +684,7 @@ void VulkanEngine::init_pipelines()
 	}
 
 	VkShaderModule texturedMeshShader;
-	if (!load_shader_module("E:/VulkanEngine/shaders/textured_lit.frag.spv", &texturedMeshShader))
+	if (!load_shader_module("/shaders/textured_lit.frag.spv", &texturedMeshShader))
 	{
 		LOG_ERROR("Error when building the textured mesh fragment shader module");
 	}
@@ -693,7 +694,7 @@ void VulkanEngine::init_pipelines()
 	}
 
 	VkShaderModule outputQuadVertShader;
-	if (!load_shader_module("E:/VulkanEngine/shaders/output_quad.vert.spv", &outputQuadVertShader))
+	if (!load_shader_module("/shaders/output_quad.vert.spv", &outputQuadVertShader))
 	{
 		LOG_ERROR("Error when building the textured mesh fragment shader module");
 	}
@@ -703,7 +704,7 @@ void VulkanEngine::init_pipelines()
 	}
 
 	VkShaderModule outputQuadFragShader;
-	if (!load_shader_module("E:/VulkanEngine/shaders/output_quad.frag.spv", &outputQuadFragShader))
+	if (!load_shader_module("/shaders/output_quad.frag.spv", &outputQuadFragShader))
 	{
 		LOG_ERROR("Error when building the textured mesh fragment shader module");
 	}
@@ -712,11 +713,13 @@ void VulkanEngine::init_pipelines()
 		LOG_SUCCESS("Textured mesh fragment shader successfully loaded");
 	}
 
+	std::cout << std::filesystem::current_path() << std::endl;
+
 	vkutil::Shader firstShader(_device);
-	firstShader.load_shader_module("E:/VulkanEngine/shaders/tri_mesh.vert.spv");
+	firstShader.load_shader_module("/shaders/tri_mesh.vert.spv");
 	firstShader.spv_reflect_test();
 
-	vkutil::PipelineBuilder pipelineBuilder;
+	vkutil::PipelineBuilder pipelineBuilder; 
 
 	pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
 	pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
@@ -871,7 +874,6 @@ void VulkanEngine::init_scene()
 
 	vmaDestroyBuffer(_allocator, vertexStagingBuffer._buffer, vertexStagingBuffer._allocation);
 
-	
 	std::vector<std::string> meshNames  = {
  		"door",
 		"gun",
@@ -1132,7 +1134,7 @@ void VulkanEngine::load_images()
 	for (int i = 0; i != texturesNames.size(); ++i)
 	{
 		std::cout << "Texture " << i << std::endl;
-		vkutil::load_image_from_asset(*this, ("E:/VulkanEngine/assets/" + texturesNames[i] + ".tx").c_str(), textures[i].image);
+		vkutil::load_image_from_asset(*this, ("/assets/" + texturesNames[i] + ".tx").c_str(), textures[i].image);
 		std::cout << "Test 1" << std::endl;
 		VkImageViewCreateInfo imageInfo = vkinit::imageview_create_info(VK_FORMAT_R8G8B8_UNORM, textures[i].image._image, VK_IMAGE_ASPECT_COLOR_BIT);
 		std::cout << "Test 2 " << std::endl;
@@ -1188,7 +1190,7 @@ void VulkanEngine::load_meshes()
 	for (auto& meshName : meshNames)
 	{
 		Mesh temp{};
-		temp.load_from_mesh_asset(("E:/VulkanEngine/assets/" + meshName + ".mesh").c_str());
+		temp.load_from_mesh_asset(("/assets/" + meshName + ".mesh").c_str());
 		meshes.push_back(temp);
 
 		_meshes[meshName] = temp;
