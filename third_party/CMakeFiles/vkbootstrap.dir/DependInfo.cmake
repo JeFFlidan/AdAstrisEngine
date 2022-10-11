@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "E:/VulkanEngine/third_party/vkbootstrap/VkBootstrap.cpp" "third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.obj" "gcc" "third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.obj.d"
+  "C:/Users/zaver/projects/VulkanEngine/third_party/vkbootstrap/VkBootstrap.cpp" "third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.obj" "gcc" "third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.obj.d"
   )
 
 # Targets to which this target links.

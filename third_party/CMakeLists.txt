@@ -40,7 +40,7 @@ target_sources(lz4 PRIVATE
 target_include_directories(lz4 PUBLIC lz4)
 
 add_library(sdl2 INTERFACE)
-set(sdl2_DIR C:/SDL2-2.0.22)
+set(sdl2_DIR SDL)
 
 if (WIN32)
 target_include_directories(sdl2 INTERFACE ${sdl2_DIR}/include ${sdl2_image_DIR}/include)
@@ -74,7 +74,7 @@ target_link_libraries(imgui PUBLIC Vulkan::Vulkan sdl2)
 target_include_directories(stb_image INTERFACE stb_image)
 
 target_include_directories(fmt_lib PUBLIC fmt_lib)
-file(GLOB FMT_FILES "E:/VulkanEngine/third_party/fmt_lib/fmt/*")
+file(GLOB FMT_FILES "fmt_lib/fmt/*")
 target_sources(fmt_lib PRIVATE ${FMT_FILES})
 
 target_include_directories(spirv_reflect PUBLIC spirv_reflect)
