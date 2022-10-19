@@ -13,6 +13,8 @@ namespace vkutil
 			
 			bool load_shader_module(const char* filePath);
 			void delete_shader_module();
+
+			VkShaderModule get_shader_module() const { return shaderModule; }
 	 
 			void spv_reflect_test();
 		private:

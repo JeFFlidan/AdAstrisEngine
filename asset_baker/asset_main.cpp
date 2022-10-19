@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
 			{
 				auto newpath = p.path();
 				newpath.replace_extension(".tx");
-				convert_image_without_alpha(p.path(), newpath);			  
+				convert_image_with_alpha(p.path(), newpath);			  
 			}
 			else if (p.path().extension() == ".obj")
 			{

@@ -27,7 +27,7 @@ class DescriptorAllocator
 		};
 
 		void reset_pools();
-		bool allocate(VkDescriptorSet* set, VkDescriptorSetLayout layout);
+		bool allocate(VkDescriptorSet* set, VkDescriptorSetLayout layout, bool nonUniform = false, uint32_t descriptorsCount = 0);
 
 		void init(VkDevice newDevice);
 
@@ -86,7 +86,7 @@ namespace vkutil
 
 			bool build(VkDescriptorSet& set, VkDescriptorSetLayout& layout);
 			bool build(VkDescriptorSet& set);
-			bool build_non_uniform(VkDescriptorSet& set, VkDescriptorSetLayout& layout);
+			bool build_non_uniform(VkDescriptorSet& set, VkDescriptorSetLayout& layout, uint32_t descriptorsCount);
 		private:
 			std::vector<VkWriteDescriptorSet> writes;
 			std::vector<VkDescriptorSetLayoutBinding> bindings;

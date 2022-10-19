@@ -16,6 +16,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.obj.d"
   "CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.obj"
   "CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.obj.d"
+  "CMakeFiles/vulkan_guide.dir/vk_renderpass.cpp.obj"
+  "CMakeFiles/vulkan_guide.dir/vk_renderpass.cpp.obj.d"
   "CMakeFiles/vulkan_guide.dir/vk_shaders.cpp.obj"
   "CMakeFiles/vulkan_guide.dir/vk_shaders.cpp.obj.d"
   "CMakeFiles/vulkan_guide.dir/vk_textures.cpp.obj"
