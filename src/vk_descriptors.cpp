@@ -27,6 +27,7 @@ VkDescriptorPool createPool(VkDevice device, const DescriptorAllocator::PoolSize
 {
 	std::vector<VkDescriptorPoolSize> sizes;
 	sizes.reserve(poolSizes.sizes.size());
+
 	for (auto sz : poolSizes.sizes)
 	{
 		sizes.push_back({ sz.first, uint32_t(sz.second * count) });
@@ -54,11 +55,11 @@ VkDescriptorPool DescriptorAllocator::grab_pool()
 	}
 	else
 	{
-		return createPool(device, descriptorSizes, 1000, 0);
+		return createPool(device, descriptorSizes, 1000, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 	}
 }
 
-bool DescriptorAllocator::allocate(VkDescriptorSet* set, VkDescriptorSetLayout layout)
+bool DescriptorAllocator::allocate(VkDescriptorSet* set, VkDescriptorSetLayout layout, bool nonUniform, uint32_t descriptorsCount)
 {
 	if (currentPool == VK_NULL_HANDLE)
 	{
@@ -67,12 +68,32 @@ bool DescriptorAllocator::allocate(VkDescriptorSet* set, VkDescriptorSetLayout l
 	}
 
 	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.pNext = nullptr;
+	
+	if (!nonUniform)
+	{
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.pNext = nullptr;
 
-	allocInfo.pSetLayouts = &layout;
-	allocInfo.descriptorPool = currentPool;
-	allocInfo.descriptorSetCount = 1;
+		allocInfo.pSetLayouts = &layout;
+		allocInfo.descriptorPool = currentPool;
+		allocInfo.descriptorSetCount = 1;
+	}
+	else
+	{
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+
+		allocInfo.pSetLayouts = &layout;
+		allocInfo.descriptorPool = currentPool;
+		allocInfo.descriptorSetCount = 1;
+
+		VkDescriptorSetVariableDescriptorCountAllocateInfoEXT variableInfo{};
+		variableInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
+		variableInfo.pNext = nullptr;
+		variableInfo.descriptorSetCount = 1;
+		variableInfo.pDescriptorCounts = &descriptorsCount;
+
+		allocInfo.pNext = &variableInfo;
+	}
 
 	VkResult allocResult = vkAllocateDescriptorSets(device, &allocInfo, set);
 	bool needReallocate = false;
@@ -298,7 +319,7 @@ namespace vkutil
 		return true;
 	}
 
-	bool DescriptorBuilder::build_non_uniform(VkDescriptorSet& set, VkDescriptorSetLayout& layout)
+	bool DescriptorBuilder::build_non_uniform(VkDescriptorSet& set, VkDescriptorSetLayout& layout, uint32_t descriptorsCount)
 	{
 		// This function uses to build non-uniform descriptor set to use it with VK_EXT_descriptor_indexing
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -313,14 +334,14 @@ namespace vkutil
 			VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT |
 			VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
 
-		VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlags{};
+		VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlags{};
 		bindingFlags.bindingCount = layoutInfo.bindingCount;
 		bindingFlags.pBindingFlags = &flags;
 
 		layoutInfo.pNext = &bindingFlags;
 
 		layout = cache->create_descriptor_layout(&layoutInfo);
-		bool success = allocator->allocate(&set, layout);
+		bool success = allocator->allocate(&set, layout, true, descriptorsCount);
 		if (!success) return false;
 
 		for (VkWriteDescriptorSet& w : writes)

@@ -1,12 +1,15 @@
 #pragma once
 
-#include <vk_types.h>
+#include "vk_types.h"
+#include "logger.h"
+#include "vk_shaders.h"
 #include <material_asset.h>
 
 #include <vector>
 #include <string>
 #include <unordered_map>
 #include <array>
+#include <vulkan/vulkan_core.h>
 
 class VulkanEngine;
 namespace vkutil
@@ -28,6 +31,19 @@ namespace vkutil
 			VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
 	};
 
+	
+	enum class MeshpassType : uint32_t
+	{
+		None = 0,
+		Forward = 1,
+		Transparency = 2,
+		DirectionalShadow = 3,
+	};
+	
+	struct ShaderParameters
+	{
+		std::string demo;
+	};
 
 	struct SampledTexture
 	{
@@ -43,6 +59,9 @@ namespace vkutil
 			{
 				switch (pass)
 				{
+					case MeshpassType::None:
+						LOG_WARNING("No information about material meshpass");
+						break;
 					case MeshpassType::Forward:
 						return data[0];
 					case MeshpassType::Transparency:
@@ -67,16 +86,21 @@ namespace vkutil
 	struct ShaderEffect
 	{
 		// Storage information to create a VkPipeline
-		VkPipelineLayout buildLayout;
-		std::array<VkDescriptorSetLayout, 4> setLayouts;
+		//VkPipelineLayout buildLayout;
+		std::vector<VkDescriptorSetLayout> setLayouts;
 
 		struct ShaderStage
 		{
-			VkShaderModule* shaderModule;
+			Shader* shader;
 			VkShaderStageFlagBits stage;
 		};
 
 		std::vector<ShaderStage> stages;
+
+		void add_stage(Shader* shader, VkShaderStageFlagBits shaderStage)
+		{
+			stages.push_back({shader, shaderStage});
+		}
 	};
 
 	struct ShaderPass
@@ -89,6 +113,9 @@ namespace vkutil
 	struct EffectTemplate
 	{
 		PerPassData<ShaderPass*> passShaders;
+
+		ShaderParameters* defaultParameters;
+		assets::MaterialMode transparency;
 	};
 
 	struct Material
@@ -97,14 +124,16 @@ namespace vkutil
 		PerPassData<VkDescriptorSet> passSets;
 
 		std::vector<SampledTexture> textures;
+		ShaderParameters parameters;
 	};
 	
 	struct MaterialData
 	{
 		std::vector<SampledTexture> textures;
 		std::string baseTemplate;
+		ShaderParameters parameters;
 
-		bool operator==(const MaterialData& other) const;
+		bool operator==(const MaterialData& othero) const;
 	
 		size_t hash() const;
 	};
@@ -112,14 +141,14 @@ namespace vkutil
 	class MaterialSystem
 	{
 		public:
-
 			void init(VulkanEngine* engine);
 			void clenaup();
 
 			void build_default_templates();
 
-			ShaderPass* build_shader(VkRenderPass renderPass, PipelineBuilder& builder, ShaderEffect* effect);
-
+			ShaderPass* build_shader_pass(VkRenderPass renderPass, PipelineBuilder& builder, ShaderEffect* effect);
+			ShaderEffect* build_shader_effect(const std::vector<std::string>& shaderPaths);
+			
 			Material* build_material(const std::string& materialName, const MaterialData& info);
 			Material* get_material(const std::string& materialName);
 
@@ -134,12 +163,14 @@ namespace vkutil
 				}
 			};
 
-			PipelineBuilder forwardPipelineBuilder;
-			PipelineBuilder shadowPipelineBuilder;
+			PipelineBuilder _postprocessingPipelineBuilder;
+			PipelineBuilder _offscrPipelineBuilder;
+			PipelineBuilder _shadowPipelineBuilder;
 
-			std::unordered_map<std::string, EffectTemplate> templateCache;
-			std::unordered_map<std::string, Material*> materials;
-			std::unordered_map<MaterialData, Material*, MaterialInfoHash> materialCache;
-			VulkanEngine* engine;
+			std::unordered_map<std::string, EffectTemplate> _templateCache;
+			std::unordered_map<std::string, Material*> _materials;
+			std::unordered_map<std::string, Shader*> _shaderCache;
+			std::unordered_map<MaterialData, Material*, MaterialInfoHash> _materialCache;
+			VulkanEngine* _engine;
 	};
 }

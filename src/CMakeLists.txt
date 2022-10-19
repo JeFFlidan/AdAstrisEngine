@@ -18,8 +18,10 @@ add_executable(vulkan_guide
     vk_camera.cpp
     material_system.h
     material_system.cpp
-	vk_shaders.h
-	vk_shaders.cpp)
+    vk_shaders.h
+    vk_shaders.cpp
+    vk_renderpass.h
+    vk_renderpass.cpp)
 
 
 set_property(TARGET vulkan_guide PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:vulkan_guide>")

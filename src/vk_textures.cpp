@@ -180,7 +180,6 @@ namespace vkutil
 
 	bool load_image_from_asset(VulkanEngine& engine, const char* filename, AllocatedImage& outImage)
 	{
-		std::cout << "Start" << std::endl;
 		assets::AssetFile file;
 		bool loaded = assets::load_binaryFile(filename, file);
 
@@ -190,9 +189,7 @@ namespace vkutil
 			return false;
 		}
 
-		std::cout << "Before asset file creation" << std::endl;
 		assets::TextureInfo textureInfo = assets::read_texture_info(&file);
-		std::cout << "After asset file creation" << std::endl;
 		VkDeviceSize imageSize = textureInfo.textureSize;
 		VkFormat imageFormat;
 		switch (textureInfo.textureFormat)
@@ -207,17 +204,15 @@ namespace vkutil
 				return false;
 		}
 
-		std::cout << "Before allocation " << std::endl;
 		AllocatedBuffer stagingBuffer = engine.create_buffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
-		std::cout << "After allocation " << std::endl;
 		void* data;
+		
 		vmaMapMemory(engine._allocator, stagingBuffer._allocation, &data);
 		assets::unpack_texture(&textureInfo, file.binaryBlob.data(), file.binaryBlob.size(), (char*)data);
 		vmaUnmapMemory(engine._allocator, stagingBuffer._allocation);
-		std::cout << "Before uploadin image" << std::endl;
+		
 		outImage = upload_image(engine, stagingBuffer, textureInfo, imageFormat);
-		std::cout << "After uploading image" << std::endl;
 		vmaDestroyBuffer(engine._allocator, stagingBuffer._buffer, stagingBuffer._allocation);
 
 		return true;

@@ -17,6 +17,7 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <vulkan/vulkan_core.h>
 
 //#define VK_RELEASE 1
 
@@ -103,6 +104,8 @@ struct FrameData
 	AllocatedBuffer _objectBuffer;
 	VkDescriptorSet _objectDescriptor;
 
+	VkDescriptorSet _texturesDescriptor{VK_NULL_HANDLE};
+
 	AllocatedBuffer _indirectCommandsBuffer;
 };
 
@@ -182,7 +185,7 @@ class VulkanEngine
 
 		std::unordered_map<std::string, Material> _materials;
 		std::unordered_map<std::string, Mesh> _meshes;
-		std::unordered_map<std::string, Texture> _loadedTextures;
+		std::vector<Texture> _loadedTextures;
 		Plane _outputQuad;
 
 		GPUSceneData _sceneParameters;
@@ -208,6 +211,8 @@ class VulkanEngine
 
 		UploadContext _uploadContext;
 		void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
+
+		std::string _projectPath;
 
 		//initializes everything in the engine
 		void init();
@@ -237,6 +242,7 @@ class VulkanEngine
 		void init_commands();
 		void init_default_renderpass();
 		void init_offscreen_renderpass();
+		void init_renderpasses();
 		void init_framebuffers();
 		void init_sync_structures();
 		bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);

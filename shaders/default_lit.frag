@@ -1,17 +1,15 @@
-#version 460
+#version 440
+layout(location = 0) in vec3 color;
+layout(location = 1) in vec2 texCoord;
+layout(location = 2) flat in int index;
 
-layout(location = 0) in vec3 inColor;
 layout(location = 0) out vec4 outFragColor;
-
-layout(set = 0, binding = 1) uniform SceneData{
-	vec4 fogColor;
-	vec4 forDistances;
-	vec4 ambientColor;
-	vec4 sunlightDirection;
-	vec4 sunlightColor;
-} sceneData;
 
 void main()
 {
-	outFragColor = vec4(inColor, 1.0);
+    #ifdef RED_COLOR
+	outFragColor = vec4(1.f, 0.f, 0.f, 1.f);
+	#endif
+
+	outFragColor = vec4(0.f, 0.f, 1.f, 1.f);
 }

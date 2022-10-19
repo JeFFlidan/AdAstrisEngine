@@ -1,13 +1,7 @@
 # Hashes of file build rules.
-39963d4241e9ae0ff84803854f39e468 CMakeFiles/Shaders
-6b661da7ca55c1c50dcf832eb8f46989 shaders/colored_triangle.frag.spv
-9dbfd24ec2382e1131216f43640f9c09 shaders/colored_triangle.vert.spv
-4c2d14ace92035c553f291e9beb59b8b shaders/default_lit.frag.spv
-e1b0ebca964fa696b21cc1019565081f shaders/monkey.frag.spv
-411278f25dd067ce555c66c5cf858945 shaders/monkey.vert.spv
-7ec11a0af189686234b31a6105c69a23 shaders/output_quad.frag.spv
-4b168100dd2d51bf3e3e92c734faa883 shaders/output_quad.vert.spv
-e4d56ede9dae18c54158ae35ecb0ae8f shaders/textured_lit.frag.spv
-39bd89d4570415ba284620a26871c69f shaders/tri_mesh.vert.spv
-57f898ae6fd62173a79662029e367713 shaders/triangle.frag.spv
-f28003d670a9123dc70177532c3d945d shaders/triangle.vert.spv
+aa51232eaa84bacb6ed56ae962bddf25 CMakeFiles/Shaders
+bf1aa12743ace12c519bb6c08b1bbef6 shaders/default_lit.frag.spv
+de5afc7bc5e18ee2baa6044f8ee92437 shaders/mesh.vert.spv
+be6bb3f747b68acd64b142c9aefad1af shaders/postprocessing.frag.spv
+5268ab53f2f9d7a4c659820be3f1d1f9 shaders/postprocessing.vert.spv
+ac5e5fe39a6b75c531cfa3963d71a58d shaders/textured_lit.frag.spv

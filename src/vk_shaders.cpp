@@ -79,7 +79,7 @@ namespace vkutil
 		res = spvReflectEnumerateDescriptorSets(&tempModule, &setCount, sets.data());
 		assert(res == SPV_REFLECT_RESULT_SUCCESS);
 		LOG_INFO("Sets vector size {}", sets.size());
-
+		
 		for (auto& set : sets)
 	   	{
 			LOG_INFO("Set bindings count {}", set->binding_count);
@@ -87,6 +87,4 @@ namespace vkutil
 		}
 	}
 } // namespace vkutil
-
-
 
