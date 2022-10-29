@@ -373,9 +373,9 @@ src/CMakeFiles/vulkan_guide.dir/all: third_party/CMakeFiles/tinyobjloader.dir/al
 src/CMakeFiles/vulkan_guide.dir/all: third_party/CMakeFiles/lz4.dir/all
 src/CMakeFiles/vulkan_guide.dir/all: third_party/CMakeFiles/fmt_lib.dir/all
 src/CMakeFiles/vulkan_guide.dir/all: third_party/CMakeFiles/spirv_reflect.dir/all
-src/CMakeFiles/vulkan_guide.dir/all: src/CMakeFiles/logger.dir/all
 src/CMakeFiles/vulkan_guide.dir/all: assetlib/CMakeFiles/assetlib.dir/all
 src/CMakeFiles/vulkan_guide.dir/all: third_party/CMakeFiles/imgui.dir/all
+src/CMakeFiles/vulkan_guide.dir/all: src/CMakeFiles/logger.dir/all
 	$(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/depend
 	$(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=E:\VulkanEngine\CMakeFiles --progress-num=33,34,35,36,37,38,39,40,41,42,43 "Built target vulkan_guide"
@@ -430,8 +430,8 @@ assetlib/CMakeFiles/assetlib.dir/clean:
 asset_baker/CMakeFiles/baker.dir/all: third_party/CMakeFiles/tinyobjloader.dir/all
 asset_baker/CMakeFiles/baker.dir/all: third_party/CMakeFiles/lz4.dir/all
 asset_baker/CMakeFiles/baker.dir/all: third_party/CMakeFiles/fmt_lib.dir/all
-asset_baker/CMakeFiles/baker.dir/all: src/CMakeFiles/logger.dir/all
 asset_baker/CMakeFiles/baker.dir/all: assetlib/CMakeFiles/assetlib.dir/all
+asset_baker/CMakeFiles/baker.dir/all: src/CMakeFiles/logger.dir/all
 	$(MAKE) $(MAKESILENT) -f asset_baker\CMakeFiles\baker.dir\build.make asset_baker/CMakeFiles/baker.dir/depend
 	$(MAKE) $(MAKESILENT) -f asset_baker\CMakeFiles\baker.dir\build.make asset_baker/CMakeFiles/baker.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=E:\VulkanEngine\CMakeFiles --progress-num=12,13 "Built target baker"

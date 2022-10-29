@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vk_mesh.h"
 #include "vk_types.h"
 #include "logger.h"
 #include "vk_shaders.h"
@@ -28,6 +29,8 @@ namespace vkutil
 			VkPipelineColorBlendAttachmentState _colorBlendAttachment;
 			VkPipelineLayout _pipelineLayout;
 
+			VertexInputDescription _vertexDescription;
+
 			VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
 	};
 
@@ -48,7 +51,7 @@ namespace vkutil
 	struct SampledTexture
 	{
 		VkSampler sampler;
-		VkImageView view;
+	    VkImageView imageView;
 	};
 
 	template<typename T>
@@ -146,7 +149,7 @@ namespace vkutil
 
 			void build_default_templates();
 
-			ShaderPass* build_shader_pass(VkRenderPass renderPass, PipelineBuilder& builder, ShaderEffect* effect);
+			ShaderPass* build_shader_pass(VkRenderPass& renderPass, PipelineBuilder& builder, ShaderEffect* effect);
 			ShaderEffect* build_shader_effect(const std::vector<std::string>& shaderPaths);
 			
 			Material* build_material(const std::string& materialName, const MaterialData& info);

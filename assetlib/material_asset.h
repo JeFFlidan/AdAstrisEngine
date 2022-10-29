@@ -18,6 +18,7 @@ namespace assets
 	struct MaterialInfo
 	{
 		std::string baseEffect;
+		std::string materialName;
 		un_str_map textures;
 		un_str_map customProperties;
 		MaterialMode mode;

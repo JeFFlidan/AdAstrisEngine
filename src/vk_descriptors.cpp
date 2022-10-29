@@ -324,7 +324,7 @@ namespace vkutil
 		// This function uses to build non-uniform descriptor set to use it with VK_EXT_descriptor_indexing
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	    layoutInfo.bindingCount = bindings.size();
+		layoutInfo.bindingCount = bindings.size();
 		layoutInfo.pBindings = bindings.data();
 		layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
 
