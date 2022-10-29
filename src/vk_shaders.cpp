@@ -17,7 +17,10 @@ namespace vkutil
 		std::ifstream file(filePath, std::ios::ate | std::ios::binary);
 
 		if (!file.is_open())
+		{
+			LOG_ERROR("Failed to open file {}", filePath);
 			return false;
+		}
 
 		size_t fileSize = static_cast<size_t>(file.tellg());
 
@@ -37,7 +40,10 @@ namespace vkutil
 		createInfo.pCode = code.data();
 
 		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+		{
+			LOG_ERROR("Failed to create shader module");
 			return false;
+		}
 
 		return true;
 	}

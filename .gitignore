@@ -1,6 +1,7 @@
 /build
 /bin
 /src/*.*~
+src/.#vk_engine.cpp
 /src/.cache
 logger_test.cpp
 logger_test.exe

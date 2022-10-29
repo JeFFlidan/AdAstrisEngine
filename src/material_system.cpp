@@ -3,7 +3,9 @@
 #include "material_asset.h"
 #include "vk_engine.h"
 #include "vk_initializers.h"
+#include "vk_mesh.h"
 
+#include <iostream>
 #include <unordered_map>
 #include <functional>
 
@@ -11,6 +13,12 @@ namespace vkutil
 {
 	VkPipeline PipelineBuilder::build_pipeline(VkDevice device, VkRenderPass pass)
 	{
+		_vertexInputInfo = vkinit::vertex_input_state_create_info();
+		_vertexInputInfo.vertexBindingDescriptionCount = _vertexDescription.bindings.size();
+		_vertexInputInfo.pVertexBindingDescriptions = _vertexDescription.bindings.data();
+		_vertexInputInfo.vertexAttributeDescriptionCount = _vertexDescription.attributes.size();
+		_vertexInputInfo.pVertexAttributeDescriptions = _vertexDescription.attributes.data();
+	
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewportState.pNext = nullptr;
@@ -85,28 +93,16 @@ namespace vkutil
 		pipelineBuilder._multisampling = vkinit::multisampling_state_create_info();
 		pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
 
-		VertexInputDescription vertexDescription = Mesh::get_vertex_description();
-
-		pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = vertexDescription.attributes.data();
-		pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = vertexDescription.attributes.size();
-
-		pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = vertexDescription.bindings.data();
-		pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = vertexDescription.bindings.size();
-
-		_offscrPipelineBuilder = pipelineBuilder;
-		_shadowPipelineBuilder = pipelineBuilder;
-
+		pipelineBuilder._vertexDescription = Mesh::get_vertex_description();
+		
+	    _offscrPipelineBuilder = pipelineBuilder;
+	    _shadowPipelineBuilder = pipelineBuilder;
 		
 		pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS_OR_EQUAL);
 
-		VertexInputDescription outputQuadVertDescription = Plane::get_vertex_description();
-
-		pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
-		pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = outputQuadVertDescription.bindings.size();
-		pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = outputQuadVertDescription.bindings.data();
-		pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = outputQuadVertDescription.attributes.size();
-		pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = outputQuadVertDescription.attributes.data();
-		_postprocessingPipelineBuilder = pipelineBuilder;
+		pipelineBuilder._vertexDescription = Plane::get_vertex_description();
+		
+	    _postprocessingPipelineBuilder = pipelineBuilder;
 	}
 
 	ShaderEffect* MaterialSystem::build_shader_effect(const std::vector<std::string>& shaderPaths)
@@ -128,8 +124,10 @@ namespace vkutil
 			{
 				case 0:
 					stage = VK_SHADER_STAGE_VERTEX_BIT;
+					break;
 				case 1:
 					stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+					break;
 			}
 
 			auto it = _shaderCache.find(shaderPaths[i]);
@@ -140,9 +138,9 @@ namespace vkutil
 			else
 			{
 				Shader* temp = new Shader{_engine->_device};
-				temp->load_shader_module(shaderPaths[i].c_str());
+				temp->load_shader_module((_engine->_projectPath + shaderPaths[i]).c_str());
 				_shaderCache[shaderPaths[i]] = temp;
-				shaderEffect->add_stage(it->second, stage);
+				shaderEffect->add_stage(temp, stage);
 			}
 		}
 
@@ -161,24 +159,28 @@ namespace vkutil
 		}
 	}
 	
-	ShaderPass* MaterialSystem::build_shader_pass(VkRenderPass renderPass, PipelineBuilder& builder, ShaderEffect* effect)
+	ShaderPass* MaterialSystem::build_shader_pass(VkRenderPass& renderPass, PipelineBuilder& builder, ShaderEffect* effect)
 	{
 		ShaderPass* shaderPass = new ShaderPass();
 
 		shaderPass->effect = effect;
 		
-	    VkPipelineLayoutCreateInfo info = vkinit::pipeline_layout_create_info();
-	    info.setLayoutCount = effect->setLayouts.size();
-	    info.pSetLayouts = effect->setLayouts.data();
-	    VkPipelineLayout layout;
-	    VkResult res = vkCreatePipelineLayout(_engine->_device, &info, nullptr, &layout);
-	    if (res != VK_SUCCESS)
+		VkPipelineLayoutCreateInfo info = vkinit::pipeline_layout_create_info();
+		info.setLayoutCount = effect->setLayouts.size();
+		info.pSetLayouts = effect->setLayouts.data();
+		VkPipelineLayout layout;
+		VkResult res = vkCreatePipelineLayout(_engine->_device, &info, nullptr, &layout);
+		if (res != VK_SUCCESS)
 			LOG_ERROR("Error creating pipeline layout in build_shader_pass");
 
 		builder._pipelineLayout = layout;
-	    setup_shader_stages(builder, effect->stages);
+		setup_shader_stages(builder, effect->stages);
+		
+		VkPipeline pipeline = builder.build_pipeline(_engine->_device, renderPass);
+		shaderPass->pipeline = pipeline;
+		shaderPass->layout = layout;
 
-	    VkPipeline pipeline = builder.build_pipeline(_engine->_device, renderPass);
+	    builder._shaderStages.clear();
 
 		return shaderPass;
 	}
@@ -186,17 +188,17 @@ namespace vkutil
 	void MaterialSystem::build_default_templates()
 	{
 		setup_pipeline_builders();
-	
+		
 		ShaderEffect* texturedLitEffect = build_shader_effect({
-			"shaders/mesh.vert.spv",
-			"shaders/textured_lig.frag.spv" });
+			"/shaders/mesh.vert.spv",
+			"/shaders/textured_lit.frag.spv" });
 		ShaderEffect* postprocessingEffect = build_shader_effect({
-		    "shaders/postprocessing.vert.spv",
-			"shaders/postprocessing.frag.spv"});
+		    "/shaders/postprocessing.vert.spv",
+			"/shaders/postprocessing.frag.spv"});
 		ShaderEffect* coloredLitEffect = build_shader_effect({
-			"shaders/mesh.vert.spv"
-			"shaders/default_lig.frag.spv"});
-
+			"/shaders/mesh.vert.spv",
+			"/shaders/default_lit.frag.spv"});
+		
 		ShaderPass* texturedLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, texturedLitEffect);
 		ShaderPass* postrpocessingPass = build_shader_pass(_engine->_renderPass, _postprocessingPipelineBuilder, postprocessingEffect);
 		ShaderPass* coloredLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, coloredLitEffect);
@@ -229,7 +231,8 @@ namespace vkutil
 			newMat->original = &_templateCache[info.baseTemplate];
 			newMat->parameters = info.parameters;
 			newMat->passSets[MeshpassType::DirectionalShadow] = VK_NULL_HANDLE;
-			newMat->textures = info.textures;
+			if (!info.textures.empty())
+				newMat->textures = info.textures;
 
 			LOG_INFO("Built new material {}", materialName);
 			_materialCache[info] = newMat;
@@ -265,7 +268,7 @@ namespace vkutil
 			{
 				if (textures[i].sampler != other.textures[i].sampler)
 					return false;
-				if (textures[i].view != other.textures[i].view)
+				if (textures[i].imageView != other.textures[i].imageView)
 					return false;
 			}
 		}
@@ -285,7 +288,7 @@ namespace vkutil
 
 		for (auto& tex : textures)
 		{
-			size_t texture_hash = (std::hash<size_t>()((size_t)tex.sampler) << 3) && (std::hash<size_t>()((size_t)tex.view) >> 7);
+			size_t texture_hash = (std::hash<size_t>()((size_t)tex.sampler) << 3) && (std::hash<size_t>()((size_t)tex.imageView) >> 7);
 
 			result ^= std::hash<size_t>()(texture_hash);
 		}

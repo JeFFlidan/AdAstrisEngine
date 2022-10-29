@@ -11,11 +11,11 @@ namespace assets
 	{
 		for (auto& it : data.items())
 		{
-			if (it.key().find("texture_"))
+			if (it.key().find("texture_") == 0)
 			{
 				info.textures[it.key()] = it.value();
 			}
-			else if (it.key().find("prop_"))
+			else if (it.key().find("prop_") == 0)
 			{
 				info.customProperties[it.key()] = it.value();
 			}
@@ -77,6 +77,7 @@ namespace assets
 		MaterialInfo info;
 		nlohmann::json matData = nlohmann::json::parse(file->json);
 		info.baseEffect = matData["base_effect"];
+		info.materialName = matData["material_name"];
 		parse_textures_and_properties(matData, info);
 		std::string mode = matData["mode"];
 		info.mode = parse_mode(mode);
@@ -87,6 +88,7 @@ namespace assets
 	{
 		nlohmann::json matData = parse_textures_and_properties(*info);
 		matData["base_effect"] = info->baseEffect;
+		matData["material_name"] = info->materialName;
 		matData["mode"] = parse_mode(info->mode);
 
 		AssetFile file;

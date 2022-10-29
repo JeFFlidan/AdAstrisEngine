@@ -1,6 +1,9 @@
 ﻿#include "vk_engine.h"
+#include "asset_loader.h"
 #include "glm/fwd.hpp"
+#include "material_asset.h"
 #include "mesh_asset.h"
+#include "prefab_asset.h"
 #include "vk_descriptors.h"
 #include "vk_textures.h"
 #include "vk_mesh.h"
@@ -8,8 +11,6 @@
 #include "vk_shaders.h"
 #include "vk_renderpass.h"
 #include "logger.h"
-//#include "material_asset.h"
-//#include "prefab_asset.h"
 
 #include <SDL.h>
 #include <SDL_vulkan.h>
@@ -22,6 +23,7 @@
 #include <vk_initializers.h>
 
 #include "VkBootstrap.h"
+#include "vk_types.h"
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -55,6 +57,8 @@
 		}															 \
 	} while (0)
 
+namespace fs = std::filesystem;
+	
 std::vector<std::string> get_supported_vulkan_instance_extension()
 {
 	uint32_t count;
@@ -102,17 +106,15 @@ void VulkanEngine::init()
 	SDL_Delay(100);
 
 	init_vulkan();
+	init_engine_systems();
 	init_swapchain();
 	init_commands();
 	// Render passes should be created before framebuffers because framebuffers are created for special render passes
 	init_renderpasses();
 	init_framebuffers();
 	init_sync_structures();
-	load_images();
 	init_descriptors();
-	init_pipelines();
-	//load_images();
-	load_meshes();
+	parse_prefabs();
 	init_scene();
 	init_imgui();
 	
@@ -142,8 +144,6 @@ void VulkanEngine::init_vulkan()
 {
 	LOG_INFO("Start");
     //PATH.erase(PATH.find("/bin"), 4);
-    _projectPath = std::filesystem::current_path().generic_string();
-	_projectPath.erase(_projectPath.find("/bin"), 4);
     
     LOG_INFO("Path is {}", _projectPath);
 	
@@ -193,11 +193,19 @@ void VulkanEngine::init_vulkan()
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
 	LOG_INFO("Finished creating allocator");
 
+	_gpuProperties = vkbDevice.physical_device.properties;
+	LOG_INFO("The GPU has a minimum buffer alignment of {}", _gpuProperties.limits.minUniformBufferOffsetAlignment)
+}
+
+void VulkanEngine::init_engine_systems()
+{
+	_projectPath = fs::current_path().string();
+	_projectPath.erase(_projectPath.find("\\bin"), 4);
+
 	_descriptorAllocator.init(_device);
 	_descriptorLayoutCache.init(_device);
 
-	_gpuProperties = vkbDevice.physical_device.properties;
-	LOG_INFO("The GPU has a minimum buffer alignment of {}", _gpuProperties.limits.minUniformBufferOffsetAlignment)
+	_materialSystem.init(this);
 }
 
 void VulkanEngine::init_swapchain()
@@ -429,38 +437,6 @@ void VulkanEngine::init_sync_structures()
 	});
 }
 
-bool VulkanEngine::load_shader_module(const char* filePath, VkShaderModule* outShaderModule)
-{
-	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
-
-	if (!file.is_open())
-		return false;
-
-	size_t fileSize = static_cast<size_t>(file.tellg());
-
-	std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
-
-	file.seekg(0);
-
-	file.read(reinterpret_cast<char*>(buffer.data()), fileSize);
-
-	file.close();
-
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.pNext = nullptr;
-
-	createInfo.codeSize = buffer.size() * sizeof(uint32_t);
-	createInfo.pCode = buffer.data();
-
-	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-		return false;
-
-	*outShaderModule = shaderModule;
-	return true;
-}
-
 void VulkanEngine::init_descriptors()
 {
 	const size_t sceneParamBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(GPUSceneData));
@@ -481,6 +457,33 @@ void VulkanEngine::init_descriptors()
 
 	//_descriptorAllocator.init(_device);
 	//_descriptorLayoutCache.init(_device);
+
+    VkDescriptorSetLayoutBinding bindingInfo;
+	bindingInfo.descriptorCount = 3;
+	bindingInfo.binding = 0;
+	bindingInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	bindingInfo.pImmutableSamplers = nullptr;
+	bindingInfo.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	
+	VkDescriptorSetLayoutCreateInfo texturesSetInfo{};
+	texturesSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	texturesSetInfo.bindingCount = 1;
+	texturesSetInfo.pBindings = &bindingInfo;
+	texturesSetInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+
+	const VkDescriptorBindingFlagsEXT flags =
+		VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT |
+		VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT |
+		VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT |
+		VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
+
+	VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlags{};
+	bindingFlags.bindingCount = texturesSetInfo.bindingCount;
+	bindingFlags.pBindingFlags = &flags;
+
+    texturesSetInfo.pNext = &bindingFlags;
+	
+    VK_CHECK(vkCreateDescriptorSetLayout(_device, &texturesSetInfo, nullptr, &_texturesSetLayout));
 	
 	VkSamplerCreateInfo imgSamplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
 	VkSampler offscrColorSampler;
@@ -543,193 +546,8 @@ void VulkanEngine::init_descriptors()
 	});
 }
 
-void VulkanEngine::init_pipelines()
-{
-	VkShaderModule meshVertShader;
-	if (!load_shader_module((_projectPath + "/shaders/mesh.vert.spv").c_str(), &meshVertShader))
-	{
-		LOG_ERROR("Error when building the mesh triangle vertex shader module");
-	}
-	else
-	{
-		LOG_SUCCESS("Mesh triangle fragment shader successfully loaded");
-	}
-
-	VkShaderModule coloredShader;
-	if (!load_shader_module((_projectPath + "/shaders/default_lit.frag.spv").c_str(), &coloredShader))
-	{
-		LOG_ERROR("Error when building the mesh triangle vertex shader module");
-	}
-	else
-	{
-		LOG_SUCCESS("Colored triangle shader successfully loaded");
-	}
-
-	VkShaderModule texturedMeshShader;
-	if (!load_shader_module((_projectPath + "/shaders/textured_lit.frag.spv").c_str(), &texturedMeshShader))
-	{
-		LOG_ERROR("Error when building the textured mesh fragment shader module");
-	}
-	else
-	{
-		LOG_SUCCESS("Textured mesh fragment shader successfully loaded");
-	}
-
-	VkShaderModule outputQuadVertShader;
-	if (!load_shader_module((_projectPath + "/shaders/postprocessing.vert.spv").c_str(), &outputQuadVertShader))
-	{
-		LOG_ERROR("Error when building the textured mesh fragment shader module");
-	}
-	else
-	{
-		LOG_SUCCESS("Textured mesh fragment shader successfully loaded");
-	}
-
-	VkShaderModule outputQuadFragShader;
-	if (!load_shader_module((_projectPath + "/shaders/postprocessing.frag.spv").c_str(), &outputQuadFragShader))
-	{
-		LOG_ERROR("Error when building the textured mesh fragment shader module");
-	}
-	else
-	{
-		LOG_SUCCESS("Textured mesh fragment shader successfully loaded");
-	}
-
-	vkutil::Shader firstShader(_device);
-	firstShader.load_shader_module((_projectPath + "/shaders/mesh.vert.spv").c_str());
-	firstShader.spv_reflect_test();
-
-	vkutil::PipelineBuilder pipelineBuilder; 
-
-	pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
-	pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-	
-	pipelineBuilder._viewport.x = 0.0f;
-	pipelineBuilder._viewport.y = 0.0f;
-	pipelineBuilder._viewport.width = static_cast<float>(_windowExtent.width);
-	pipelineBuilder._viewport.height = static_cast<float>(_windowExtent.height);
-	pipelineBuilder._viewport.minDepth = 0.0f;
-	pipelineBuilder._viewport.maxDepth = 1.0f;
-
-	pipelineBuilder._scissor.offset = { 0, 0 };
-	pipelineBuilder._scissor.extent = _windowExtent;
-
-	pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
-	pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL);
-	pipelineBuilder._multisampling = vkinit::multisampling_state_create_info();
-	pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
-
-	VertexInputDescription vertexDescription = Mesh::get_vertex_description();
-
-	pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = vertexDescription.attributes.data();
-	pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = vertexDescription.attributes.size();
-
-	pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = vertexDescription.bindings.data();
-	pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = vertexDescription.bindings.size();
-
-	VkPipelineLayoutCreateInfo texturedPipelineLayoutInfo = vkinit::pipeline_layout_create_info();
-
-	/*VkPushConstantRange pushConstant;
-	pushConstant.offset = 0;
-	pushConstant.size = sizeof(MeshPushConstants);
-	pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-	texturedPipelineLayoutInfo.pPushConstantRanges = &pushConstant;
-	texturedPipelineLayoutInfo.pushConstantRangeCount = 1;*/
-
-	VkDescriptorSetLayout texturedSetLayouts[] = { _globalSetLayout, _objectSetLayout, _texturesSetLayout };
-
-	texturedPipelineLayoutInfo.setLayoutCount = 3;
-	texturedPipelineLayoutInfo.pSetLayouts = texturedSetLayouts;
-
-	VkPipelineLayout texturedPipelineLayout;
-	VK_CHECK(vkCreatePipelineLayout(_device, &texturedPipelineLayoutInfo, nullptr, &texturedPipelineLayout));
-
-	pipelineBuilder._shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, meshVertShader));
-	pipelineBuilder._shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, texturedMeshShader));
-
-	pipelineBuilder._pipelineLayout = texturedPipelineLayout;
-
-	VkPipeline texPipeline = pipelineBuilder.build_pipeline(_device, _offscrRenderPass);
-	create_material(texPipeline, texturedPipelineLayout, "textured_mesh");
-	
-	pipelineBuilder._shaderStages.clear();
-	pipelineBuilder._shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, meshVertShader));
-	pipelineBuilder._shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, coloredShader));
-
-	VkPipeline coloredPipeline = pipelineBuilder.build_pipeline(_device, _offscrRenderPass);
-	create_material(coloredPipeline, texturedPipelineLayout, "colored_mesh");
-
-	VkPipelineLayoutCreateInfo outputQuadPipelineLayoutInfo = vkinit::pipeline_layout_create_info();
-	outputQuadPipelineLayoutInfo.setLayoutCount = 1;
-	outputQuadPipelineLayoutInfo.pSetLayouts = &_globalSetLayout;
-
-	VkPipelineLayout outputQuadLayout;
-	VK_CHECK(vkCreatePipelineLayout(_device, &outputQuadPipelineLayoutInfo, nullptr, &outputQuadLayout));
-
-	pipelineBuilder._pipelineLayout = outputQuadLayout;
-
-	pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS_OR_EQUAL);
-
-	VertexInputDescription outputQuadVertDescription = Plane::get_vertex_description();
-
-	pipelineBuilder._shaderStages.clear();
-	pipelineBuilder._shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_VERTEX_BIT, outputQuadVertShader));
-	pipelineBuilder._shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(VK_SHADER_STAGE_FRAGMENT_BIT, outputQuadFragShader));
-
-	pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
-	pipelineBuilder._vertexInputInfo.vertexBindingDescriptionCount = outputQuadVertDescription.bindings.size();
-	pipelineBuilder._vertexInputInfo.pVertexBindingDescriptions = outputQuadVertDescription.bindings.data();
-	pipelineBuilder._vertexInputInfo.vertexAttributeDescriptionCount = outputQuadVertDescription.attributes.size();
-	pipelineBuilder._vertexInputInfo.pVertexAttributeDescriptions = outputQuadVertDescription.attributes.data();
-
-	VkPipeline outputQuadPipeline = pipelineBuilder.build_pipeline(_device, _renderPass);
-	create_material(outputQuadPipeline, outputQuadLayout, "outputquad");	
-
-	vkDestroyShaderModule(_device, meshVertShader, nullptr);
-	vkDestroyShaderModule(_device, coloredShader, nullptr);
-	vkDestroyShaderModule(_device, texturedMeshShader, nullptr);
-	vkDestroyShaderModule(_device, outputQuadVertShader, nullptr);
-	vkDestroyShaderModule(_device, outputQuadFragShader, nullptr);
-
-	_mainDeletionQueue.push_function([=](){
-		vkDestroyPipeline(_device, outputQuadPipeline, nullptr);
-		vkDestroyPipeline(_device, texPipeline, nullptr);
-
-		vkDestroyPipelineLayout(_device, outputQuadLayout, nullptr);
-		vkDestroyPipelineLayout(_device, texturedPipelineLayout, nullptr);
-	});
-}
-
 void VulkanEngine::init_scene()
 {
-	RenderObject map;
-	map.mesh = get_mesh("empire");
-	map.material = get_material("textured_mesh");
-	map.transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(5.0f, -10.0f, 0.0f));
-
-	//_renderables.push_back(map);
-
-	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
-
-	VkSampler blockySampler;
-	vkCreateSampler(_device, &samplerInfo, nullptr, &blockySampler);
-
-	Material* texturedMat = get_material("textured_mesh");
-
-	/*VkDescriptorImageInfo imageBufferInfo{};
-	imageBufferInfo.sampler = blockySampler;
-	imageBufferInfo.imageView = _loadedTextures["empire_diffuse"].imageView;
-	imageBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &_descriptorAllocator)
-		.bind_image(0, &imageBufferInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.build(texturedMat->textureSet, _singleTextureSetLayout);
-
-	VkWriteDescriptorSet texture1 = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, texturedMat->textureSet, &imageBufferInfo, 0);
-
-	vkUpdateDescriptorSets(_device, 1, &texture1, 0, nullptr);*/
-
 	size_t outputQuadVertBufferSize = _outputQuad._vertices.size() * sizeof(Vertex);
 	AllocatedBuffer vertexStagingBuffer = create_buffer(outputQuadVertBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 	
@@ -755,22 +573,24 @@ void VulkanEngine::init_scene()
 
 	vmaDestroyBuffer(_allocator, vertexStagingBuffer._buffer, vertexStagingBuffer._allocation);
 
-	std::vector<std::string> meshNames  = {
-		"door",
-		"gun",
-		"gun2",
-		"monkey_flat",
-		"monkey_smooth"
-	};
-
-	std::vector<std::string> materialNames = {
-		"textured_mesh",
-		"textured_mesh",
-		"textured_mesh",
-		"colored_mesh",
-		"colored_mesh"
-	};
-
+	vkutil::MaterialData materialData;
+	materialData.baseTemplate = "Postprocessing";
+	_materialSystem.build_material("Postprocessing", materialData);
+	for (int i = 0; i != 2; ++i)
+	{
+		_frames[i]._indirectCommandsBuffer = create_buffer(
+			1000 * sizeof(VkDrawIndexedIndirectCommand),
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |  VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+			VMA_MEMORY_USAGE_GPU_ONLY);
+	}
+	
+	_mainDeletionQueue.push_function([=](){
+		for (int i = 0; i != 2; ++i)
+		{
+			vmaDestroyBuffer(_allocator, _frames[i]._indirectCommandsBuffer._buffer, _frames[i]._indirectCommandsBuffer._allocation);
+		}
+	});
+	
 	std::vector<glm::vec3> translation = {
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, -8.0f),
@@ -779,29 +599,14 @@ void VulkanEngine::init_scene()
 		glm::vec3(0.0f, 0.0f, -26.0f)
 	};
 
-	for (int i = 0; i != meshNames.size(); ++i)
+	for (int i = 0; i != _meshAndMaterialNames.size(); ++i)
 	{
 		RenderObject temp;
-		temp.mesh = &_meshes[meshNames[i]];
-		temp.material = get_material(materialNames[i]);
+		temp.material = _materialSystem.get_material(_meshAndMaterialNames[i].materialName);
+		temp.mesh = &_meshes[_meshAndMaterialNames[i].meshName];
 		temp.transformMatrix = glm::translate(glm::mat4(1.0f), translation[i]);
 		_renderables.push_back(temp);
 	}
-
-	for (int i = 0; i != 2; ++i)
-	{
-		_frames[i]._indirectCommandsBuffer = create_buffer(
-			1000 * sizeof(VkDrawIndexedIndirectCommand),
-			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |  VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-			VMA_MEMORY_USAGE_GPU_ONLY);
-	}
-
-	_mainDeletionQueue.push_function([=](){
-		for (int i = 0; i != 2; ++i)
-		{
-			vmaDestroyBuffer(_allocator, _frames[i]._indirectCommandsBuffer._buffer, _frames[i]._indirectCommandsBuffer._allocation);
-		}
-	});
 }
 
 void VulkanEngine::draw()
@@ -1002,182 +807,107 @@ void VulkanEngine::run()
 	}
 }
 
-void VulkanEngine::load_images()
+void VulkanEngine::parse_prefabs()
 {
-	auto start = std::chrono::high_resolution_clock::now();
-	/*Texture lostEmpire;
-
-	vkutil::load_image_from_asset(*this, (PATH + "/empireAssets/lost_empire-RGBA.tx").c_str(), lostEmpire.image);
-
-	VkImageViewCreateInfo imageInfo = vkinit::imageview_create_info(VK_FORMAT_R8G8B8A8_UNORM, lostEmpire.image._image, VK_IMAGE_ASPECT_COLOR_BIT);
-	vkCreateImageView(_device, &imageInfo, nullptr, &lostEmpire.imageView);
-
-	_loadedTextures["empire_diffuse"] = lostEmpire;*/
-
-	std::vector<std::string> texturesNames = {
-		"Sci fi door 1_BaseColor",
-		"Gun_BaseColor",
-		"Gun_2_BaseColor",
-	};
-
-	for (int i = 0; i != texturesNames.size(); ++i)
-	{
-		Texture temp;
-		vkutil::load_image_from_asset(*this, (_projectPath + "/assets/" + texturesNames[i] + ".tx").c_str(), temp.image);
-		VkImageViewCreateInfo imageInfo = vkinit::imageview_create_info(VK_FORMAT_R8G8B8A8_UNORM, temp.image._image, VK_IMAGE_ASPECT_COLOR_BIT);	 
-		vkCreateImageView(_device, &imageInfo, nullptr, &temp.imageView);
-
-		_loadedTextures.push_back(temp);
-	}
-
-	auto end = std::chrono::high_resolution_clock::now();
-	auto diff = end - start;
-
-	LOG_INFO("Downloading textures took {} {}", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / 1000000.0, "ms");
-
-	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
-
-	VkSampler blockySampler;
-	vkCreateSampler(_device, &samplerInfo, nullptr, &blockySampler);
-	VkDescriptorImageInfo samplerImageInfo{};
-	samplerImageInfo.imageView = nullptr;
-	samplerImageInfo.sampler = blockySampler;
-	samplerImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-	std::vector<VkDescriptorImageInfo> imagesInfo;
+	_materialSystem.build_default_templates();
+	std::string assetsPath = _projectPath + "/assets/";
+	fs::path direcory{ assetsPath };
 	
-    for (auto tex : _loadedTextures)
-    {
-		VkDescriptorImageInfo temp;
-		temp.imageView = tex.imageView;
-		temp.sampler = blockySampler;
-		temp.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imagesInfo.push_back(temp);
-    }
-
-	for (int i = 0; i != FRAME_OVERLAP; ++i)
-	{
-		 vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &_descriptorAllocator)
-			.bind_image(0, imagesInfo.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, imagesInfo.size())
-			//.bind_image(1, &samplerImageInfo, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
-			.build_non_uniform(_frames[i]._texturesDescriptor, _texturesSetLayout, imagesInfo.size());
-	}
-    
-	// assets::MaterialInfo test;
-	// test.baseEffect = "Test";
-	// test.textures = { {"texture_base_color", "E:/VulkanEngine/empireAssets/lost_empire-RGBA.tx"} };
-	// test.customProperties = { { "prop_test1", "test1" }, { "prop_test2", "test2" } };
-	// test.mode = assets::MaterialMode::OPAQUE;
-// 
-	// assets::AssetFile file = assets::pack_material(&test);
-	// assets::save_binaryFile("E:/VulkanEngine/empireAssets/material_test.mat", file);
-
-	// assets::PrefabInfo test;
-	// test.meshPath = "E:/VulkanEngine/empireAssets/lost_empire.mesh";
-	// test.materialPath = "E:/VulkanEngine/empireAssets/material_test.mat";
-	// std::array<float, 16> matrix;
-
-	// glm::mat4 mtx = glm::mat4(1.0f);
-	// const float* source = (const float*)glm::value_ptr(mtx);
-	// memcpy(matrix.data(), (float*)source, sizeof(float) * 16);
-	// for (int i = 0; i != 16; ++i)
-	// {
-	// 	matrix[i] = 1.0f;
-	// }
-	
-	// test.matrix = matrix;
-
-	// assets::AssetFile file = assets::pack_prefab(&test);
-	// assets::save_binaryFile("E:/VulkanEngine/empireAssets/test_prefab.pref", file);
-}
-
-void VulkanEngine::load_meshes()
-{
-	Mesh lostEmpire{};
-
 	std::vector<Mesh> meshes;
 	
-	auto start = std::chrono::high_resolution_clock::now();
+	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
+	VkSampler sampler;
+	VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &sampler));
 
-	std::vector<std::string> meshNames  = {
- 		"door",
-		"gun",
-		"gun2",
-		"monkey_flat",
-		"monkey_smooth"
-	};
-	
-	for (auto& meshName : meshNames)
+	std::vector<VkDescriptorImageInfo> baseColorImageInfos;
+	std::vector<VkDescriptorImageInfo> normalImageInfos;
+	std::vector<VkDescriptorImageInfo> armImageInfos;
+
+	for (auto& p : fs::directory_iterator(direcory))
 	{
-		Mesh temp{};
-		temp.load_from_mesh_asset((_projectPath + "/assets/" + meshName + ".mesh").c_str());
-		meshes.push_back(temp);
+		if (p.path().extension() == ".pref")
+		{
+			assets::AssetFile file;
+			assets::load_binaryFile(p.path().string().c_str(), file);
+			assets::PrefabInfo info = assets::read_prefab_info(&file);
 
-		_meshes[meshName] = temp;
+			Mesh tempMesh{};
+			tempMesh.load_from_mesh_asset(info.meshPath.c_str());
+			meshes.push_back(tempMesh);
+			std::string meshName = info.meshPath;
+			meshName.erase(0, meshName.find_last_of("/"));
+		    meshName.erase(meshName.find(".mesh"), 5);
+		    meshName.erase(meshName.find('/'), 1);
+			_meshes[meshName] = tempMesh;
+
+		    assets::load_binaryFile(info.materialPath.c_str(), file);
+		    assets::MaterialInfo materialInfo = assets::read_material_info(&file);
+			vkutil::MaterialData materialData;
+			materialData.baseTemplate = materialInfo.baseEffect;
+
+			if (!materialInfo.textures.empty())
+			{
+				for (auto& tex : materialInfo.textures)
+				{
+					Texture tempTexture;
+					vkutil::load_image_from_asset(*this, tex.second.c_str(), tempTexture.image);
+					VkImageViewCreateInfo imageViewInfo = vkinit::imageview_create_info(VK_FORMAT_R8G8B8A8_UNORM, tempTexture.image._image, VK_IMAGE_ASPECT_COLOR_BIT);
+					vkCreateImageView(_device, &imageViewInfo, nullptr, &tempTexture.imageView);
+
+					if (tex.first == "texture_base_color")
+					{
+						_baseColorTextures.push_back(tempTexture);
+						materialData.textures.push_back({ sampler, _baseColorTextures.back().imageView });
+
+						VkDescriptorImageInfo tempInfo;
+						tempInfo.imageView = _baseColorTextures.back().imageView;
+						tempInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+						tempInfo.sampler = sampler;
+						baseColorImageInfos.push_back(tempInfo);
+					}
+					else if (tex.first == "normal_texture")
+					{
+						_normalTextures.push_back(tempTexture);
+						materialData.textures.push_back({ sampler, _normalTextures.back().imageView });
+
+						VkDescriptorImageInfo tempInfo;
+						tempInfo.imageView = _normalTextures.back().imageView;
+						tempInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+						tempInfo.sampler = sampler;
+					    normalImageInfos.push_back(tempInfo);
+					}					
+					else if (tex.first == "arm_texture")
+					{
+						_armTextures.push_back(tempTexture);
+						materialData.textures.push_back({ sampler, _armTextures.back().imageView });
+
+						VkDescriptorImageInfo tempInfo;
+						tempInfo.imageView = _armTextures.back().imageView;
+						tempInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+						tempInfo.sampler = sampler;
+					    armImageInfos.push_back(tempInfo);
+					}
+				}
+			}
+			else
+			{
+				LOG_WARNING("No textures in {} material", materialInfo.materialName);
+			}
+
+			
+			_materialSystem.build_material(materialInfo.materialName, materialData);
+			_meshAndMaterialNames.push_back({ meshName, materialInfo.materialName });			
+		}
 	}
-
-	lostEmpire.load_from_mesh_asset((_projectPath + "/empireAssets/lost_empire.mesh").c_str());
-
-	auto end = std::chrono::high_resolution_clock::now();
-	auto diff = end - start;
-
-	LOG_INFO("reading mesh assets file took {} {}", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / 1000000.0, "ms");
 
 	allocate_global_vertex_and_index_buffer(meshes);
 
-	upload_mesh(lostEmpire);
-
-	_meshes["empire"] = lostEmpire;
-}
-
-void VulkanEngine::upload_mesh(Mesh& mesh)
-{
-	auto start = std::chrono::high_resolution_clock::now();
-
-	size_t vertexBufferSize = mesh._vertices.size() * sizeof(assets::Vertex_f32_PNCV);
-	size_t indexBufferSize = mesh._indices.size() * sizeof(uint32_t);
-
-	AllocatedBuffer vertexStagingBuffer = create_buffer(vertexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-
-	AllocatedBuffer indexStagingBuffer = create_buffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-
-	void* data;
-	vmaMapMemory(_allocator, vertexStagingBuffer._allocation, &data);
-	memcpy(data, mesh._vertices.data(), mesh._vertices.size() * sizeof(assets::Vertex_f32_PNCV));
-	vmaUnmapMemory(_allocator, vertexStagingBuffer._allocation);
-
-	data = nullptr;
-	vmaMapMemory(_allocator, indexStagingBuffer._allocation, &data);
-	memcpy(data, mesh._indices.data(), mesh._indices.size() * sizeof(uint32_t));
-	vmaUnmapMemory(_allocator, indexStagingBuffer._allocation);
-
-	mesh._vertexBuffer = create_buffer(vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-	mesh._indexBuffer = create_buffer(indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-
-	immediate_submit([=](VkCommandBuffer cmd){
-		VkBufferCopy copy;
-		copy.dstOffset = 0;
-		copy.srcOffset = 0;
-		copy.size = vertexBufferSize;
-		vkCmdCopyBuffer(cmd, vertexStagingBuffer._buffer, mesh._vertexBuffer._buffer, 1, &copy);
-
-		copy.size = indexBufferSize;
-		vkCmdCopyBuffer(cmd, indexStagingBuffer._buffer, mesh._indexBuffer._buffer, 1, &copy);
-	});
-
-	_mainDeletionQueue.push_function([=](){
-		vmaDestroyBuffer(_allocator, mesh._vertexBuffer._buffer, mesh._vertexBuffer._allocation);
-		vmaDestroyBuffer(_allocator, mesh._indexBuffer._buffer, mesh._indexBuffer._allocation);
-	});
-
-	vmaDestroyBuffer(_allocator, vertexStagingBuffer._buffer, vertexStagingBuffer._allocation);
-	vmaDestroyBuffer(_allocator, indexStagingBuffer._buffer, indexStagingBuffer._allocation);
-
-	auto end = std::chrono::high_resolution_clock::now();
-
-	auto diff = end - start;
-
-	LOG_INFO("allocating mesh buffers took {} {}", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / 1000000.0, "ms");
+	for (int i = 0; i != FRAME_OVERLAP; ++i)
+	{		
+		vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &_descriptorAllocator)
+			.bind_image(0, baseColorImageInfos.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, baseColorImageInfos.size())
+			.build_non_uniform(_frames[i]._texturesDescriptor, _texturesSetLayout, baseColorImageInfos.size());
+	}
 }
 
 void VulkanEngine::allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes)
@@ -1253,28 +983,6 @@ void VulkanEngine::allocate_global_vertex_and_index_buffer(std::vector<Mesh> mes
 	auto diff = end - start;
 
 	LOG_INFO("allocating mesh buffers took {} {}", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / 1000000.0, "ms");
-}
-
-Material* VulkanEngine::create_material(VkPipeline pipeline, VkPipelineLayout layout, const std::string& name)
-{
-	Material mat;
-	mat.pipeline = pipeline;
-	mat.pipelineLayout = layout;
-	_materials[name] = mat;
-	return &_materials[name];
-}
-
-Material* VulkanEngine::get_material(const std::string& name)
-{
-	auto it = _materials.find(name);
-	if (it == _materials.end())
-	{
-		return nullptr;
-	}
-	else
-	{
-		return &(*it).second;
-	}
 }
 
 Mesh* VulkanEngine::get_mesh(const std::string& name)
@@ -1379,7 +1087,6 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* objects, int 
 
 	vmaDestroyBuffer(_allocator, stagingBuffer._buffer, stagingBuffer._allocation);
 
-	Material* previousMaterial = nullptr;
 	//bind_material(cmd, draws[0].material);
 	VkDeviceSize offset = 0;
     vkCmdBindVertexBuffers(cmd, 0, 1, &_globalVertexBuffer._buffer, &offset);
@@ -1406,11 +1113,12 @@ void VulkanEngine::draw_output_quad(VkCommandBuffer cmd)
 {
 	int frameIndex = _frameNumber % FRAME_OVERLAP;
 
-	auto material = &_materials["outputquad"];
+	auto material = _materialSystem.get_material("Postprocessing");
 	if (material != nullptr)
 	{
-		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipeline);
-		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 0, 1, &get_current_frame()._globalDescriptor, 0, nullptr);
+		auto meshPass = material->original->passShaders[vkutil::MeshpassType::Forward];
+		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPass->pipeline);
+		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPass->layout, 0, 1, &get_current_frame()._globalDescriptor, 0, nullptr);
 	}
 	else
 	{
@@ -1533,15 +1241,16 @@ std::vector<IndirectBatch> VulkanEngine::compact_draws(RenderObject* objects, in
 	return draws;
 }
 
-void VulkanEngine::bind_material(VkCommandBuffer cmd, Material* material)
+void VulkanEngine::bind_material(VkCommandBuffer cmd, vkutil::Material* material)
 {
-	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipeline);
-	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 0, 1, &get_current_frame()._globalDescriptor, 0, nullptr);
-	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 1, 1, &get_current_frame()._objectDescriptor, 0, nullptr);
+	auto renderPass = material->original->passShaders[vkutil::MeshpassType::Forward];
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPass->pipeline);
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPass->layout, 0, 1, &get_current_frame()._globalDescriptor, 0, nullptr);
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPass->layout, 1, 1, &get_current_frame()._objectDescriptor, 0, nullptr);
 
 	if (get_current_frame()._texturesDescriptor != VK_NULL_HANDLE)
 	{
-		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 2, 1, &get_current_frame()._texturesDescriptor, 0, nullptr);
+		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPass->layout, 2, 1, &get_current_frame()._texturesDescriptor, 0, nullptr);
 	}
 }
 

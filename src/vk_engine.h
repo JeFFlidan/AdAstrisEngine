@@ -5,6 +5,7 @@
 
 #include "vk_types.h"
 #include "vk_mesh.h"
+#include "material_system.h"
 #include <stdint.h>
 #include <vk_descriptors.h>
 #include <vk_camera.h>
@@ -46,17 +47,10 @@ struct MeshPushConstants
 	glm::mat4 render_matrix;
 };
 
-struct Material
-{
-	VkDescriptorSet textureSet{VK_NULL_HANDLE};
-	VkPipeline pipeline;
-	VkPipelineLayout pipelineLayout;
-};
-
 struct RenderObject
 {
 	Mesh* mesh;
-	Material* material;
+	vkutil::Material* material;
 	glm::mat4 transformMatrix;
 	glm::vec4 color;
 };
@@ -134,9 +128,16 @@ struct Plane
 struct IndirectBatch
 {
 	Mesh* mesh;
-	Material* material;
+	vkutil::Material* material;
 	uint32_t first;
 	uint32_t count;
+};
+
+struct PrefabElementsNames
+{
+	std::string meshName;
+	std::string materialName;
+	//std::vector<std::string> textureNames;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
@@ -173,6 +174,8 @@ class VulkanEngine
 		DescriptorAllocator _descriptorAllocator;
 		DescriptorLayoutCache _descriptorLayoutCache;
 
+		vkutil::MaterialSystem _materialSystem;
+
 		Attachment _depthImage;
 		Attachment _offscrDepthImage;
 		Attachment _offscrColorImage;
@@ -183,9 +186,12 @@ class VulkanEngine
 
 		std::vector<RenderObject> _renderables;
 
-		std::unordered_map<std::string, Material> _materials;
 		std::unordered_map<std::string, Mesh> _meshes;
 		std::vector<Texture> _loadedTextures;
+		std::vector<Texture> _baseColorTextures;
+		std::vector<Texture> _normalTextures;
+		std::vector<Texture> _armTextures;
+		std::vector<PrefabElementsNames> _meshAndMaterialNames;
 		Plane _outputQuad;
 
 		GPUSceneData _sceneParameters;
@@ -226,8 +232,6 @@ class VulkanEngine
 		//run main loop
 		void run();
 		
-		Material* create_material(VkPipeline pipeline, VkPipelineLayout layout, const std::string& name);
-		Material* get_material(const std::string& name);
 		Mesh* get_mesh(const std::string& name);
 
 		void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
@@ -237,20 +241,14 @@ class VulkanEngine
 
 	private:
 		void init_vulkan();
+		void init_engine_systems();
 		void init_imgui();
 		void init_swapchain();
 		void init_commands();
-		void init_default_renderpass();
-		void init_offscreen_renderpass();
 		void init_renderpasses();
 		void init_framebuffers();
 		void init_sync_structures();
-		bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
-		void init_pipelines();
 		void init_scene();
-		void load_images();
-		void load_meshes();
-		void upload_mesh(Mesh& mesh);
 		void init_descriptors();
 		size_t pad_uniform_buffer_size(size_t originalSize);
 
@@ -262,12 +260,8 @@ class VulkanEngine
 			VkImageAspectFlags aspectFlags);
 
 		std::vector<IndirectBatch> compact_draws(RenderObject* objects, int count);
-		void bind_material(VkCommandBuffer cmd, Material* mateial);
+		void bind_material(VkCommandBuffer cmd, vkutil::Material* mateial);
 		void bind_mesh(VkCommandBuffer cmd, Mesh* mesh);
 		void allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes);
-
-		void test()
-		{
-			int i = 0;
-		}
+		void parse_prefabs();
 };

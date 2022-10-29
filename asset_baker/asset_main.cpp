@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <cstring>
 
 #include <json.hpp>
 #include <lz4.h>
@@ -10,6 +11,8 @@
 #include <stb_image.h>
 
 #include <asset_loader.h>
+#include <material_asset.h>
+#include <prefab_asset.h>
 #include <texture_asset.h>
 #include <mesh_asset.h>
 #include <tiny_obj_loader.h>
@@ -188,6 +191,46 @@ bool convert_image_without_alpha(const fs::path& input, const fs::path& output)
 	return true;
 }
 
+// Temporary solution, it must be replaced by saving materials from the engine for the particular project
+void save_material(
+	fs::path directory,
+	const std::string& materialName,
+	const std::string& baseEffect,
+	const std::vector<std::string>& textures,
+	assets::MaterialMode materialMode)
+{
+	// In the textures vector: 0 index is base color, 1 - normal, 2 - arm (if it's a PBR shader, but in other cases the order will be the same)
+	assets::MaterialInfo info;
+	info.materialName = materialName;
+	info.baseEffect = baseEffect;
+	if (!textures.empty())
+	{
+		info.textures["texture_base_color"] = directory.string() + textures[0];
+	}
+    info.mode = materialMode;
+
+    assets::AssetFile file = assets::pack_material(&info);
+    std::string path = directory.string()+ '/' + materialName + ".mat";
+    assets::save_binaryFile(path.c_str(), file);
+}
+
+// Temporary solution, it must be replaced by saving prefabs from the engine for the particular project
+void save_prefab(const std::string& directory, const std::string& prefabName)
+{
+	assets::PrefabInfo info;
+	std::array<float, 16> matrix;
+	for (int i = 0; i != 16; ++i)
+	{
+		matrix[i] = 1.0f;
+	}
+	info.matrix = matrix;
+	info.materialPath = directory + '/' + prefabName + ".mat";
+	info.meshPath = directory + '/' +  prefabName + ".mesh";
+
+	assets::AssetFile file = assets::pack_prefab(&info);
+	assets::save_binaryFile((directory + '/' + prefabName + ".pref").c_str(), file);
+}
+
 int main(int argc, char* argv[])
 {
 	if (argc < 2)
@@ -225,6 +268,38 @@ int main(int argc, char* argv[])
 				jsonPath.replace_extension(".json");
 				convert_mesh(p.path(), newpath);
 			}
+		}
+
+		// Temporary solution, should be removed in the future.
+		if (argc == 3 && strcmp("create_prefab", argv[2]) == 0)
+		{
+			save_material(
+				directory,
+				"door",
+				"PBR_opaque",
+				{ "/Sci fi door 1_BaseColor.tx" },
+				assets::MaterialMode::OPAQUE
+			);
+
+			save_material(
+				directory,
+				"gun",
+				"PBR_opaque",
+				{ "/Gun_BaseColor.tx" },
+				assets::MaterialMode::OPAQUE
+			);
+
+			save_material(
+				directory,
+				"gun2",
+				"PBR_opaque",
+				{ "/Gun_2_BaseColor.tx" },
+				assets::MaterialMode::OPAQUE
+			);
+
+			save_prefab(directory.string(), "gun");
+			save_prefab(directory.string(), "gun2");
+			save_prefab(directory.string(), "door");
 		}
 	}
 }
