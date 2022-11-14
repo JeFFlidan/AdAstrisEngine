@@ -119,12 +119,15 @@ bool convert_mesh(const fs::path& input, const fs::path& output)
 	
 	load_obj_file(attrib, shapes, vertices, indices);
 
+	assets::MeshBounds meshBounds = assets::calculate_bounds(vertices.data(), vertices.size());
+
 	assets::MeshInfo meshInfo;
 	meshInfo.vertexBufferSize = vertices.size() * sizeof(Vertex);
 	meshInfo.indexBufferSize = indices.size() * sizeof(uint32_t);
 	meshInfo.vertexFormat = assets::VertexFormat::PNCV_F32;
 	meshInfo.indexSize = 1;
 	meshInfo.originalFile = input.string();
+	meshInfo.bounds = meshBounds;
 
 	assets::AssetFile newMesh = assets::pack_mesh(&meshInfo, (char*)vertices.data(), (char*)indices.data());
 

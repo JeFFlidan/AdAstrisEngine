@@ -1,4 +1,0 @@
-E:/VulkanEngine/src/CMakeFiles/logger.dir
-E:/VulkanEngine/src/CMakeFiles/vulkan_guide.dir
-E:/VulkanEngine/src/CMakeFiles/edit_cache.dir
-E:/VulkanEngine/src/CMakeFiles/rebuild_cache.dir

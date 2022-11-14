@@ -8,6 +8,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <functional>
+#include <vulkan/vulkan_core.h>
 
 namespace vkutil
 {
@@ -107,6 +108,7 @@ namespace vkutil
 
 	ShaderEffect* MaterialSystem::build_shader_effect(const std::vector<std::string>& shaderPaths)
 	{
+		std::cout << "Call shader effect" << std::endl;
 		// Main order is: 0 - vertex shader, 1 - fragment shader, 2 - geometry shader ...
 		ShaderEffect* shaderEffect = new ShaderEffect();
 
@@ -144,10 +146,6 @@ namespace vkutil
 			}
 		}
 
-		shaderEffect->setLayouts.push_back(_engine->_globalSetLayout);
-		shaderEffect->setLayouts.push_back(_engine->_objectSetLayout);
-		shaderEffect->setLayouts.push_back(_engine->_texturesSetLayout);
-
 		return shaderEffect;
 	}
 
@@ -164,15 +162,9 @@ namespace vkutil
 		ShaderPass* shaderPass = new ShaderPass();
 
 		shaderPass->effect = effect;
-		
-		VkPipelineLayoutCreateInfo info = vkinit::pipeline_layout_create_info();
-		info.setLayoutCount = effect->setLayouts.size();
-		info.pSetLayouts = effect->setLayouts.data();
-		VkPipelineLayout layout;
-		VkResult res = vkCreatePipelineLayout(_engine->_device, &info, nullptr, &layout);
-		if (res != VK_SUCCESS)
-			LOG_ERROR("Error creating pipeline layout in build_shader_pass");
 
+		VkPipelineLayout layout = effect->get_pipeline_layout(_engine->_device);
+		
 		builder._pipelineLayout = layout;
 		setup_shader_stages(builder, effect->stages);
 		
@@ -195,13 +187,13 @@ namespace vkutil
 		ShaderEffect* postprocessingEffect = build_shader_effect({
 		    "/shaders/postprocessing.vert.spv",
 			"/shaders/postprocessing.frag.spv"});
-		ShaderEffect* coloredLitEffect = build_shader_effect({
-			"/shaders/mesh.vert.spv",
-			"/shaders/default_lit.frag.spv"});
+		//ShaderEffect* coloredLitEffect = build_shader_effect({
+		//	"/shaders/mesh.vert.spv",
+		//	"/shaders/default_lit.frag.spv"});
 		
 		ShaderPass* texturedLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, texturedLitEffect);
 		ShaderPass* postrpocessingPass = build_shader_pass(_engine->_renderPass, _postprocessingPipelineBuilder, postprocessingEffect);
-		ShaderPass* coloredLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, coloredLitEffect);
+		//ShaderPass* coloredLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, coloredLitEffect);
 
 		EffectTemplate effectTemplate;
 		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = nullptr;
@@ -250,7 +242,43 @@ namespace vkutil
 
 	void MaterialSystem::clenaup()
 	{
-		
+		for (auto templ : _templateCache)
+		{				
+			auto pass = templ.second.passShaders[vkutil::MeshpassType::Forward];
+			
+			vkDestroyPipeline(_engine->_device,
+				pass->pipeline,
+				nullptr
+			);
+			
+			vkDestroyPipelineLayout(
+				_engine->_device,
+				pass->layout,
+				nullptr
+			);
+
+			pass->effect->destroy_shader_modules();
+		}
+	}
+	
+	void MaterialSystem::destroy_pipeline_layouts()
+	{
+		for (auto material : _materials)
+		{
+			vkDestroyPipelineLayout(
+				_engine->_device,
+				material.second->original->passShaders[vkutil::MeshpassType::Forward]->layout,
+				nullptr
+			);
+		}
+	}
+
+	void MaterialSystem::destroy_shaders_modules()
+	{
+		for (auto& material : _materials)
+		{
+			material.second->original->passShaders[vkutil::MeshpassType::Forward]->effect->destroy_shader_modules();
+		}
 	}
 
 	bool MaterialData::operator==(const MaterialData& other) const

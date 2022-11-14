@@ -27,11 +27,19 @@ namespace assets
 		P32N8C8V16
 	};
 
+	struct MeshBounds
+	{
+		float origin[3];
+		float radius;
+		float extents[3];
+	};
+	
 	struct MeshInfo
 	{
 		uint64_t vertexBufferSize;
 		uint64_t indexBufferSize;
 		VertexFormat vertexFormat;
+		MeshBounds bounds;
 		char indexSize;
 		CompressionMode compressionMode;
 		std::string originalFile;
@@ -42,4 +50,6 @@ namespace assets
 	void unpack_mesh(MeshInfo* info, const char* sourceBuffer, size_t sourceSize, char* vertexBuffer, char* indexBuffer);
 	
 	MeshInfo read_mesh_info(AssetFile* file);
+
+	MeshBounds calculate_bounds(Vertex_f32_PNCV* vertices, size_t count);
 }

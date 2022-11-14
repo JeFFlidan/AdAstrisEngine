@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include <vk_types.h>
 #include <vector>
 #include <array>
@@ -82,11 +83,12 @@ namespace vkutil
 			static DescriptorBuilder begin(DescriptorLayoutCache* layoutCache, DescriptorAllocator* allocator);
 
 			DescriptorBuilder& bind_buffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t  descriptorCount = 1);
-			DescriptorBuilder& bind_image(uint32_t binding, VkDescriptorImageInfo* imageInfo, VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t descriptorCount = 1);
+			DescriptorBuilder& bind_image(uint32_t binding, VkDescriptorImageInfo* imageInfo, VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t descriptorCount = 1, uint32_t descriptorCountWrites = 1);
 
 			bool build(VkDescriptorSet& set, VkDescriptorSetLayout& layout);
 			bool build(VkDescriptorSet& set);
 			bool build_non_uniform(VkDescriptorSet& set, VkDescriptorSetLayout& layout, uint32_t descriptorsCount);
+			bool build_non_uniform(VkDescriptorSet& set, uint32_t descriptorCount);
 		private:
 			std::vector<VkWriteDescriptorSet> writes;
 			std::vector<VkDescriptorSetLayoutBinding> bindings;

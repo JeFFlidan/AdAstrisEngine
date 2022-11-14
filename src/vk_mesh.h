@@ -14,12 +14,21 @@ struct VertexInputDescription
 	VkPipelineVertexInputStateCreateFlags flags = 0;
 };
 
+struct RenderBounds
+{
+	glm::vec3 origin;
+	float radius;
+	glm::vec3 extents;
+	bool valid;
+};
+
 struct Mesh
 {
 	std::vector<assets::Vertex_f32_PNCV> _vertices;
 	std::vector<uint32_t> _indices;
 	AllocatedBuffer _vertexBuffer;
 	AllocatedBuffer _indexBuffer;
+	RenderBounds _bounds;
 
 	bool load_from_obj(const char* filename);
 	bool load_from_mesh_asset(const char* assetPath);

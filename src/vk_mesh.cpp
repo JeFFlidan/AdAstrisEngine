@@ -60,6 +60,13 @@ bool Mesh::load_from_mesh_asset(const char* assetPath)
 	}
 
 	assets::MeshInfo meshInfo = assets::read_mesh_info(&file);
+
+	assets::MeshBounds meshBounds = meshInfo.bounds;
+	_bounds.origin = glm::vec3(meshBounds.origin[0], meshBounds.origin[1], meshBounds.origin[2]);
+	_bounds.extents = glm::vec3(meshBounds.extents[0], meshBounds.extents[1], meshBounds.origin[2]);
+	_bounds.radius = meshBounds.radius;
+	_bounds.valid = true;
+	
 	_vertices.resize(meshInfo.vertexBufferSize / sizeof(assets::Vertex_f32_PNCV));
 	_indices.resize(meshInfo.indexBufferSize / sizeof(uint32_t));
 	assets::unpack_mesh(&meshInfo, file.binaryBlob.data(), file.binaryBlob.size(), (char*)_vertices.data(), (char*)_indices.data());

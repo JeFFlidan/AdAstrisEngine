@@ -12,12 +12,10 @@ add_library(lz4 STATIC)
 add_library(fmt_lib STATIC)
 add_library(spirv_reflect STATIC)
 
-target_sources(vkbootstrap PRIVATE 
-    vkbootstrap/VkBootstrap.h
-    vkbootstrap/VkBootstrap.cpp
-    )
-
 target_include_directories(vkbootstrap PUBLIC vkbootstrap)
+file(GLOB VKBOOTSTRAP_FILES "vkbootstrap/*")
+target_sources(vkbootstrap PRIVATE ${VKBOOTSTRAP_FILES})
+
 target_link_libraries(vkbootstrap PUBLIC Vulkan::Vulkan $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
 
 #both vma and glm and header only libs so we only need the include path
