@@ -51,7 +51,7 @@ namespace vkutil
 	struct SampledTexture
 	{
 		VkSampler sampler;
-	    VkImageView imageView;
+		VkImageView imageView;
 	};
 
 	template<typename T>
@@ -84,26 +84,6 @@ namespace vkutil
 
 		private:
 			std::array<T, 3> data;
-	};
-
-	struct ShaderEffect
-	{
-		// Storage information to create a VkPipeline
-		//VkPipelineLayout buildLayout;
-		std::vector<VkDescriptorSetLayout> setLayouts;
-
-		struct ShaderStage
-		{
-			Shader* shader;
-			VkShaderStageFlagBits stage;
-		};
-
-		std::vector<ShaderStage> stages;
-
-		void add_stage(Shader* shader, VkShaderStageFlagBits shaderStage)
-		{
-			stages.push_back({shader, shaderStage});
-		}
 	};
 
 	struct ShaderPass
@@ -154,6 +134,9 @@ namespace vkutil
 			
 			Material* build_material(const std::string& materialName, const MaterialData& info);
 			Material* get_material(const std::string& materialName);
+
+			void destroy_pipeline_layouts();
+			void destroy_shaders_modules();
 
 			void setup_pipeline_builders();
 		

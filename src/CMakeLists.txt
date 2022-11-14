@@ -6,6 +6,7 @@ add_executable(vulkan_guide
     vk_engine.cpp
     vk_engine.h
     vk_types.h
+    vk_types.cpp
     vk_initializers.cpp
     vk_initializers.h
     vk_mesh.h
@@ -21,7 +22,9 @@ add_executable(vulkan_guide
     vk_shaders.h
     vk_shaders.cpp
     vk_renderpass.h
-    vk_renderpass.cpp)
+    vk_renderpass.cpp
+    vk_scene.h
+    vk_scene.cpp)
 
 
 set_property(TARGET vulkan_guide PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:vulkan_guide>")

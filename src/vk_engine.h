@@ -75,6 +75,8 @@ struct GPUObjectData
 {
 	glm::vec4 color;
 	glm::mat4 model;
+	//glm::vec4 originRad;	// bound
+	//glm::vec4 extends;	// bound
 };
 
 struct UploadContext
@@ -99,8 +101,11 @@ struct FrameData
 	VkDescriptorSet _objectDescriptor;
 
 	VkDescriptorSet _texturesDescriptor{VK_NULL_HANDLE};
+	VkDescriptorSet _outputQuadTexture{VK_NULL_HANDLE};
 
 	AllocatedBuffer _indirectCommandsBuffer;
+
+	DescriptorAllocator _dynamicDescriptorAllocator;
 };
 
 struct Vertex
@@ -138,6 +143,18 @@ struct PrefabElementsNames
 	std::string meshName;
 	std::string materialName;
 	//std::vector<std::string> textureNames;
+};
+
+struct MeshObject
+{
+	Mesh* mesh{ nullptr };
+
+	vkutil::Material* material{ nullptr };
+	uint32_t customSortKey;
+	glm::mat4 transformMatrix;
+
+	uint32_t bDrawForwardPass : 1;
+	uint32_t bDrawShadowPass : 1;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
@@ -179,10 +196,15 @@ class VulkanEngine
 		Attachment _depthImage;
 		Attachment _offscrDepthImage;
 		Attachment _offscrColorImage;
+		VkSampler _offscrColorSampler;
+
+		AllocatedImage _depthPyramid;
+		VkSampler _depthSampler;
+		VkImageView _depthPyramideMips[16] = {};
 
 		VmaAllocator _allocator;
 
-		DeletionQueue _mainDeletionQueue;	    
+		DeletionQueue _mainDeletionQueue;
 
 		std::vector<RenderObject> _renderables;
 
@@ -191,6 +213,12 @@ class VulkanEngine
 		std::vector<Texture> _baseColorTextures;
 		std::vector<Texture> _normalTextures;
 		std::vector<Texture> _armTextures;
+
+		std::vector<VkDescriptorImageInfo> _baseColorImageInfos;
+		std::vector<VkDescriptorImageInfo> _normalImageInfos;
+		VkSampler _textureSampler;
+		std::vector<VkDescriptorImageInfo> _armImageInfos;
+
 		std::vector<PrefabElementsNames> _meshAndMaterialNames;
 		Plane _outputQuad;
 

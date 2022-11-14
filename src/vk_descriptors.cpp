@@ -12,6 +12,7 @@ void DescriptorAllocator::init(VkDevice newDevice)
 
 void DescriptorAllocator::cleanup()
 {
+	std::cout << "Reset pool" << std::endl;
 	for (auto p : freePools)
 	{
 		vkDestroyDescriptorPool(device, p, nullptr);
@@ -97,7 +98,7 @@ bool DescriptorAllocator::allocate(VkDescriptorSet* set, VkDescriptorSetLayout l
 
 	VkResult allocResult = vkAllocateDescriptorSets(device, &allocInfo, set);
 	bool needReallocate = false;
-
+	
 	switch (allocResult)
 	{
 		case VK_SUCCESS:
@@ -125,8 +126,10 @@ bool DescriptorAllocator::allocate(VkDescriptorSet* set, VkDescriptorSetLayout l
 
 void DescriptorAllocator::reset_pools()
 {
+	std::cout << "Start reseting pools" << std::endl;
 	for (auto p : usedPools)
 	{
+		std::cout << "Reset pool" << std::endl;
 		vkResetDescriptorPool(device, p, 0);
 		freePools.push_back(p);
 	}
@@ -271,11 +274,12 @@ namespace vkutil
 		return *this;
 	}
 
-	DescriptorBuilder& DescriptorBuilder::bind_image(uint32_t binding, VkDescriptorImageInfo* imageInfo, VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t descriptorCount)
+	DescriptorBuilder& DescriptorBuilder::bind_image(uint32_t binding, VkDescriptorImageInfo* imageInfo, VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t descriptorCountBinds, uint32_t descriptorCountWrites)
 	{
+		std::cout << descriptorCountWrites << std::endl;
 		VkDescriptorSetLayoutBinding newBinding{};
 
-		newBinding.descriptorCount = descriptorCount;
+		newBinding.descriptorCount = descriptorCountBinds;
 		newBinding.descriptorType = type;
 		newBinding.pImmutableSamplers = nullptr;
 		newBinding.stageFlags = stageFlags;
@@ -287,7 +291,7 @@ namespace vkutil
 		newWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		newWrite.pNext = nullptr;
 
-		newWrite.descriptorCount = descriptorCount;
+		newWrite.descriptorCount = descriptorCountWrites;
 		newWrite.descriptorType = type;
 		newWrite.dstBinding = binding;
 		newWrite.pImageInfo = imageInfo;
@@ -347,6 +351,63 @@ namespace vkutil
 		for (VkWriteDescriptorSet& w : writes)
 			w.dstSet = set;
 
+		vkUpdateDescriptorSets(allocator->device, writes.size(), writes.data(), 0, nullptr);
+
+		return true;
+	}
+
+	bool DescriptorBuilder::build(VkDescriptorSet& set)
+	{
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.pNext = nullptr;
+
+		layoutInfo.bindingCount = bindings.size();
+		layoutInfo.pBindings = bindings.data();
+
+		VkDescriptorSetLayout layout = cache->create_descriptor_layout(&layoutInfo);
+
+		bool success = allocator->allocate(&set, layout);
+		if (!success) return false;
+
+		for (VkWriteDescriptorSet& w : writes)
+			w.dstSet = set;
+
+		vkUpdateDescriptorSets(allocator->device, writes.size(), writes.data(), 0, nullptr);
+
+		return true;
+	}
+	
+	bool DescriptorBuilder::build_non_uniform(VkDescriptorSet& set, uint32_t descriptorsCount)
+	{
+		// This function uses to build non-uniform descriptor set to use it with VK_EXT_descriptor_indexing
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = bindings.size();
+		layoutInfo.pBindings = bindings.data();
+		layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+
+		const VkDescriptorBindingFlags flags =
+			VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+			VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+			VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+
+		VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlags{};
+		bindingFlags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+		bindingFlags.pNext = nullptr;
+		bindingFlags.bindingCount = layoutInfo.bindingCount;
+		bindingFlags.pBindingFlags = &flags;
+
+		layoutInfo.pNext = &bindingFlags;
+
+		VkDescriptorSetLayout layout = cache->create_descriptor_layout(&layoutInfo);
+		bool success = allocator->allocate(&set, layout, true, descriptorsCount);
+		if (!success) return false;
+
+		for (VkWriteDescriptorSet& w : writes)
+			w.dstSet = set;
+		
 		vkUpdateDescriptorSets(allocator->device, writes.size(), writes.data(), 0, nullptr);
 
 		return true;

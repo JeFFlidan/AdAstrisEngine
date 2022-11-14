@@ -321,6 +321,30 @@ vk_renderpass.cpp.s:
 	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_renderpass.cpp.s
 .PHONY : vk_renderpass.cpp.s
 
+vk_scene.obj: vk_scene.cpp.obj
+.PHONY : vk_scene.obj
+
+# target to build an object file
+vk_scene.cpp.obj:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_scene.cpp.obj
+.PHONY : vk_scene.cpp.obj
+
+vk_scene.i: vk_scene.cpp.i
+.PHONY : vk_scene.i
+
+# target to preprocess a source file
+vk_scene.cpp.i:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_scene.cpp.i
+.PHONY : vk_scene.cpp.i
+
+vk_scene.s: vk_scene.cpp.s
+.PHONY : vk_scene.s
+
+# target to generate assembly for a file
+vk_scene.cpp.s:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_scene.cpp.s
+.PHONY : vk_scene.cpp.s
+
 vk_shaders.obj: vk_shaders.cpp.obj
 .PHONY : vk_shaders.obj
 
@@ -369,6 +393,30 @@ vk_textures.cpp.s:
 	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_textures.cpp.s
 .PHONY : vk_textures.cpp.s
 
+vk_types.obj: vk_types.cpp.obj
+.PHONY : vk_types.obj
+
+# target to build an object file
+vk_types.cpp.obj:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_types.cpp.obj
+.PHONY : vk_types.cpp.obj
+
+vk_types.i: vk_types.cpp.i
+.PHONY : vk_types.i
+
+# target to preprocess a source file
+vk_types.cpp.i:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_types.cpp.i
+.PHONY : vk_types.cpp.i
+
+vk_types.s: vk_types.cpp.s
+.PHONY : vk_types.s
+
+# target to generate assembly for a file
+vk_types.cpp.s:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_types.cpp.s
+.PHONY : vk_types.cpp.s
+
 # Help Target
 help:
 	@echo The following are some of the valid targets for this Makefile:
@@ -403,12 +451,18 @@ help:
 	@echo ... vk_renderpass.obj
 	@echo ... vk_renderpass.i
 	@echo ... vk_renderpass.s
+	@echo ... vk_scene.obj
+	@echo ... vk_scene.i
+	@echo ... vk_scene.s
 	@echo ... vk_shaders.obj
 	@echo ... vk_shaders.i
 	@echo ... vk_shaders.s
 	@echo ... vk_textures.obj
 	@echo ... vk_textures.i
 	@echo ... vk_textures.s
+	@echo ... vk_types.obj
+	@echo ... vk_types.i
+	@echo ... vk_types.s
 .PHONY : help
 
 
