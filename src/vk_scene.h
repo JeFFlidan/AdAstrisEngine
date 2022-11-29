@@ -1,6 +1,5 @@
 #pragma once
 
-#include "vk_engine.h"
 #include "vk_types.h"
 #include "vk_mesh.h"
 #include "material_system.h"

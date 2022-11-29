@@ -6,6 +6,7 @@
 #include "vk_types.h"
 #include "vk_mesh.h"
 #include "material_system.h"
+#include "vk_scene.h"
 #include <stdint.h>
 #include <vk_descriptors.h>
 #include <vk_camera.h>
@@ -157,6 +158,53 @@ struct MeshObject
 	uint32_t bDrawShadowPass : 1;
 };
 
+// structs for culling
+struct DrawCullData
+{
+	glm::mat4 view;
+	float P00, P11, znear, zfar; // symmetric projection parameters
+	float frustum[4];  // data for left/right/top/bottom frustum planes
+	float lodBase, lodStep;  // lod distance i = base * pow(step, i)
+	float pyramidWidth, pyramidHeight;  // depth pyramid size in texels
+
+	uint32_t drawCount;
+
+	int cullingEnabled;
+	int lodEnabled;
+	int occlusionEnabled;
+	int distCull;
+	int AABBcheck;
+	float aabbmin_x;
+	float aabbmin_y;
+	float aabbmin_z;
+	float aabbmax_x;
+	float aabbmax_y;
+	float aabbmax_z;	
+};
+
+struct ObjectData
+{
+	glm::mat4 model;
+	glm::vec4 sphereBounds;
+	glm::vec4 extents;
+};
+
+struct DrawCommand
+{
+	uint32_t indexCount;
+	uint32_t instanceCount;
+	uint32_t firstIndex;
+	int vertexOffset;
+	uint32_t firstInstance;
+	uint32_t objectID;
+	uint32_t batchID;
+};
+
+struct alignas(16) DepthReduceData
+{
+	glm::vec2 imageSize;
+};
+
 constexpr unsigned int FRAME_OVERLAP = 2;
 
 class VulkanEngine 
@@ -192,15 +240,24 @@ class VulkanEngine
 		DescriptorLayoutCache _descriptorLayoutCache;
 
 		vkutil::MaterialSystem _materialSystem;
+		RenderScene _renderScene;
 
 		Attachment _depthImage;
 		Attachment _offscrDepthImage;
 		Attachment _offscrColorImage;
 		VkSampler _offscrColorSampler;
 
+		// Depth map data for culling
 		AllocatedImage _depthPyramid;
 		VkSampler _depthSampler;
 		VkImageView _depthPyramideMips[16] = {};
+		VkExtent2D _depthPyramidExtent { 1024 * 4, 1024 * 4 };
+		int _depthPyramidWidth;
+		int _depthPyramidHeight;
+		int _depthPyramidLevels;
+
+		VkPipeline _depthReducePipeline;
+		VkPipelineLayout _depthReduceLayout;
 
 		VmaAllocator _allocator;
 
@@ -292,4 +349,9 @@ class VulkanEngine
 		void bind_mesh(VkCommandBuffer cmd, Mesh* mesh);
 		void allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes);
 		void parse_prefabs();
+
+		// methods for renderer
+		void fill_renderable_objects();
+		void culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd);
+		void draw_forward_pass();		
 };
