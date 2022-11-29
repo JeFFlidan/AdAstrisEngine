@@ -133,11 +133,10 @@ void RenderScene::fill_indirect_array(GPUIndirectObject* data, MeshPass& pass)
 	{
 		auto batch = pass.batches[i];
 
-		data[dataIndex].command.firstIndex = batch.first;
+		data[dataIndex].command.firstInstance = batch.first;
 		data[dataIndex].command.instanceCount = 0;		// Will be filled in cull compute shader
 		data[dataIndex].command.firstIndex = get_mesh(batch.meshID)->firstIndex;
 		data[dataIndex].command.vertexOffset = get_mesh(batch.meshID)->firstVertex;
-		data[dataIndex].command.vertexOffset = get_mesh(batch.meshID)->vertexCount;
 		data[dataIndex].command.indexCount = get_mesh(batch.meshID)->indexCount;
 		data[dataIndex].batchID = i;
 		data[dataIndex].objectID = 0;
@@ -253,7 +252,6 @@ void RenderScene::refresh_pass(RenderScene::MeshPass* meshPass)
 
 	fill_multi_batches(meshPass);
 }
-
 
 void RenderScene::build_indirect_batches(RenderScene::MeshPass* pass, std::vector<IndirectBatch>& outBatches, std::vector<RenderScene::RenderBatch>& inObjects)
 {

@@ -58,6 +58,9 @@
 	} while (0)
 
 namespace fs = std::filesystem;
+
+uint32_t get_image_mip_levels(uint32_t width, uint32_t height);
+uint32_t previous_pow2(uint32_t v);
 	
 std::vector<std::string> get_supported_vulkan_instance_extension()
 {
@@ -240,6 +243,7 @@ void VulkanEngine::init_engine_systems()
 	}
 
 	_materialSystem.init(this);
+	_renderScene.init();
 }
 
 void VulkanEngine::init_swapchain()
@@ -299,6 +303,71 @@ void VulkanEngine::init_swapchain()
 		vkDestroyImageView(_device, _offscrColorImage._imageView, nullptr);
 		vmaDestroyImage(_allocator, _offscrColorImage._imageData._image, _offscrColorImage._imageData._allocation);		
 	});
+
+	// setup depth pyramid to make culling
+	_depthPyramidWidth = previous_pow2(_windowExtent.width);
+	_depthPyramidHeight = previous_pow2(_windowExtent.height);
+	_depthPyramidLevels = get_image_mip_levels(_depthPyramidWidth, _depthPyramidHeight);
+
+	VkExtent3D pyramidExtent = {
+		static_cast<uint32_t>(_depthPyramidWidth),
+		static_cast<uint32_t>(_depthPyramidHeight),
+		1
+	};
+
+	VmaAllocationCreateInfo img_allocinfo{};
+	img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	img_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);	// VMA allocate 
+	
+	VkImageCreateInfo pyramidImageInfo = vkinit::image_create_info(VK_FORMAT_R32_SFLOAT,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+		pyramidExtent);
+
+	pyramidImageInfo.mipLevels = _depthPyramidLevels;
+
+	vmaCreateImage(_allocator, &pyramidImageInfo, &img_allocinfo, &_depthPyramid._image, &_depthPyramid._allocation, nullptr);
+
+	VkImageViewCreateInfo pyramidImageViewInfo = vkinit::imageview_create_info(VK_FORMAT_R32_SFLOAT,
+		_depthPyramid._image,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+	pyramidImageViewInfo.subresourceRange.baseMipLevel = _depthPyramidLevels;
+	VK_CHECK(vkCreateImageView(_device, &pyramidImageViewInfo, nullptr, &_depthPyramid._defaultView));
+
+	for (int32_t i = 0; i != _depthPyramidLevels; ++i)
+	{
+		VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(VK_FORMAT_R32_SFLOAT,
+			_depthPyramid._image,
+			VK_IMAGE_ASPECT_COLOR_BIT);
+		viewInfo.subresourceRange.levelCount = 1;
+		viewInfo.subresourceRange.baseMipLevel = i;
+
+		VkImageView pyramid;
+		VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &pyramid));
+
+		_depthPyramideMips[i] = pyramid;
+		assert(_depthPyramideMips[i]);
+	}
+
+	VkSamplerCreateInfo createInfo{};
+
+	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	createInfo.magFilter = VK_FILTER_LINEAR;
+	createInfo.minFilter = VK_FILTER_LINEAR;
+	createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+	createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	createInfo.minLod = 0.0f;
+	createInfo.maxLod = 16.0f;
+
+	// This extension take 2x2 texel quad instead of taking more texels for linear filtering
+	VkSamplerReductionModeCreateInfoEXT reductionInfo{};
+	reductionInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO_EXT;
+	reductionInfo.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
+
+	createInfo.pNext = &reductionInfo;
+
+	VK_CHECK(vkCreateSampler(_device, &createInfo, nullptr, &_depthSampler));
 }
 
 void VulkanEngine::init_imgui()
@@ -863,7 +932,7 @@ void VulkanEngine::parse_prefabs()
 	
 	std::vector<Mesh> meshes;
 	
-	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
+	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);
 	VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &_textureSampler));
 
 	for (auto& p : fs::directory_iterator(direcory))
@@ -1414,6 +1483,31 @@ void VulkanEngine::bind_mesh(VkCommandBuffer cmd, Mesh* mesh)
 	VkDeviceSize offset = 0;
 	vkCmdBindVertexBuffers(cmd, 0, 1, &mesh->_vertexBuffer._buffer, &offset);
 	vkCmdBindIndexBuffer(cmd, mesh->_indexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
+}
+
+// functions for depth pyramid to make culling
+uint32_t previous_pow2(uint32_t v)
+{
+	uint32_t r = 1;
+
+	while (r * 2 < v)
+		r *= 2;
+
+	return r;
+}
+
+uint32_t get_image_mip_levels(uint32_t width, uint32_t height)
+{
+	uint32_t result = 1;
+
+	while (width > 1 || height > 1)
+	{
+		result++;
+		width /= 2;
+		height /= 2;
+	}
+
+	return result;
 }
 
 VertexInputDescription Plane::get_vertex_description()
