@@ -74,10 +74,10 @@ struct GPUSceneData
 
 struct GPUObjectData
 {
-	glm::vec4 color;
+	//glm::vec4 color;
 	glm::mat4 model;
-	//glm::vec4 originRad;	// bound
-	//glm::vec4 extends;	// bound
+	glm::vec4 originRad;	// bound
+	glm::vec4 extents;	// bound
 };
 
 struct UploadContext
@@ -107,6 +107,8 @@ struct FrameData
 	AllocatedBuffer _indirectCommandsBuffer;
 
 	DescriptorAllocator _dynamicDescriptorAllocator;
+
+	DeletionQueue _frameDeletionQueue;
 };
 
 struct Vertex
@@ -258,6 +260,10 @@ class VulkanEngine
 
 		VkPipeline _depthReducePipeline;
 		VkPipelineLayout _depthReduceLayout;
+		VkPipeline _cullingPipeline;
+		VkPipelineLayout _cullintPipelineLayout;
+
+		VkDescriptorSetLayout _depthReduceDescriptorSetLayout;
 
 		VmaAllocator _allocator;
 
@@ -335,6 +341,8 @@ class VulkanEngine
 		void init_sync_structures();
 		void init_scene();
 		void init_descriptors();
+		void init_pipelines();
+		void setup_compute_pipeline(vkutil::Shader* shader, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout);
 		size_t pad_uniform_buffer_size(size_t originalSize);
 
 		void create_attachment(
@@ -348,10 +356,15 @@ class VulkanEngine
 		void bind_material(VkCommandBuffer cmd, vkutil::Material* mateial);
 		void bind_mesh(VkCommandBuffer cmd, Mesh* mesh);
 		void allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes);
+		template<typename T>
+		void reallocate_buffer(AllocatedBufferT<T>& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+		AllocatedBuffer reallocate_buffer(AllocatedBuffer buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 		void parse_prefabs();
 
 		// methods for renderer
 		void fill_renderable_objects();
 		void culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd);
-		void draw_forward_pass();		
+		void draw_forward_pass();
+		void depth_reduce(VkCommandBuffer cmd);
+		void prepare_data_for_drawing(VkCommandBuffer cmd);
 };

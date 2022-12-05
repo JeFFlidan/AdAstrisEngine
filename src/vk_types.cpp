@@ -3,30 +3,14 @@
 #include "logger.h"
 #include <vulkan/vulkan_core.h>
 
-AllocatedBuffer AllocatedBuffer::create_buffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+AllocatedBuffer::AllocatedBuffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
-	AllocatedBuffer newBuffer;
-	newBuffer._bufferSize = allocSize;
+	allocate_buffer(engine, allocSize, usage, memoryUsage);
+}
 
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.pNext = nullptr;
-
-	bufferInfo.size = allocSize;
-	bufferInfo.usage = usage;
-
-	VmaAllocationCreateInfo vmaallocInfo{};
-	vmaallocInfo.usage = memoryUsage;
-
-    VkResult res = vmaCreateBuffer(engine->_allocator, &bufferInfo, &vmaallocInfo, &newBuffer._buffer, &newBuffer._allocation, nullptr);
-
-    if (res != VK_SUCCESS)
-    {
-		LOG_ERROR("Failed to allocate buffer");
-		return AllocatedBuffer();
-    }
-	
-	return newBuffer;
+void AllocatedBuffer::create_buffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+{
+	allocate_buffer(engine, allocSize, usage, memoryUsage);
 }
 
 void AllocatedBuffer::copy_from(VulkanEngine* engine, void* srcBuffer, size_t sizeInBytes)
@@ -37,7 +21,16 @@ void AllocatedBuffer::copy_from(VulkanEngine* engine, void* srcBuffer, size_t si
 	vmaUnmapMemory(engine->_allocator, _allocation);
 }
 
-void AllocatedBuffer::copyBufferCmd(VulkanEngine* engine, VkCommandBuffer cmd , AllocatedBuffer* srcBuffer, AllocatedBuffer* dstBuffer, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
+VkDescriptorBufferInfo AllocatedBuffer::get_info(bool isStorage, VkDeviceSize offset)
+{
+	VkDescriptorBufferInfo info;
+	info.buffer = _buffer;
+	info.offset = offset;
+	info.range = (isStorage) ? VK_WHOLE_SIZE : _bufferSize;
+	return info;
+}
+
+void AllocatedBuffer::copy_buffer_cmd(VulkanEngine* engine, VkCommandBuffer cmd , AllocatedBuffer* srcBuffer, AllocatedBuffer* dstBuffer, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
 {
 	VkBufferCopy copy;
 	copy.dstOffset = dstOffset;
@@ -51,3 +44,32 @@ void AllocatedBuffer::destroy_buffer(VulkanEngine* engine)
     vmaDestroyBuffer(engine->_allocator, _buffer, _allocation);
 }
 
+template<typename T>
+void AllocatedBufferT<T>::copy_typed_buffer_cmd(VulkanEngine* engine, VkCommandBuffer cmd, AllocatedBufferT<T>* srcBuffer, AllocatedBufferT<T>* dstBuffer, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
+{
+	VkBufferCopy copy;
+	copy.dstOffset = dstOffset;
+	copy.srcOffset = srcOffset;
+	copy.size = srcBuffer->_bufferSize;
+	vkCmdCopyBuffer(cmd, srcBuffer->_buffer, dstBuffer->_buffer, 1, &copy);
+}
+
+void AllocatedBuffer::allocate_buffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+{
+	_bufferSize = allocSize;
+
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.pNext = nullptr;
+
+	bufferInfo.size = allocSize;
+	bufferInfo.usage = usage;
+
+	VmaAllocationCreateInfo vmaallocInfo{};
+	vmaallocInfo.usage = memoryUsage;
+
+    VkResult res = vmaCreateBuffer(engine->_allocator, &bufferInfo, &vmaallocInfo, &_buffer, &_allocation, nullptr);
+    
+    if (res != VK_SUCCESS)
+		LOG_ERROR("Failed to allocate buffer");
+}

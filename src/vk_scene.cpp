@@ -178,7 +178,12 @@ void RenderScene::fill_object_data(GPUObjectData* data)
 void RenderScene::write_object(GPUObjectData* target, Handle<RenderableObject> objectID)
 {
 	GPUObjectData tempData;
-	//tempData.
+	tempData.model = get_renderable_object(objectID)->transformMatrix;
+	Mesh* mesh = get_mesh(get_renderable_object(objectID)->meshID)->original;
+	tempData.extents = glm::vec4(mesh->_bounds.extents, mesh->_bounds.radius);
+	tempData.originRad = glm::vec4(mesh->_bounds.origin, mesh->_bounds.radius);
+
+	memcpy(target, &tempData, sizeof(GPUObjectData));
 }
 
 void RenderScene::merge_meshes(class VulkanEngine* engine)

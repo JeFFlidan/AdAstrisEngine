@@ -34,6 +34,13 @@ namespace vkutil
 			VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
 	};
 
+	class ComputePipelineBuilder
+	{
+		public:
+			VkPipelineLayout _layout;
+			VkPipelineShaderStageCreateInfo _shaderStage;
+			VkPipeline build_pipeline(VkDevice device);
+	};
 	
 	enum class MeshpassType : uint32_t
 	{

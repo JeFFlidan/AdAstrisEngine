@@ -4,6 +4,7 @@
 #pragma once
 
 #include <vk_types.h>
+#include <vulkan/vulkan_core.h>
 
 namespace vkinit 
 {
@@ -36,5 +37,8 @@ namespace vkinit
 
 	VkCommandBufferBeginInfo command_buffer_begin_info(VkCommandBufferUsageFlags flags = 0);
 	VkSubmitInfo submit_info(VkCommandBuffer* cmd);
+
+	VkImageMemoryBarrier image_barrier(VkImage image, VkAccessFlags srcMask, VkAccessFlags dstMask, VkImageLayout srcLayout, VkImageLayout dstLayout, VkImageAspectFlags aspectFlag);
+	VkBufferMemoryBarrier buffer_barrier(AllocatedBuffer* buffer, VkAccessFlags srcMask, VkAccessFlags dstMask, uint32_t queueFamily, VkDeviceSize offset = 0);
 }
 
