@@ -67,6 +67,24 @@ namespace vkutil
 		}
 	}
 
+	VkPipeline ComputePipelineBuilder::build_pipeline(VkDevice device)
+	{
+		VkComputePipelineCreateInfo computePipelineInfo{};
+		computePipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+		computePipelineInfo.pNext = nullptr;
+		computePipelineInfo.layout = _layout;
+		computePipelineInfo.stage = _shaderStage;
+
+		VkPipeline newPipeline;
+		if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &computePipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
+		{
+			LOG_FATAL("Failed to create compute pipeline");
+			return VK_NULL_HANDLE;
+		}
+
+		return newPipeline;
+	}
+
 	void MaterialSystem::init(VulkanEngine* engine)
 	{
 		this->_engine = engine;

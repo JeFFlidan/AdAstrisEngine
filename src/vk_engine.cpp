@@ -656,6 +656,43 @@ void VulkanEngine::init_descriptors()
 	});
 }
 
+void VulkanEngine::init_pipelines()
+{
+	vkutil::Shader depthReduceShader(_device);
+	depthReduceShader.load_shader_module((_projectPath + "/shaders/reduce_depth.comp.glsl").c_str());
+	vkutil::Shader drawCullShader(_device);
+	drawCullShader.load_shader_module((_projectPath + "/shaders/draw_cull.comp.glsl").c_str());
+
+	setup_compute_pipeline(&depthReduceShader, _depthReducePipeline, _depthReduceLayout);
+	setup_compute_pipeline(&drawCullShader, _cullingPipeline, _cullintPipelineLayout);
+
+	_mainDeletionQueue.push_function([=](){
+		vkDestroyPipeline(_device, _depthReducePipeline, nullptr);
+		vkDestroyPipelineLayout(_device, _depthReduceLayout, nullptr);
+
+		vkDestroyPipeline(_device, _cullingPipeline, nullptr);
+		vkDestroyPipelineLayout(_device, _cullintPipelineLayout, nullptr);
+	});
+}
+
+void VulkanEngine::setup_compute_pipeline(vkutil::Shader* shader, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout)
+{
+	vkutil::ShaderEffect tempEffect;
+	tempEffect.add_stage(shader, VK_SHADER_STAGE_COMPUTE_BIT);
+	pipelineLayout = tempEffect.get_pipeline_layout(_device);
+
+	VkPipelineShaderStageCreateInfo shaderStage = vkinit::pipeline_shader_stage_create_info(
+		VK_SHADER_STAGE_COMPUTE_BIT,
+		shader->get_shader_module()
+	);
+
+	vkutil::ComputePipelineBuilder builder;
+	builder._layout = pipelineLayout;
+	builder._shaderStage = shaderStage;
+
+	pipeline = builder.build_pipeline(_device);
+}
+
 void VulkanEngine::init_scene()
 {
 	size_t outputQuadVertBufferSize = _outputQuad._vertices.size() * sizeof(Vertex);
@@ -1056,30 +1093,26 @@ void VulkanEngine::allocate_global_vertex_and_index_buffer(std::vector<Mesh> mes
 	    previousIndicesSize += meshes[i]._indices.size();
 	}
 
-	AllocatedBuffer vertexStagingBuffer = AllocatedBuffer::create_buffer(this,
-		_globalVertexBufferSize * sizeof(assets::Vertex_f32_PNCV),
+	AllocatedBuffer vertexStagingBuffer(this, _globalVertexBufferSize * sizeof(assets::Vertex_f32_PNCV),
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 	
-	AllocatedBuffer indexStagingBuffer = AllocatedBuffer::create_buffer(this,
-		_globalIndexBufferSize * sizeof(uint32_t),
+	AllocatedBuffer indexStagingBuffer(this, _globalIndexBufferSize * sizeof(uint32_t),
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
 	vertexStagingBuffer.copy_from(this, (void*)vertices.data(), vertices.size() * sizeof(assets::Vertex_f32_PNCV));
 	indexStagingBuffer.copy_from(this, (void*)indices.data(), indices.size() * sizeof(uint32_t));
 
-	_globalVertexBuffer = AllocatedBuffer::create_buffer(this,
-		_globalVertexBufferSize * sizeof(assets::Vertex_f32_PNCV),
+	_globalVertexBuffer.create_buffer(this, _globalVertexBufferSize * sizeof(assets::Vertex_f32_PNCV),
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	
-	_globalIndexBuffer = AllocatedBuffer::create_buffer(this,
-		_globalIndexBufferSize * sizeof(uint32_t),
+	_globalIndexBuffer.create_buffer(this, _globalIndexBufferSize * sizeof(uint32_t),
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 
 	immediate_submit([&](VkCommandBuffer cmd){
-	    AllocatedBuffer::copyBufferCmd(this, cmd, &vertexStagingBuffer, &_globalVertexBuffer);
-	    AllocatedBuffer::copyBufferCmd(this, cmd, &indexStagingBuffer, &_globalIndexBuffer);
+	    AllocatedBuffer::copy_buffer_cmd(this, cmd, &vertexStagingBuffer, &_globalVertexBuffer);
+	    AllocatedBuffer::copy_buffer_cmd(this, cmd, &indexStagingBuffer, &_globalIndexBuffer);
 	});
 	
 	_mainDeletionQueue.push_function([=](){
@@ -1151,7 +1184,7 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* objects, int 
 	{
 		RenderObject& object = objects[i];
 		GPUObjectData temp;
-		temp.color = object.color;
+		//temp.color = object.color;
 		temp.model = object.transformMatrix;
 		gpuObjectData.push_back(temp);
 	}
@@ -1483,6 +1516,18 @@ void VulkanEngine::bind_mesh(VkCommandBuffer cmd, Mesh* mesh)
 	VkDeviceSize offset = 0;
 	vkCmdBindVertexBuffers(cmd, 0, 1, &mesh->_vertexBuffer._buffer, &offset);
 	vkCmdBindIndexBuffer(cmd, mesh->_indexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
+}
+
+template<typename T>
+void VulkanEngine::reallocate_buffer(AllocatedBufferT<T>& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+{
+	AllocatedBufferT<T> newBuffer(this, size, usage, memoryUsage);
+
+	get_current_frame()._frameDeletionQueue.push_function([=](){
+		vmaDestroyBuffer(_allocator, buffer._buffer, buffer._allocation);
+	});
+
+	buffer = newBuffer;
 }
 
 // functions for depth pyramid to make culling

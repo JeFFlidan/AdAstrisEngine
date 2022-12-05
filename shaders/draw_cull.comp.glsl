@@ -194,7 +194,7 @@ void main()
 		if (visible)
 		{
 			uint batchIndex = compactInstanceBuffer.Instances[gID].batchID;
-			uint countIndex = atomicAdd(dtawBuffer.Draws[batchIndex].instanceCount, 1);
+			uint countIndex = atomicAdd(drawBuffer.Draws[batchIndex].instanceCount, 1);
 
 			uint instanceIndex = drawBuffer.Draws[batchIndex].firstIndex + countIndex;
 

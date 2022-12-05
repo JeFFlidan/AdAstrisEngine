@@ -1,4 +1,5 @@
 ﻿#include <vk_initializers.h>
+#include <vulkan/vulkan_core.h>
 
 namespace vkinit
 {
@@ -295,5 +296,39 @@ namespace vkinit
 		info.pSignalSemaphores = nullptr;
 
 		return info;
+	}
+
+	VkImageMemoryBarrier image_barrier(VkImage image, VkAccessFlags srcMask, VkAccessFlags dstMask, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageAspectFlags aspectFlag)
+	{
+		VkImageMemoryBarrier memoryBarrier{};
+		memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		memoryBarrier.pNext = nullptr;
+		memoryBarrier.image = image;
+		memoryBarrier.srcAccessMask = srcMask;
+		memoryBarrier.dstAccessMask = dstMask;
+		memoryBarrier.oldLayout = oldLayout;
+		memoryBarrier.newLayout = newLayout;
+		memoryBarrier.subresourceRange.aspectMask = aspectFlag;
+		memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		memoryBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		memoryBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+		return memoryBarrier;
+	}
+
+	VkBufferMemoryBarrier buffer_barrier(AllocatedBuffer* buffer, VkAccessFlags srcMask, VkAccessFlags dstMask, uint32_t queueFamily, VkDeviceSize offset)
+	{
+		VkBufferMemoryBarrier barrier{};
+		barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+		barrier.pNext = nullptr;
+		barrier.buffer = buffer->_buffer;
+		barrier.size = buffer->_bufferSize;
+		barrier.offset = offset;
+		barrier.srcQueueFamilyIndex = queueFamily;
+		barrier.dstQueueFamilyIndex = queueFamily;
+		barrier.srcAccessMask = srcMask;
+		barrier.dstAccessMask = dstMask;
+		return barrier;
 	}
 }

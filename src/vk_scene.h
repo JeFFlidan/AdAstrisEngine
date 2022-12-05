@@ -122,11 +122,11 @@ class RenderScene
 				std::vector<Handle<PassObject>> reusableObjects;
 				std::vector<Handle<PassObject>> objectToDelete;
 		
-				AllocatedBuffer compactedInstanceBuffer;
-				AllocatedBuffer passObjectsBuffer;
-				AllocatedBuffer drawIndirectBuffer;
-				AllocatedBuffer clearIndirectBuffer;
-		
+				AllocatedBufferT<uint32_t> compactedInstanceBuffer;
+				AllocatedBufferT<GPUInstance> passObjectsBuffer;
+				AllocatedBufferT<GPUIndirectObject> drawIndirectBuffer;		// GPU indirect buffer after culling
+				AllocatedBufferT<GPUIndirectObject> clearIndirectBuffer;	// CPU indirect buffer
+
 				PassObject* get(Handle<PassObject> handle);
 		
 				vkutil::MeshpassType type;
@@ -146,7 +146,7 @@ class RenderScene
 		
 		AllocatedBuffer _globalVertexBuffer;
 		AllocatedBuffer _globalIndexBuffer;
-		AllocatedBuffer _objectDataBuffer;		// GPUObjectdata
+		AllocatedBufferT<GPUObjectData> _objectDataBuffer;		// GPUObjectdata
 	
 		size_t _globalVertexBufferSize = 0;
 		size_t _globalIndexBufferSize = 0;
