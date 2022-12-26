@@ -41,14 +41,20 @@ class AllocatedBufferT : public AllocatedBuffer
 {
 	public:
 		AllocatedBufferT<T>() = default;
-		AllocatedBufferT<T>(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+		AllocatedBufferT<T>(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+		{
+			allocate_buffer(engine, allocSize, usage, memoryUsage);
+		}
+		
+		static void copy_typed_buffer_cmd(VulkanEngine* engine, VkCommandBuffer cmd, AllocatedBufferT<T>* srcBuffer, AllocatedBufferT<T>* dstBuffer, VkDeviceSize dstOffset = 0, VkDeviceSize srcOffset = 0)
+		{
+			VkBufferCopy copy;
+			copy.dstOffset = dstOffset;
+			copy.srcOffset = srcOffset;
+			copy.size = srcBuffer->_bufferSize;
+			vkCmdCopyBuffer(cmd, srcBuffer->_buffer, dstBuffer->_buffer, 1, &copy);
+		}
 
-		static void copy_typed_buffer_cmd(VulkanEngine* engine,
-			VkCommandBuffer cmd,
-			AllocatedBufferT<T>* srcBuffer,
-			AllocatedBufferT<T>* dstBuffer,
-			VkDeviceSize dstOffset = 0,
-			VkDeviceSize srcOffset = 0);
 	private:
 		using AllocatedBuffer::copy_buffer_cmd;
 };

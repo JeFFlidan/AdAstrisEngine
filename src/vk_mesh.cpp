@@ -32,7 +32,7 @@ VertexInputDescription Mesh::get_vertex_description()
 	colorAttribute.binding = 0;
 	colorAttribute.location = 2;
 	colorAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-	colorAttribute.offset = offsetof(assets::Vertex_f32_PNCV, color);
+	colorAttribute.offset = offsetof(assets::Vertex_f32_PNCV, tangent);
 
 	VkVertexInputAttributeDescription uvAttribute{};
 	uvAttribute.binding = 0;
@@ -63,7 +63,7 @@ bool Mesh::load_from_mesh_asset(const char* assetPath)
 
 	assets::MeshBounds meshBounds = meshInfo.bounds;
 	_bounds.origin = glm::vec3(meshBounds.origin[0], meshBounds.origin[1], meshBounds.origin[2]);
-	_bounds.extents = glm::vec3(meshBounds.extents[0], meshBounds.extents[1], meshBounds.origin[2]);
+	_bounds.extents = glm::vec3(meshBounds.extents[0], meshBounds.extents[1], meshBounds.extents[2]);
 	_bounds.radius = meshBounds.radius;
 	_bounds.valid = true;
 	

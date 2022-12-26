@@ -3,6 +3,7 @@
 #include "vk_types.h"
 #include "vk_mesh.h"
 #include "material_system.h"
+#include "engine_actors.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -66,12 +67,12 @@ class RenderScene
 	public:
 		struct PassMaterial
 		{
-			VkDescriptorSet materialSet;
+			//VkDescriptorSet materialSet;
 			vkutil::ShaderPass* shaderPass;
 	
 			bool operator==(const PassMaterial& other) const
 			{
-				return materialSet == other.materialSet && shaderPass == other.shaderPass;
+				return shaderPass == other.shaderPass;
 			}		
 		};
 	
@@ -134,11 +135,25 @@ class RenderScene
 				bool needsIndirectRefresh = true;
 				bool needsInstanceRefresh = true;
 		};
-	
+
+		bool bNeedsReloadingRenderables = true;
+		
 		std::vector<RenderableObject> _renderables;		// All objects in the scene to render
 		std::vector<DrawMesh> _meshes;
 		std::vector<vkutil::Material*> _materials;
 		std::vector<Handle<RenderableObject>> _dirtyObjects;	// Objects which should be reupload to the GPU
+
+		std::vector<VkDescriptorImageInfo> _baseColorInfos;
+		std::vector<VkDescriptorImageInfo> _normalInfos;
+		std::vector<VkDescriptorImageInfo> _armInfos;
+		VkSampler _textureSampler;
+
+		std::vector<actors::DirectionLight> _dirLights;
+		std::vector<actors::PointLight> _pointLights;
+		std::vector<actors::SpotLight> _spotLights;
+		AllocatedBufferT<actors::DirectionLight> _dirLightsBuffer;
+		AllocatedBufferT<actors::PointLight> _pointLightsBuffer;
+		AllocatedBufferT<actors::SpotLight> _spotLightsBuffer;
 	
 		MeshPass _forwardPass;
 		MeshPass _shadowPass;
@@ -153,15 +168,15 @@ class RenderScene
 	
 		std::unordered_map<Mesh*, Handle<DrawMesh>> _meshConvert;
 		std::unordered_map<vkutil::Material*, Handle<vkutil::Material>> _materialConvert;
-	
+
 		void init();
-		
+
 		Handle<RenderableObject> register_object(MeshObject* object);
 		void register_object_batch(MeshObject* first, uint32_t count);
-	
+
 		void update_transform(Handle<RenderableObject> objectID, const glm::mat4 transformMatrix);
 		void update_object(Handle<RenderableObject> objectID);
-	
+
 		void fill_object_data(GPUObjectData* data);
 		void fill_indirect_array(GPUIndirectObject* data, MeshPass& pass);
 		void fill_instances_array(GPUInstance* data, MeshPass& pass);
@@ -187,6 +202,7 @@ class RenderScene
 		Handle<vkutil::Material> get_material_handle(vkutil::Material* material);
 
 		private:
+			VkDevice _device;
 			void delete_batches(MeshPass* meshPass);
 		    void fill_pass_objects(MeshPass* meshPass, std::vector<Handle<PassObject>>& passObjectsHandles);
 			void fill_flat_batches(MeshPass* meshPass, std::vector<Handle<PassObject>>& passObjectsHandles);

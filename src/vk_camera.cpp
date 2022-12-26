@@ -9,10 +9,10 @@ Camera::Camera(glm::vec3 position,
 	WorldUp = up;
 	Yaw = yaw;
 	Pitch = pitch;
-	updateCameraVectors();
+	update_camera_vectors();
 }
 
-void Camera::processKeyboard(Camera_Movement direction, float deltaTime)
+void Camera::process_keyboard(Camera_Movement direction, float deltaTime)
 {
 	float velocity = deltaTime * MovementSpeed;
 	if (direction == FORWARD)
@@ -25,7 +25,7 @@ void Camera::processKeyboard(Camera_Movement direction, float deltaTime)
 		Position += Right * velocity;
 }
 
-void Camera::ProcessMouseMovement(float xoffset, float yoffset, VkBool32 constrainPitch)
+void Camera::process_mouse_movement(float xoffset, float yoffset, VkBool32 constrainPitch)
 {
 	Yaw += xoffset * MouseSensitivity;
 	Pitch -= yoffset * MouseSensitivity;
@@ -38,10 +38,10 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset, VkBool32 constra
 			Pitch = -89.0f;
 	}
 
-	updateCameraVectors();
+	update_camera_vectors();
 }
 
-void Camera::ProcessMouseScroll(float yoffset)
+void Camera::process_mouse_scroll(float yoffset)
 {
 	Zoom -= yoffset;
 	if (Zoom > 45.0f)
@@ -50,7 +50,7 @@ void Camera::ProcessMouseScroll(float yoffset)
 		Zoom = 1.0f;
 }
 
-void Camera::updateCameraVectors()
+void Camera::update_camera_vectors()
 {
 	glm::vec3 direction;
 	direction.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));

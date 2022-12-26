@@ -200,7 +200,7 @@ namespace vkutil
 		setup_pipeline_builders();
 		
 		ShaderEffect* texturedLitEffect = build_shader_effect({
-			"/shaders/mesh.vert.spv",
+			"/shaders/instancing.vert.spv",
 			"/shaders/textured_lit.frag.spv" });
 		ShaderEffect* postprocessingEffect = build_shader_effect({
 		    "/shaders/postprocessing.vert.spv",
@@ -240,7 +240,7 @@ namespace vkutil
 			Material* newMat = new Material();
 			newMat->original = &_templateCache[info.baseTemplate];
 			newMat->parameters = info.parameters;
-			newMat->passSets[MeshpassType::DirectionalShadow] = VK_NULL_HANDLE;
+			//newMat->passSets[MeshpassType::DirectionalShadow] = VK_NULL_HANDLE;
 			if (!info.textures.empty())
 				newMat->textures = info.textures;
 

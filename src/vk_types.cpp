@@ -19,6 +19,7 @@ void AllocatedBuffer::copy_from(VulkanEngine* engine, void* srcBuffer, size_t si
 	vmaMapMemory(engine->_allocator, _allocation, &data);
 	memcpy(data, srcBuffer, sizeInBytes);
 	vmaUnmapMemory(engine->_allocator, _allocation);
+	_bufferSize = sizeInBytes;
 }
 
 VkDescriptorBufferInfo AllocatedBuffer::get_info(bool isStorage, VkDeviceSize offset)
@@ -32,6 +33,7 @@ VkDescriptorBufferInfo AllocatedBuffer::get_info(bool isStorage, VkDeviceSize of
 
 void AllocatedBuffer::copy_buffer_cmd(VulkanEngine* engine, VkCommandBuffer cmd , AllocatedBuffer* srcBuffer, AllocatedBuffer* dstBuffer, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
 {
+	dstBuffer->_bufferSize = srcBuffer->_bufferSize;
 	VkBufferCopy copy;
 	copy.dstOffset = dstOffset;
 	copy.srcOffset = srcOffset;
@@ -42,16 +44,6 @@ void AllocatedBuffer::copy_buffer_cmd(VulkanEngine* engine, VkCommandBuffer cmd 
 void AllocatedBuffer::destroy_buffer(VulkanEngine* engine)
 {
     vmaDestroyBuffer(engine->_allocator, _buffer, _allocation);
-}
-
-template<typename T>
-void AllocatedBufferT<T>::copy_typed_buffer_cmd(VulkanEngine* engine, VkCommandBuffer cmd, AllocatedBufferT<T>* srcBuffer, AllocatedBufferT<T>* dstBuffer, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
-{
-	VkBufferCopy copy;
-	copy.dstOffset = dstOffset;
-	copy.srcOffset = srcOffset;
-	copy.size = srcBuffer->_bufferSize;
-	vkCmdCopyBuffer(cmd, srcBuffer->_buffer, dstBuffer->_buffer, 1, &copy);
 }
 
 void AllocatedBuffer::allocate_buffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
@@ -73,3 +65,4 @@ void AllocatedBuffer::allocate_buffer(VulkanEngine* engine, size_t allocSize, Vk
     if (res != VK_SUCCESS)
 		LOG_ERROR("Failed to allocate buffer");
 }
+
