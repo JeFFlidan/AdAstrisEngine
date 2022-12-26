@@ -1,5 +1,6 @@
 ﻿#include "vk_engine.h"
 #include "asset_loader.h"
+#include "engine_actors.h"
 #include "glm/fwd.hpp"
 #include "material_asset.h"
 #include "mesh_asset.h"
@@ -117,6 +118,7 @@ void VulkanEngine::init()
 	init_framebuffers();
 	init_sync_structures();
 	init_descriptors();
+	init_pipelines();
 	parse_prefabs();
 	init_scene();
 	init_imgui();
@@ -155,8 +157,6 @@ void VulkanEngine::init_vulkan()
 {
 	LOG_INFO("Start");
     //PATH.erase(PATH.find("/bin"), 4);
-    
-    LOG_INFO("Path is {}", _projectPath);
 	
 	vkb::InstanceBuilder builder;
 
@@ -192,12 +192,14 @@ void VulkanEngine::init_vulkan()
 	features.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
 	features.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
 	features.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+	features.samplerFilterMinmax = VK_TRUE;
 	features.pNext = nullptr;
 	
 	vkb::PhysicalDevice physicalDevice = selector
 		.set_minimum_version(1, 2)
 		.set_surface(_surface)
 		.add_required_extension("VK_EXT_descriptor_indexing")
+		.add_required_extension("VK_EXT_sampler_filter_minmax")
 		.set_required_features_12(features)
 		.select()
 		.value();
@@ -233,6 +235,8 @@ void VulkanEngine::init_engine_systems()
 {
 	_projectPath = fs::current_path().string();
 	_projectPath.erase(_projectPath.find("\\bin"), 4);
+
+	LOG_INFO("Path is {}", _projectPath);
 
 	_descriptorAllocator.init(_device);
 	_descriptorLayoutCache.init(_device);
@@ -289,7 +293,7 @@ void VulkanEngine::init_swapchain()
 		_offscrDepthImage,
 		imageExtent, 
 		VK_FORMAT_D32_SFLOAT,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_IMAGE_ASPECT_DEPTH_BIT
 	);
 
@@ -330,11 +334,12 @@ void VulkanEngine::init_swapchain()
 	VkImageViewCreateInfo pyramidImageViewInfo = vkinit::imageview_create_info(VK_FORMAT_R32_SFLOAT,
 		_depthPyramid._image,
 		VK_IMAGE_ASPECT_COLOR_BIT);
-	pyramidImageViewInfo.subresourceRange.baseMipLevel = _depthPyramidLevels;
+	pyramidImageViewInfo.subresourceRange.levelCount = _depthPyramidLevels;
 	VK_CHECK(vkCreateImageView(_device, &pyramidImageViewInfo, nullptr, &_depthPyramid._defaultView));
 
 	for (int32_t i = 0; i != _depthPyramidLevels; ++i)
 	{
+		std::cout << i << std::endl;
 		VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(VK_FORMAT_R32_SFLOAT,
 			_depthPyramid._image,
 			VK_IMAGE_ASPECT_COLOR_BIT);
@@ -602,6 +607,8 @@ void VulkanEngine::init_descriptors()
 
 		_frames[i]._cameraBuffer = create_buffer(sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
+		_frames[i]._sceneDataBuffer.create_buffer(this, sizeof(GPUSceneData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+
 		/*VkDescriptorBufferInfo cameraInfo;
 		cameraInfo.buffer = _frames[i]._cameraBuffer._buffer;
 		cameraInfo.offset = 0;
@@ -659,9 +666,9 @@ void VulkanEngine::init_descriptors()
 void VulkanEngine::init_pipelines()
 {
 	vkutil::Shader depthReduceShader(_device);
-	depthReduceShader.load_shader_module((_projectPath + "/shaders/reduce_depth.comp.glsl").c_str());
+	depthReduceShader.load_shader_module((_projectPath + "/shaders/reduce_depth.comp.glsl.spv").c_str());
 	vkutil::Shader drawCullShader(_device);
-	drawCullShader.load_shader_module((_projectPath + "/shaders/draw_cull.comp.glsl").c_str());
+	drawCullShader.load_shader_module((_projectPath + "/shaders/draw_cull.comp.glsl.spv").c_str());
 
 	setup_compute_pipeline(&depthReduceShader, _depthReducePipeline, _depthReduceLayout);
 	setup_compute_pipeline(&drawCullShader, _cullingPipeline, _cullintPipelineLayout);
@@ -738,32 +745,45 @@ void VulkanEngine::init_scene()
 		}
 	});
 	
-	std::vector<glm::vec3> translation = {
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, -8.0f),
-		glm::vec3(0.0f, 0.0f, -14.0f),
-		glm::vec3(0.0f, 0.0f, -20.0f),
-		glm::vec3(0.0f, 0.0f, -26.0f)
-	};
+	actors::DirectionLight dirLight;
+	dirLight.direction = glm::vec4(2.0f, -8.0f, -5.0f, 1.0f);
+	dirLight.colorAndIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 4.0f);
+	_renderScene._dirLights.push_back(dirLight);
 
-	for (int i = 0; i != _meshAndMaterialNames.size(); ++i)
-	{
-		RenderObject temp;
-		temp.material = _materialSystem.get_material(_meshAndMaterialNames[i].materialName);
-		temp.mesh = &_meshes[_meshAndMaterialNames[i].meshName];
-		temp.transformMatrix = glm::translate(glm::mat4(1.0f), translation[i]);
-		_renderables.push_back(temp);
-	}
+	actors::PointLight pointLight;
+	pointLight.sourceRadius = 0.0f;
+	pointLight.attenuationRadius = 50.0f;
+	pointLight.color = glm::vec4(0.5f, 0.12f, 0.3f, 1.0f);
+	pointLight.intensity = 8.0f;
+	pointLight.position = glm::vec4(0.0f, 12.0f, 10.0f, 1.0f);
+	_renderScene._pointLights.push_back(pointLight);
+
+	actors::SpotLight spotLight;
+	spotLight.color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+	spotLight.distance = 25.0f;
+	spotLight.intensity = 8.0f;
+	spotLight.position = glm::vec4(13.0f, 8.0f, 5.0f, 1.0f);
+	spotLight.innerConeRadius = 7.5f;
+	spotLight.outerConeRadius = 35.0f;
+	_renderScene._spotLights.push_back(spotLight);
 }
 
 void VulkanEngine::draw()
 {
 	//ImGui::Render();
+	LOG_INFO("Start new frame");
+
+	VkCommandBuffer cmd = get_current_frame()._mainCommandBuffer;
 
 	// Wait for GPU
 	VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
 	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
+	LOG_INFO("Before flushing frame deletion queue");
+	get_current_frame()._frameDeletionQueue.flush();
+	LOG_INFO("After flushing frame deletion queue");
+	std::cout << "Before reseting pools" << std::endl;
 	get_current_frame()._dynamicDescriptorAllocator.reset_pools();
+	std::cout << "After reseting pools" << std::endl;
 
 	uint32_t swapchainImageIndex;
 	VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._presentSemaphore, nullptr, &swapchainImageIndex));
@@ -780,7 +800,7 @@ void VulkanEngine::draw()
 
 	VkClearValue clearValue;
 	float flash = abs(std::sin(_frameNumber / 120.0f));
-	clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
+	clearValue.color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
 
 	VkClearValue depthClear;
 	depthClear.depthStencil.depth = 1.f;
@@ -792,14 +812,65 @@ void VulkanEngine::draw()
 	VkClearValue clearValues[] = { clearValue, depthClear };
 	rpInfo.pClearValues = clearValues;
 
+	//LOG_INFO("Before filling renderables objects");
+/*	if (_renderScene.bNeedsReloadingRenderables)
+	{
+		fill_renderable_objects();
+		_renderScene.bNeedsReloadingRenderables = false;
+	}*/
+
+	glm::mat4 view = camera.get_view_matrix();
+	glm::mat4 projection = camera.get_projection_matrix();
+ 
+	GPUCameraData camData;
+	camData.view = view;
+	camData.proj = projection;
+	camData.viewproj = projection * view;
+	camData.position = glm::vec4(camera.get_position(), 0.0f);
+
+	get_current_frame()._cameraBuffer.copy_from(this, &camData, sizeof(GPUCameraData));
+	
+	GPUSceneData sceneData;
+	sceneData.dirLightsAmount = _renderScene._dirLights.size();
+	sceneData.pointLightsAmount = _renderScene._pointLights.size();
+	sceneData.spotLightsAmount = _renderScene._spotLights.size();
+
+	get_current_frame()._sceneDataBuffer.copy_from(this, &sceneData, sizeof(GPUSceneData));
+
+	_beforeCullingBufferBarriers.clear();
+	_afterCullingBufferBarriers.clear();
+	LOG_INFO("Before preparing data");
+	prepare_data_for_drawing(cmd);
+
+	prepare_gpu_indirect_buffer(cmd, _renderScene._forwardPass);
+	
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, _beforeCullingBufferBarriers.size(), _beforeCullingBufferBarriers.data(), 0, nullptr);
+
+	CullParams forwardPassCullParams;
+	forwardPassCullParams.frustumCull = true;
+	forwardPassCullParams.occlusionCull = true;
+	forwardPassCullParams.drawDist = 9999999;
+	forwardPassCullParams.aabb = false;
+
+	LOG_INFO("Before culling");
+	culling(_renderScene._forwardPass, cmd, forwardPassCullParams);
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+		0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
+	
 	vkCmdBeginRenderPass(get_current_frame()._mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	draw_objects(get_current_frame()._mainCommandBuffer, _renderables.data(), _renderables.size());
+	//draw_objects(get_current_frame()._mainCommandBuffer, _renderables.data(), _renderables.size());
+
+	LOG_INFO("Before drawing");
+	draw_forward_pass(cmd);
 
 	//ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), get_current_frame()._mainCommandBuffer);
 
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
+	LOG_INFO("Before depth reducing");
+	depth_reduce(cmd);
 
+	LOG_INFO("Before image barrier for attachment");
 	VkImageMemoryBarrier imageMemoryBarrier{};
 	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -818,10 +889,11 @@ void VulkanEngine::draw()
 	rpInfo = vkinit::renderpass_begin_info(_renderPass, _windowExtent, _framebuffers[swapchainImageIndex]);
 	rpInfo.clearValueCount = 1;
 	rpInfo.pClearValues = &clearValue;
-
+	LOG_INFO("Before new render pass");
 	vkCmdBeginRenderPass(get_current_frame()._mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-
+	LOG_INFO("Before drawing output quad");
 	draw_output_quad(get_current_frame()._mainCommandBuffer);
+	LOG_INFO("After drawing output quad");
 
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
 
@@ -932,7 +1004,7 @@ void VulkanEngine::run()
 				float xoffset = xPos - lastX;
 				float yoffset = yPos - lastY;
 
-				camera.ProcessMouseMovement(xPos, yPos);
+				camera.process_mouse_movement(xPos, yPos);
 			}
 		}
 
@@ -942,13 +1014,13 @@ void VulkanEngine::run()
 		SDL_PumpEvents();
 		const Uint8 *state = SDL_GetKeyboardState(nullptr);
 		if (state[SDL_SCANCODE_W])
-			camera.processKeyboard(FORWARD, elapsed_seconds);
+			camera.process_keyboard(FORWARD, elapsed_seconds);
 		if (state[SDL_SCANCODE_S])
-			camera.processKeyboard(BACKWARD, elapsed_seconds);
+			camera.process_keyboard(BACKWARD, elapsed_seconds);
 		if (state[SDL_SCANCODE_A])
-			camera.processKeyboard(LEFT, elapsed_seconds);
+			camera.process_keyboard(LEFT, elapsed_seconds);
 		if (state[SDL_SCANCODE_D])
-			camera.processKeyboard(RIGHT, elapsed_seconds);
+			camera.process_keyboard(RIGHT, elapsed_seconds);
 		//SDL_SetRelativeMouseMode(SDL_FALSE);
 
 		//ImGui_ImplVulkan_NewFrame();
@@ -972,6 +1044,16 @@ void VulkanEngine::parse_prefabs()
 	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);
 	VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &_textureSampler));
 
+	std::vector<glm::vec3> translation = {
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(-20.0f, 0.0f, 0.0f),
+		glm::vec3(-80.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f)
+	};
+
+	int counter = 0;
+	
 	for (auto& p : fs::directory_iterator(direcory))
 	{
 		if (p.path().extension() == ".pref")
@@ -993,7 +1075,10 @@ void VulkanEngine::parse_prefabs()
 		    assets::MaterialInfo materialInfo = assets::read_material_info(&file);
 			vkutil::MaterialData materialData;
 			materialData.baseTemplate = materialInfo.baseEffect;
+			MeshObject tempMeshObject;
 
+			LOG_INFO("Textures amount: {}", materialInfo.textures.size());
+			
 			if (!materialInfo.textures.empty())
 			{
 				for (auto& tex : materialInfo.textures)
@@ -1006,44 +1091,28 @@ void VulkanEngine::parse_prefabs()
 					if (tex.first == "texture_base_color")
 					{
 						_baseColorTextures.push_back(tempTexture);
-						materialData.textures.push_back({ _textureSampler, _baseColorTextures.back().imageView });
-
-						VkDescriptorImageInfo tempInfo;
-						tempInfo.imageView = _baseColorTextures.back().imageView;
-						tempInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-						tempInfo.sampler = _textureSampler;
-						_baseColorImageInfos.push_back(tempInfo);
-
+						
+						tempMeshObject.baseColor = _baseColorTextures.back().imageView;
 						
 						_mainDeletionQueue.push_function([=](){
 							vkDestroyImageView(_device, _baseColorTextures.back().imageView, nullptr);
 						});
 					}
-					else if (tex.first == "normal_texture")
+					else if (tex.first == "texture_normal")
 					{
 						_normalTextures.push_back(tempTexture);
-						materialData.textures.push_back({ _textureSampler, _normalTextures.back().imageView });
-
-						VkDescriptorImageInfo tempInfo;
-						tempInfo.imageView = _normalTextures.back().imageView;
-						tempInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-						tempInfo.sampler = _textureSampler;
-						_normalImageInfos.push_back(tempInfo);
+						
+						tempMeshObject.normal = _normalTextures.back().imageView;
 
 						_mainDeletionQueue.push_function([=](){
 							vkDestroyImageView(_device, _normalTextures.back().imageView, nullptr);
 						});
 					}
-					else if (tex.first == "arm_texture")
+					else if (tex.first == "texture_arm")
 					{
 						_armTextures.push_back(tempTexture);
-						materialData.textures.push_back({ _textureSampler, _armTextures.back().imageView });
-
-						VkDescriptorImageInfo tempInfo;
-						tempInfo.imageView = _armTextures.back().imageView;
-						tempInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-						tempInfo.sampler = _textureSampler;
-						_armImageInfos.push_back(tempInfo);
+						
+						tempMeshObject.arm = _armTextures.back().imageView;
 
 						_mainDeletionQueue.push_function([=](){
 							vkDestroyImageView(_device, _armTextures.back().imageView, nullptr);
@@ -1055,17 +1124,21 @@ void VulkanEngine::parse_prefabs()
 			{
 				LOG_WARNING("No textures in {} material", materialInfo.materialName);
 			}
-
 			
-			_materialSystem.build_material(materialInfo.materialName, materialData);			
-			_meshAndMaterialNames.push_back({ meshName, materialInfo.materialName });
+			_materialSystem.build_material(materialInfo.materialName, materialData);
+			tempMeshObject.material = _materialSystem.get_material(materialInfo.materialName);
+			tempMeshObject.mesh = &_meshes[meshName];
+			tempMeshObject.transformMatrix = glm::translate(glm::mat4(1.0f), translation[counter]);
+			_meshObjects.push_back(tempMeshObject);
+			++counter;
 		}
 	}
 
 	_mainDeletionQueue.push_function([=](){
 		vkDestroySampler(_device, _textureSampler, nullptr);
 	});
-	allocate_global_vertex_and_index_buffer(meshes);
+
+	fill_renderable_objects();
 }
 
 void VulkanEngine::allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes)
@@ -1146,9 +1219,8 @@ Mesh* VulkanEngine::get_mesh(const std::string& name)
 void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* objects, int count)
 {
 	std::cout << "Start drawing frame" << std::endl;
-	glm::mat4 view = camera.GetViewMatrix();
-	glm::mat4 projection = glm::perspective(glm::radians(70.f), 1700.f / 900.f, 0.1f, 200.f);
-	projection[1][1] *= -1;			// Why?
+	glm::mat4 view = camera.get_view_matrix();
+	glm::mat4 projection = camera.get_projection_matrix();
  
 	GPUCameraData camData;
 	camData.view = view;
@@ -1162,7 +1234,7 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* objects, int 
 
 	float framed = (_frameNumber / 120.0f);
 
-	_sceneParameters.ambientColor = { std::sin(framed), 0, std::cos(framed), 1 };
+	//_sceneParameters.ambientColor = { std::sin(framed), 0, std::cos(framed), 1 };
 
 	char* sceneData;
 	vmaMapMemory(_allocator, _sceneParameterBuffer._allocation, (void**)&sceneData);
@@ -1518,7 +1590,7 @@ void VulkanEngine::bind_mesh(VkCommandBuffer cmd, Mesh* mesh)
 	vkCmdBindIndexBuffer(cmd, mesh->_indexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
 }
 
-template<typename T>
+/*template<typename T>
 void VulkanEngine::reallocate_buffer(AllocatedBufferT<T>& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
 	AllocatedBufferT<T> newBuffer(this, size, usage, memoryUsage);
@@ -1528,7 +1600,7 @@ void VulkanEngine::reallocate_buffer(AllocatedBufferT<T>& buffer, size_t size, V
 	});
 
 	buffer = newBuffer;
-}
+}*/
 
 // functions for depth pyramid to make culling
 uint32_t previous_pow2(uint32_t v)

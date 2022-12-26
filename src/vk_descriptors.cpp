@@ -412,4 +412,37 @@ namespace vkutil
 
 		return true;
 	}
+
+	bool DescriptorBuilder::build_partially_bound(VkDescriptorSet& set, uint32_t descriptorsCount, uint32_t partiallyBoundedAmount)
+	{
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = bindings.size();
+		layoutInfo.pBindings = bindings.data();
+		layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+
+		VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT |
+			VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
+
+		std::vector<VkDescriptorBindingFlags> flags(partiallyBoundedAmount, flag);
+
+		VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlags{};
+		bindingFlags.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+		bindingFlags.pNext = nullptr;
+		bindingFlags.bindingCount = flags.size();
+		bindingFlags.pBindingFlags = flags.data();
+
+		layoutInfo.pNext = &bindingFlags;
+
+		VkDescriptorSetLayout layout = cache->create_descriptor_layout(&layoutInfo);
+		bool success = allocator->allocate(&set, layout, true, descriptorsCount);
+		if (!success) return false;
+
+		for (VkWriteDescriptorSet& w : writes)
+			w.dstSet = set;
+
+		vkUpdateDescriptorSets(allocator->device, writes.size(), writes.data(), 0, nullptr);
+	
+		return true;
+	}
 }

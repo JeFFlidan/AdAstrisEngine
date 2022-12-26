@@ -1,3 +1,4 @@
+#include "nlohmann/detail/conversions/to_json.hpp"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -43,9 +44,9 @@ Vertex pack_vertex(tinyobj::real_t vx,
 	new_vert.normal[1] = ny;
 	new_vert.normal[2] = nz;
 
-	new_vert.color[0] = 0.0f;
-	new_vert.color[1] = 0.0f;
-	new_vert.color[2] = 0.0f;
+	//new_vert.color[0] = 0.0f;
+	//new_vert.color[1] = 0.0f;
+	//new_vert.color[2] = 0.0f;
 
 	new_vert.uv[0] = ux;
 	new_vert.uv[1] = 1 - uy;
@@ -59,6 +60,7 @@ void load_obj_file(tinyobj::attrib_t& attrib,
 	std::vector<uint32_t>& indices
 )
 {
+	std::vector<Vertex> threeVertices;
 	for (size_t s = 0; s != shapes.size(); ++s)
 	{
 		size_t index_offset = 0;
@@ -83,8 +85,48 @@ void load_obj_file(tinyobj::attrib_t& attrib,
 
 				Vertex new_vert = pack_vertex(vx, vy, vz, nx, ny, nz, ux, uy);
 
-				indices.push_back(vertices.size());
-				vertices.push_back(new_vert);
+				threeVertices.push_back(new_vert);
+
+				if (threeVertices.size() == 3)
+				{
+					Vertex firstVert = threeVertices[0];
+					Vertex secondVert = threeVertices[1];
+					Vertex thirdVert = threeVertices[2];
+					float vertPos1[3] = { firstVert.position[0], firstVert.position[1], firstVert.position[2] };
+					float vertPos2[3] = { secondVert.position[0], secondVert.position[1], secondVert.position[2] };
+					float vertPos3[3] = { thirdVert.position[0], thirdVert.position[1], thirdVert.position[2] };
+					float vertUv1[2] = { firstVert.uv[0], firstVert.uv[1] };
+					float vertUv2[2] = { secondVert.uv[0], secondVert.uv[1] };
+					float vertUv3[2] = { thirdVert.uv[0], thirdVert.uv[1] };
+					float edge1[3] = { vertPos2[0] - vertPos1[0], vertPos2[1] - vertPos1[1], vertPos2[2] - vertPos1[2] };
+					float edge2[3] = { vertPos3[0] - vertPos1[0], vertPos3[1] - vertPos1[1], vertPos3[2] - vertPos1[2] };
+					float deltaUV1[2] = { vertUv2[0] - vertUv1[0], vertUv2[1] - vertUv1[1] };
+					float deltaUV2[2] = { vertUv3[0] - vertUv1[0], vertUv3[1] - vertUv1[1] };
+					float f = 1.0f / (deltaUV1[0] * deltaUV2[1] - deltaUV2[0] * deltaUV1[1]);
+					float tangent[3];
+					tangent[0] = f * (deltaUV2[1] * edge1[0] - deltaUV1[1] * edge2[0]);
+					tangent[1] = f * (deltaUV2[1] * edge1[1] - deltaUV1[1] * edge2[1]);
+					tangent[2] = f * (deltaUV2[1] * edge1[2] - deltaUV1[1] * edge2[2]);
+					firstVert.tangent[0] = tangent[0];
+					firstVert.tangent[1] = tangent[1];
+					firstVert.tangent[2] = tangent[2];
+					secondVert.tangent[0] = tangent[0];
+					secondVert.tangent[1] = tangent[1];
+					secondVert.tangent[2] = tangent[2];
+					thirdVert.tangent[0] = tangent[0];
+					thirdVert.tangent[1] = tangent[1];
+					thirdVert.tangent[2] = tangent[2];
+					indices.push_back(vertices.size());
+					vertices.push_back(firstVert);
+					indices.push_back(vertices.size());
+					vertices.push_back(secondVert);
+					indices.push_back(vertices.size());
+					vertices.push_back(thirdVert);
+					threeVertices.clear();
+				}
+
+				//indices.push_back(vertices.size());
+				//vertices.push_back(new_vert);
 			}
 
 			index_offset += fv;
@@ -209,6 +251,8 @@ void save_material(
 	if (!textures.empty())
 	{
 		info.textures["texture_base_color"] = directory.string() + textures[0];
+		info.textures["texture_normal"] = directory.string() + textures[1];
+		info.textures["texture_arm"] = directory.string() + textures[2];
 	}
     info.mode = materialMode;
 
@@ -280,7 +324,7 @@ int main(int argc, char* argv[])
 				directory,
 				"door",
 				"PBR_opaque",
-				{ "/Sci fi door 1_BaseColor.tx" },
+				{ "/Sci fi door 1_BaseColor.tx", "/Sci fi door 1_Normal.tx", "/Sci fi door 1_ARM.tx" },
 				assets::MaterialMode::OPAQUE
 			);
 
@@ -288,7 +332,7 @@ int main(int argc, char* argv[])
 				directory,
 				"gun",
 				"PBR_opaque",
-				{ "/Gun_BaseColor.tx" },
+				{ "/Gun_BaseColor.tx", "/Gun_Normal.tx", "/Gun_ARM.tx" },
 				assets::MaterialMode::OPAQUE
 			);
 
@@ -296,7 +340,7 @@ int main(int argc, char* argv[])
 				directory,
 				"gun2",
 				"PBR_opaque",
-				{ "/Gun_2_BaseColor.tx" },
+				{ "/Gun_2_BaseColor.tx", "/Gun_2_Normal.tx", "/Gun_2_ARM.tx" },
 				assets::MaterialMode::OPAQUE
 			);
 

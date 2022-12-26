@@ -17,3 +17,5 @@ compile_commands.json
 /VulkanEngine
 debug
 src/CMakeFiles
+/shaders/*.*~
+/shaders/*.*.*~

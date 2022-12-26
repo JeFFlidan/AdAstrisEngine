@@ -1,12 +1,16 @@
 #include "vk_scene.h"
 #include "material_system.h"
+
 #include "mesh_asset.h"
 #include "vk_engine.h"
+#include "vk_initializers.h"
 
+#include <iostream>
 #include <future>
 #include <algorithm>
 #include <iterator>
 #include <stdint.h>
+#include <vulkan/vulkan_core.h>
 
 //public methods
 
@@ -23,8 +27,10 @@ void RenderScene::register_object_batch(MeshObject* first, uint32_t count)
 
 	for (int i = 0; i != count; ++i)
 	{
-	    register_object(&(first[i]));
+		register_object(&(first[i]));
 	}
+
+	std::cout << "Renderables size " << _renderables.size() << std::endl;
 }
 
 Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
@@ -41,8 +47,11 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 	
 	_renderables.push_back(newObj);
 
+	std::cout << "bDrawForwardPass " << object->bDrawForwardPass << std::endl;
+	
 	if (object->bDrawForwardPass)
 	{
+		std::cout << "In forward pass" << std::endl;
 		if (object->material->original->passShaders[vkutil::MeshpassType::Transparency])
 		{
 			_transparentForwardPass.unbatchedObjects.push_back(handle);
@@ -59,6 +68,37 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 		{
 			_shadowPass.unbatchedObjects.push_back(handle);
 		}
+	}
+
+	if (object->baseColor != VK_NULL_HANDLE)
+	{
+		std::cout << "Set up base color info" << std::endl;
+		VkDescriptorImageInfo imageInfo;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = object->baseColor;
+		imageInfo.sampler = nullptr;
+
+		_baseColorInfos.push_back(imageInfo);
+	}
+	
+	if (object->normal != VK_NULL_HANDLE)
+	{
+		VkDescriptorImageInfo imageInfo;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = object->normal;
+		imageInfo.sampler = nullptr;
+
+		_normalInfos.push_back(imageInfo);
+	}
+	
+	if (object->arm != VK_NULL_HANDLE)
+	{
+		VkDescriptorImageInfo imageInfo;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = object->arm;
+		imageInfo.sampler = nullptr;
+	
+		_armInfos.push_back(imageInfo);
 	}
 
 	update_object(handle);
@@ -157,6 +197,7 @@ void RenderScene::fill_instances_array(GPUInstance* data, MeshPass& pass)
 		{
 			data[dataIndex].batchID = i;
 			data[dataIndex].objectID = pass.get(pass.flatBatches[j + batch.first].object)->original.handle;
+			LOG_INFO("Instance object ID: {}", data[dataIndex].objectID);
 			++dataIndex;
 		}
 	}
@@ -199,39 +240,66 @@ void RenderScene::merge_meshes(class VulkanEngine* engine)
 		mesh.isMerged = true;
     }
     
+	std::vector<assets::Vertex_f32_PNCV> vertices(_globalVertexBufferSize);
+	std::vector<uint32_t> indices(_globalIndexBufferSize);
+
+	size_t previousVerticesSize = 0;
+	size_t previousIndicesSize = 0;
+
+	for (int i = 0; i != _meshes.size(); ++i)
+	{
+		Mesh* mesh = _meshes[i].original;
+	
+		memcpy(vertices.data() + previousVerticesSize, mesh->_vertices.data(), mesh->_vertices.size() * sizeof(assets::Vertex_f32_PNCV));
+	    previousVerticesSize += mesh->_vertices.size();
+
+	    memcpy(indices.data() + previousIndicesSize, mesh->_indices.data(), mesh->_indices.size() * sizeof(uint32_t));
+	    previousIndicesSize += mesh->_indices.size();
+	}
+
+	AllocatedBuffer vertexStagingBuffer(engine, _globalVertexBufferSize * sizeof(assets::Vertex_f32_PNCV),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+	
+	AllocatedBuffer indexStagingBuffer(engine, _globalIndexBufferSize * sizeof(uint32_t),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+
+	vertexStagingBuffer.copy_from(engine, vertices.data(), _globalVertexBufferSize * sizeof(assets::Vertex_f32_PNCV));
+	indexStagingBuffer.copy_from(engine, indices.data(), _globalIndexBufferSize * sizeof(uint32_t));
+    
 	_globalVertexBuffer = engine->create_buffer(_globalVertexBufferSize * sizeof(assets::Vertex_f32_PNCV),
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 
-	_globalIndexBuffer = engine->create_buffer(_globalIndexBufferSize * sizeof(assets::Vertex_f32_PNCV),
+	_globalIndexBuffer = engine->create_buffer(_globalIndexBufferSize * sizeof(uint32_t),
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 
-	engine->immediate_submit([=](VkCommandBuffer cmd){
-		for (auto& mesh : _meshes)
-		{
-			VkBufferCopy copy;
-			copy.size = mesh.vertexCount * sizeof(assets::Vertex_f32_PNCV);
-			copy.srcOffset = 0;
-			copy.dstOffset = mesh.firstVertex;
-			vkCmdCopyBuffer(cmd, mesh.original->_vertexBuffer._buffer, _globalVertexBuffer._buffer, 1, &copy);
+	engine->immediate_submit([&](VkCommandBuffer cmd){
+	    AllocatedBuffer::copy_buffer_cmd(engine, cmd, &vertexStagingBuffer, &_globalVertexBuffer);
+	    AllocatedBuffer::copy_buffer_cmd(engine, cmd, &indexStagingBuffer, &_globalIndexBuffer);
+	});
 
-			copy.size = mesh.indexCount * sizeof(uint32_t);
-			copy.dstOffset = mesh.firstIndex;
-			vkCmdCopyBuffer(cmd, mesh.original->_indexBuffer._buffer, _globalIndexBuffer._buffer, 1, &copy);
-		}
-	});	
+	LOG_INFO("Vertex buffer size {}", _globalVertexBuffer._bufferSize);
+	LOG_INFO("Index buffer size {}", _globalIndexBuffer._bufferSize);
+
+	engine->_mainDeletionQueue.push_function([=](){
+		vmaDestroyBuffer(engine->_allocator, _globalVertexBuffer._buffer, _globalVertexBuffer._allocation);
+		vmaDestroyBuffer(engine->_allocator, _globalIndexBuffer._buffer, _globalIndexBuffer._allocation);
+	});
+	
+	vmaDestroyBuffer(engine->_allocator, vertexStagingBuffer._buffer, vertexStagingBuffer._allocation);
+	vmaDestroyBuffer(engine->_allocator, indexStagingBuffer._buffer, indexStagingBuffer._allocation);
 }
 
 void RenderScene::build_batches()
 {
 	// I have to read how async works
 	auto forward = std::async(std::launch::async, [&]{ refresh_pass(&_forwardPass); });
-	auto shadow = std::async(std::launch::async, [&]{ refresh_pass(&_shadowPass); });
-	auto transparent = std::async(std::launch::async, [&]{ refresh_pass(&_transparentForwardPass); });
+	//auto shadow = std::async(std::launch::async, [&]{ refresh_pass(&_shadowPass); });
+	//auto transparent = std::async(std::launch::async, [&]{ refresh_pass(&_transparentForwardPass); });
 
-	transparent.get();
-	shadow.get();
+	//transparent.get();
+	//shadow.get();
 	forward.get();
 }
 
@@ -241,18 +309,23 @@ void RenderScene::refresh_pass(RenderScene::MeshPass* meshPass)
 	meshPass->needsIndirectRefresh = true;
 	meshPass->needsInstanceRefresh = true;
 
+	LOG_INFO("Before deleting batches");
+	
 	delete_batches(meshPass);
 
 	std::vector<Handle<PassObject>> passObjectHandles;
+	LOG_INFO("Before filling pass objects");
 	fill_pass_objects(meshPass, passObjectHandles);
+	std::cout << "Forward pass pass objects size " << meshPass->objects.size() << std::endl;
 
+	LOG_INFO("Before filling flat batches");
 	fill_flat_batches(meshPass, passObjectHandles);
 	meshPass->batches.clear();
 	
 	meshPass->batches.reserve(meshPass->flatBatches.size());
-
+	LOG_INFO("Before filling indirect batches");
 	build_indirect_batches(meshPass, meshPass->batches, meshPass->flatBatches);
-
+	LOG_INFO("Before filling multibatches");
 	meshPass->multibatches.clear();
 
 	fill_multi_batches(meshPass);
@@ -260,6 +333,8 @@ void RenderScene::refresh_pass(RenderScene::MeshPass* meshPass)
 
 void RenderScene::build_indirect_batches(RenderScene::MeshPass* pass, std::vector<IndirectBatch>& outBatches, std::vector<RenderScene::RenderBatch>& inObjects)
 {
+	std::cout << "In objects size" << inObjects.size() << std::endl;
+	LOG_INFO("Before creating first indirect batch");
 	RenderScene::IndirectBatch tempBatch;
 	tempBatch.first = 0;
 	tempBatch.count = 0;
@@ -269,14 +344,15 @@ void RenderScene::build_indirect_batches(RenderScene::MeshPass* pass, std::vecto
 	
 	auto* prevBatch = &outBatches.back();
 
+	LOG_INFO("Before for loop");
 	for (int i = 0; i != inObjects.size(); ++i)
 	{
+		std::cout << i << std::endl;
 		RenderScene::PassObject* passObject = pass->get(inObjects[i].object);
 		
 		bool bSameMaterials = false;
 
-		if (passObject->material.materialSet == prevBatch->material.materialSet &&
-			passObject->material.shaderPass == prevBatch->material.shaderPass)
+		if (passObject->material.shaderPass == prevBatch->material.shaderPass)
 		{
 			bSameMaterials = true;
 		}
@@ -452,7 +528,7 @@ void RenderScene::fill_pass_objects(MeshPass* meshPass, std::vector<Handle<PassO
 		
 		PassMaterial tempMaterialPass;
 		tempMaterialPass.shaderPass = material->original->passShaders[meshPass->type];
-		tempMaterialPass.materialSet = material->passSets[meshPass->type];
+		//tempMaterialPass.materialSet = material->passSets[meshPass->type];
 		
 		PassObject tempObject;
 		tempObject.customKey = renderableObject->customSortKey;
@@ -507,7 +583,9 @@ void RenderScene::fill_flat_batches(MeshPass* meshPass, std::vector<Handle<PassO
 		else if (first.sortKey == second.sortKey) { return first.object.handle < second.object.handle; }
 		else { return false; }
 	});
-	
+
+	std::cout << "New flat batches size " << newFlatBatches.size() << std::endl;
+
 	if (meshPass->flatBatches.size() > 0 && newFlatBatches.size() > 0)
 	{
 		size_t oldEnd = meshPass->flatBatches.size();
@@ -530,6 +608,7 @@ void RenderScene::fill_flat_batches(MeshPass* meshPass, std::vector<Handle<PassO
 	}
 	else
 	{
+		std::cout << "Before moving data" << std::endl;
 		meshPass->flatBatches = std::move(newFlatBatches);
 	}
 }
@@ -549,8 +628,7 @@ void RenderScene::fill_multi_batches(MeshPass* meshPass)
 
 		bool bSameMaterials = false;
 
-		if (bCompatibleMesh && currentBatch->material.materialSet == prevBatch->material.materialSet
-			&& currentBatch->material.shaderPass == prevBatch->material.shaderPass)
+		if (bCompatibleMesh && currentBatch->material.shaderPass == prevBatch->material.shaderPass)
 		{
 			bSameMaterials = true;
 		}
@@ -559,7 +637,7 @@ void RenderScene::fill_multi_batches(MeshPass* meshPass)
 		{
 			meshPass->multibatches.push_back(tempMultiBatch);
 			tempMultiBatch.count = 1;
-			tempMultiBatch.first = i;
+ 			tempMultiBatch.first = i;
 		}
 		else
 		{
@@ -569,7 +647,7 @@ void RenderScene::fill_multi_batches(MeshPass* meshPass)
 
 	meshPass->multibatches.push_back(tempMultiBatch);
 }
-			
+		
 RenderScene::PassObject* RenderScene::MeshPass::get(Handle<RenderScene::PassObject> handle)
 {
 	return &objects[handle.handle];

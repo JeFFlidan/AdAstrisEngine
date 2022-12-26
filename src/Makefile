@@ -297,6 +297,30 @@ vk_mesh.cpp.s:
 	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.s
 .PHONY : vk_mesh.cpp.s
 
+vk_renderer.obj: vk_renderer.cpp.obj
+.PHONY : vk_renderer.obj
+
+# target to build an object file
+vk_renderer.cpp.obj:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_renderer.cpp.obj
+.PHONY : vk_renderer.cpp.obj
+
+vk_renderer.i: vk_renderer.cpp.i
+.PHONY : vk_renderer.i
+
+# target to preprocess a source file
+vk_renderer.cpp.i:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_renderer.cpp.i
+.PHONY : vk_renderer.cpp.i
+
+vk_renderer.s: vk_renderer.cpp.s
+.PHONY : vk_renderer.s
+
+# target to generate assembly for a file
+vk_renderer.cpp.s:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_renderer.cpp.s
+.PHONY : vk_renderer.cpp.s
+
 vk_renderpass.obj: vk_renderpass.cpp.obj
 .PHONY : vk_renderpass.obj
 
@@ -448,6 +472,9 @@ help:
 	@echo ... vk_mesh.obj
 	@echo ... vk_mesh.i
 	@echo ... vk_mesh.s
+	@echo ... vk_renderer.obj
+	@echo ... vk_renderer.i
+	@echo ... vk_renderer.s
 	@echo ... vk_renderpass.obj
 	@echo ... vk_renderpass.i
 	@echo ... vk_renderpass.s

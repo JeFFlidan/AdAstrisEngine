@@ -7,6 +7,7 @@
 #include "vk_mesh.h"
 #include "material_system.h"
 #include "vk_scene.h"
+#include "engine_actors.h"
 #include <stdint.h>
 #include <vk_descriptors.h>
 #include <vk_camera.h>
@@ -61,15 +62,19 @@ struct GPUCameraData
 	glm::mat4 view;
 	glm::mat4 proj;
 	glm::mat4 viewproj;
+	glm::vec4 position;
 };
 
 struct GPUSceneData
 {
-	glm::vec4 fogColor;
+	/*glm::vec4 fogColor;
 	glm::vec4 forDistances;
 	glm::vec4 ambientColor;
 	glm::vec4 sunlightDirection;
-	glm::vec4 sunlightColor;
+	glm::vec4 sunlightColor;*/
+	uint32_t dirLightsAmount;
+	uint32_t pointLightsAmount;
+	uint32_t spotLightsAmount;
 };
 
 struct GPUObjectData
@@ -97,6 +102,8 @@ struct FrameData
 
 	AllocatedBuffer _cameraBuffer;
 	VkDescriptorSet _globalDescriptor;
+
+	AllocatedBuffer _sceneDataBuffer;
 
 	AllocatedBuffer _objectBuffer;
 	VkDescriptorSet _objectDescriptor;
@@ -153,15 +160,19 @@ struct MeshObject
 	Mesh* mesh{ nullptr };
 
 	vkutil::Material* material{ nullptr };
+	VkImageView baseColor{ VK_NULL_HANDLE };
+	VkImageView normal{ VK_NULL_HANDLE };
+	VkImageView arm{ VK_NULL_HANDLE };
+	
 	uint32_t customSortKey;
 	glm::mat4 transformMatrix;
 
-	uint32_t bDrawForwardPass : 1;
-	uint32_t bDrawShadowPass : 1;
+	uint32_t bDrawForwardPass{ 1 };
+	uint32_t bDrawShadowPass{ 1 };
 };
 
 // structs for culling
-struct DrawCullData
+struct CullData
 {
 	glm::mat4 view;
 	float P00, P11, znear, zfar; // symmetric projection parameters
@@ -182,6 +193,16 @@ struct DrawCullData
 	float aabbmax_x;
 	float aabbmax_y;
 	float aabbmax_z;	
+};
+
+struct CullParams
+{
+	bool occlusionCull;
+	bool frustumCull;
+	float drawDist;
+	bool aabb;
+	glm::vec3 aabbmin;
+	glm::vec3 aabbmax;
 };
 
 struct ObjectData
@@ -258,6 +279,9 @@ class VulkanEngine
 		int _depthPyramidHeight;
 		int _depthPyramidLevels;
 
+		std::vector<VkBufferMemoryBarrier> _beforeCullingBufferBarriers;
+		std::vector<VkBufferMemoryBarrier> _afterCullingBufferBarriers;		// I should execute those barriers before drawing
+
 		VkPipeline _depthReducePipeline;
 		VkPipelineLayout _depthReduceLayout;
 		VkPipeline _cullingPipeline;
@@ -270,6 +294,7 @@ class VulkanEngine
 		DeletionQueue _mainDeletionQueue;
 
 		std::vector<RenderObject> _renderables;
+		std::vector<MeshObject> _meshObjects;
 
 		std::unordered_map<std::string, Mesh> _meshes;
 		std::vector<Texture> _loadedTextures;
@@ -348,7 +373,7 @@ class VulkanEngine
 		void create_attachment(
 			Attachment& attachment, 
 			VkExtent3D imageExtent, 
-			VkFormat format, 
+			VkFormat format,
 			VkImageUsageFlags usageFlags, 
 			VkImageAspectFlags aspectFlags);
 
@@ -356,15 +381,32 @@ class VulkanEngine
 		void bind_material(VkCommandBuffer cmd, vkutil::Material* mateial);
 		void bind_mesh(VkCommandBuffer cmd, Mesh* mesh);
 		void allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes);
+
 		template<typename T>
-		void reallocate_buffer(AllocatedBufferT<T>& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+		void reallocate_buffer(AllocatedBufferT<T>& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+		{
+			AllocatedBufferT<T> newBuffer(this, size, usage, memoryUsage);
+
+			if (buffer._buffer != VK_NULL_HANDLE)
+			{
+				get_current_frame()._frameDeletionQueue.push_function([=](){
+					LOG_INFO("Before deleting buffer");
+					vmaDestroyBuffer(_allocator, buffer._buffer, buffer._allocation);
+					LOG_INFO("After deleting buffer");
+				});
+			}
+
+			buffer = newBuffer;
+		}
+
 		AllocatedBuffer reallocate_buffer(AllocatedBuffer buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 		void parse_prefabs();
 
 		// methods for renderer
+		void prepare_gpu_indirect_buffer(VkCommandBuffer cmd, RenderScene::MeshPass& meshPass);
 		void fill_renderable_objects();
-		void culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd);
-		void draw_forward_pass();
+		void culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd, CullParams cullParams);
+		void draw_forward_pass(VkCommandBuffer cmd);
 		void depth_reduce(VkCommandBuffer cmd);
 		void prepare_data_for_drawing(VkCommandBuffer cmd);
 };

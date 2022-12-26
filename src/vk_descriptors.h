@@ -89,6 +89,7 @@ namespace vkutil
 			bool build(VkDescriptorSet& set);
 			bool build_non_uniform(VkDescriptorSet& set, VkDescriptorSetLayout& layout, uint32_t descriptorsCount);
 			bool build_non_uniform(VkDescriptorSet& set, uint32_t descriptorCount);
+			bool build_partially_bound(VkDescriptorSet& set, uint32_t descriptorsCount, uint32_t partiallyBoundedAmount);
 		private:
 			std::vector<VkWriteDescriptorSet> writes;
 			std::vector<VkDescriptorSetLayoutBinding> bindings;

@@ -7,7 +7,7 @@ layout(set = 0, binding = 5) uniform CameraBuffer
 	mat4 view;
 	mat4 proj;
 	mat4 viewProj;
-};
+} cameraBuffer;
 
 struct DrawCullData
 {
@@ -111,9 +111,11 @@ bool isVisible(uint objectIndex)
 	uint index = objectIndex;
 
 	vec4 sphereBounds = objectBuffer.objects[index].sphereBounds;
+	mat4 model = objectBuffer.objects[index].model;
 
 	vec3 center = sphereBounds.xyz;
-	center = (cullData.view * vec4(center, 1.0)).xyz;
+	center = (cullData.view * model * vec4(center, 1.0)).xyz;
+
 	float radius = sphereBounds.w;
 
 	bool visible = true;
@@ -161,7 +163,7 @@ bool isVisibleAABB(uint objectIndex)
 	vec4 sphereBounds = objectBuffer.objects[index].sphereBounds;
 
 	vec3 center = sphereBounds.xyz;
-	float radius - sphereBounds.w;
+	float radius = sphereBounds.w;
 
 	bool visible = true;
 
@@ -196,7 +198,7 @@ void main()
 			uint batchIndex = compactInstanceBuffer.Instances[gID].batchID;
 			uint countIndex = atomicAdd(drawBuffer.Draws[batchIndex].instanceCount, 1);
 
-			uint instanceIndex = drawBuffer.Draws[batchIndex].firstIndex + countIndex;
+			uint instanceIndex = drawBuffer.Draws[batchIndex].firstInstance + countIndex;
 
 			finalInstanceBuffer.IDs[instanceIndex] = objectID;
 		}
