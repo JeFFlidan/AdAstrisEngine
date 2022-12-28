@@ -293,12 +293,6 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 			AllocatedBufferT<actors::DirectionLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_dirLightsBuffer);
 		});
 		tempBuffer.destroy_buffer(this);
-
-		for (auto& light : _renderScene._dirLights)
-		{
-			std::cout << "Dir light color: " << light.colorAndIntensity.x << " " << light.colorAndIntensity.y << " " << light.colorAndIntensity.z << std::endl;
-			std::cout << "Dir light position: " << light.direction.x << " " << light.direction.y << " " << light.direction.z << std::endl;
-		}
 	}
 	if (spotLightsBufSize != scene->_spotLightsBuffer._bufferSize)
 	{
@@ -310,12 +304,6 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 			AllocatedBufferT<actors::SpotLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_spotLightsBuffer);
 		});
 		tempBuffer.destroy_buffer(this);
-
-		for (auto& light : _renderScene._spotLights)
-		{
-			std::cout << "Spot light color: " << light.color.x << " " << light.color.y << " " << light.color.z << std::endl;
-			std::cout << "Spot light position: " << light.position.x << " " << light.position.y << " " << light.position.z << std::endl;
-		}
 	}
 	if (pointLightsBufSize != scene->_pointLightsBuffer._bufferSize)
 	{
@@ -328,12 +316,6 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 		});
 		//AllocatedBufferT<actors::PointLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_pointLightsBuffer);
 		tempBuffer.destroy_buffer(this);
-		
-		for (auto& light : _renderScene._pointLights)
-		{
-			std::cout << "Point light color: " << light.color.x << " " << light.color.y << " " << light.color.z << std::endl;
-			std::cout << "Point light position: " << light.position.x << " " << light.position.y << " " << light.position.z << std::endl;
-		}
 	}
 	
 

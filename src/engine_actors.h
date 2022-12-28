@@ -5,21 +5,17 @@ namespace actors
 {	
 	struct PointLight
 	{
-		glm::vec4 color;
-		glm::vec4 position;
-		float attenuationRadius;
+		glm::vec4 colorAndIntensity;	// Intensity in lm
+		glm::vec4 positionAndAttRadius;
 		float sourceRadius;
-		float intensity;
 	};
 
 	struct SpotLight
 	{
-		glm::vec4 color;
-		glm::vec4 position;
-		float innerConeRadius;
+		glm::vec4 colorAndIntensity;	// Intensity in lm
+		glm::vec4 positionAndDistance;
+		glm::vec4 spotDirAndInnerConeRadius;
 		float outerConeRadius;
-		float distance;
-		float intensity;
 	};
 
 	struct DirectionLight
