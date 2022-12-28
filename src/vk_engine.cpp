@@ -747,24 +747,21 @@ void VulkanEngine::init_scene()
 	
 	actors::DirectionLight dirLight;
 	dirLight.direction = glm::vec4(2.0f, -8.0f, -5.0f, 1.0f);
-	dirLight.colorAndIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 4.0f);
+	dirLight.colorAndIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
 	_renderScene._dirLights.push_back(dirLight);
 
 	actors::PointLight pointLight;
 	pointLight.sourceRadius = 0.0f;
-	pointLight.attenuationRadius = 50.0f;
-	pointLight.color = glm::vec4(0.5f, 0.12f, 0.3f, 1.0f);
-	pointLight.intensity = 8.0f;
-	pointLight.position = glm::vec4(0.0f, 12.0f, 10.0f, 1.0f);
+	pointLight.colorAndIntensity = glm::vec4(0.0f, 0.8f, 0.25f, 1800.0f);
+	pointLight.positionAndAttRadius = glm::vec4(25.0f, 8.0f, 10.0f, 1000.0f);
 	_renderScene._pointLights.push_back(pointLight);
 
 	actors::SpotLight spotLight;
-	spotLight.color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-	spotLight.distance = 25.0f;
-	spotLight.intensity = 8.0f;
-	spotLight.position = glm::vec4(13.0f, 8.0f, 5.0f, 1.0f);
-	spotLight.innerConeRadius = 7.5f;
-	spotLight.outerConeRadius = 35.0f;
+	spotLight.colorAndIntensity = glm::vec4(0.0f, 0.0f, 1.0f, 1800.0f);
+	spotLight.positionAndDistance = glm::vec4(13.0f, 8.0f, 5.0f, 40.0f);
+	float innerConeRadius = glm::cos(glm::radians(10.0f));
+	spotLight.spotDirAndInnerConeRadius = glm::vec4(0.0f, 0.0f, -2.0f, innerConeRadius);
+	spotLight.outerConeRadius = glm::cos(glm::radians(65.0f));
 	_renderScene._spotLights.push_back(spotLight);
 }
 
@@ -1046,9 +1043,9 @@ void VulkanEngine::parse_prefabs()
 
 	std::vector<glm::vec3> translation = {
 		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 20.0f),
 		glm::vec3(-20.0f, 0.0f, 0.0f),
 		glm::vec3(-80.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f)
 	};
 
@@ -1078,7 +1075,7 @@ void VulkanEngine::parse_prefabs()
 			MeshObject tempMeshObject;
 
 			LOG_INFO("Textures amount: {}", materialInfo.textures.size());
-			
+
 			if (!materialInfo.textures.empty())
 			{
 				for (auto& tex : materialInfo.textures)
@@ -1129,8 +1126,14 @@ void VulkanEngine::parse_prefabs()
 			tempMeshObject.material = _materialSystem.get_material(materialInfo.materialName);
 			tempMeshObject.mesh = &_meshes[meshName];
 			tempMeshObject.transformMatrix = glm::translate(glm::mat4(1.0f), translation[counter]);
-			_meshObjects.push_back(tempMeshObject);
 			++counter;
+			if (counter == 2)
+			{
+				glm::mat4 model = glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::translate(model, glm::vec3(-35.0f, 0.0f, -20.0f));
+				tempMeshObject.transformMatrix = model;
+			}
+			_meshObjects.push_back(tempMeshObject);
 		}
 	}
 
