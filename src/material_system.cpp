@@ -126,7 +126,6 @@ namespace vkutil
 
 	ShaderEffect* MaterialSystem::build_shader_effect(const std::vector<std::string>& shaderPaths)
 	{
-		std::cout << "Call shader effect" << std::endl;
 		// Main order is: 0 - vertex shader, 1 - fragment shader, 2 - geometry shader ...
 		ShaderEffect* shaderEffect = new ShaderEffect();
 

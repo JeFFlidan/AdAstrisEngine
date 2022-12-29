@@ -21,6 +21,30 @@ void RenderScene::init()
 	_transparentForwardPass.type = vkutil::MeshpassType::Transparency;
 }
 
+void RenderScene::cleanup(VulkanEngine* engine)
+{
+	std::vector<MeshPass*> passes = { &_forwardPass };
+	for (auto pass : passes)
+	{
+		std::cout << "Before comp instance\n";
+		pass->compactedInstanceBuffer.destroy_buffer(engine);
+		std::cout << "Before pass obj\n";
+		pass->passObjectsBuffer.destroy_buffer(engine);
+		std::cout << "Before draw indir\n";
+		pass->drawIndirectBuffer.destroy_buffer(engine);
+		std::cout << "Before clear indirect buffer\n";
+		pass->clearIndirectBuffer.destroy_buffer(engine);
+	}
+	std::cout << "Before point lights\n";
+	_pointLightsBuffer.destroy_buffer(engine);
+	std::cout << "Before spot lights\n";
+	_spotLightsBuffer.destroy_buffer(engine);
+	std::cout << "Before dir lights\n";
+	_dirLightsBuffer.destroy_buffer(engine);
+	std::cout << "Before objects data\n";
+	_objectDataBuffer.destroy_buffer(engine);
+}
+
 void RenderScene::register_object_batch(MeshObject* first, uint32_t count)
 {
 	_renderables.reserve(count);
@@ -29,8 +53,6 @@ void RenderScene::register_object_batch(MeshObject* first, uint32_t count)
 	{
 		register_object(&(first[i]));
 	}
-
-	std::cout << "Renderables size " << _renderables.size() << std::endl;
 }
 
 Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
@@ -47,11 +69,8 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 	
 	_renderables.push_back(newObj);
 
-	std::cout << "bDrawForwardPass " << object->bDrawForwardPass << std::endl;
-	
 	if (object->bDrawForwardPass)
 	{
-		std::cout << "In forward pass" << std::endl;
 		if (object->material->original->passShaders[vkutil::MeshpassType::Transparency])
 		{
 			_transparentForwardPass.unbatchedObjects.push_back(handle);
@@ -72,7 +91,6 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 
 	if (object->baseColor != VK_NULL_HANDLE)
 	{
-		std::cout << "Set up base color info" << std::endl;
 		VkDescriptorImageInfo imageInfo;
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo.imageView = object->baseColor;
@@ -309,23 +327,16 @@ void RenderScene::refresh_pass(RenderScene::MeshPass* meshPass)
 	meshPass->needsIndirectRefresh = true;
 	meshPass->needsInstanceRefresh = true;
 
-	LOG_INFO("Before deleting batches");
-	
 	delete_batches(meshPass);
 
 	std::vector<Handle<PassObject>> passObjectHandles;
-	LOG_INFO("Before filling pass objects");
 	fill_pass_objects(meshPass, passObjectHandles);
-	std::cout << "Forward pass pass objects size " << meshPass->objects.size() << std::endl;
 
-	LOG_INFO("Before filling flat batches");
 	fill_flat_batches(meshPass, passObjectHandles);
 	meshPass->batches.clear();
 	
 	meshPass->batches.reserve(meshPass->flatBatches.size());
-	LOG_INFO("Before filling indirect batches");
 	build_indirect_batches(meshPass, meshPass->batches, meshPass->flatBatches);
-	LOG_INFO("Before filling multibatches");
 	meshPass->multibatches.clear();
 
 	fill_multi_batches(meshPass);
@@ -333,8 +344,6 @@ void RenderScene::refresh_pass(RenderScene::MeshPass* meshPass)
 
 void RenderScene::build_indirect_batches(RenderScene::MeshPass* pass, std::vector<IndirectBatch>& outBatches, std::vector<RenderScene::RenderBatch>& inObjects)
 {
-	std::cout << "In objects size" << inObjects.size() << std::endl;
-	LOG_INFO("Before creating first indirect batch");
 	RenderScene::IndirectBatch tempBatch;
 	tempBatch.first = 0;
 	tempBatch.count = 0;
@@ -344,10 +353,8 @@ void RenderScene::build_indirect_batches(RenderScene::MeshPass* pass, std::vecto
 	
 	auto* prevBatch = &outBatches.back();
 
-	LOG_INFO("Before for loop");
 	for (int i = 0; i != inObjects.size(); ++i)
 	{
-		std::cout << i << std::endl;
 		RenderScene::PassObject* passObject = pass->get(inObjects[i].object);
 		
 		bool bSameMaterials = false;
@@ -584,8 +591,6 @@ void RenderScene::fill_flat_batches(MeshPass* meshPass, std::vector<Handle<PassO
 		else { return false; }
 	});
 
-	std::cout << "New flat batches size " << newFlatBatches.size() << std::endl;
-
 	if (meshPass->flatBatches.size() > 0 && newFlatBatches.size() > 0)
 	{
 		size_t oldEnd = meshPass->flatBatches.size();
@@ -608,7 +613,6 @@ void RenderScene::fill_flat_batches(MeshPass* meshPass, std::vector<Handle<PassO
 	}
 	else
 	{
-		std::cout << "Before moving data" << std::endl;
 		meshPass->flatBatches = std::move(newFlatBatches);
 	}
 }
