@@ -1,8 +1,9 @@
-#include <vk_textures.h>
 #include <iostream>
-#include <logger.h>
+#include <chrono>
 
-#include <vk_initializers.h>
+#include "logger.h"
+#include "vk_textures.h"
+#include "vk_initializers.h"
 #include <asset_loader.h>
 #include <vulkan/vulkan_core.h>
 
@@ -167,8 +168,8 @@ namespace vkutil
 
 		engine._mainDeletionQueue.push_function([=](){
 			vmaDestroyImage(engine._allocator, newImage._image, newImage._allocation);
-		});
 
+		});
 		vmaDestroyBuffer(engine._allocator, stagingBuffer._buffer, stagingBuffer._allocation);
 
 		LOG_SUCCESS("Texture loaded successfully {}", file);
@@ -207,13 +208,21 @@ namespace vkutil
 		AllocatedBuffer stagingBuffer = engine.create_buffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
 		void* data;
-		
+
+		auto start = std::chrono::system_clock::now();
 		vmaMapMemory(engine._allocator, stagingBuffer._allocation, &data);
 		assets::unpack_texture(&textureInfo, file.binaryBlob.data(), file.binaryBlob.size(), (char*)data);
 		vmaUnmapMemory(engine._allocator, stagingBuffer._allocation);
-		
+		auto end = std::chrono::system_clock::now();
+		auto diff = end - start;
+		LOG_INFO("Unpack texture took {} {}", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / 1000000.0, "ms");
+
+		start = std::chrono::system_clock::now();
 		outImage = upload_image(engine, stagingBuffer, textureInfo, imageFormat);
 		vmaDestroyBuffer(engine._allocator, stagingBuffer._buffer, stagingBuffer._allocation);
+		end = std::chrono::system_clock::now();
+		diff = end - start;
+		LOG_INFO("Uploading image took {} {}", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / 1000000.0, "ms");
 
 		return true;
 	}

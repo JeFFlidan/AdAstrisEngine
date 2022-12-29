@@ -13,10 +13,8 @@ namespace assets
 		for (auto& it : data.items())
 		{
 			counter++;
-			std::cout << it.key() << std::endl;
 			if (it.key().find("texture_") == 0)
 			{
-				std::cout << "Read texture info" << std::endl;
 				info.textures[it.key()] = it.value();
 			}
 			else if (it.key().find("prop_") == 0)
@@ -24,7 +22,6 @@ namespace assets
 				info.customProperties[it.key()] = it.value();
 			}
 		}
-		std::cout << "Amount of textures in read material data: " << counter << std::endl;
 	}
 
 	nlohmann::json parse_textures_and_properties(MaterialInfo& info)

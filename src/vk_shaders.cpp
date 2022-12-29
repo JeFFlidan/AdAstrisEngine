@@ -95,12 +95,8 @@ namespace vkutil
 			for (SpvReflectDescriptorSet* set : descriptorSets)
 			{
 				bool needsSorting = false;
-				std::cout << "Set: " << set->set << std::endl;
 				for (int i = 0; i != set->binding_count; ++i)
 				{
-					std::cout << "Bind: " << set->bindings[i]->binding << std::endl;
-					std::cout << "Descriptor count " << set->bindings[i]->count << std::endl;
-
 					auto bind = set->bindings[i];
 					
 					Binding binding;
@@ -174,10 +170,6 @@ namespace vkutil
 					return false;
 			});
 
-			for (auto& bind : binds)
-			{
-				std::cout << "Set: " << data.first << " binding: " << bind.binding << std::endl;
-			}
 			std::cout << std::endl;
 
 			VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -239,46 +231,6 @@ namespace vkutil
 		{
 			if (stage.shader->get_shader_module() != VK_NULL_HANDLE)
 				stage.shader->delete_shader_module();
-		}
-	}
-
-	void Shader::spv_reflect_test()
-	{
-		SpvReflectShaderModule tempModule;
-		uint32_t size = code.size() * sizeof(uint32_t);
-		SpvReflectResult res = spvReflectCreateShaderModule(size, code.data(), &tempModule);
-		assert(res == SPV_REFLECT_RESULT_SUCCESS);
-
-		uint32_t setCount = 0;
-		res = spvReflectEnumerateDescriptorSets(&tempModule, &setCount, nullptr);
-		assert(res == SPV_REFLECT_RESULT_SUCCESS);
-	    
-		LOG_INFO("Descriptor sets of shader count: {}", setCount);
-
-		uint32_t bindCount = 0;
-		res = spvReflectEnumerateDescriptorBindings(&tempModule, &bindCount, nullptr);
-		assert(res == SPV_REFLECT_RESULT_SUCCESS);	    
-		LOG_INFO("Descriptor binding count: {}", bindCount)
-
-		std::vector<SpvReflectDescriptorBinding*> bindings(bindCount);
-		res = spvReflectEnumerateDescriptorBindings(&tempModule, &bindCount, bindings.data());
-		assert(res == SPV_REFLECT_RESULT_SUCCESS);
-		LOG_INFO("Bindings vector size: {}", bindings.size())
-
-		for (auto& bind : bindings)
-		{
-			LOG_INFO("Binding index {}", bind->input_attachment_index);
-		}
-
-		std::vector<SpvReflectDescriptorSet*> sets(setCount);
-		res = spvReflectEnumerateDescriptorSets(&tempModule, &setCount, sets.data());
-		assert(res == SPV_REFLECT_RESULT_SUCCESS);
-		LOG_INFO("Sets vector size {}", sets.size());
-		
-		for (auto& set : sets)
-	   	{
-			LOG_INFO("Set bindings count {}", set->binding_count);
-			LOG_INFO("Set {}", set->set);
 		}
 	}
 } // namespace vkutil

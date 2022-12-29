@@ -228,6 +228,12 @@ struct alignas(16) DepthReduceData
 	glm::vec2 imageSize;
 };
 
+struct ThreadInfo
+{
+	VkCommandPool commandPool{ VK_NULL_HANDLE };
+	std::vector<VkCommandBuffer> commandBuffers;
+};
+
 constexpr unsigned int FRAME_OVERLAP = 2;
 
 class VulkanEngine 
@@ -320,7 +326,7 @@ class VulkanEngine
 	    size_t _globalIndexBufferSize = 0;
 
 		bool _isInitialized{ false };
-		int _frameNumber{0};        
+		int _frameNumber{0};
 		int _selectedShader{0};
 
 		VkExtent2D _windowExtent{ 1700 , 900 };
@@ -333,6 +339,8 @@ class VulkanEngine
 
 		UploadContext _uploadContext;
 		void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
+		uint32_t _numThreads;
+		std::vector<ThreadInfo> _threadInfo;
 
 		std::string _projectPath;
 
@@ -378,8 +386,6 @@ class VulkanEngine
 			VkImageAspectFlags aspectFlags);
 
 		std::vector<IndirectBatch> compact_draws(RenderObject* objects, int count);
-		void bind_material(VkCommandBuffer cmd, vkutil::Material* mateial);
-		void bind_mesh(VkCommandBuffer cmd, Mesh* mesh);
 		void allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes);
 
 		template<typename T>
@@ -402,6 +408,8 @@ class VulkanEngine
 		AllocatedBuffer reallocate_buffer(AllocatedBuffer buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 		void parse_prefabs();
 
+		void refresh_multi_threads_command_buffers(uint32_t objectsPerThread);
+		
 		// methods for renderer
 		void prepare_gpu_indirect_buffer(VkCommandBuffer cmd, RenderScene::MeshPass& meshPass);
 		void fill_renderable_objects();

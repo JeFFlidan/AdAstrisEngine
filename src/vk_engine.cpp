@@ -2,6 +2,7 @@
 #include "asset_loader.h"
 #include "engine_actors.h"
 #include "glm/fwd.hpp"
+#include "glm/geometric.hpp"
 #include "material_asset.h"
 #include "mesh_asset.h"
 #include "prefab_asset.h"
@@ -16,8 +17,10 @@
 #include <SDL.h>
 #include <SDL_vulkan.h>
 
+#include <limits>
 #include <stdint.h>
 #include <stdio.h>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 #include <vk_types.h>
@@ -134,19 +137,35 @@ void VulkanEngine::cleanup()
 	{
 		vkWaitForFences(_device, 1, &_frames[0]._renderFence, true, 1000000000);
 		vkWaitForFences(_device, 1, &_frames[1]._renderFence, true, 1000000000);
+		vkDeviceWaitIdle(_device);
 
+		LOG_INFO("Before main deletion queue");
 		_mainDeletionQueue.flush();
+		LOG_INFO("Before frame deletion queue");
+		for (int i = 0; i != FRAME_OVERLAP; ++i)
+		{
+			_frames[i]._frameDeletionQueue.flush();
+		}
 
-		std::cout << "Reset pools" << std::endl;
+		LOG_INFO("Reset pools");
 		for (int i = 0; i != FRAME_OVERLAP; ++i)
 			_frames[i]._dynamicDescriptorAllocator.cleanup();
 		_descriptorAllocator.cleanup();
 		_descriptorLayoutCache.cleanup();
-		std::cout << "Finish reseting pools" << std::endl;
-		_materialSystem.clenaup();		
+		LOG_INFO("Finish reseting pools");
+		_materialSystem.clenaup();
+		_renderScene.cleanup(this);
+		vmaDestroyAllocator(_allocator);
 
+		for (int i = 0; i != FRAME_OVERLAP; ++i)
+		{
+			vkDestroySemaphore(_device, _frames[i]._presentSemaphore, nullptr);
+			vkDestroySemaphore(_device, _frames[i]._renderSemaphore, nullptr);
+		}
+		
 		vkDestroySurfaceKHR(_instance, _surface, nullptr);
 		vkDestroyDevice(_device, nullptr);
+		vkb::destroy_debug_utils_messenger(_instance, _debug_messenger, nullptr);
 		vkDestroyInstance(_instance, nullptr);
 
 		SDL_DestroyWindow(_window);
@@ -165,15 +184,6 @@ void VulkanEngine::init_vulkan()
 		.require_api_version(1, 2, 0)
 		.use_default_debug_messenger()
 		.build();
-
-	uint32_t layerCount;
-	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-	std::vector<VkLayerProperties> layers(layerCount);
-	vkEnumerateInstanceLayerProperties(&layerCount, layers.data());
-	for (auto l : layers)
-	{
-		std::cout << "Layer " << l.layerName << std::endl;
-	}
 
 	vkb::Instance vkb_inst = inst_ret.value();
 	_instance = vkb_inst.instance;
@@ -236,7 +246,11 @@ void VulkanEngine::init_engine_systems()
 	_projectPath = fs::current_path().string();
 	_projectPath.erase(_projectPath.find("\\bin"), 4);
 
+	_numThreads = std::thread::hardware_concurrency();
+	_threadInfo.resize(_numThreads);
+
 	LOG_INFO("Path is {}", _projectPath);
+	LOG_INFO("Possible number of threads is {}", _numThreads);
 
 	_descriptorAllocator.init(_device);
 	_descriptorLayoutCache.init(_device);
@@ -337,9 +351,13 @@ void VulkanEngine::init_swapchain()
 	pyramidImageViewInfo.subresourceRange.levelCount = _depthPyramidLevels;
 	VK_CHECK(vkCreateImageView(_device, &pyramidImageViewInfo, nullptr, &_depthPyramid._defaultView));
 
+	_mainDeletionQueue.push_function([=](){
+		vkDestroyImageView(_device, _depthPyramid._defaultView, nullptr);
+		vmaDestroyImage(_allocator, _depthPyramid._image, _depthPyramid._allocation);
+	});
+
 	for (int32_t i = 0; i != _depthPyramidLevels; ++i)
 	{
-		std::cout << i << std::endl;
 		VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(VK_FORMAT_R32_SFLOAT,
 			_depthPyramid._image,
 			VK_IMAGE_ASPECT_COLOR_BIT);
@@ -348,6 +366,9 @@ void VulkanEngine::init_swapchain()
 
 		VkImageView pyramid;
 		VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &pyramid));
+		_mainDeletionQueue.push_function([=](){
+			vkDestroyImageView(_device, pyramid, nullptr);
+		});
 
 		_depthPyramideMips[i] = pyramid;
 		assert(_depthPyramideMips[i]);
@@ -373,6 +394,9 @@ void VulkanEngine::init_swapchain()
 	createInfo.pNext = &reductionInfo;
 
 	VK_CHECK(vkCreateSampler(_device, &createInfo, nullptr, &_depthSampler));
+	_mainDeletionQueue.push_function([=](){
+		vkDestroySampler(_device, _depthSampler, nullptr);
+	});
 }
 
 void VulkanEngine::init_imgui()
@@ -532,10 +556,10 @@ void VulkanEngine::init_sync_structures()
 		VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_frames[i]._presentSemaphore));
 		VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_frames[i]._renderSemaphore));
 
-		_mainDeletionQueue.push_function([=](){
+		/*_mainDeletionQueue.push_function([=](){
 			vkDestroySemaphore(_device, _frames[i]._presentSemaphore, nullptr);
 			vkDestroySemaphore(_device, _frames[i]._renderSemaphore, nullptr);
-		});
+		});*/
 	}
 
 	VkFenceCreateInfo uploadFenceCreateInfo = vkinit::fence_create_info();
@@ -652,6 +676,7 @@ void VulkanEngine::init_descriptors()
 	for (int i = 0; i != FRAME_OVERLAP; ++i)
 	{
 		_mainDeletionQueue.push_function([=](){
+			vmaDestroyBuffer(_allocator, _frames[i]._sceneDataBuffer._buffer, _frames[i]._sceneDataBuffer._allocation);
 			vmaDestroyBuffer(_allocator, _frames[i]._objectBuffer._buffer, _frames[i]._objectBuffer._allocation);
 			vmaDestroyBuffer(_allocator, _frames[i]._cameraBuffer._buffer, _frames[i]._cameraBuffer._allocation);
 		});
@@ -673,13 +698,16 @@ void VulkanEngine::init_pipelines()
 	setup_compute_pipeline(&depthReduceShader, _depthReducePipeline, _depthReduceLayout);
 	setup_compute_pipeline(&drawCullShader, _cullingPipeline, _cullintPipelineLayout);
 
-	_mainDeletionQueue.push_function([=](){
+	_mainDeletionQueue.push_function([&](){
 		vkDestroyPipeline(_device, _depthReducePipeline, nullptr);
 		vkDestroyPipelineLayout(_device, _depthReduceLayout, nullptr);
 
 		vkDestroyPipeline(_device, _cullingPipeline, nullptr);
 		vkDestroyPipelineLayout(_device, _cullintPipelineLayout, nullptr);
 	});
+
+	depthReduceShader.delete_shader_module();
+	drawCullShader.delete_shader_module();
 }
 
 void VulkanEngine::setup_compute_pipeline(vkutil::Shader* shader, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout)
@@ -775,12 +803,8 @@ void VulkanEngine::draw()
 	// Wait for GPU
 	VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
 	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
-	LOG_INFO("Before flushing frame deletion queue");
 	get_current_frame()._frameDeletionQueue.flush();
-	LOG_INFO("After flushing frame deletion queue");
-	std::cout << "Before reseting pools" << std::endl;
 	get_current_frame()._dynamicDescriptorAllocator.reset_pools();
-	std::cout << "After reseting pools" << std::endl;
 
 	uint32_t swapchainImageIndex;
 	VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._presentSemaphore, nullptr, &swapchainImageIndex));
@@ -809,13 +833,6 @@ void VulkanEngine::draw()
 	VkClearValue clearValues[] = { clearValue, depthClear };
 	rpInfo.pClearValues = clearValues;
 
-	//LOG_INFO("Before filling renderables objects");
-/*	if (_renderScene.bNeedsReloadingRenderables)
-	{
-		fill_renderable_objects();
-		_renderScene.bNeedsReloadingRenderables = false;
-	}*/
-
 	glm::mat4 view = camera.get_view_matrix();
 	glm::mat4 projection = camera.get_projection_matrix();
  
@@ -836,7 +853,6 @@ void VulkanEngine::draw()
 
 	_beforeCullingBufferBarriers.clear();
 	_afterCullingBufferBarriers.clear();
-	LOG_INFO("Before preparing data");
 	prepare_data_for_drawing(cmd);
 
 	prepare_gpu_indirect_buffer(cmd, _renderScene._forwardPass);
@@ -849,7 +865,6 @@ void VulkanEngine::draw()
 	forwardPassCullParams.drawDist = 9999999;
 	forwardPassCullParams.aabb = false;
 
-	LOG_INFO("Before culling");
 	culling(_renderScene._forwardPass, cmd, forwardPassCullParams);
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
 		0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
@@ -858,16 +873,13 @@ void VulkanEngine::draw()
 
 	//draw_objects(get_current_frame()._mainCommandBuffer, _renderables.data(), _renderables.size());
 
-	LOG_INFO("Before drawing");
 	draw_forward_pass(cmd);
 
 	//ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), get_current_frame()._mainCommandBuffer);
 
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
-	LOG_INFO("Before depth reducing");
 	depth_reduce(cmd);
 
-	LOG_INFO("Before image barrier for attachment");
 	VkImageMemoryBarrier imageMemoryBarrier{};
 	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -886,11 +898,8 @@ void VulkanEngine::draw()
 	rpInfo = vkinit::renderpass_begin_info(_renderPass, _windowExtent, _framebuffers[swapchainImageIndex]);
 	rpInfo.clearValueCount = 1;
 	rpInfo.pClearValues = &clearValue;
-	LOG_INFO("Before new render pass");
 	vkCmdBeginRenderPass(get_current_frame()._mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-	LOG_INFO("Before drawing output quad");
 	draw_output_quad(get_current_frame()._mainCommandBuffer);
-	LOG_INFO("After drawing output quad");
 
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
 
@@ -926,7 +935,7 @@ void VulkanEngine::draw()
 	presentInfo.pImageIndices = &swapchainImageIndex;
 	VK_CHECK(vkQueuePresentKHR(_graphicsQueue, &presentInfo));
 
-	std::cout << "frame number is " << _frameNumber << std::endl;
+	LOG_INFO("Frame number is {}", _frameNumber);
 	_frameNumber++;	
 }
 
@@ -961,7 +970,6 @@ void VulkanEngine::run()
 			if (e.type == SDL_QUIT)
 			{
 				bQuit = true;
-				break;
 			}
 			if (e.type == SDL_KEYDOWN)
 			{
@@ -979,7 +987,6 @@ void VulkanEngine::run()
 				if (e.key.keysym.sym == SDLK_ESCAPE)
 				{
 					bQuit = true;
-					break;
 				}
 			}
 
@@ -1005,8 +1012,8 @@ void VulkanEngine::run()
 			}
 		}
 
-		if (bQuit)
-			break;
+		//if (bQuit)
+			//break;
 		//SDL_SetRelativeMouseMode(SDL_TRUE);
 		SDL_PumpEvents();
 		const Uint8 *state = SDL_GetKeyboardState(nullptr);
@@ -1043,9 +1050,9 @@ void VulkanEngine::parse_prefabs()
 
 	std::vector<glm::vec3> translation = {
 		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 20.0f),
-		glm::vec3(-20.0f, 0.0f, 0.0f),
-		glm::vec3(-80.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 45.0f),
+		glm::vec3(-50.0f, 0.0f, 0.0f),
+		glm::vec3(-100.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f)
 	};
 
@@ -1061,6 +1068,13 @@ void VulkanEngine::parse_prefabs()
 
 			Mesh tempMesh{};
 			tempMesh.load_from_mesh_asset(info.meshPath.c_str());
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), translation[counter]);
+			if (counter == 1)
+			{
+				model = glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::translate(model, glm::vec3(-35.0f, 0.0f, -45.0f));
+			}
+
 			meshes.push_back(tempMesh);
 			std::string meshName = info.meshPath;
 			meshName.erase(0, meshName.find_last_of("/"));
@@ -1074,8 +1088,6 @@ void VulkanEngine::parse_prefabs()
 			materialData.baseTemplate = materialInfo.baseEffect;
 			MeshObject tempMeshObject;
 
-			LOG_INFO("Textures amount: {}", materialInfo.textures.size());
-
 			if (!materialInfo.textures.empty())
 			{
 				for (auto& tex : materialInfo.textures)
@@ -1085,35 +1097,27 @@ void VulkanEngine::parse_prefabs()
 					VkImageViewCreateInfo imageViewInfo = vkinit::imageview_create_info(VK_FORMAT_R8G8B8A8_UNORM, tempTexture.image._image, VK_IMAGE_ASPECT_COLOR_BIT);
 					vkCreateImageView(_device, &imageViewInfo, nullptr, &tempTexture.imageView);
 
+					_mainDeletionQueue.push_function([=](){
+						vkDestroyImageView(_device, tempTexture.imageView, nullptr);
+					});
+
 					if (tex.first == "texture_base_color")
 					{
 						_baseColorTextures.push_back(tempTexture);
 						
 						tempMeshObject.baseColor = _baseColorTextures.back().imageView;
-						
-						_mainDeletionQueue.push_function([=](){
-							vkDestroyImageView(_device, _baseColorTextures.back().imageView, nullptr);
-						});
 					}
 					else if (tex.first == "texture_normal")
 					{
 						_normalTextures.push_back(tempTexture);
 						
 						tempMeshObject.normal = _normalTextures.back().imageView;
-
-						_mainDeletionQueue.push_function([=](){
-							vkDestroyImageView(_device, _normalTextures.back().imageView, nullptr);
-						});
 					}
 					else if (tex.first == "texture_arm")
 					{
 						_armTextures.push_back(tempTexture);
 						
 						tempMeshObject.arm = _armTextures.back().imageView;
-
-						_mainDeletionQueue.push_function([=](){
-							vkDestroyImageView(_device, _armTextures.back().imageView, nullptr);
-						});
 					}
 				}
 			}
@@ -1125,14 +1129,9 @@ void VulkanEngine::parse_prefabs()
 			_materialSystem.build_material(materialInfo.materialName, materialData);
 			tempMeshObject.material = _materialSystem.get_material(materialInfo.materialName);
 			tempMeshObject.mesh = &_meshes[meshName];
-			tempMeshObject.transformMatrix = glm::translate(glm::mat4(1.0f), translation[counter]);
+			tempMeshObject.transformMatrix = model;
 			++counter;
-			if (counter == 2)
-			{
-				glm::mat4 model = glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-				model = glm::translate(model, glm::vec3(-35.0f, 0.0f, -20.0f));
-				tempMeshObject.transformMatrix = model;
-			}
+			
 			_meshObjects.push_back(tempMeshObject);
 		}
 	}
@@ -1529,81 +1528,27 @@ std::vector<IndirectBatch> VulkanEngine::compact_draws(RenderObject* objects, in
 	return draws;
 }
 
-void VulkanEngine::bind_material(VkCommandBuffer cmd, vkutil::Material* material)
+void VulkanEngine::refresh_multi_threads_command_buffers(uint32_t objectsPerThread)
 {
-	auto frame = get_current_frame();
-
-	VkSamplerCreateInfo imgSamplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
-	VkSampler offscrColorSampler;
-	vkCreateSampler(_device, &imgSamplerInfo, nullptr, &offscrColorSampler);
-
-	VkDescriptorBufferInfo cameraInfo;
-	cameraInfo.buffer = frame._cameraBuffer._buffer;
-	cameraInfo.offset = 0;
-	cameraInfo.range = sizeof(GPUCameraData);
-
-	VkDescriptorBufferInfo sceneInfo;
-	sceneInfo.buffer = _sceneParameterBuffer._buffer;
-	sceneInfo.offset = 0;
-	sceneInfo.range = sizeof(GPUSceneData);
-
-	VkDescriptorBufferInfo objectBufferInfo;
-	objectBufferInfo.buffer = frame._objectBuffer._buffer;
-	objectBufferInfo.offset = 0;
-	objectBufferInfo.range = VK_WHOLE_SIZE;
-
-	VkDescriptorImageInfo offscrColorImgInfo;
-	offscrColorImgInfo.sampler = offscrColorSampler;
-	offscrColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	offscrColorImgInfo.imageView = _offscrColorImage._imageView;
-
-	VkDescriptorSet globalDescriptor;
-	VkDescriptorSet objectDescriptor;
-	VkDescriptorSet texturesDescriptor;
-	
-	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &frame._dynamicDescriptorAllocator)
-		.bind_buffer(0, &cameraInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.bind_buffer(1, &sceneInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.build(globalDescriptor);
-	
-	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &frame._dynamicDescriptorAllocator)
-		.bind_buffer(0, &objectBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.build(objectDescriptor);
-
-/*	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &frame._dynamicDescriptorAllocator)
-		.bind_image(0, _baseColorImageInfos.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _baseColorImageInfos.size())
-		.build_non_uniform(texturesDescriptor, _baseColorImageInfos.size());*/
-
-	std::vector<VkDescriptorSet> sets = { globalDescriptor, objectDescriptor, frame._texturesDescriptor };
-	auto renderPass = material->original->passShaders[vkutil::MeshpassType::Forward];
-
-	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPass->pipeline);
-	
-	for (int i = 0; i != sets.size(); ++i)
+	for (auto& thread : _threadInfo)
 	{
-		std::cout << "Descriptor bind " << i << std::endl; 
-		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPass->layout, i, 1, &sets[i], 0, nullptr);
-	}	
+		if (thread.commandPool == VK_NULL_HANDLE)
+			break;
+		vkDestroyCommandPool(_device, thread.commandPool, nullptr);
+	}
+
+	VkCommandPoolCreateInfo commandPoolCreateInfo = vkinit::command_pool_create_info(_graphicsQueueFamily,
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	
+	for (int i = 0; i != _numThreads; ++i)
+	{
+		ThreadInfo* thread = &_threadInfo[i];
+		VK_CHECK(vkCreateCommandPool(_device, &commandPoolCreateInfo, nullptr, &thread->commandPool));
+		VkCommandBufferAllocateInfo allocInfo = vkinit::command_buffer_allocate_info(thread->commandPool, objectsPerThread, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+		thread->commandBuffers.reserve(objectsPerThread);
+		VK_CHECK(vkAllocateCommandBuffers(_device, &allocInfo, thread->commandBuffers.data()));
+	}
 }
-
-void VulkanEngine::bind_mesh(VkCommandBuffer cmd, Mesh* mesh)
-{
-	VkDeviceSize offset = 0;
-	vkCmdBindVertexBuffers(cmd, 0, 1, &mesh->_vertexBuffer._buffer, &offset);
-	vkCmdBindIndexBuffer(cmd, mesh->_indexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
-}
-
-/*template<typename T>
-void VulkanEngine::reallocate_buffer(AllocatedBufferT<T>& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
-{
-	AllocatedBufferT<T> newBuffer(this, size, usage, memoryUsage);
-
-	get_current_frame()._frameDeletionQueue.push_function([=](){
-		vmaDestroyBuffer(_allocator, buffer._buffer, buffer._allocation);
-	});
-
-	buffer = newBuffer;
-}*/
 
 // functions for depth pyramid to make culling
 uint32_t previous_pow2(uint32_t v)

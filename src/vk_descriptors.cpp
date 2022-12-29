@@ -1,5 +1,7 @@
+#include "vk_descriptors.h"
+#include "logger.h"
+
 #include <stdint.h>
-#include <vk_descriptors.h>
 #include <algorithm>
 #include <functional>
 #include <iostream>
@@ -12,7 +14,7 @@ void DescriptorAllocator::init(VkDevice newDevice)
 
 void DescriptorAllocator::cleanup()
 {
-	std::cout << "Reset pool" << std::endl;
+	LOG_INFO("Reset pool");
 	for (auto p : freePools)
 	{
 		vkDestroyDescriptorPool(device, p, nullptr);
@@ -126,12 +128,11 @@ bool DescriptorAllocator::allocate(VkDescriptorSet* set, VkDescriptorSetLayout l
 
 void DescriptorAllocator::reset_pools()
 {
-	std::cout << "Start reseting pools" << std::endl;
 	for (auto p : usedPools)
 	{
-		std::cout << "Reset pool" << std::endl;
 		vkResetDescriptorPool(device, p, 0);
 		freePools.push_back(p);
+		LOG_INFO("Reset pool");
 	}
 
 	usedPools.clear();
@@ -276,7 +277,6 @@ namespace vkutil
 
 	DescriptorBuilder& DescriptorBuilder::bind_image(uint32_t binding, VkDescriptorImageInfo* imageInfo, VkDescriptorType type, VkShaderStageFlags stageFlags, uint32_t descriptorCountBinds, uint32_t descriptorCountWrites)
 	{
-		std::cout << descriptorCountWrites << std::endl;
 		VkDescriptorSetLayoutBinding newBinding{};
 
 		newBinding.descriptorCount = descriptorCountBinds;

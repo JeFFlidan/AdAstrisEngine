@@ -170,6 +170,7 @@ class RenderScene
 		std::unordered_map<vkutil::Material*, Handle<vkutil::Material>> _materialConvert;
 
 		void init();
+		void cleanup(VulkanEngine* engine);
 
 		Handle<RenderableObject> register_object(MeshObject* object);
 		void register_object_batch(MeshObject* first, uint32_t count);

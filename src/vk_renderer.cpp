@@ -37,25 +37,9 @@ inline glm::mat4 perspectiveProjection(float fovY, float aspectWbyH, float zNear
 
 void VulkanEngine::fill_renderable_objects()
 {
-	// I have to think about removing RenderObject data type and make MeshObject vector in init_scene method
-	/*std::vector<MeshObject> meshObjects;
-
-	for (auto& obj : _renderables)
-	{
-		MeshObject temp;
-		temp.mesh = obj.mesh;
-		temp.material = obj.material;
-		temp.transformMatrix = obj.transformMatrix;
-		temp.customSortKey = 1;
-
-		meshObjects.push_back(temp);
-	}*/
-	LOG_INFO("Before registering objects");
 	_renderScene.register_object_batch(_meshObjects.data(), _meshObjects.size());
 	
-	LOG_INFO("Before building batches");
 	_renderScene.build_batches();
-	LOG_INFO("Before mergind meshes");
 	_renderScene.merge_meshes(this);
 }
 
@@ -95,10 +79,6 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
 		.build(objectDescriptorSet);
 
 	size_t descriptorsAmount = _renderScene._baseColorInfos.size() + _renderScene._normalInfos.size() + _renderScene._armInfos.size();
-
-	LOG_INFO("Base color textures amount: {}", _renderScene._baseColorInfos.size());
-	LOG_INFO("Normal textures amount: {}", _renderScene._normalInfos.size());
-	LOG_INFO("Arm textures amount: {}", _renderScene._armInfos.size());
 	
 	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
 		.bind_image(0, _renderScene._baseColorInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._baseColorInfos.size())
@@ -117,8 +97,6 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
 	vkutil::ShaderPass* prevMaterial = nullptr;
 
 	VkDeviceSize offset = 0;
-	LOG_INFO("Vertex buffer size {} {}", _renderScene._globalVertexBuffer._bufferSize, _renderScene._globalVertexBufferSize);
-	LOG_INFO("Index buffer size {} {}", _renderScene._globalIndexBuffer._bufferSize, _renderScene._globalIndexBufferSize);
 	vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
 	vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
 	
@@ -134,7 +112,6 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
 			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPass->pipeline);
 			for (int i = 0; i != sets.size(); ++i)
 			{
-				LOG_INFO("Descriptor set {}", i);
 				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPass->layout, i, 1, &sets[i], 0, nullptr);
 			}
 			prevMaterial = renderPass;
@@ -172,7 +149,7 @@ void VulkanEngine::culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd,
 		.bind_buffer(5, &cameraBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
 		.build(cullingSet);
 
-	glm::mat4 projection = camera.get_projection_matrix();
+	glm::mat4 projection = camera.get_projection_matrix(true);
 	glm::mat4 projectionT = glm::transpose(projection);
 
 	glm::vec4 frustumX = normalize_plane(projectionT[3] + projectionT[0]);
@@ -181,7 +158,7 @@ void VulkanEngine::culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd,
 	CullData cullData;
 	cullData.P00 = projection[0][0];
 	cullData.P11 = projection[1][1];
-	cullData.znear = 0.1f;
+	cullData.znear = 0.001f;
 	cullData.zfar = cullParams.drawDist;
 	cullData.frustum[0] = frustumX.x;
 	cullData.frustum[1] = frustumX.z;
@@ -279,14 +256,9 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 	size_t pointLightsBufSize = sizeof(actors::PointLight) * scene->_pointLights.size();
 	size_t spotLightsBufSize = sizeof(actors::SpotLight) * scene->_spotLights.size();
 
-	LOG_INFO("Sizes {} {} {}", dirLightsBufSize, pointLightsBufSize, spotLightsBufSize);
-
-	LOG_INFO("Before allocating lights data");
 	if (dirLightsBufSize != scene->_dirLightsBuffer._bufferSize)
 	{
-		LOG_INFO("Before dir lights");
 		reallocate_buffer(scene->_dirLightsBuffer, dirLightsBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-		LOG_INFO("After allocating before copying from vector");
 		AllocatedBufferT<actors::DirectionLight> tempBuffer(this, dirLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 		tempBuffer.copy_from(this, scene->_dirLights.data(), dirLightsBufSize);
 		immediate_submit([&](VkCommandBuffer cmd){
@@ -296,7 +268,6 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 	}
 	if (spotLightsBufSize != scene->_spotLightsBuffer._bufferSize)
 	{
-		LOG_INFO("Before spot lights");
 		reallocate_buffer(scene->_spotLightsBuffer, spotLightsBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 		AllocatedBufferT<actors::SpotLight> tempBuffer(this, spotLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 		tempBuffer.copy_from(this, scene->_spotLights.data(), spotLightsBufSize);
@@ -307,7 +278,6 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 	}
 	if (pointLightsBufSize != scene->_pointLightsBuffer._bufferSize)
 	{
-		LOG_INFO("Before point lights");
 		reallocate_buffer(scene->_pointLightsBuffer, pointLightsBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 		AllocatedBufferT<actors::PointLight> tempBuffer(this, pointLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 		tempBuffer.copy_from(this, scene->_pointLights.data(), pointLightsBufSize);
@@ -318,7 +288,6 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 		tempBuffer.destroy_buffer(this);
 	}
 	
-
 	std::vector<RenderScene::MeshPass*> passes = {
 		&_renderScene._forwardPass,
 		&_renderScene._shadowPass,
@@ -373,9 +342,7 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 
 			if (pass.clearIndirectBuffer._buffer != VK_NULL_HANDLE)
 			{
-				LOG_INFO("Add CPU indirect batches to the deletion queue");
 				get_current_frame()._frameDeletionQueue.push_function([=](){
-					LOG_INFO("Delete clear indirect buffer");
 					pPass->clearIndirectBuffer.destroy_buffer(this);
 				});
 			}
@@ -400,11 +367,8 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 
 			unmapMemory.push_back(tempBuffer);
 
-			LOG_INFO("Add pass objects buffer to the deletion queue");
 			get_current_frame()._frameDeletionQueue.push_function([=](){
-				LOG_INFO("Before deleting staging pass objects buffer");
 				vmaDestroyBuffer(_allocator, tempBuffer._buffer, tempBuffer._allocation);
-				LOG_INFO("After deleting staging pass objects buffer");
 			});
 
 			AllocatedBufferT<GPUInstance>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &pass.passObjectsBuffer);

@@ -13,12 +13,11 @@ namespace vkutil
 			Shader(VkDevice dev) : device(dev) {}
 			
 			bool load_shader_module(const char* filePath);
+			
 			void delete_shader_module();
 
 			VkShaderModule get_shader_module() const { return shaderModule; }
 			std::vector<uint32_t> get_code() const { return code; }
-			
-			void spv_reflect_test();
 		private:
 			VkDevice device;
 			VkShaderModule shaderModule;
