@@ -61,22 +61,23 @@ class AllocatedBufferT : public AllocatedBuffer
 
 struct AllocatedImage
 {
-	VkImage _image;
-	VmaAllocation _allocation;
-	VkImageView _defaultView;
-	int _mipLevels;
+	VkImage image;
+	VmaAllocation allocation;
+	int mipLevels;
 };
 
 struct Texture
 {
-	AllocatedImage image;
+	AllocatedImage imageData;
 	VkImageView imageView;
+
+	void destroy_texture(VulkanEngine* engine);
 };
 
-struct Attachment
+struct Attachment : public Texture
 {
-	VkImageView _imageView;
-	AllocatedImage _imageData;
-	VkFormat _format;
+	VkFormat format;
+
+	void destroy_attachment(VulkanEngine* engine);
 };
 

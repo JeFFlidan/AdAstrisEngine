@@ -19,15 +19,20 @@ namespace vkutil
 		_vertexInputInfo.pVertexBindingDescriptions = _vertexDescription.bindings.data();
 		_vertexInputInfo.vertexAttributeDescriptionCount = _vertexDescription.attributes.size();
 		_vertexInputInfo.pVertexAttributeDescriptions = _vertexDescription.attributes.data();
+
+		VkDynamicState* dynamicStates = _dynamicStates;
+		dynamicStates[0] = VK_DYNAMIC_STATE_VIEWPORT;
+		dynamicStates[1] = VK_DYNAMIC_STATE_SCISSOR;
+		_dynamicState = vkinit::dynamic_state_create_info(dynamicStates, 2);
 	
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewportState.pNext = nullptr;
 
 		viewportState.viewportCount = 1;
-		viewportState.pViewports = &_viewport;
+		viewportState.pViewports = nullptr;
 		viewportState.scissorCount = 1;
-		viewportState.pScissors = &_scissor;
+		viewportState.pScissors = nullptr;
 
 		VkPipelineColorBlendStateCreateInfo colorBlending{};
 		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -54,6 +59,7 @@ namespace vkutil
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 		pipelineInfo.pDepthStencilState = &_depthStencil;
+		pipelineInfo.pDynamicState = &_dynamicState;
 
 		VkPipeline newPipeline;
 
@@ -97,7 +103,7 @@ namespace vkutil
 		pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
 		pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 		
-		pipelineBuilder._viewport.x = 0.0f;
+		/*pipelineBuilder._viewport.x = 0.0f;
 		pipelineBuilder._viewport.y = 0.0f;
 		pipelineBuilder._viewport.width = static_cast<float>(_engine->_windowExtent.width);
 		pipelineBuilder._viewport.height = static_cast<float>(_engine->_windowExtent.height);
@@ -105,7 +111,7 @@ namespace vkutil
 		pipelineBuilder._viewport.maxDepth = 1.0f;
 
 		pipelineBuilder._scissor.offset = { 0, 0 };
-		pipelineBuilder._scissor.extent = _engine->_windowExtent;
+		pipelineBuilder._scissor.extent = _engine->_windowExtent;*/
 
 		pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 		pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL);
@@ -188,6 +194,8 @@ namespace vkutil
 		VkPipeline pipeline = builder.build_pipeline(_engine->_device, renderPass);
 		shaderPass->pipeline = pipeline;
 		shaderPass->layout = layout;
+		shaderPass->renderPass = renderPass;
+		shaderPass->pipelineBuilder = &builder;
 
 	    builder._shaderStages.clear();
 
@@ -224,6 +232,33 @@ namespace vkutil
 		_templateCache["Postprocessing"] = effectTemplate;
 	}
 
+	void MaterialSystem::refresh_default_templates()
+	{
+		for (auto& temp : _templateCache)
+		{
+			EffectTemplate* effectTemplate = &temp.second;
+			PerPassData<ShaderPass*> shaderPasses = effectTemplate->passShaders;
+			
+			if (shaderPasses[MeshpassType::DirectionalShadow] != nullptr)
+			{
+				ShaderPass* shaderPass = shaderPasses[MeshpassType::DirectionalShadow];
+				refresh_shader_pass(shaderPass);
+			}
+
+			if (shaderPasses[MeshpassType::Forward] != nullptr)
+			{
+				ShaderPass* shaderPass = shaderPasses[MeshpassType::Forward];
+				refresh_shader_pass(shaderPass);
+			}
+
+			if (shaderPasses[MeshpassType::Transparency] != nullptr)
+			{
+				ShaderPass* shaderPass = shaderPasses[MeshpassType::Transparency];
+				refresh_shader_pass(shaderPass);
+			}
+		}
+	}
+
 	Material* MaterialSystem::build_material(const std::string& materialName, const MaterialData& info)
 	{
 		Material* mat;
@@ -257,7 +292,7 @@ namespace vkutil
 		return _materials[materialName];
 	}
 
-	void MaterialSystem::clenaup()
+	void MaterialSystem::cleanup()
 	{
 		for (auto templ : _templateCache)
 		{				
@@ -296,6 +331,22 @@ namespace vkutil
 		{
 			material.second->original->passShaders[vkutil::MeshpassType::Forward]->effect->destroy_shader_modules();
 		}
+	}
+
+	void MaterialSystem::refresh_shader_pass(ShaderPass* shaderPass)
+	{
+		PipelineBuilder pipelineBuilder = *shaderPass->pipelineBuilder;
+		LOG_INFO("Shader stages from effect size {}", shaderPass->effect->stages.size());
+		LOG_INFO("Shader stages from builder size {}", shaderPass->pipelineBuilder->_shaderStages.size());
+		vkDestroyPipeline(_engine->_device, shaderPass->pipeline, nullptr);
+		pipelineBuilder._viewport.x = 0.0f;
+		pipelineBuilder._viewport.y = 0.0f;
+		pipelineBuilder._viewport.width = static_cast<float>(_engine->_windowExtent.width);
+		pipelineBuilder._viewport.height = static_cast<float>(_engine->_windowExtent.height);
+		pipelineBuilder._scissor.extent = _engine->_windowExtent;
+		setup_shader_stages(pipelineBuilder, shaderPass->effect->stages);
+		
+		shaderPass->pipeline = pipelineBuilder.build_pipeline(_engine->_device, shaderPass->renderPass);
 	}
 
 	bool MaterialData::operator==(const MaterialData& other) const

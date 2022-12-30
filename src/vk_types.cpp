@@ -66,3 +66,14 @@ void AllocatedBuffer::allocate_buffer(VulkanEngine* engine, size_t allocSize, Vk
 		LOG_ERROR("Failed to allocate buffer");
 }
 
+void Texture::destroy_texture(VulkanEngine* engine)
+{
+	vkDestroyImageView(engine->_device, imageView, nullptr);
+	vmaDestroyImage(engine->_allocator, imageData.image, imageData.allocation);
+}
+
+void Attachment::destroy_attachment(VulkanEngine* engine)
+{
+	destroy_texture(engine);
+}
+

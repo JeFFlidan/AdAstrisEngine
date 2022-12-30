@@ -28,6 +28,8 @@ namespace vkutil
 			VkPipelineMultisampleStateCreateInfo _multisampling;
 			VkPipelineColorBlendAttachmentState _colorBlendAttachment;
 			VkPipelineLayout _pipelineLayout;
+			VkDynamicState _dynamicStates[2];
+			VkPipelineDynamicStateCreateInfo _dynamicState;
 
 			VertexInputDescription _vertexDescription;
 
@@ -98,6 +100,8 @@ namespace vkutil
 		ShaderEffect* effect{ nullptr };
 		VkPipeline pipeline{ VK_NULL_HANDLE };
 		VkPipelineLayout layout{ VK_NULL_HANDLE };
+		VkRenderPass renderPass{ VK_NULL_HANDLE };
+		PipelineBuilder* pipelineBuilder{ nullptr };
 	};
 
 	struct EffectTemplate
@@ -132,20 +136,16 @@ namespace vkutil
 	{
 		public:
 			void init(VulkanEngine* engine);
-			void clenaup();
+			void cleanup();
 
 			void build_default_templates();
+			void refresh_default_templates();
 
 			ShaderPass* build_shader_pass(VkRenderPass& renderPass, PipelineBuilder& builder, ShaderEffect* effect);
 			ShaderEffect* build_shader_effect(const std::vector<std::string>& shaderPaths);
 			
 			Material* build_material(const std::string& materialName, const MaterialData& info);
 			Material* get_material(const std::string& materialName);
-
-			void destroy_pipeline_layouts();
-			void destroy_shaders_modules();
-
-			void setup_pipeline_builders();
 		
 		private:
 			struct MaterialInfoHash
@@ -159,11 +159,19 @@ namespace vkutil
 			PipelineBuilder _postprocessingPipelineBuilder;
 			PipelineBuilder _offscrPipelineBuilder;
 			PipelineBuilder _shadowPipelineBuilder;
+			PipelineBuilder _transparencyBuilder;
 
 			std::unordered_map<std::string, EffectTemplate> _templateCache;
 			std::unordered_map<std::string, Material*> _materials;
 			std::unordered_map<std::string, Shader*> _shaderCache;
 			std::unordered_map<MaterialData, Material*, MaterialInfoHash> _materialCache;
 			VulkanEngine* _engine;
+	
+			void destroy_pipeline_layouts();
+			void destroy_shaders_modules();
+
+			void setup_pipeline_builders();
+
+			void refresh_shader_pass(ShaderPass* shaderPass);
 	};
 }

@@ -136,7 +136,7 @@ void VulkanEngine::culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd,
 
 	VkDescriptorImageInfo depthPyramidImageInfo;
 	depthPyramidImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-	depthPyramidImageInfo.imageView = _depthPyramid._defaultView;
+	depthPyramidImageInfo.imageView = _depthPyramid.imageView;
 	depthPyramidImageInfo.sampler = _depthSampler;
 
 	VkDescriptorSet cullingSet;
@@ -149,7 +149,7 @@ void VulkanEngine::culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd,
 		.bind_buffer(5, &cameraBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
 		.build(cullingSet);
 
-	glm::mat4 projection = camera.get_projection_matrix(true);
+	glm::mat4 projection = camera.get_projection_matrix((float)_windowExtent.width, (float)_windowExtent.height);
 	glm::mat4 projectionT = glm::transpose(projection);
 
 	glm::vec4 frustumX = normalize_plane(projectionT[3] + projectionT[0]);
@@ -403,7 +403,7 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 void VulkanEngine::depth_reduce(VkCommandBuffer cmd)
 {
 	// Method to create depth pyramid based on the depth map mipmaps
-	VkImageMemoryBarrier mainDepthBarrier = vkinit::image_barrier(_offscrDepthImage._imageData._image,
+	VkImageMemoryBarrier mainDepthBarrier = vkinit::image_barrier(_offscrDepthImage.imageData.image,
 		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 		VK_ACCESS_SHADER_READ_BIT,
 		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -427,7 +427,7 @@ void VulkanEngine::depth_reduce(VkCommandBuffer cmd)
 		if (i == 0)
 		{
 			sourceTarget.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			sourceTarget.imageView = _offscrDepthImage._imageView;
+			sourceTarget.imageView = _offscrDepthImage.imageView;
 		}
 		else
 		{
@@ -452,7 +452,7 @@ void VulkanEngine::depth_reduce(VkCommandBuffer cmd)
 		vkCmdPushConstants(cmd, _depthReduceLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(DepthReduceData), &reduceData);
 		vkCmdDispatch(cmd, get_group_count(levelWidth, 32), get_group_count(levelHeight, 32), 1);
 
-		VkImageMemoryBarrier reduceBarrier = vkinit::image_barrier(_depthPyramid._image,
+		VkImageMemoryBarrier reduceBarrier = vkinit::image_barrier(_depthPyramid.imageData.image,
 			VK_ACCESS_SHADER_WRITE_BIT,
 			VK_ACCESS_SHADER_READ_BIT,
 			VK_IMAGE_LAYOUT_UNDEFINED,
@@ -462,7 +462,7 @@ void VulkanEngine::depth_reduce(VkCommandBuffer cmd)
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, 0, 0, 0, 1, &reduceBarrier);
 	}
 
-	mainDepthBarrier = vkinit::image_barrier(_offscrDepthImage._imageData._image,
+	mainDepthBarrier = vkinit::image_barrier(_offscrDepthImage.imageData.image,
 		VK_ACCESS_SHADER_READ_BIT,
 		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

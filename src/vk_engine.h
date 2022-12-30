@@ -277,7 +277,7 @@ class VulkanEngine
 		VkSampler _offscrColorSampler;
 
 		// Depth map data for culling
-		AllocatedImage _depthPyramid;
+		Texture _depthPyramid;
 		VkSampler _depthSampler;
 		VkImageView _depthPyramideMips[16] = {};
 		VkExtent2D _depthPyramidExtent { 1024 * 4, 1024 * 4 };
@@ -377,6 +377,8 @@ class VulkanEngine
 		void init_pipelines();
 		void setup_compute_pipeline(vkutil::Shader* shader, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout);
 		size_t pad_uniform_buffer_size(size_t originalSize);
+
+		void refresh_swapchain();
 
 		void create_attachment(
 			Attachment& attachment, 
