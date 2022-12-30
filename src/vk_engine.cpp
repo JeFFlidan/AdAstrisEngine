@@ -118,12 +118,12 @@ void VulkanEngine::init()
 
 	init_vulkan();
 	init_engine_systems();
-	init_swapchain();
+	init_sync_structures();
 	init_commands();
+	init_swapchain();
 	// Render passes should be created before framebuffers because framebuffers are created for special render passes
 	init_renderpasses();
 	init_framebuffers();
-	init_sync_structures();
 	init_descriptors();
 	init_pipelines();
 	parse_prefabs();
@@ -370,6 +370,17 @@ void VulkanEngine::init_swapchain()
 		VK_IMAGE_ASPECT_COLOR_BIT);
 	pyramidImageViewInfo.subresourceRange.levelCount = _depthPyramidLevels;
 	VK_CHECK(vkCreateImageView(_device, &pyramidImageViewInfo, nullptr, &_depthPyramid.imageView));
+
+	immediate_submit([=](VkCommandBuffer cmd){
+		VkImageMemoryBarrier barrier = vkinit::image_barrier(_depthPyramid.imageData.image,
+			0,
+			VK_ACCESS_SHADER_WRITE_BIT,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_GENERAL,
+			VK_IMAGE_ASPECT_COLOR_BIT);
+
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+	});
 
 	/*_mainDeletionQueue.push_function([=](){
 		vkDestroyImageView(_device, _depthPyramid.imageView, nullptr);
