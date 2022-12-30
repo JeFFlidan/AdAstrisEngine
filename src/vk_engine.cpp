@@ -605,53 +605,6 @@ void VulkanEngine::init_descriptors()
 	const size_t sceneParamBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(GPUSceneData));
 	_sceneParameterBuffer = create_buffer(sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-	/*VkDescriptorSetLayoutBinding textureBind = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0);
-
-	VkDescriptorSetLayoutCreateInfo set3info{};
-	set3info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	set3info.flags = 0;
-	set3info.pNext = nullptr;
-	set3info.bindingCount = 1;
-	set3info.pBindings = &textureBind;
-
-	vkCreateDescriptorSetLayout(_device, &set3info, nullptr, &_singleTextureSetLayout);
-    
-    vkCreateDescriptorSetLayout(_device, &set3info, nullptr, &_texturesSetLayout);*/
-
-	//_descriptorAllocator.init(_device);
-	//_descriptorLayoutCache.init(_device);
-
-	/*VkDescriptorSetLayoutBinding bindingInfo;
-	bindingInfo.descriptorCount = 3;
-	bindingInfo.binding = 0;
-	bindingInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	bindingInfo.pImmutableSamplers = nullptr;
-	bindingInfo.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	
-	VkDescriptorSetLayoutCreateInfo texturesSetInfo{};
-	texturesSetInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	texturesSetInfo.bindingCount = 1;
-	texturesSetInfo.pBindings = &bindingInfo;
-	texturesSetInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
-
-	const VkDescriptorBindingFlagsEXT flags =
-		VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT |
-		VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT |
-		VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT |
-		VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT;
-
-	VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlags{};
-	bindingFlags.bindingCount = texturesSetInfo.bindingCount;
-	bindingFlags.pBindingFlags = &flags;
-
-    texturesSetInfo.pNext = &bindingFlags;
-	
-    VK_CHECK(vkCreateDescriptorSetLayout(_device, &texturesSetInfo, nullptr, &_texturesSetLayout));
-	
-	VkSamplerCreateInfo imgSamplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
-	VkSampler offscrColorSampler;
-	vkCreateSampler(_device, &imgSamplerInfo, nullptr, &offscrColorSampler);*/
-
 	VkSamplerCreateInfo imgSamplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
 	vkCreateSampler(_device, &imgSamplerInfo, nullptr, &_offscrColorSampler);
 
@@ -663,36 +616,6 @@ void VulkanEngine::init_descriptors()
 		_frames[i]._cameraBuffer = create_buffer(sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 		_frames[i]._sceneDataBuffer.create_buffer(this, sizeof(GPUSceneData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-		/*VkDescriptorBufferInfo cameraInfo;
-		cameraInfo.buffer = _frames[i]._cameraBuffer._buffer;
-		cameraInfo.offset = 0;
-		cameraInfo.range = sizeof(GPUCameraData);
-
-		VkDescriptorBufferInfo sceneInfo;
-		sceneInfo.buffer = _sceneParameterBuffer._buffer;
-		sceneInfo.offset = 0;
-		sceneInfo.range = sizeof(GPUSceneData);
-
-		VkDescriptorBufferInfo objectBufferInfo;
-		objectBufferInfo.buffer = _frames[i]._objectBuffer._buffer;
-		objectBufferInfo.offset = 0;
-		objectBufferInfo.range = VK_WHOLE_SIZE;
-
-		VkDescriptorImageInfo offscrColorImgInfo;
-		offscrColorImgInfo.sampler = offscrColorSampler;
-		offscrColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		offscrColorImgInfo.imageView = _offscrColorImage._imageView;
-
-		vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &_descriptorAllocator)
-			.bind_buffer(0, &cameraInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			.bind_buffer(1, &sceneInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
-			.bind_image(2, &offscrColorImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-			.build(_frames[i]._globalDescriptor, _globalSetLayout);
-
-		vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &_descriptorAllocator)
-			.bind_buffer(0, &objectBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-			.build(_frames[i]._objectDescriptor, _objectSetLayout);*/
 		
 		VkDescriptorImageInfo offscrColorImgInfo;
 		offscrColorImgInfo.sampler = _offscrColorSampler;
@@ -922,15 +845,13 @@ void VulkanEngine::draw()
 	vkCmdSetViewport(get_current_frame()._mainCommandBuffer, 0, 1, &viewport);
 	vkCmdSetScissor(get_current_frame()._mainCommandBuffer, 0, 1, &scissor);
 
-	//draw_objects(get_current_frame()._mainCommandBuffer, _renderables.data(), _renderables.size());
-
 	draw_forward_pass(cmd);
 
 	//ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), get_current_frame()._mainCommandBuffer);
 
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
 	depth_reduce(cmd);
-	LOG_INFO("After reducing depth");
+
 	VkImageMemoryBarrier imageMemoryBarrier{};
 	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -945,18 +866,15 @@ void VulkanEngine::draw()
 		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 		0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
-	LOG_INFO("After pipeline barrier");
 
 	rpInfo = vkinit::renderpass_begin_info(_renderPass, _windowExtent, _framebuffers[swapchainImageIndex]);
 	rpInfo.clearValueCount = 1;
 	rpInfo.pClearValues = &clearValue;
-	LOG_INFO("Before beginning render pass");
+
 	vkCmdBeginRenderPass(get_current_frame()._mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 	draw_output_quad(get_current_frame()._mainCommandBuffer);
-	LOG_INFO("After drawing output quad");
 
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
-	LOG_INFO("After ending the second render pass");
 	VK_CHECK(vkEndCommandBuffer(get_current_frame()._mainCommandBuffer));
 
 	VkSubmitInfo submit{};
@@ -973,7 +891,6 @@ void VulkanEngine::draw()
 
 	submit.commandBufferCount = 1;
 	submit.pCommandBuffers = &get_current_frame()._mainCommandBuffer;
-	LOG_INFO("Before submitting");
 	VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, get_current_frame()._renderFence));
 
 	VkPresentInfoKHR presentInfo{};
@@ -987,7 +904,6 @@ void VulkanEngine::draw()
 	presentInfo.waitSemaphoreCount = 1;
 
 	presentInfo.pImageIndices = &swapchainImageIndex;
-	LOG_INFO("Before preseting KHR");
 	VkResult result = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
 
 	LOG_INFO("Frame number is {}", _frameNumber);
@@ -1071,23 +987,6 @@ void VulkanEngine::run()
 
 				camera.process_mouse_movement(xPos, yPos);
 			}
-
-			/*if (e.type == SDL_WINDOWEVENT_RESIZED)
-			{
-				LOG_INFO("Resize window");
-				int height = 0, width = 0;
-				SDL_GetWindowSize(_window, &width, &height);
-				while (width == 0 || height == 0)
-					SDL_GetWindowSize(_window, &width, &height);
-
-				SDL_SetWindowSize(_window, width, height);
-
-				_windowExtent.width = (uint32_t)e.window.data1;
-				_windowExtent.height = (uint32_t)e.window.data2;
-
-				//vkDeviceWaitIdle(_device);
-				refresh_swapchain();
-			}*/
 		}
 
 		//if (bQuit)
@@ -1296,168 +1195,6 @@ Mesh* VulkanEngine::get_mesh(const std::string& name)
 	}
 }
 
-void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* objects, int count)
-{
-	std::cout << "Start drawing frame" << std::endl;
-	glm::mat4 view = camera.get_view_matrix();
-	glm::mat4 projection = camera.get_projection_matrix((float)_windowExtent.width, (float)_windowExtent.height);
- 
-	GPUCameraData camData;
-	camData.view = view;
-	camData.proj = projection;
-	camData.viewproj = projection * view;
-
-	void* data;
-	vmaMapMemory(_allocator, get_current_frame()._cameraBuffer._allocation, &data);			// Get camera buffer's pointer
-	memcpy(data, &camData, sizeof(GPUCameraData));
-	vmaUnmapMemory(_allocator, get_current_frame()._cameraBuffer._allocation);
-
-	float framed = (_frameNumber / 120.0f);
-
-	//_sceneParameters.ambientColor = { std::sin(framed), 0, std::cos(framed), 1 };
-
-	char* sceneData;
-	vmaMapMemory(_allocator, _sceneParameterBuffer._allocation, (void**)&sceneData);
-
-	int frameIndex = _frameNumber % FRAME_OVERLAP;
-
-	sceneData += pad_uniform_buffer_size(sizeof(GPUSceneData)) * frameIndex;
-	memcpy(sceneData, &_sceneParameters, sizeof(GPUSceneData));
-	
-	vmaUnmapMemory(_allocator, _sceneParameterBuffer._allocation);
-
-	void* objectData;
-	vmaMapMemory(_allocator, get_current_frame()._objectBuffer._allocation, &objectData);
-	GPUObjectData* objectSSBO = (GPUObjectData*)objectData;
-
-	std::vector<GPUObjectData> gpuObjectData;
-
-	for (int i = 0; i != count; ++i)
-	{
-		RenderObject& object = objects[i];
-		GPUObjectData temp;
-		//temp.color = object.color;
-		temp.model = object.transformMatrix;
-		gpuObjectData.push_back(temp);
-	}
-
-	memcpy(objectData, gpuObjectData.data(), gpuObjectData.size() * sizeof(GPUObjectData));
-
-	vmaUnmapMemory(_allocator, get_current_frame()._objectBuffer._allocation);
-
-	std::vector<IndirectBatch> draws = compact_draws(objects, count);
-
-	AllocatedBuffer stagingBuffer = create_buffer(
-		1000 * sizeof(VkDrawIndexedIndirectCommand),
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VMA_MEMORY_USAGE_CPU_ONLY
-	);
-
-	data = nullptr;
-	vmaMapMemory(_allocator, stagingBuffer._allocation, &data);
-	
-	VkDrawIndexedIndirectCommand* indexedDrawCommands = reinterpret_cast<VkDrawIndexedIndirectCommand*>(data);
-	uint32_t vertexOffset = 0;
-
-	uint32_t totalIndices = 0;
-	
-	for (int i = 0; i != count; ++i)
-	{
-		RenderObject& object = objects[i];
-		indexedDrawCommands[i].indexCount = object.mesh->_indices.size();
-		indexedDrawCommands[i].firstInstance = i;
-		indexedDrawCommands[i].instanceCount = 1;
-		indexedDrawCommands[i].vertexOffset = vertexOffset;
-		indexedDrawCommands[i].firstIndex = totalIndices;
-		vertexOffset += object.mesh->_vertices.size();
-		totalIndices += object.mesh->_indices.size();
-	}
-
-	vmaUnmapMemory(_allocator, stagingBuffer._allocation);
-
-	immediate_submit([=](VkCommandBuffer cmd){
-		VkBufferCopy copy;
-		copy.dstOffset = 0;
-		copy.srcOffset = 0;
-		copy.size = 1000 * sizeof(VkDrawIndexedIndirectCommand);
-		vkCmdCopyBuffer(cmd, stagingBuffer._buffer, get_current_frame()._indirectCommandsBuffer._buffer, 1, &copy);
-	});
-
-	vmaDestroyBuffer(_allocator, stagingBuffer._buffer, stagingBuffer._allocation);
-
-	//bind_material(cmd, draws[0].material);
-	VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(cmd, 0, 1, &_globalVertexBuffer._buffer, &offset);
-    vkCmdBindIndexBuffer(cmd, _globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
-
-    vkutil::EffectTemplate* prevMaterial = nullptr;
-
-	auto& frame = get_current_frame();
-
-	VkDescriptorBufferInfo cameraInfo;
-	cameraInfo.buffer = frame._cameraBuffer._buffer;
-	cameraInfo.offset = 0;
-	cameraInfo.range = sizeof(GPUCameraData);
-
-	VkDescriptorBufferInfo sceneInfo;
-	sceneInfo.buffer = _sceneParameterBuffer._buffer;
-	sceneInfo.offset = 0;
-	sceneInfo.range = sizeof(GPUSceneData);
-
-	VkDescriptorBufferInfo objectBufferInfo;
-	objectBufferInfo.buffer = frame._objectBuffer._buffer;
-	objectBufferInfo.offset = 0;
-	objectBufferInfo.range = VK_WHOLE_SIZE;
-
-	VkDescriptorSet globalDescriptor;
-	VkDescriptorSet objectDescriptor;
-	VkDescriptorSet texturesDescriptor;
-	
-	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &frame._dynamicDescriptorAllocator)
-		.bind_buffer(0, &cameraInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.bind_buffer(1, &sceneInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.build(globalDescriptor);
-	
-	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &frame._dynamicDescriptorAllocator)
-		.bind_buffer(0, &objectBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.build(objectDescriptor);
-
-	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &frame._dynamicDescriptorAllocator)
-		.bind_image(0, _baseColorImageInfos.data(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _baseColorImageInfos.size())
-		.build_non_uniform(texturesDescriptor, _baseColorImageInfos.size());
-
-	std::vector<VkDescriptorSet*> sets = { &globalDescriptor, &objectDescriptor, &texturesDescriptor };
-    
-	for (IndirectBatch& draw : draws)
-	{
-		if (draw.material->original != prevMaterial)
-		{
-			auto renderPass = draw.material->original->passShaders[vkutil::MeshpassType::Forward];
-			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPass->pipeline);
-			for (int i = 0; i != sets.size(); ++i)
-			{
-				std::cout << "Descriptor bind " << i << std::endl;
-				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, renderPass->layout, i, 1, sets[i], 0, nullptr);
-			}
-
-			prevMaterial = draw.material->original;
-		}
-		//bind_material(cmd, draw.material);
-		//bind_mesh(cmd, draw.mesh);
-
-		VkDeviceSize indirectOffset = draw.first * sizeof(VkDrawIndexedIndirectCommand);
-		uint32_t drawStride = sizeof(VkDrawIndexedIndirectCommand);
-
-		//vkCmdDraw(cmd, object.mesh->_vertices.size(), 1, 0, i);
-		//vkCmdDrawIndexed(cmd, static_cast<uint32_t>(object.mesh->_indices.size()), 1, 0, 0, i);
-		//vkCmdDrawIndirect(cmd, get_current_frame()._indirectCommandsBuffer._buffer, indirectOffset, draw.count, drawStride);
-
-		vkCmdDrawIndexedIndirect(cmd, get_current_frame()._indirectCommandsBuffer._buffer, indirectOffset, draw.count, drawStride);
-	}
-
-	std::cout << "Finish drawing frame" << std::endl;
-}
-
 void VulkanEngine::draw_output_quad(VkCommandBuffer cmd)
 {
 	int frameIndex = _frameNumber % FRAME_OVERLAP;
@@ -1575,39 +1312,6 @@ AllocatedBuffer VulkanEngine::create_buffer(size_t allocSize, VkBufferUsageFlags
 	VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &vmaallocInfo, &newBuffer._buffer, &newBuffer._allocation, nullptr));
 
 	return newBuffer;
-}
-
-std::vector<IndirectBatch> VulkanEngine::compact_draws(RenderObject* objects, int count)
-{
-	std::vector<IndirectBatch> draws;
-	IndirectBatch firstDraw;
-	firstDraw.mesh = objects[0].mesh;
-	firstDraw.material = objects[0].material;
-	firstDraw.first = 0;
-	firstDraw.count = 1;
-
-	draws.push_back(firstDraw);
-
-	for (int i = 1; i < count; ++i)
-	{
-		bool sameMesh = objects[i].mesh == draws.back().mesh;
-		bool sameMaterial = objects[i].material == draws.back().material;
-
-		if (sameMesh && sameMaterial)
-			draws.back().count++;
-		else
-		{
-			IndirectBatch newDraw;
-			newDraw.mesh = objects[i].mesh;
-			newDraw.material = objects[i].material;
-			newDraw.first = i;
-			newDraw.count = 1;
-
-			draws.push_back(newDraw);
-		}
-	}
-
-	return draws;
 }
 
 void VulkanEngine::refresh_multi_threads_command_buffers(uint32_t objectsPerThread)

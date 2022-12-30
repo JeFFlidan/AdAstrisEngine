@@ -142,8 +142,6 @@ namespace vkutil
 				range.stageFlags = stage.stage;
 				ranges.push_back(range);
 			}
-		    
-			std::cout << std::endl;
 		}
 
 		for (auto& data : bindingsCache)
@@ -169,8 +167,6 @@ namespace vkutil
 						return true;
 					return false;
 			});
-
-			std::cout << std::endl;
 
 			VkDescriptorSetLayoutCreateInfo layoutInfo{};
 			layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
