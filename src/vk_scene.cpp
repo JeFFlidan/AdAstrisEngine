@@ -26,22 +26,15 @@ void RenderScene::cleanup(VulkanEngine* engine)
 	std::vector<MeshPass*> passes = { &_forwardPass };
 	for (auto pass : passes)
 	{
-		std::cout << "Before comp instance\n";
 		pass->compactedInstanceBuffer.destroy_buffer(engine);
-		std::cout << "Before pass obj\n";
 		pass->passObjectsBuffer.destroy_buffer(engine);
-		std::cout << "Before draw indir\n";
 		pass->drawIndirectBuffer.destroy_buffer(engine);
-		std::cout << "Before clear indirect buffer\n";
 		pass->clearIndirectBuffer.destroy_buffer(engine);
 	}
-	std::cout << "Before point lights\n";
+
 	_pointLightsBuffer.destroy_buffer(engine);
-	std::cout << "Before spot lights\n";
 	_spotLightsBuffer.destroy_buffer(engine);
-	std::cout << "Before dir lights\n";
 	_dirLightsBuffer.destroy_buffer(engine);
-	std::cout << "Before objects data\n";
 	_objectDataBuffer.destroy_buffer(engine);
 }
 

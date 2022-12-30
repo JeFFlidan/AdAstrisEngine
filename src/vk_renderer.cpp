@@ -244,7 +244,6 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 		vmaUnmapMemory(_allocator, tempBuffer._allocation);
 		
 		get_current_frame()._frameDeletionQueue.push_function([=](){
-			LOG_INFO("Delete object data buffer");
 			scene->_objectDataBuffer.destroy_buffer(this);
 		});
 
