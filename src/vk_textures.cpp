@@ -26,7 +26,7 @@ namespace vkutil
 		VmaAllocationCreateInfo dimg_allocinfo{};
 		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-		vmaCreateImage(engine._allocator, &dimg_info, &dimg_allocinfo, &newImage._image, &newImage._allocation, nullptr);
+		vmaCreateImage(engine._allocator, &dimg_info, &dimg_allocinfo, &newImage.image, &newImage.allocation, nullptr);
 
 		engine.immediate_submit([&](VkCommandBuffer cmd){
 			VkImageSubresourceRange range;
@@ -40,7 +40,7 @@ namespace vkutil
 			imageBarrier_toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			imageBarrier_toTransfer.image = newImage._image;
+			imageBarrier_toTransfer.image = newImage.image;
 			imageBarrier_toTransfer.subresourceRange = range;
 
 			imageBarrier_toTransfer.srcAccessMask = 0;
@@ -61,7 +61,7 @@ namespace vkutil
 			copyRegion.imageSubresource.mipLevel = 0;
 			copyRegion.imageExtent = imageExtent;
 
-			vkCmdCopyBufferToImage(cmd, stagingBuffer._buffer, newImage._image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+			vkCmdCopyBufferToImage(cmd, stagingBuffer._buffer, newImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
 			VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
 			imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -75,7 +75,7 @@ namespace vkutil
 		});
 
 		engine._mainDeletionQueue.push_function([=](){
-			vmaDestroyImage(engine._allocator, newImage._image, newImage._allocation);
+			vmaDestroyImage(engine._allocator, newImage.image, newImage.allocation);
 		});
 
 		return newImage;
@@ -118,7 +118,7 @@ namespace vkutil
 		VmaAllocationCreateInfo dimg_allocinfo{};
 		dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-		vmaCreateImage(engine._allocator, &dimg_info, &dimg_allocinfo, &newImage._image, &newImage._allocation, nullptr);
+		vmaCreateImage(engine._allocator, &dimg_info, &dimg_allocinfo, &newImage.image, &newImage.allocation, nullptr);
 
 		engine.immediate_submit([&](VkCommandBuffer cmd){
 			VkImageSubresourceRange range;
@@ -132,7 +132,7 @@ namespace vkutil
 			imageBarrier_toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			imageBarrier_toTransfer.image = newImage._image;
+			imageBarrier_toTransfer.image = newImage.image;
 			imageBarrier_toTransfer.subresourceRange = range;
 
 			imageBarrier_toTransfer.srcAccessMask = 0;
@@ -153,7 +153,7 @@ namespace vkutil
 			copyRegion.imageSubresource.mipLevel = 0;
 			copyRegion.imageExtent = imageExtent;
 
-			vkCmdCopyBufferToImage(cmd, stagingBuffer._buffer, newImage._image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+			vkCmdCopyBufferToImage(cmd, stagingBuffer._buffer, newImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
 			VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
 			imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -167,7 +167,7 @@ namespace vkutil
 		});
 
 		engine._mainDeletionQueue.push_function([=](){
-			vmaDestroyImage(engine._allocator, newImage._image, newImage._allocation);
+			vmaDestroyImage(engine._allocator, newImage.image, newImage.allocation);
 
 		});
 		vmaDestroyBuffer(engine._allocator, stagingBuffer._buffer, stagingBuffer._allocation);

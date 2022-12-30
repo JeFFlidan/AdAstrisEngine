@@ -143,6 +143,18 @@ namespace vkinit
 		return info;
 	}
 
+	VkPipelineDynamicStateCreateInfo dynamic_state_create_info(VkDynamicState* dynamicStates, uint32_t count, VkPipelineDynamicStateCreateFlags flags)
+	{
+		VkPipelineDynamicStateCreateInfo info;
+		info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		info.pNext = nullptr;
+		info.pDynamicStates = dynamicStates;
+		info.dynamicStateCount = count;
+		info.flags = flags;
+
+		return info;
+	}
+
 	VkRenderPassBeginInfo renderpass_begin_info(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer)
 	{
 		VkRenderPassBeginInfo beginInfo{};

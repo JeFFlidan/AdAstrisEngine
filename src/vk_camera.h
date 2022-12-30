@@ -30,17 +30,17 @@ class Camera
 		void process_mouse_scroll(float yoffset);
 
 		glm::mat4 get_view_matrix() const { return glm::lookAt(Position, Position + Front, Up); }
-		glm::mat4 get_projection_matrix(bool bReverse = false) const
+		glm::mat4 get_projection_matrix(float width, float height, bool bReverse = false) const
 		{
 			if (bReverse)
 			{
-				glm::mat4 projection = glm::perspective(glm::radians(70.f), 1700.0f / 900.0f, 5000.0f, 0.001f);
+				glm::mat4 projection = glm::perspective(glm::radians(70.f), width / height, 5000.0f, 0.001f);
 				projection[1][1] *= -1;
 				return projection;
 			}
 			else
 			{
-				glm::mat4 projection = glm::perspective(glm::radians(70.f), 1700.0f / 900.0f, 0.001f, 5000.0f);
+				glm::mat4 projection = glm::perspective(glm::radians(70.f), width / height, 0.001f, 5000.0f);
 				projection[1][1] *= -1;
 				return projection;
 			}
