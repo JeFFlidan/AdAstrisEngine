@@ -10,7 +10,7 @@ namespace vkutil
 		return temp;
 	}
 
-	RenderPassBuilder& RenderPassBuilder::addColorAttachment(
+	RenderPassBuilder& RenderPassBuilder::add_color_attachment(
 		VkFormat imageFormat,
 		VkSampleCountFlagBits samples,
 		VkImageLayout finalLayout,
@@ -39,7 +39,7 @@ namespace vkutil
 		return *this;
 	}
 
-	RenderPassBuilder& RenderPassBuilder::addDepthAttachment(
+	RenderPassBuilder& RenderPassBuilder::add_depth_attachment(
 		VkFormat imageFormat,
 		VkSampleCountFlagBits samples,
 		VkImageLayout finalLayout,
@@ -77,7 +77,7 @@ namespace vkutil
 		return *this;
 	}
 
-	RenderPassBuilder& RenderPassBuilder::addSubpass(VkPipelineBindPoint pipelineType)
+	RenderPassBuilder& RenderPassBuilder::add_subpass(VkPipelineBindPoint pipelineType)
 	{
 		VkSubpassDescription subpass{};
 		subpass.pipelineBindPoint = pipelineType;

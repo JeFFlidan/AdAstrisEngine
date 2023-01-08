@@ -343,4 +343,19 @@ namespace vkinit
 		barrier.dstAccessMask = dstMask;
 		return barrier;
 	}
+
+	VkFramebufferCreateInfo framebuffer_create_info(VkImageView* imageViews, uint32_t count, VkRenderPass renderPass, VkExtent3D extent, VkFramebufferCreateFlags flags)
+	{
+		VkFramebufferCreateInfo info;
+		info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		info.pNext = nullptr;
+		info.flags = flags;
+		info.layers = 1;
+		info.width = extent.width;
+		info.height = extent.height;
+		info.renderPass = renderPass;
+		info.attachmentCount = count;
+		info.pAttachments = imageViews;
+		return info;
+	}
 }

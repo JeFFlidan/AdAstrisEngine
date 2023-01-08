@@ -62,6 +62,12 @@ struct GPUInstance
 	uint32_t batchID;
 };
 
+struct DirShadowData
+{
+	glm::mat4 lightSpaceMatrix;
+	uint32_t id;
+};
+
 class RenderScene
 {
 	public:
@@ -154,9 +160,13 @@ class RenderScene
 		AllocatedBufferT<actors::DirectionLight> _dirLightsBuffer;
 		AllocatedBufferT<actors::PointLight> _pointLightsBuffer;
 		AllocatedBufferT<actors::SpotLight> _spotLightsBuffer;
-	
+
+		bool _needsBakeLightMaps{ true };
+		std::vector<DirShadowMap> _dirShadowMaps;
+		std::vector<VkDescriptorImageInfo> _dirShadowMapsInfos;
+
 		MeshPass _forwardPass;
-		MeshPass _shadowPass;
+		MeshPass _dirShadowPass;
 		MeshPass _transparentForwardPass;
 		
 		AllocatedBuffer _globalVertexBuffer;

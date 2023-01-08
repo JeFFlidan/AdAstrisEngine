@@ -3,6 +3,7 @@
 #include "SDL_video.h"
 #include "asset_loader.h"
 #include "engine_actors.h"
+#include "glm/common.hpp"
 #include "glm/fwd.hpp"
 #include "glm/geometric.hpp"
 #include "material_asset.h"
@@ -124,6 +125,7 @@ void VulkanEngine::init()
 	// Render passes should be created before framebuffers because framebuffers are created for special render passes
 	init_renderpasses();
 	init_framebuffers();
+	init_shadow_maps();
 	init_descriptors();
 	init_pipelines();
 	parse_prefabs();
@@ -286,6 +288,7 @@ void VulkanEngine::init_engine_systems()
 
 void VulkanEngine::init_swapchain()
 {
+	LOG_INFO("Init swapchain");
 	vkb::SwapchainBuilder swapchainBuilder{_chosenGPU, _device, _surface};
 	vkb::Swapchain vkbSwapchain = swapchainBuilder
 		.use_default_format_selection()
@@ -513,22 +516,23 @@ void VulkanEngine::init_commands()
 void VulkanEngine::init_renderpasses()
 {
 	vkutil::RenderPassBuilder::begin()
-		.addColorAttachment(_offscrColorImage.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-		.addDepthAttachment(_offscrDepthImage.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
-		.addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
+		.add_color_attachment(_offscrColorImage.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+		.add_depth_attachment(_offscrDepthImage.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
+		.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
 		.build(_device, _offscrRenderPass);
 	
 	vkutil::RenderPassBuilder::begin()
-		.addColorAttachment(_swapchainImageFormat, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-		.addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
+		.add_color_attachment(_swapchainImageFormat, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+		.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
 		.build(_device, _renderPass);
 
-	_mainDeletionQueue.push_function([=](){vkDestroyRenderPass(_device, _renderPass, nullptr);});
-	_mainDeletionQueue.push_function([=](){vkDestroyRenderPass(_device, _offscrRenderPass, nullptr);});
+	_mainDeletionQueue.push_function([=](){ vkDestroyRenderPass(_device, _renderPass, nullptr); });
+	_mainDeletionQueue.push_function([=](){ vkDestroyRenderPass(_device, _offscrRenderPass, nullptr); });
 }
 
 void VulkanEngine::init_framebuffers()
 {
+	LOG_INFO("Init framebuffers");
 	VkFramebufferCreateInfo fbInfo{};
 	fbInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	fbInfo.pNext = nullptr;
@@ -570,8 +574,83 @@ void VulkanEngine::init_framebuffers()
 	}
 }
 
+void VulkanEngine::init_shadow_maps()
+{
+	actors::DirectionLight dirLight;
+	float nearPlane = 0.01f, farPlane = 100.0f;
+	dirLight.direction = glm::vec4(-10.0f, -50.0f, -5.0f, 0.0f);
+	dirLight.direction = glm::normalize(dirLight.direction);
+	dirLight.lightProjMat = glm::ortho(-farPlane, farPlane, -farPlane, farPlane, nearPlane, farPlane);
+	dirLight.lightProjMat[1][1] *= -1;
+	glm::vec3 position = glm::vec3(dirLight.direction) * -farPlane;
+	dirLight.lightViewMat = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	dirLight.colorAndIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
+	_renderScene._dirLights.push_back(dirLight);
+
+	actors::PointLight pointLight;
+	pointLight.sourceRadius = 0.0f;
+	pointLight.colorAndIntensity = glm::vec4(0.0f, 0.8f, 0.25f, 1800.0f);
+	pointLight.positionAndAttRadius = glm::vec4(25.0f, 8.0f, 10.0f, 1000.0f);
+	_renderScene._pointLights.push_back(pointLight);
+
+	actors::SpotLight spotLight;
+	spotLight.colorAndIntensity = glm::vec4(0.0f, 0.0f, 1.0f, 1800.0f);
+	spotLight.positionAndDistance = glm::vec4(13.0f, 8.0f, 5.0f, 40.0f);
+	float innerConeRadius = glm::cos(glm::radians(10.0f));
+	spotLight.spotDirAndInnerConeRadius = glm::vec4(0.0f, 0.0f, -2.0f, innerConeRadius);
+	spotLight.outerConeRadius = glm::cos(glm::radians(65.0f));
+	_renderScene._spotLights.push_back(spotLight);
+
+	LOG_INFO("Init shadow maps");
+	VkExtent3D dirLightShadowMapExtent = {
+		2048,
+		2048,
+		1
+	};
+
+	for (int i = 0; i != _renderScene._dirLights.size(); ++i)
+	{
+		DirShadowMap tempMap;
+		create_attachment(
+			tempMap.attachment,
+			dirLightShadowMapExtent,
+			VK_FORMAT_D32_SFLOAT,
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_ASPECT_DEPTH_BIT
+		);
+
+		vkutil::RenderPassBuilder::begin()
+			.add_depth_attachment(tempMap.attachment.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
+			.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
+			.build(_device, tempMap.renderPass);
+
+		VkImageView* attach = &tempMap.attachment.imageView;
+		VkFramebufferCreateInfo info = vkinit::framebuffer_create_info(attach, 1, tempMap.renderPass, dirLightShadowMapExtent);
+		VK_CHECK(vkCreateFramebuffer(_device, &info, nullptr, &tempMap.framebuffer));
+		_renderScene._dirShadowMaps.push_back(tempMap);
+
+		_mainDeletionQueue.push_function([=](){
+			vkDestroyFramebuffer(_device, tempMap.framebuffer, nullptr);
+			vkDestroyRenderPass(_device, tempMap.renderPass, nullptr);
+			vkDestroyImageView(_device, tempMap.attachment.imageView, nullptr);
+			vmaDestroyImage(_allocator, tempMap.attachment.imageData.image, tempMap.attachment.imageData.allocation);
+		});
+	}
+
+	LOG_INFO("Finish initing shadow maps");
+
+	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+	samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+	VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &_shadowMapSampler));
+
+	_mainDeletionQueue.push_function([=](){
+		vkDestroySampler(_device, _shadowMapSampler, nullptr);
+	});
+}
+
 void VulkanEngine::init_sync_structures()
 {
+	LOG_INFO("Init sync struct");
 	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
 	
 	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
@@ -602,6 +681,7 @@ void VulkanEngine::init_sync_structures()
 
 void VulkanEngine::init_descriptors()
 {
+	LOG_INFO("Init descriptors");
 	const size_t sceneParamBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(GPUSceneData));
 	_sceneParameterBuffer = create_buffer(sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
@@ -621,10 +701,6 @@ void VulkanEngine::init_descriptors()
 		offscrColorImgInfo.sampler = _offscrColorSampler;
 		offscrColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		offscrColorImgInfo.imageView = _offscrColorImage.imageView;
-
-		vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &_descriptorAllocator)
-			.bind_image(0, &offscrColorImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-			.build(_frames[i]._outputQuadTexture);
 	}
 
 	for (int i = 0; i != FRAME_OVERLAP; ++i)
@@ -644,6 +720,7 @@ void VulkanEngine::init_descriptors()
 
 void VulkanEngine::init_pipelines()
 {
+	LOG_INFO("Init pipelines");
 	vkutil::Shader depthReduceShader(_device);
 	depthReduceShader.load_shader_module((_projectPath + "/shaders/reduce_depth.comp.glsl.spv").c_str());
 	vkutil::Shader drawCullShader(_device);
@@ -726,25 +803,6 @@ void VulkanEngine::init_scene()
 			vmaDestroyBuffer(_allocator, _frames[i]._indirectCommandsBuffer._buffer, _frames[i]._indirectCommandsBuffer._allocation);
 		}
 	});
-	
-	actors::DirectionLight dirLight;
-	dirLight.direction = glm::vec4(2.0f, -8.0f, -5.0f, 1.0f);
-	dirLight.colorAndIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
-	_renderScene._dirLights.push_back(dirLight);
-
-	actors::PointLight pointLight;
-	pointLight.sourceRadius = 0.0f;
-	pointLight.colorAndIntensity = glm::vec4(0.0f, 0.8f, 0.25f, 1800.0f);
-	pointLight.positionAndAttRadius = glm::vec4(25.0f, 8.0f, 10.0f, 1000.0f);
-	_renderScene._pointLights.push_back(pointLight);
-
-	actors::SpotLight spotLight;
-	spotLight.colorAndIntensity = glm::vec4(0.0f, 0.0f, 1.0f, 1800.0f);
-	spotLight.positionAndDistance = glm::vec4(13.0f, 8.0f, 5.0f, 40.0f);
-	float innerConeRadius = glm::cos(glm::radians(10.0f));
-	spotLight.spotDirAndInnerConeRadius = glm::vec4(0.0f, 0.0f, -2.0f, innerConeRadius);
-	spotLight.outerConeRadius = glm::cos(glm::radians(65.0f));
-	_renderScene._spotLights.push_back(spotLight);
 }
 
 void VulkanEngine::draw()
@@ -780,56 +838,58 @@ void VulkanEngine::draw()
 
 	VK_CHECK(vkBeginCommandBuffer(get_current_frame()._mainCommandBuffer, &cmdBeginInfo));
 
+	_beforeCullingBufferBarriers.clear();
+	_afterCullingBufferBarriers.clear();
+
+	prepare_per_frame_data(cmd);
+
+	prepare_data_for_drawing(cmd);
+
+	prepare_gpu_indirect_buffer(cmd, _renderScene._dirShadowPass);
+
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, _beforeCullingBufferBarriers.size(), _beforeCullingBufferBarriers.data(), 0, nullptr);
+
+	if (_renderScene._needsBakeLightMaps)
+	{
+		bake_shadow_maps(cmd);
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, _afterShadowsBarriers.size(), _afterShadowsBarriers.data());
+		_afterShadowsBarriers.clear();
+		_renderScene._needsBakeLightMaps = false;
+	}
+
 	VkClearValue clearValue;
 	float flash = abs(std::sin(_frameNumber / 120.0f));
 	clearValue.color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
 
 	VkClearValue depthClear;
 	depthClear.depthStencil.depth = 1.f;
-
-	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_offscrRenderPass, _windowExtent, _offscrFramebuffers[swapchainImageIndex]);
-
-	rpInfo.clearValueCount = 2;
 	
-	VkClearValue clearValues[] = { clearValue, depthClear };
-	rpInfo.pClearValues = clearValues;
-
-	glm::mat4 view = camera.get_view_matrix();
-	glm::mat4 projection = camera.get_projection_matrix((float)_windowExtent.width, (float)_windowExtent.height);
- 
-	GPUCameraData camData;
-	camData.view = view;
-	camData.proj = projection;
-	camData.viewproj = projection * view;
-	camData.position = glm::vec4(camera.get_position(), 0.0f);
-
-	get_current_frame()._cameraBuffer.copy_from(this, &camData, sizeof(GPUCameraData));
-	
-	GPUSceneData sceneData;
-	sceneData.dirLightsAmount = _renderScene._dirLights.size();
-	sceneData.pointLightsAmount = _renderScene._pointLights.size();
-	sceneData.spotLightsAmount = _renderScene._spotLights.size();
-
-	get_current_frame()._sceneDataBuffer.copy_from(this, &sceneData, sizeof(GPUSceneData));
-
 	_beforeCullingBufferBarriers.clear();
 	_afterCullingBufferBarriers.clear();
-	prepare_data_for_drawing(cmd);
-
-	prepare_gpu_indirect_buffer(cmd, _renderScene._forwardPass);
 	
-	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, _beforeCullingBufferBarriers.size(), _beforeCullingBufferBarriers.data(), 0, nullptr);
-
 	CullParams forwardPassCullParams;
 	forwardPassCullParams.frustumCull = true;
 	forwardPassCullParams.occlusionCull = true;
 	forwardPassCullParams.drawDist = 9999999;
 	forwardPassCullParams.aabb = false;
+	forwardPassCullParams.viewMatrix = camera.get_view_matrix();
+	forwardPassCullParams.projMatrix = camera.get_projection_matrix(_windowExtent.width, _windowExtent.height, true);
+
+	prepare_gpu_indirect_buffer(cmd, _renderScene._forwardPass);
+
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, _beforeCullingBufferBarriers.size(), _beforeCullingBufferBarriers.data(), 0, nullptr);
 
 	culling(_renderScene._forwardPass, cmd, forwardPassCullParams);
+
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
 		0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
+
+	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_offscrRenderPass, _windowExtent, _offscrFramebuffers[swapchainImageIndex]);
+	rpInfo.clearValueCount = 2;
 	
+	VkClearValue clearValues[] = { clearValue, depthClear };
+	rpInfo.pClearValues = clearValues;
+
 	vkCmdBeginRenderPass(get_current_frame()._mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	VkViewport viewport;
@@ -842,8 +902,8 @@ void VulkanEngine::draw()
 	VkRect2D scissor;
 	scissor.offset = { 0, 0 };
 	scissor.extent = _windowExtent;
-	vkCmdSetViewport(get_current_frame()._mainCommandBuffer, 0, 1, &viewport);
-	vkCmdSetScissor(get_current_frame()._mainCommandBuffer, 0, 1, &scissor);
+	vkCmdSetViewport(cmd, 0, 1, &viewport);
+	vkCmdSetScissor(cmd, 0, 1, &scissor);
 
 	draw_forward_pass(cmd);
 
@@ -1016,6 +1076,8 @@ void VulkanEngine::run()
 
 void VulkanEngine::parse_prefabs()
 {
+	LOG_INFO("Start parsing prefabs");
+	
 	_materialSystem.build_default_templates();
 	std::string assetsPath = _projectPath + "/assets/";
 	fs::path direcory{ assetsPath };
@@ -1027,30 +1089,32 @@ void VulkanEngine::parse_prefabs()
 
 	std::vector<glm::vec3> translation = {
 		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 45.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(-50.0f, 0.0f, 0.0f),
 		glm::vec3(-100.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f)
 	};
 
 	int counter = 0;
-	
+	LOG_INFO("Before cycle");
 	for (auto& p : fs::directory_iterator(direcory))
 	{
 		if (p.path().extension() == ".pref")
 		{
+			LOG_INFO("Loading prefabs");
 			assets::AssetFile file;
 			assets::load_binaryFile(p.path().string().c_str(), file);
 			assets::PrefabInfo info = assets::read_prefab_info(&file);
 
 			Mesh tempMesh{};
 			tempMesh.load_from_mesh_asset(info.meshPath.c_str());
+			//glm::mat4 model = glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			glm::mat4 model = glm::translate(glm::mat4(1.0f), translation[counter]);
-			if (counter == 1)
+			/*if (counter == 1)
 			{
 				model = glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 				model = glm::translate(model, glm::vec3(-35.0f, 0.0f, -45.0f));
-			}
+			}*/
 
 			meshes.push_back(tempMesh);
 			std::string meshName = info.meshPath;
@@ -1067,6 +1131,7 @@ void VulkanEngine::parse_prefabs()
 
 			if (!materialInfo.textures.empty())
 			{
+				LOG_INFO("Loading textures");
 				for (auto& tex : materialInfo.textures)
 				{
 					Texture tempTexture;
@@ -1102,7 +1167,7 @@ void VulkanEngine::parse_prefabs()
 			{
 				LOG_WARNING("No textures in {} material", materialInfo.materialName);
 			}
-			
+			LOG_INFO("Set up final result");
 			_materialSystem.build_material(materialInfo.materialName, materialData);
 			tempMeshObject.material = _materialSystem.get_material(materialInfo.materialName);
 			tempMeshObject.mesh = &_meshes[meshName];
@@ -1110,6 +1175,7 @@ void VulkanEngine::parse_prefabs()
 			++counter;
 			
 			_meshObjects.push_back(tempMeshObject);
+			LOG_INFO("Finish this step");
 		}
 	}
 
@@ -1118,6 +1184,8 @@ void VulkanEngine::parse_prefabs()
 	});
 
 	fill_renderable_objects();
+
+	LOG_INFO("Finishing parsing prefabs");
 }
 
 void VulkanEngine::allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes)
@@ -1282,6 +1350,7 @@ void VulkanEngine::create_attachment(
 			VkImageAspectFlags aspectFlags)
 {
 	attachment.format = format;
+	attachment.extent = imageExtent;
 
 	VkImageCreateInfo img_info = vkinit::image_create_info(attachment.format, usageFlags, imageExtent);
 	

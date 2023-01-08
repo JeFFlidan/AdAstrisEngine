@@ -203,6 +203,8 @@ struct CullParams
 	bool aabb;
 	glm::vec3 aabbmin;
 	glm::vec3 aabbmax;
+	glm::mat4 projMatrix;
+	glm::mat4 viewMatrix;
 };
 
 struct ObjectData
@@ -258,6 +260,7 @@ class VulkanEngine
 		VkRenderPass _offscrRenderPass;
 		std::vector<VkFramebuffer> _framebuffers;
 		std::vector<VkFramebuffer> _offscrFramebuffers;
+		VkFramebuffer _dirLightShadowFramebuffer;
 
 		VkDescriptorSetLayout _globalSetLayout;
 		VkDescriptorSetLayout _objectSetLayout;
@@ -287,6 +290,7 @@ class VulkanEngine
 
 		std::vector<VkBufferMemoryBarrier> _beforeCullingBufferBarriers;
 		std::vector<VkBufferMemoryBarrier> _afterCullingBufferBarriers;		// I should execute those barriers before drawing
+		std::vector<VkImageMemoryBarrier> _afterShadowsBarriers;
 
 		VkPipeline _depthReducePipeline;
 		VkPipelineLayout _depthReduceLayout;
@@ -312,6 +316,8 @@ class VulkanEngine
 		std::vector<VkDescriptorImageInfo> _normalImageInfos;
 		VkSampler _textureSampler;
 		std::vector<VkDescriptorImageInfo> _armImageInfos;
+
+		VkSampler _shadowMapSampler;
 
 		std::vector<PrefabElementsNames> _meshAndMaterialNames;
 		Plane _outputQuad;
@@ -371,6 +377,7 @@ class VulkanEngine
 		void init_commands();
 		void init_renderpasses();
 		void init_framebuffers();
+		void init_shadow_maps();
 		void init_sync_structures();
 		void init_scene();
 		void init_descriptors();
@@ -390,10 +397,9 @@ class VulkanEngine
 		std::vector<IndirectBatch> compact_draws(RenderObject* objects, int count);
 		void allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes);
 
-		template<typename T>
-		void reallocate_buffer(AllocatedBufferT<T>& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+		void reallocate_buffer(AllocatedBuffer& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 		{
-			AllocatedBufferT<T> newBuffer(this, size, usage, memoryUsage);
+			AllocatedBuffer newBuffer(this, size, usage, memoryUsage);
 
 			if (buffer._buffer != VK_NULL_HANDLE)
 			{
@@ -407,16 +413,18 @@ class VulkanEngine
 			buffer = newBuffer;
 		}
 
-		AllocatedBuffer reallocate_buffer(AllocatedBuffer buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 		void parse_prefabs();
 
 		void refresh_multi_threads_command_buffers(uint32_t objectsPerThread);
 		
 		// methods for renderer
 		void prepare_gpu_indirect_buffer(VkCommandBuffer cmd, RenderScene::MeshPass& meshPass);
+		void prepare_data_for_drawing(VkCommandBuffer cmd);
+		void prepare_per_frame_data(VkCommandBuffer cmd);
 		void fill_renderable_objects();
 		void culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd, CullParams cullParams);
 		void draw_forward_pass(VkCommandBuffer cmd);
+		void bake_shadow_maps(VkCommandBuffer cmd);
+		void draw_dir_lights_shadow_pass(VkCommandBuffer cmd);
 		void depth_reduce(VkCommandBuffer cmd);
-		void prepare_data_for_drawing(VkCommandBuffer cmd);
 };
