@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
+#include <glm/mat4x4.hpp>
 #include "vk_mem_alloc.h"
 
 class VulkanEngine;
@@ -31,8 +32,8 @@ class AllocatedBuffer
 			AllocatedBuffer* dstBuffer,
 			VkDeviceSize dstOffset = 0, 
 			VkDeviceSize srcOffset = 0);
-	protected:
-		void allocate_buffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);		
+		protected:
+			void allocate_buffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);		
 };
 
 // Typed version of AllocatedBuffer
@@ -77,7 +78,19 @@ struct Texture
 struct Attachment : public Texture
 {
 	VkFormat format;
+	VkExtent3D extent;
 
 	void destroy_attachment(VulkanEngine* engine);
+};
+
+struct DirShadowMap
+{
+	// Struct for directional light's shadow
+	Attachment attachment;
+	VkFramebuffer framebuffer{ VK_NULL_HANDLE };
+	VkRenderPass renderPass{ VK_NULL_HANDLE };
+	AllocatedBuffer dirLightBuffer;		// It's an uniform buffer to bake shadow maps
+
+	void destroy_shadow_map(VulkanEngine* engine);
 };
 

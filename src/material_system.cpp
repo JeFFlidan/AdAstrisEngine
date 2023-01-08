@@ -6,6 +6,7 @@
 #include "vk_mesh.h"
 
 #include <iostream>
+#include <limits>
 #include <unordered_map>
 #include <functional>
 #include <vulkan/vulkan_core.h>
@@ -121,7 +122,7 @@ namespace vkutil
 		pipelineBuilder._vertexDescription = Mesh::get_vertex_description();
 		
 	    _offscrPipelineBuilder = pipelineBuilder;
-	    _shadowPipelineBuilder = pipelineBuilder;
+	    _dirLightShadowPipelineBuilder = pipelineBuilder;
 		
 		pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS_OR_EQUAL);
 
@@ -212,16 +213,24 @@ namespace vkutil
 		ShaderEffect* postprocessingEffect = build_shader_effect({
 		    "/shaders/postprocessing.vert.spv",
 			"/shaders/postprocessing.frag.spv"});
+		ShaderEffect* dirLightShadowEffect = build_shader_effect({
+			"/shaders/dir_light_depth_map.vert.spv",
+			"/shaders/dir_light_depth_map.frag.spv"
+		});
+			
 		//ShaderEffect* coloredLitEffect = build_shader_effect({
 		//	"/shaders/mesh.vert.spv",
 		//	"/shaders/default_lit.frag.spv"});
+
+		DirShadowMap& shadowMap = _engine->_renderScene._dirShadowMaps[0];
 		
 		ShaderPass* texturedLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, texturedLitEffect);
 		ShaderPass* postrpocessingPass = build_shader_pass(_engine->_renderPass, _postprocessingPipelineBuilder, postprocessingEffect);
+		ShaderPass* dirLightShadowPass = build_shader_pass(shadowMap.renderPass, _dirLightShadowPipelineBuilder, dirLightShadowEffect);
 		//ShaderPass* coloredLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, coloredLitEffect);
 
 		EffectTemplate effectTemplate;
-		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = nullptr;
+		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = dirLightShadowPass;
 		effectTemplate.passShaders[MeshpassType::Transparency] = nullptr;
 		effectTemplate.passShaders[MeshpassType::Forward] = texturedLitPass;
 		effectTemplate.defaultParameters = nullptr;
@@ -229,6 +238,7 @@ namespace vkutil
 		_templateCache["PBR_opaque"] = effectTemplate;
 
 		effectTemplate.passShaders[MeshpassType::Forward] = postrpocessingPass;
+		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = nullptr;
 		_templateCache["Postprocessing"] = effectTemplate;
 	}
 
@@ -295,21 +305,24 @@ namespace vkutil
 	void MaterialSystem::cleanup()
 	{
 		for (auto templ : _templateCache)
-		{				
+		{
+			VkDevice device = _engine->_device;
+			
 			auto pass = templ.second.passShaders[vkutil::MeshpassType::Forward];
-			
-			vkDestroyPipeline(_engine->_device,
-				pass->pipeline,
-				nullptr
-			);
-			
-			vkDestroyPipelineLayout(
-				_engine->_device,
-				pass->layout,
-				nullptr
-			);
+			if (pass != nullptr)
+			{
+				vkDestroyPipeline(device, pass->pipeline, nullptr);	
+				vkDestroyPipelineLayout(device, pass->layout, nullptr);
+				pass->effect->destroy_shader_modules();
+			}
 
-			pass->effect->destroy_shader_modules();
+			pass = templ.second.passShaders[vkutil::MeshpassType::DirectionalShadow];
+			if (pass != nullptr)
+			{
+				vkDestroyPipeline(device, pass->pipeline, nullptr);
+				vkDestroyPipelineLayout(device, pass->layout, nullptr);
+				pass->effect->destroy_shader_modules();
+			}
 		}
 	}
 	

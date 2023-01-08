@@ -158,7 +158,7 @@ namespace vkutil
 
 			PipelineBuilder _postprocessingPipelineBuilder;
 			PipelineBuilder _offscrPipelineBuilder;
-			PipelineBuilder _shadowPipelineBuilder;
+			PipelineBuilder _dirLightShadowPipelineBuilder;
 			PipelineBuilder _transparencyBuilder;
 
 			std::unordered_map<std::string, EffectTemplate> _templateCache;

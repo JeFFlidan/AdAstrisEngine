@@ -10,21 +10,21 @@ namespace vkutil
 		public:
 			static RenderPassBuilder begin();
 			
-			RenderPassBuilder& addColorAttachment(
+			RenderPassBuilder& add_color_attachment(
 				VkFormat imageFormat,
 				VkSampleCountFlagBits samples,
 				VkImageLayout finalLayout,
 				VkImageLayout refLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 				VkAttachmentDescriptionFlags flags = 0);
 
-			RenderPassBuilder& addDepthAttachment(
+			RenderPassBuilder& add_depth_attachment(
 				VkFormat imageFormat,
 				VkSampleCountFlagBits samples,
 				VkImageLayout finalLayout,
 				VkImageLayout refLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 				VkAttachmentDescriptionFlags flags = 0);
 
-			RenderPassBuilder& addSubpass(VkPipelineBindPoint pipelineType);
+			RenderPassBuilder& add_subpass(VkPipelineBindPoint pipelineType);
 			
 		    void build(VkDevice& device, VkRenderPass& renderPass);
 			

@@ -1,6 +1,9 @@
 #version 460
 
 #extension GL_EXT_nonuniform_qualifier : require
+#extension GL_GOOGLE_include_directive : require
+
+#include "data.h"
 
 layout(location = 0) in vec2 texCoord;
 layout(location = 1) in flat uint id;
@@ -9,27 +12,6 @@ layout(location = 3) in vec3 fragPos;
 layout(location = 4) in mat3 TBN;
 
 layout(location = 0) out vec4 outFragColor;
-
-struct DirectionLight
-{
-	vec4 direction;
-	vec4 colorAndIntensity;	// w = intensity
-};
-
-struct PointLight
-{
-	vec4 colorAndIntensity;
-	vec4 positionAndAttRadius;
-	float sourceRadius;
-};
-
-struct SpotLight
-{
-	vec4 colorAndIntensity;
-	vec4 positionAndDistance;
-	vec4 spotDirAndInnerConeRadius;
-	float outerConeRadius;
-};
 
 layout(set = 0, binding = 0) buffer DirectionLights
 {
@@ -47,6 +29,7 @@ layout(set = 0, binding = 2) buffer SpotLights
 } spotLights;
 
 layout(set = 0, binding = 5) uniform sampler samp;
+layout(set = 0, binding = 6) uniform sampler shadowSamp;
 
 layout(set = 0, binding = 4) uniform SceneData
 {
@@ -58,8 +41,7 @@ layout(set = 0, binding = 4) uniform SceneData
 layout(set = 2, binding = 0) uniform texture2D baseColorTextures[];
 layout(set = 3, binding = 0) uniform texture2D normalTextures[];
 layout(set = 4, binding = 0) uniform texture2D armTextures[];
-
-//layout(set = 2, binding = 1) uniform sampler samp;
+layout(set = 5, binding = 0) uniform texture2D dirShadowMaps[];
 
 const float PI = 3.14159265359;
 
@@ -78,6 +60,8 @@ float calculateSpotLightAttenuation(SpotLight spotLight, vec3 unormalizedLightVe
 vec3 calculateDirectionLight(vec3 F0, vec3 N, vec3 V, DirectionLight dirLight, vec3 albedo, float roughness, float metallic);
 vec3 calculatePointLight(vec3 F0, vec3 N, vec3 V, PointLight pointLight, vec3 albedo, float roughness, float metallic);
 vec3 calculateSpotLight(vec3 F0, vec3 N, vec3 V, SpotLight spotLight, vec3 albedo, float roughness, float metallic);
+
+float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id);
 
 void main()
 {
@@ -99,11 +83,16 @@ void main()
 	vec3 dirLightsL0 = vec3(0.0);
 	vec3 pointLightsL0 = vec3(0.0);
 	vec3 spotLightsL0 = vec3(0.0);
+
+	float shadow = 0.0;
 	
 	for (int i = 0; i != sceneData.dirLightsAmount; ++i)
 	{
 		dirLightsL0 += calculateDirectionLight(F0, normal, view, dirLights.casters[i], albedo, roughness, metallic);
+		shadow = calculateDirLightShadow(dirLights.casters[i], normal, i);
 	}
+
+	dirLightsL0 *= (1.0 - shadow);
 
 	for (int i = 0; i != sceneData.pointLightsAmount; ++i)
 	{
@@ -115,12 +104,15 @@ void main()
 		spotLightsL0 += calculateSpotLight(F0, normal, view, spotLights.casters[i], albedo, roughness, metallic);
 	}
 
-	vec3 ambient = vec3(0.03) * albedo * ao;
-	vec3 finalColor = ambient + spotLightsL0 + dirLightsL0 + pointLightsL0;
+	vec3 ambient = vec3(0.01) * albedo * ao;
+	vec3 finalColor = ambient + (spotLightsL0 + dirLightsL0 + pointLightsL0);
+	//finalColor = ambient + (spotLightsL0 + dirLightsL0 + pointLightsL0);
 
 	finalColor = pow(finalColor, vec3(1.0/2.2));
 
 	outFragColor = vec4(finalColor, 1.0);
+	//float temp = calculateDirLightShadow(dirLights.casters[0], 0);
+	//outFragColor = vec4(temp);
 }
 
 vec3 calculateDirectionLight(vec3 F0, vec3 N, vec3 V, DirectionLight dirLight, vec3 albedo, float roughness, float metallic)
@@ -281,5 +273,35 @@ float calculateSpotLightAttenuation(SpotLight spotLight, vec3 unormalizedLightVe
 	attenuation *= getDistanceAtt(unormalizedLightVector, lightInvSqrMaxDist);
 	attenuation *= getAngleAtt(spotLight, normalizedLightVector);
 	return attenuation;
+}
+
+float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id)
+{
+	vec4 fragPosLightSpace = dirLight.lightProjMat * dirLight.lightViewMat * vec4(fragPos, 1.0);
+	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	projCoords.xy = projCoords.xy * 0.5 + 0.5;
+	float currentDepth = projCoords.z;
+	
+	if (currentDepth > 1.0)
+		return 0.0;
+
+	vec3 L = normalize(vec3(-dirLight.direction));
+	float bias = max(0.05 * (1.0 - dot(N, L)), 0.005);
+		
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / textureSize(sampler2D(dirShadowMaps[id], shadowSamp), 0);
+	for (int x = -1; x <= 1; ++x)
+	{
+		for (int y = -1; y <= 1; ++y)
+		{
+			vec2 tempTexCoord = projCoords.xy + vec2(x, y) * texelSize;
+			float pcfDepth = texture(nonuniformEXT(sampler2D(dirShadowMaps[id], shadowSamp)), tempTexCoord).r;
+			shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+		}
+	}
+
+	shadow /= 9.0;
+	
+	return shadow;
 }
 

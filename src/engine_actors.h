@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
 
 namespace actors
 {	
@@ -22,6 +23,8 @@ namespace actors
 	{
 		glm::vec4 direction;
 		glm::vec4 colorAndIntensity;	// w = intensity
+		glm::mat4 lightViewMat;
+		glm::mat4 lightProjMat;
 	};
 }
 

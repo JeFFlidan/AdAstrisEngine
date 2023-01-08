@@ -17,13 +17,13 @@
 void RenderScene::init()
 {
 	_forwardPass.type = vkutil::MeshpassType::Forward;
-	_shadowPass.type = vkutil::MeshpassType::DirectionalShadow;
+	_dirShadowPass.type = vkutil::MeshpassType::DirectionalShadow;
 	_transparentForwardPass.type = vkutil::MeshpassType::Transparency;
 }
 
 void RenderScene::cleanup(VulkanEngine* engine)
 {
-	std::vector<MeshPass*> passes = { &_forwardPass };
+	std::vector<MeshPass*> passes = { &_forwardPass, &_dirShadowPass };
 	for (auto pass : passes)
 	{
 		pass->compactedInstanceBuffer.destroy_buffer(engine);
@@ -36,6 +36,11 @@ void RenderScene::cleanup(VulkanEngine* engine)
 	_spotLightsBuffer.destroy_buffer(engine);
 	_dirLightsBuffer.destroy_buffer(engine);
 	_objectDataBuffer.destroy_buffer(engine);
+
+	for (auto& shadowMap : _dirShadowMaps)
+	{
+		shadowMap.dirLightBuffer.destroy_buffer(engine);
+	}
 }
 
 void RenderScene::register_object_batch(MeshObject* first, uint32_t count)
@@ -78,7 +83,8 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 	{
 		if (object->material->original->passShaders[vkutil::MeshpassType::Forward])
 		{
-			_shadowPass.unbatchedObjects.push_back(handle);
+			LOG_INFO("+1 in shadow pass");
+			_dirShadowPass.unbatchedObjects.push_back(handle);
 		}
 	}
 
@@ -147,8 +153,8 @@ void RenderScene::update_object(Handle<RenderableObject> objectID)
 		Handle<PassObject> handle;
 	    handle.handle = passInidices[vkutil::MeshpassType::DirectionalShadow];
 
-	    _shadowPass.objectToDelete.push_back(handle);
-	    _shadowPass.unbatchedObjects.push_back(objectID);
+	    _dirShadowPass.objectToDelete.push_back(handle);
+	    _dirShadowPass.unbatchedObjects.push_back(objectID);
 
 	    passInidices[vkutil::MeshpassType::DirectionalShadow] = -1;
 	}
@@ -306,11 +312,11 @@ void RenderScene::build_batches()
 {
 	// I have to read how async works
 	auto forward = std::async(std::launch::async, [&]{ refresh_pass(&_forwardPass); });
-	//auto shadow = std::async(std::launch::async, [&]{ refresh_pass(&_shadowPass); });
+	auto shadow = std::async(std::launch::async, [&]{ refresh_pass(&_dirShadowPass); });
 	//auto transparent = std::async(std::launch::async, [&]{ refresh_pass(&_transparentForwardPass); });
 
 	//transparent.get();
-	//shadow.get();
+	shadow.get();
 	forward.get();
 }
 
@@ -400,7 +406,7 @@ RenderScene::MeshPass* RenderScene::get_mesh_pass(vkutil::MeshpassType type)
 			pass = &_forwardPass;
 			break;
 		case vkutil::MeshpassType::DirectionalShadow:
-			pass = &_shadowPass;
+			pass = &_dirShadowPass;
 			break;
 		case vkutil::MeshpassType::Transparency:
 			pass = &_transparentForwardPass;

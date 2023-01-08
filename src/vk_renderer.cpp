@@ -5,6 +5,7 @@
 #include "fmt/core.h"
 #include "glm/geometric.hpp"
 #include "glm/matrix.hpp"
+#include "logger.h"
 #include "material_system.h"
 #include "vk_descriptors.h"
 #include "vk_engine.h"
@@ -50,6 +51,9 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
 	VkDescriptorImageInfo samplerInfo{};
 	samplerInfo.sampler = _textureSampler;
 
+	VkDescriptorImageInfo sampler2Info{};
+	sampler2Info.sampler = _shadowMapSampler;
+
 	VkDescriptorBufferInfo objectDataInfo = _renderScene._objectDataBuffer.get_info(true);
 	VkDescriptorBufferInfo instanceInfo = meshPass.compactedInstanceBuffer.get_info(true);
 	VkDescriptorBufferInfo cameraInfo = get_current_frame()._cameraBuffer.get_info();
@@ -63,6 +67,7 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
 	VkDescriptorSet texturesDescriptorSet1;
 	VkDescriptorSet texturesDescriptorSet2;
 	VkDescriptorSet texturesDescriptorSet3;
+	VkDescriptorSet dirShadowMapsDescriptorSet;
 
 	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
 		.bind_buffer(0, &dirLightsInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -71,6 +76,7 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
 		.bind_buffer(3, &cameraInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
 		.bind_buffer(4, &sceneDataInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.bind_image(5, &samplerInfo, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(6, &sampler2Info, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.build(globalDescriptorSet);
 
 	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
@@ -92,7 +98,17 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
 		.bind_image(0, _renderScene._armInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._armInfos.size())
 		.build_non_uniform(texturesDescriptorSet3, _renderScene._armInfos.size());
 
-	std::vector<VkDescriptorSet> sets = { globalDescriptorSet, objectDescriptorSet, texturesDescriptorSet1, texturesDescriptorSet2, texturesDescriptorSet3 };
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_image(0, _renderScene._dirShadowMapsInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._dirShadowMaps.size())
+		.build_non_uniform(dirShadowMapsDescriptorSet, _renderScene._dirShadowMapsInfos.size());
+
+	std::vector<VkDescriptorSet> sets = {
+		globalDescriptorSet,
+		objectDescriptorSet,
+		texturesDescriptorSet1,
+		texturesDescriptorSet2,
+		texturesDescriptorSet3,
+		dirShadowMapsDescriptorSet};
 
 	vkutil::ShaderPass* prevMaterial = nullptr;
 
@@ -126,6 +142,141 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
 	}
 }
 
+void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
+{
+	_renderScene._dirShadowMapsInfos.clear();
+	size_t size = sizeof(glm::mat4) * _renderScene._dirLights.size();
+
+	float nearPlane = 0.1f, farPlane = 85.0f;
+
+	for (int i = 0; i != _renderScene._dirLights.size(); ++i)
+	{
+		auto dirLight = _renderScene._dirLights[i];
+		size_t allocSize = sizeof(actors::DirectionLight);
+		AllocatedBuffer& buffer = _renderScene._dirShadowMaps[i].dirLightBuffer;
+		reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		buffer.copy_from(this, &dirLight, allocSize);
+	}
+	
+	draw_dir_lights_shadow_pass(cmd);
+
+	for (auto& shadowMap : _renderScene._dirShadowMaps)
+	{
+		VkDescriptorImageInfo info;
+		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		info.imageView = shadowMap.attachment.imageView;
+		info.sampler = nullptr;
+
+		_renderScene._dirShadowMapsInfos.push_back(info);
+	}
+}
+
+void VulkanEngine::draw_dir_lights_shadow_pass(VkCommandBuffer cmd)
+{
+	auto& meshPass = _renderScene._dirShadowPass;
+	
+	vkutil::ShaderPass* prevMaterial = nullptr;
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
+	vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
+
+	VkClearValue depthClear;
+	depthClear.depthStencil.depth = 1.f;
+	
+	for (int i = 0; i != _renderScene._dirLights.size(); ++i)
+	{		
+		actors::DirectionLight& dirLight = _renderScene._dirLights[i];
+		DirShadowMap& shadowMap = _renderScene._dirShadowMaps[i];
+
+		CullParams cullParams;
+		cullParams.frustumCull = true;
+		cullParams.occlusionCull = false;
+		cullParams.aabb = false;
+		cullParams.drawDist = 9999999;
+		cullParams.viewMatrix = dirLight.lightViewMat;
+		cullParams.projMatrix = dirLight.lightProjMat;
+
+		culling(_renderScene._dirShadowPass, cmd, cullParams);
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+			0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
+
+		_afterCullingBufferBarriers.clear();
+
+		VkDescriptorBufferInfo objectDataBufferInfo = _renderScene._objectDataBuffer.get_info(true);
+		VkDescriptorBufferInfo finalInstanceBufferInfo = meshPass.compactedInstanceBuffer.get_info(true);
+		VkDescriptorBufferInfo testInfo = _renderScene._dirLightsBuffer.get_info(true);
+		VkDescriptorBufferInfo cameraBuffer = get_current_frame()._cameraBuffer.get_info();
+
+		VkDescriptorSet dirShadowsDescriptorSet;
+		vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+			.bind_buffer(0, &objectDataBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+			.bind_buffer(1, &finalInstanceBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+			.build(dirShadowsDescriptorSet);
+
+		VkDescriptorBufferInfo dirShadowMapBufferInfo = _renderScene._dirShadowMaps[i].dirLightBuffer.get_info();
+
+		VkDescriptorSet dirShadowMapSet;
+		vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+			.bind_buffer(0, &dirShadowMapBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+			.build(dirShadowMapSet);
+
+		VkExtent3D extent3D = shadowMap.attachment.extent;
+		VkExtent2D extent = { extent3D.width, extent3D.height };
+		VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(shadowMap.renderPass, extent, shadowMap.framebuffer);
+		rpInfo.clearValueCount = 1;
+		rpInfo.pClearValues = &depthClear;
+		vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		VkViewport viewport;
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		viewport.width = static_cast<float>(extent.width);
+		viewport.height = static_cast<float>(extent.height);
+		VkRect2D scissor;
+		scissor.offset = { 0, 0 };
+		scissor.extent = extent;
+		vkCmdSetViewport(cmd, 0, 1, &viewport);
+		vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+		for (int i = 0; i != meshPass.multibatches.size(); ++i)
+		{
+			auto& multibatch = meshPass.multibatches[i];
+			auto& batch = meshPass.batches[multibatch.first];
+
+			auto shaderPass = batch.material.shaderPass;
+
+			if (shaderPass != prevMaterial)
+			{
+				vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->layout, 0, 1, &dirShadowsDescriptorSet, 0, nullptr);
+				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->layout, 1, 1, &dirShadowMapSet, 0, nullptr);
+				prevMaterial = shaderPass;
+			}
+
+			VkDeviceSize offset = multibatch.first * sizeof(GPUIndirectObject);
+			uint32_t stride = sizeof(GPUIndirectObject);
+
+			auto& meshPass = _renderScene._dirShadowPass;
+
+			vkCmdDrawIndexedIndirect(cmd, meshPass.drawIndirectBuffer._buffer, offset, multibatch.count, stride);
+		}
+
+		vkCmdEndRenderPass(cmd);
+
+		VkImage& image = shadowMap.attachment.imageData.image;
+		VkImageMemoryBarrier imageBarrier = vkinit::image_barrier(image,
+			VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+			VK_ACCESS_SHADER_READ_BIT,
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			VK_IMAGE_ASPECT_DEPTH_BIT);
+
+		_afterShadowsBarriers.push_back(imageBarrier);
+	}
+}
+
 void VulkanEngine::culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd, CullParams cullParams)
 {
 	VkDescriptorBufferInfo objectDataBufferInfo = _renderScene._objectDataBuffer.get_info(true);
@@ -149,7 +300,7 @@ void VulkanEngine::culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd,
 		.bind_buffer(5, &cameraBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT)
 		.build(cullingSet);
 
-	glm::mat4 projection = camera.get_projection_matrix((float)_windowExtent.width, (float)_windowExtent.height);
+	glm::mat4 projection = cullParams.projMatrix;
 	glm::mat4 projectionT = glm::transpose(projection);
 
 	glm::vec4 frustumX = normalize_plane(projectionT[3] + projectionT[0]);
@@ -172,7 +323,7 @@ void VulkanEngine::culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd,
 	cullData.lodStep = 1.5f;
 	cullData.pyramidWidth = static_cast<uint32_t>(_depthPyramidWidth);
 	cullData.pyramidHeight = static_cast<uint32_t>(_depthPyramidHeight);
-	cullData.view = camera.get_view_matrix();
+	cullData.view = cullParams.viewMatrix;
 
 	cullData.AABBcheck = cullParams.aabb;
 	cullData.aabbmin_x = cullParams.aabbmin.x;
@@ -289,7 +440,7 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 	
 	std::vector<RenderScene::MeshPass*> passes = {
 		&_renderScene._forwardPass,
-		&_renderScene._shadowPass,
+		&_renderScene._dirShadowPass,
 		&_renderScene._transparentForwardPass
 	};
 
@@ -300,7 +451,7 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 		size_t compactedBufSize = pass.flatBatches.size() * sizeof(uint32_t);
 		size_t passObjBufSize = pass.flatBatches.size() * sizeof(GPUInstance);
 		size_t indirectBufSize = pass.batches.size() * sizeof(GPUIndirectObject);
-		
+
 		if (pass.compactedInstanceBuffer._bufferSize != compactedBufSize)
 		{
 			reallocate_buffer(pass.compactedInstanceBuffer, compactedBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
@@ -397,6 +548,27 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 		nullptr, static_cast<uint32_t>(bufferMemoryBarriers.size()), bufferMemoryBarriers.data(), 0, nullptr);
 
 	bufferMemoryBarriers.clear();
+}
+
+void VulkanEngine::prepare_per_frame_data(VkCommandBuffer cmd)
+{
+	glm::mat4 view = camera.get_view_matrix();
+	glm::mat4 projection = camera.get_projection_matrix((float)_windowExtent.width, (float)_windowExtent.height);
+ 
+	GPUCameraData camData;
+	camData.view = view;
+	camData.proj = projection;
+	camData.viewproj = projection * view;
+	camData.position = glm::vec4(camera.get_position(), 0.0f);
+
+	get_current_frame()._cameraBuffer.copy_from(this, &camData, sizeof(GPUCameraData));
+	
+	GPUSceneData sceneData;
+	sceneData.dirLightsAmount = _renderScene._dirLights.size();
+	sceneData.pointLightsAmount = _renderScene._pointLights.size();
+	sceneData.spotLightsAmount = _renderScene._spotLights.size();
+
+	get_current_frame()._sceneDataBuffer.copy_from(this, &sceneData, sizeof(GPUSceneData));	
 }
 
 void VulkanEngine::depth_reduce(VkCommandBuffer cmd)

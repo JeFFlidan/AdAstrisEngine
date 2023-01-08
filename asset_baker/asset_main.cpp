@@ -344,9 +344,18 @@ int main(int argc, char* argv[])
 				assets::MaterialMode::OPAQUE
 			);
 
-			save_prefab(directory.string(), "gun");
-			save_prefab(directory.string(), "gun2");
+			save_material(
+				directory,
+				"wall",
+				"PBR_opaque",
+				{ "/Painted_metal_basecolor.tx", "/Painted_metal_normal.tx", "/Painted_metal_ARM.tx" },
+				assets::MaterialMode::OPAQUE
+			);
+
+			//save_prefab(directory.string(), "gun");
+			//save_prefab(directory.string(), "gun2");
 			save_prefab(directory.string(), "door");
+			save_prefab(directory.string(), "wall");
 		}
 	}
 }
