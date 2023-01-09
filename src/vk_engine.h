@@ -423,7 +423,9 @@ class VulkanEngine
 		void prepare_per_frame_data(VkCommandBuffer cmd);
 		void fill_renderable_objects();
 		void culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd, CullParams cullParams);
-		void draw_forward_pass(VkCommandBuffer cmd);
+		void draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
+		void draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
+		void submit(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void bake_shadow_maps(VkCommandBuffer cmd);
 		void draw_dir_lights_shadow_pass(VkCommandBuffer cmd);
 		void depth_reduce(VkCommandBuffer cmd);

@@ -104,16 +104,6 @@ namespace vkutil
 		pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
 		pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 		
-		/*pipelineBuilder._viewport.x = 0.0f;
-		pipelineBuilder._viewport.y = 0.0f;
-		pipelineBuilder._viewport.width = static_cast<float>(_engine->_windowExtent.width);
-		pipelineBuilder._viewport.height = static_cast<float>(_engine->_windowExtent.height);
-		pipelineBuilder._viewport.minDepth = 0.0f;
-		pipelineBuilder._viewport.maxDepth = 1.0f;
-
-		pipelineBuilder._scissor.offset = { 0, 0 };
-		pipelineBuilder._scissor.extent = _engine->_windowExtent;*/
-
 		pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 		pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL);
 		pipelineBuilder._multisampling = vkinit::multisampling_state_create_info();
@@ -323,26 +313,6 @@ namespace vkutil
 				vkDestroyPipelineLayout(device, pass->layout, nullptr);
 				pass->effect->destroy_shader_modules();
 			}
-		}
-	}
-	
-	void MaterialSystem::destroy_pipeline_layouts()
-	{
-		for (auto material : _materials)
-		{
-			vkDestroyPipelineLayout(
-				_engine->_device,
-				material.second->original->passShaders[vkutil::MeshpassType::Forward]->layout,
-				nullptr
-			);
-		}
-	}
-
-	void MaterialSystem::destroy_shaders_modules()
-	{
-		for (auto& material : _materials)
-		{
-			material.second->original->passShaders[vkutil::MeshpassType::Forward]->effect->destroy_shader_modules();
 		}
 	}
 

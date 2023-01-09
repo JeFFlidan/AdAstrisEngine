@@ -167,9 +167,6 @@ namespace vkutil
 			std::unordered_map<MaterialData, Material*, MaterialInfoHash> _materialCache;
 			VulkanEngine* _engine;
 	
-			void destroy_pipeline_layouts();
-			void destroy_shaders_modules();
-
 			void setup_pipeline_builders();
 
 			void refresh_shader_pass(ShaderPass* shaderPass);
