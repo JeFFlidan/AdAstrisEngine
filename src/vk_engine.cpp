@@ -303,21 +303,11 @@ void VulkanEngine::init_swapchain()
 
 	_swapchainImageFormat = vkbSwapchain.image_format;
 
-	//_mainDeletionQueue.push_function([=](){ vkDestroySwapchainKHR(_device, _swapchain, nullptr); });
-
 	VkExtent3D imageExtent = {
 		_windowExtent.width,
 		_windowExtent.height,
 		1
 	 };
-
-	// create_attachment(
-	// 	_depthImage,
-	// 	imageExtent,
-	// 	VK_FORMAT_D32_SFLOAT,
-	// 	VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-	// 	VK_IMAGE_ASPECT_DEPTH_BIT
-	// );
 
 	create_attachment(
 		_offscrColorImage,
@@ -333,17 +323,13 @@ void VulkanEngine::init_swapchain()
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_IMAGE_ASPECT_DEPTH_BIT
 	);
+	
+	VkSamplerCreateInfo imgSamplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
+	vkCreateSampler(_device, &imgSamplerInfo, nullptr, &_offscrColorSampler);
 
-	/*_mainDeletionQueue.push_function([=](){
-		// vkDestroyImageView(_device, _depthImage._imageView, nullptr);
-		// vmaDestroyImage(_allocator, _depthImage._imageData._image, _depthImage._imageData._allocation);
-
-		vkDestroyImageView(_device, _offscrDepthImage._imageView, nullptr);
-		vmaDestroyImage(_allocator, _offscrDepthImage._imageData._image, _offscrDepthImage._imageData._allocation);
-
-		vkDestroyImageView(_device, _offscrColorImage._imageView, nullptr);
-		vmaDestroyImage(_allocator, _offscrColorImage._imageData._image, _offscrColorImage._imageData._allocation);		
-	});*/
+	_mainDeletionQueue.push_function([=](){
+		vkDestroySampler(_device, _offscrColorSampler, nullptr);
+	});
 
 	// setup depth pyramid to make culling
 	_depthPyramidWidth = previous_pow2(_windowExtent.width);
@@ -385,11 +371,6 @@ void VulkanEngine::init_swapchain()
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
 	});
 
-	/*_mainDeletionQueue.push_function([=](){
-		vkDestroyImageView(_device, _depthPyramid.imageView, nullptr);
-		vmaDestroyImage(_allocator, _depthPyramid._image, _depthPyramid._allocation);
-	});*/
-
 	for (int32_t i = 0; i != _depthPyramidLevels; ++i)
 	{
 		VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(VK_FORMAT_R32_SFLOAT,
@@ -400,9 +381,6 @@ void VulkanEngine::init_swapchain()
 
 		VkImageView pyramid;
 		VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &pyramid));
-		/*_mainDeletionQueue.push_function([=](){
-			vkDestroyImageView(_device, pyramid, nullptr);
-		});*/
 
 		_depthPyramideMips[i] = pyramid;
 		assert(_depthPyramideMips[i]);
@@ -428,9 +406,6 @@ void VulkanEngine::init_swapchain()
 	createInfo.pNext = &reductionInfo;
 
 	VK_CHECK(vkCreateSampler(_device, &createInfo, nullptr, &_depthSampler));
-	/*_mainDeletionQueue.push_function([=](){
-		vkDestroySampler(_device, _depthSampler, nullptr);
-	});*/
 }
 
 void VulkanEngine::init_imgui()
@@ -564,13 +539,6 @@ void VulkanEngine::init_framebuffers()
 		fbInfo.attachmentCount = 2;
 		fbInfo.pAttachments = attachments;
 		VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_offscrFramebuffers[i]));
-
-		/*_mainDeletionQueue.push_function([=](){
-			vkDestroyFramebuffer(_device, _framebuffers[i], nullptr);
-			vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
-
-			vkDestroyFramebuffer(_device, _offscrFramebuffers[i], nullptr);
-		});*/
 	}
 }
 
@@ -601,7 +569,6 @@ void VulkanEngine::init_shadow_maps()
 	spotLight.outerConeRadius = glm::cos(glm::radians(65.0f));
 	_renderScene._spotLights.push_back(spotLight);
 
-	LOG_INFO("Init shadow maps");
 	VkExtent3D dirLightShadowMapExtent = {
 		2048,
 		2048,
@@ -637,8 +604,6 @@ void VulkanEngine::init_shadow_maps()
 		});
 	}
 
-	LOG_INFO("Finish initing shadow maps");
-
 	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 	VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &_shadowMapSampler));
@@ -665,11 +630,6 @@ void VulkanEngine::init_sync_structures()
 
 		VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_frames[i]._presentSemaphore));
 		VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_frames[i]._renderSemaphore));
-
-		/*_mainDeletionQueue.push_function([=](){
-			vkDestroySemaphore(_device, _frames[i]._presentSemaphore, nullptr);
-			vkDestroySemaphore(_device, _frames[i]._renderSemaphore, nullptr);
-		});*/
 	}
 
 	VkFenceCreateInfo uploadFenceCreateInfo = vkinit::fence_create_info();
@@ -684,9 +644,6 @@ void VulkanEngine::init_descriptors()
 	LOG_INFO("Init descriptors");
 	const size_t sceneParamBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(GPUSceneData));
 	_sceneParameterBuffer = create_buffer(sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-	VkSamplerCreateInfo imgSamplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
-	vkCreateSampler(_device, &imgSamplerInfo, nullptr, &_offscrColorSampler);
 
 	for (int i = 0; i != FRAME_OVERLAP; ++i)
 	{
@@ -714,7 +671,6 @@ void VulkanEngine::init_descriptors()
 
 	_mainDeletionQueue.push_function([=](){
 		vmaDestroyBuffer(_allocator, _sceneParameterBuffer._buffer, _sceneParameterBuffer._allocation);
-		vkDestroySampler(_device, _offscrColorSampler, nullptr);
 	});
 }
 
@@ -838,16 +794,15 @@ void VulkanEngine::draw()
 
 	VK_CHECK(vkBeginCommandBuffer(get_current_frame()._mainCommandBuffer, &cmdBeginInfo));
 
-	_beforeCullingBufferBarriers.clear();
-	_afterCullingBufferBarriers.clear();
-
 	prepare_per_frame_data(cmd);
 
-	prepare_data_for_drawing(cmd);
+	prepare_data_for_drawing(cmd);		// Prepare per mesh pass data
 
+	// Copy indirect buffer data from host buffer to device buffer
 	prepare_gpu_indirect_buffer(cmd, _renderScene._dirShadowPass);
-
+	prepare_gpu_indirect_buffer(cmd, _renderScene._forwardPass);
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, _beforeCullingBufferBarriers.size(), _beforeCullingBufferBarriers.data(), 0, nullptr);
+	_beforeCullingBufferBarriers.clear();
 
 	if (_renderScene._needsBakeLightMaps)
 	{
@@ -855,125 +810,22 @@ void VulkanEngine::draw()
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, _afterShadowsBarriers.size(), _afterShadowsBarriers.data());
 		_afterShadowsBarriers.clear();
 		_renderScene._needsBakeLightMaps = false;
-	}
-
-	VkClearValue clearValue;
-	float flash = abs(std::sin(_frameNumber / 120.0f));
-	clearValue.color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
-
-	VkClearValue depthClear;
-	depthClear.depthStencil.depth = 1.f;
+	}	
 	
-	_beforeCullingBufferBarriers.clear();
-	_afterCullingBufferBarriers.clear();
-	
-	CullParams forwardPassCullParams;
-	forwardPassCullParams.frustumCull = true;
-	forwardPassCullParams.occlusionCull = true;
-	forwardPassCullParams.drawDist = 9999999;
-	forwardPassCullParams.aabb = false;
-	forwardPassCullParams.viewMatrix = camera.get_view_matrix();
-	forwardPassCullParams.projMatrix = camera.get_projection_matrix(_windowExtent.width, _windowExtent.height, true);
-
-	prepare_gpu_indirect_buffer(cmd, _renderScene._forwardPass);
-
-	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, _beforeCullingBufferBarriers.size(), _beforeCullingBufferBarriers.data(), 0, nullptr);
-
-	culling(_renderScene._forwardPass, cmd, forwardPassCullParams);
-
-	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-		0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
-
-	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_offscrRenderPass, _windowExtent, _offscrFramebuffers[swapchainImageIndex]);
-	rpInfo.clearValueCount = 2;
-	
-	VkClearValue clearValues[] = { clearValue, depthClear };
-	rpInfo.pClearValues = clearValues;
-
-	vkCmdBeginRenderPass(get_current_frame()._mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	VkViewport viewport;
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	viewport.width = static_cast<float>(_windowExtent.width);
-	viewport.height = static_cast<float>(_windowExtent.height);
-	VkRect2D scissor;
-	scissor.offset = { 0, 0 };
-	scissor.extent = _windowExtent;
-	vkCmdSetViewport(cmd, 0, 1, &viewport);
-	vkCmdSetScissor(cmd, 0, 1, &scissor);
-
-	draw_forward_pass(cmd);
+	draw_forward_pass(cmd, swapchainImageIndex);
 
 	//ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), get_current_frame()._mainCommandBuffer);
 
-	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
 	depth_reduce(cmd);
 
-	VkImageMemoryBarrier imageMemoryBarrier{};
-	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageMemoryBarrier.image = _offscrColorImage.imageData.image;
-	imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-	imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	draw_final_quad(cmd, swapchainImageIndex);
 
-	vkCmdPipelineBarrier(
-		get_current_frame()._mainCommandBuffer,
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-		0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
-
-	rpInfo = vkinit::renderpass_begin_info(_renderPass, _windowExtent, _framebuffers[swapchainImageIndex]);
-	rpInfo.clearValueCount = 1;
-	rpInfo.pClearValues = &clearValue;
-
-	vkCmdBeginRenderPass(get_current_frame()._mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-	draw_output_quad(get_current_frame()._mainCommandBuffer);
-
-	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
 	VK_CHECK(vkEndCommandBuffer(get_current_frame()._mainCommandBuffer));
 
-	VkSubmitInfo submit{};
-	submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submit.pNext = nullptr;
+	submit(cmd, swapchainImageIndex);
 	
-	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	submit.pWaitDstStageMask = &waitStage;
-	submit.waitSemaphoreCount = 1;
-	submit.pWaitSemaphores = &get_current_frame()._presentSemaphore;
-
-	submit.signalSemaphoreCount = 1;
-	submit.pSignalSemaphores = &get_current_frame()._renderSemaphore;
-
-	submit.commandBufferCount = 1;
-	submit.pCommandBuffers = &get_current_frame()._mainCommandBuffer;
-	VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, get_current_frame()._renderFence));
-
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.pNext = nullptr;
-
-	presentInfo.pSwapchains = &_swapchain;
-	presentInfo.swapchainCount = 1;
-
-	presentInfo.pWaitSemaphores = &get_current_frame()._renderSemaphore;
-	presentInfo.waitSemaphoreCount = 1;
-
-	presentInfo.pImageIndices = &swapchainImageIndex;
-	VkResult result = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
-
 	LOG_INFO("Frame number is {}", _frameNumber);
 	_frameNumber++;
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-	{
-		refresh_swapchain();
-		return;
-	}
 }
 
 void VulkanEngine::run()
@@ -1076,8 +928,6 @@ void VulkanEngine::run()
 
 void VulkanEngine::parse_prefabs()
 {
-	LOG_INFO("Start parsing prefabs");
-	
 	_materialSystem.build_default_templates();
 	std::string assetsPath = _projectPath + "/assets/";
 	fs::path direcory{ assetsPath };
@@ -1096,25 +946,17 @@ void VulkanEngine::parse_prefabs()
 	};
 
 	int counter = 0;
-	LOG_INFO("Before cycle");
 	for (auto& p : fs::directory_iterator(direcory))
 	{
 		if (p.path().extension() == ".pref")
 		{
-			LOG_INFO("Loading prefabs");
 			assets::AssetFile file;
 			assets::load_binaryFile(p.path().string().c_str(), file);
 			assets::PrefabInfo info = assets::read_prefab_info(&file);
 
 			Mesh tempMesh{};
 			tempMesh.load_from_mesh_asset(info.meshPath.c_str());
-			//glm::mat4 model = glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 			glm::mat4 model = glm::translate(glm::mat4(1.0f), translation[counter]);
-			/*if (counter == 1)
-			{
-				model = glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-				model = glm::translate(model, glm::vec3(-35.0f, 0.0f, -45.0f));
-			}*/
 
 			meshes.push_back(tempMesh);
 			std::string meshName = info.meshPath;
@@ -1131,7 +973,6 @@ void VulkanEngine::parse_prefabs()
 
 			if (!materialInfo.textures.empty())
 			{
-				LOG_INFO("Loading textures");
 				for (auto& tex : materialInfo.textures)
 				{
 					Texture tempTexture;
@@ -1167,7 +1008,6 @@ void VulkanEngine::parse_prefabs()
 			{
 				LOG_WARNING("No textures in {} material", materialInfo.materialName);
 			}
-			LOG_INFO("Set up final result");
 			_materialSystem.build_material(materialInfo.materialName, materialData);
 			tempMeshObject.material = _materialSystem.get_material(materialInfo.materialName);
 			tempMeshObject.mesh = &_meshes[meshName];
@@ -1175,7 +1015,6 @@ void VulkanEngine::parse_prefabs()
 			++counter;
 			
 			_meshObjects.push_back(tempMeshObject);
-			LOG_INFO("Finish this step");
 		}
 	}
 
@@ -1184,8 +1023,6 @@ void VulkanEngine::parse_prefabs()
 	});
 
 	fill_renderable_objects();
-
-	LOG_INFO("Finishing parsing prefabs");
 }
 
 void VulkanEngine::allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes)

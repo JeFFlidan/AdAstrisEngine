@@ -44,9 +44,22 @@ void VulkanEngine::fill_renderable_objects()
 	_renderScene.merge_meshes(this);
 }
 
-void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
+void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImageIndex)
 {
 	auto& meshPass = _renderScene._forwardPass;
+
+	CullParams forwardPassCullParams;
+	forwardPassCullParams.frustumCull = true;
+	forwardPassCullParams.occlusionCull = true;
+	forwardPassCullParams.drawDist = 9999999;
+	forwardPassCullParams.aabb = false;
+	forwardPassCullParams.viewMatrix = camera.get_view_matrix();
+	forwardPassCullParams.projMatrix = camera.get_projection_matrix(_windowExtent.width, _windowExtent.height, true);
+	
+	culling(meshPass, cmd, forwardPassCullParams);
+
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+		0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
 
 	VkDescriptorImageInfo samplerInfo{};
 	samplerInfo.sampler = _textureSampler;
@@ -111,10 +124,37 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
 		dirShadowMapsDescriptorSet};
 
 	vkutil::ShaderPass* prevMaterial = nullptr;
-
+	
 	VkDeviceSize offset = 0;
 	vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
 	vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
+	
+	VkClearValue clearValue;
+	clearValue.color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+
+	VkClearValue depthClear;
+	depthClear.depthStencil.depth = 1.f;
+	
+	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_offscrRenderPass, _windowExtent, _offscrFramebuffers[swapchainImageIndex]);
+	rpInfo.clearValueCount = 2;
+	
+	VkClearValue clearValues[] = { clearValue, depthClear };
+	rpInfo.pClearValues = clearValues;
+
+	vkCmdBeginRenderPass(get_current_frame()._mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	VkViewport viewport;
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	viewport.width = static_cast<float>(_windowExtent.width);
+	viewport.height = static_cast<float>(_windowExtent.height);
+	VkRect2D scissor;
+	scissor.offset = { 0, 0 };
+	scissor.extent = _windowExtent;
+	vkCmdSetViewport(cmd, 0, 1, &viewport);
+	vkCmdSetScissor(cmd, 0, 1, &scissor);
 	
 	for (int i = 0; i != meshPass.multibatches.size(); ++i)
 	{
@@ -139,6 +179,109 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd)
 		auto& meshPass = _renderScene._forwardPass;
 
 		vkCmdDrawIndexedIndirect(cmd, meshPass.drawIndirectBuffer._buffer, offset, multibatch.count, stride);
+	}
+
+	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
+}
+
+void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex)
+{
+	VkImageMemoryBarrier imageMemoryBarrier{};
+	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageMemoryBarrier.image = _offscrColorImage.imageData.image;
+	imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+	imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	vkCmdPipelineBarrier(
+		get_current_frame()._mainCommandBuffer,
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+
+	VkClearValue clearValue;
+	clearValue.color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+	
+	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_renderPass, _windowExtent, _framebuffers[swapchainImageIndex]);
+		
+	rpInfo.clearValueCount = 1;
+	rpInfo.pClearValues = &clearValue;
+
+	vkCmdBeginRenderPass(get_current_frame()._mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+	
+	auto material = _materialSystem.get_material("Postprocessing");
+	
+	VkDescriptorImageInfo offscrColorImgInfo;
+	offscrColorImgInfo.sampler = _offscrColorSampler;
+	offscrColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	offscrColorImgInfo.imageView = _offscrColorImage.imageView;
+
+	VkDescriptorSet offscrColorImageSet;
+	
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_image(0, &offscrColorImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.build(offscrColorImageSet);
+		
+	if (material != nullptr)
+	{
+		auto meshPass = material->original->passShaders[vkutil::MeshpassType::Forward];
+		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPass->pipeline);
+		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPass->layout, 0, 1, &offscrColorImageSet, 0, nullptr);
+	}
+	else
+	{
+		LOG_FATAL("Invalid material for output quad, draw_output_quad func");
+	}
+
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(cmd, 0, 1, &_outputQuad._vertexBuffer._buffer, &offset);
+	vkCmdDraw(cmd, _outputQuad._vertices.size(), 1, 0, 0);
+
+	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
+}
+
+void VulkanEngine::submit(VkCommandBuffer cmd, uint32_t swapchainImageIndex)
+{
+	VkSubmitInfo submit{};
+	submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submit.pNext = nullptr;
+	
+	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	submit.pWaitDstStageMask = &waitStage;
+	submit.waitSemaphoreCount = 1;
+	submit.pWaitSemaphores = &get_current_frame()._presentSemaphore;
+
+	submit.signalSemaphoreCount = 1;
+	submit.pSignalSemaphores = &get_current_frame()._renderSemaphore;
+
+	submit.commandBufferCount = 1;
+	submit.pCommandBuffers = &get_current_frame()._mainCommandBuffer;
+	VkResult result = vkQueueSubmit(_graphicsQueue, 1, &submit, get_current_frame()._renderFence);
+	if (result != VK_SUCCESS)
+	{
+		LOG_FATAL("Queue submit fatal error {}", result);
+		return;
+	}
+
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.pNext = nullptr;
+
+	presentInfo.pSwapchains = &_swapchain;
+	presentInfo.swapchainCount = 1;
+
+	presentInfo.pWaitSemaphores = &get_current_frame()._renderSemaphore;
+	presentInfo.waitSemaphoreCount = 1;
+
+	presentInfo.pImageIndices = &swapchainImageIndex;
+	result = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		refresh_swapchain();
+		return;
 	}
 }
 
