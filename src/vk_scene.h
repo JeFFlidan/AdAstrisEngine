@@ -164,9 +164,13 @@ class RenderScene
 		bool _needsBakeLightMaps{ true };
 		std::vector<DirShadowMap> _dirShadowMaps;
 		std::vector<VkDescriptorImageInfo> _dirShadowMapsInfos;
+		std::vector<PointShadowMap> _pointShadowMaps;
+		std::vector<VkDescriptorImageInfo> _pointShadowMapsInfos;
 
+		// I have to think how to make many passes for many lights
 		MeshPass _forwardPass;
 		MeshPass _dirShadowPass;
+		MeshPass _pointShadowPass;
 		MeshPass _transparentForwardPass;
 		
 		AllocatedBuffer _globalVertexBuffer;

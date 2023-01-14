@@ -4,6 +4,8 @@
 #include "asset_loader.h"
 #include "engine_actors.h"
 #include "glm/common.hpp"
+#include "glm/ext/matrix_clip_space.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include "glm/fwd.hpp"
 #include "glm/geometric.hpp"
 #include "material_asset.h"
@@ -232,6 +234,7 @@ void VulkanEngine::init_vulkan()
 		.set_surface(_surface)
 		.add_required_extension("VK_EXT_descriptor_indexing")
 		.add_required_extension("VK_EXT_sampler_filter_minmax")
+		.add_required_extension("VK_KHR_multiview")
 		.set_required_features_12(features)
 		.select()
 		.value();
@@ -243,7 +246,14 @@ void VulkanEngine::init_vulkan()
 	shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
 	shader_draw_parameters_features.pNext = nullptr;
 	shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
-	vkb::Device vkbDevice = deviceBuilder.add_pNext(&shader_draw_parameters_features).build().value();
+
+	deviceBuilder.add_pNext(&shader_draw_parameters_features);
+
+	VkPhysicalDeviceMultiviewFeatures multiViewFeatures{};
+	multiViewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
+	multiViewFeatures.multiview = VK_TRUE;
+	
+	vkb::Device vkbDevice = deviceBuilder.add_pNext(&multiViewFeatures).build().value();
 	LOG_INFO("Finished picking up logical device");
 
 	_device = vkbDevice.device;
@@ -543,7 +553,13 @@ void VulkanEngine::init_framebuffers()
 }
 
 void VulkanEngine::init_shadow_maps()
-{
+{	
+	VkExtent3D lightShadowMapExtent = {
+		2048,
+		2048,
+		1
+	};
+
 	actors::DirectionLight dirLight;
 	float nearPlane = 0.01f, farPlane = 100.0f;
 	dirLight.direction = glm::vec4(-10.0f, -50.0f, -5.0f, 0.0f);
@@ -558,7 +574,7 @@ void VulkanEngine::init_shadow_maps()
 	actors::PointLight pointLight;
 	pointLight.sourceRadius = 0.0f;
 	pointLight.colorAndIntensity = glm::vec4(0.0f, 0.8f, 0.25f, 1800.0f);
-	pointLight.positionAndAttRadius = glm::vec4(25.0f, 8.0f, 10.0f, 1000.0f);
+	pointLight.positionAndAttRadius = glm::vec4(10.0f, 25.0f, 25.0f, 1000.0f);
 	_renderScene._pointLights.push_back(pointLight);
 
 	actors::SpotLight spotLight;
@@ -569,18 +585,12 @@ void VulkanEngine::init_shadow_maps()
 	spotLight.outerConeRadius = glm::cos(glm::radians(65.0f));
 	_renderScene._spotLights.push_back(spotLight);
 
-	VkExtent3D dirLightShadowMapExtent = {
-		2048,
-		2048,
-		1
-	};
-
 	for (int i = 0; i != _renderScene._dirLights.size(); ++i)
 	{
 		DirShadowMap tempMap;
 		create_attachment(
 			tempMap.attachment,
-			dirLightShadowMapExtent,
+			lightShadowMapExtent,
 			VK_FORMAT_D32_SFLOAT,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_ASPECT_DEPTH_BIT
@@ -592,7 +602,7 @@ void VulkanEngine::init_shadow_maps()
 			.build(_device, tempMap.renderPass);
 
 		VkImageView* attach = &tempMap.attachment.imageView;
-		VkFramebufferCreateInfo info = vkinit::framebuffer_create_info(attach, 1, tempMap.renderPass, dirLightShadowMapExtent);
+		VkFramebufferCreateInfo info = vkinit::framebuffer_create_info(attach, 1, tempMap.renderPass, tempMap.attachment.extent);
 		VK_CHECK(vkCreateFramebuffer(_device, &info, nullptr, &tempMap.framebuffer));
 		_renderScene._dirShadowMaps.push_back(tempMap);
 
@@ -604,17 +614,62 @@ void VulkanEngine::init_shadow_maps()
 		});
 	}
 
-	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
 	samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 	VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &_shadowMapSampler));
 
 	_mainDeletionQueue.push_function([=](){
 		vkDestroySampler(_device, _shadowMapSampler, nullptr);
 	});
+
+	for (int i = 0; i != _renderScene._pointLights.size(); ++i)
+	{
+		PointShadowMap tempMap;
+		actors::PointLight& pointLight = _renderScene._pointLights[i];
+
+		setup_point_light_space_matrix(pointLight, tempMap, lightShadowMapExtent);
+		
+		Attachment& attachment = tempMap.attachment;
+		attachment.format = VK_FORMAT_D32_SFLOAT;
+		attachment.extent = lightShadowMapExtent;
+		create_cube_map(
+			attachment,
+			attachment.extent,
+			attachment.format,
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_ASPECT_DEPTH_BIT);
+
+		const uint32_t viewMask = 0b00111111;
+		const uint32_t correlationMask = 0b00111111;
+
+		VkRenderPassMultiviewCreateInfoKHR renderPassMultiviewInfo{};
+		renderPassMultiviewInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO_KHR;
+		renderPassMultiviewInfo.subpassCount = 1;
+		renderPassMultiviewInfo.pViewMasks = &viewMask;
+		renderPassMultiviewInfo.correlationMaskCount = 1;
+		renderPassMultiviewInfo.pCorrelationMasks = &correlationMask;
+
+		VkRenderPass& renderPass = tempMap.renderPass;
+		vkutil::RenderPassBuilder::begin()
+			.add_depth_attachment(attachment.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
+			.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
+			.build(_device, renderPass, &renderPassMultiviewInfo);
+
+		VkFramebufferCreateInfo framebufferInfo = vkinit::framebuffer_create_info(
+			&attachment.imageView,
+			1,
+			renderPass,
+			attachment.extent);
+
+		VkFramebuffer& framebuffer = tempMap.framebuffer;
+		VK_CHECK(vkCreateFramebuffer(_device, &framebufferInfo, nullptr, &framebuffer));
+
+		_renderScene._pointShadowMaps.push_back(tempMap);
+	}
 }
 
 void VulkanEngine::init_sync_structures()
-{
+{  
 	LOG_INFO("Init sync struct");
 	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
 	
@@ -799,6 +854,7 @@ void VulkanEngine::draw()
 	prepare_data_for_drawing(cmd);		// Prepare per mesh pass data
 
 	// Copy indirect buffer data from host buffer to device buffer
+	prepare_gpu_indirect_buffer(cmd, _renderScene._pointShadowPass);
 	prepare_gpu_indirect_buffer(cmd, _renderScene._dirShadowPass);
 	prepare_gpu_indirect_buffer(cmd, _renderScene._forwardPass);
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, _beforeCullingBufferBarriers.size(), _beforeCullingBufferBarriers.data(), 0, nullptr);
@@ -809,7 +865,7 @@ void VulkanEngine::draw()
 		bake_shadow_maps(cmd);
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, _afterShadowsBarriers.size(), _afterShadowsBarriers.data());
 		_afterShadowsBarriers.clear();
-		_renderScene._needsBakeLightMaps = false;
+		//_renderScene._needsBakeLightMaps = false;
 	}	
 	
 	draw_forward_pass(cmd, swapchainImageIndex);
@@ -1100,47 +1156,6 @@ Mesh* VulkanEngine::get_mesh(const std::string& name)
 	}
 }
 
-void VulkanEngine::draw_output_quad(VkCommandBuffer cmd)
-{
-	int frameIndex = _frameNumber % FRAME_OVERLAP;
-
-	auto material = _materialSystem.get_material("Postprocessing");
-
-	VkSamplerCreateInfo imgSamplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
-	VkSampler offscrColorSampler;
-	vkCreateSampler(_device, &imgSamplerInfo, nullptr, &offscrColorSampler);
-	
-	VkDescriptorImageInfo offscrColorImgInfo;
-	offscrColorImgInfo.sampler = offscrColorSampler;
-	offscrColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	offscrColorImgInfo.imageView = _offscrColorImage.imageView;
-
-	VkDescriptorSet offscrColorImageSet;
-	
-	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
-		.bind_image(0, &offscrColorImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.build(offscrColorImageSet);
-		
-	if (material != nullptr)
-	{
-		auto meshPass = material->original->passShaders[vkutil::MeshpassType::Forward];
-		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPass->pipeline);
-		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPass->layout, 0, 1, &offscrColorImageSet, 0, nullptr);
-	}
-	else
-	{
-		LOG_FATAL("Invalid material for output quad, draw_output_quad func");
-	}
-
-	VkDeviceSize offset = 0;
-	vkCmdBindVertexBuffers(cmd, 0, 1, &_outputQuad._vertexBuffer._buffer, &offset);
-	vkCmdDraw(cmd, _outputQuad._vertices.size(), 1, 0, 0);
-
-	get_current_frame()._frameDeletionQueue.push_function([=](){
-		vkDestroySampler(_device, offscrColorSampler, nullptr);
-	});
-}
-
 FrameData& VulkanEngine::get_current_frame()
 {
 	return _frames[_frameNumber % FRAME_OVERLAP];
@@ -1180,16 +1195,18 @@ void VulkanEngine::immediate_submit(std::function<void(VkCommandBuffer cmd)>&& f
 }
 
 void VulkanEngine::create_attachment(
-			Attachment& attachment, 
-			VkExtent3D imageExtent, 
-			VkFormat format, 
-			VkImageUsageFlags usageFlags, 
-			VkImageAspectFlags aspectFlags)
+	Attachment& attachment, 
+	VkExtent3D imageExtent,
+	VkFormat format, 
+	VkImageUsageFlags usageFlags, 
+	VkImageAspectFlags aspectFlags,
+	uint32_t layerCount)
 {
 	attachment.format = format;
 	attachment.extent = imageExtent;
 
 	VkImageCreateInfo img_info = vkinit::image_create_info(attachment.format, usageFlags, imageExtent);
+	img_info.arrayLayers = layerCount;
 	
 	VmaAllocationCreateInfo img_allocinfo{};
 	img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -1197,8 +1214,59 @@ void VulkanEngine::create_attachment(
 
 	vmaCreateImage(_allocator, &img_info, &img_allocinfo, &attachment.imageData.image, &attachment.imageData.allocation, nullptr);
 
-	VkImageViewCreateInfo view_info = vkinit::imageview_create_info(attachment.format, attachment.imageData.image, aspectFlags);
-	VK_CHECK(vkCreateImageView(_device, &view_info, nullptr, &attachment.imageView));
+	VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(attachment.format, attachment.imageData.image, aspectFlags);
+	if (layerCount != 1)
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+	viewInfo.subresourceRange.layerCount = layerCount;
+	VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &attachment.imageView));
+}
+
+void VulkanEngine::create_cube_map(
+	Texture& texture,
+	VkExtent3D imageExtent,
+	VkFormat format,
+	VkImageUsageFlags usageFlags,
+	VkImageAspectFlags aspectFlags)
+{
+	VkImage& image = texture.imageData.image;
+	VmaAllocation& allocation = texture.imageData.allocation;
+
+	VkImageCreateInfo imageInfo = vkinit::image_create_info(format, usageFlags, imageExtent);
+	imageInfo.arrayLayers = 6;
+	imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+
+	VmaAllocationCreateInfo imageAllocInfo{};
+	imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	imageAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	vmaCreateImage(_allocator, &imageInfo, &imageAllocInfo, &image, &allocation, nullptr);
+
+	VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(format, image, aspectFlags);
+	viewInfo.subresourceRange.layerCount = 6;
+	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+
+	VkImageView tempView;
+	VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &tempView));
+	texture.imageView = tempView;
+}
+
+void VulkanEngine::setup_point_light_space_matrix(actors::PointLight& pointLight, PointShadowMap& shadowMap, VkExtent3D extent)
+{
+	float aspect = (float)extent.width / (float)extent.height;
+	float nearPlane = 0.1f;
+	float farPlane = 1024.0f;
+	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, nearPlane, farPlane);
+
+	glm::vec3 pos = glm::vec3(pointLight.positionAndAttRadius);
+	pointLight.lightSpaceMat[0] = shadowProj * glm::lookAt(pos, pos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+	pointLight.lightSpaceMat[1] = shadowProj * glm::lookAt(pos, pos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+	pointLight.lightSpaceMat[2] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	pointLight.lightSpaceMat[3] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+	pointLight.lightSpaceMat[4] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+	pointLight.lightSpaceMat[5] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+	pointLight.farPlane = farPlane;
+
+	shadowMap.lightProjMat = shadowProj;
+	shadowMap.lightViewMat = glm::lookAt(pos, pos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
 AllocatedBuffer VulkanEngine::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)

@@ -11,6 +11,8 @@ struct PointLight
 	vec4 colorAndIntensity;
 	vec4 positionAndAttRadius;
 	float sourceRadius;
+	float farPlane;
+	mat4 lightSpaceMat[6];
 };
 
 struct SpotLight

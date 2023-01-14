@@ -42,6 +42,7 @@ layout(set = 2, binding = 0) uniform texture2D baseColorTextures[];
 layout(set = 3, binding = 0) uniform texture2D normalTextures[];
 layout(set = 4, binding = 0) uniform texture2D armTextures[];
 layout(set = 5, binding = 0) uniform texture2D dirShadowMaps[];
+layout(set = 6, binding = 0) uniform textureCube pointShadowMaps[];
 
 const float PI = 3.14159265359;
 
@@ -62,6 +63,7 @@ vec3 calculatePointLight(vec3 F0, vec3 N, vec3 V, PointLight pointLight, vec3 al
 vec3 calculateSpotLight(vec3 F0, vec3 N, vec3 V, SpotLight spotLight, vec3 albedo, float roughness, float metallic);
 
 float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id);
+float calculatePointLightShadow(PointLight pointLight, vec3 N, int id);
 
 void main()
 {
@@ -83,7 +85,6 @@ void main()
 	vec3 dirLightsL0 = vec3(0.0);
 	vec3 pointLightsL0 = vec3(0.0);
 	vec3 spotLightsL0 = vec3(0.0);
-
 	float shadow = 0.0;
 	
 	for (int i = 0; i != sceneData.dirLightsAmount; ++i)
@@ -97,6 +98,7 @@ void main()
 	for (int i = 0; i != sceneData.pointLightsAmount; ++i)
 	{
 		pointLightsL0 += calculatePointLight(F0, normal, view, pointLights.casters[i], albedo, roughness, metallic);
+		calculatePointLightShadow(pointLights.casters[i], normal, i);
 	}
 
 	for (int i = 0; i != sceneData.spotLightsAmount; ++i)
@@ -303,5 +305,11 @@ float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id)
 	shadow /= 9.0;
 	
 	return shadow;
+}
+
+float calculatePointLightShadow(PointLight pointLight, vec3 N, int id)
+{
+	vec3 test = texture(nonuniformEXT(samplerCube(pointShadowMaps[id], shadowSamp)), vec3(0.2)).xyz;
+	return 0.0;
 }
 

@@ -19,11 +19,12 @@ void RenderScene::init()
 	_forwardPass.type = vkutil::MeshpassType::Forward;
 	_dirShadowPass.type = vkutil::MeshpassType::DirectionalShadow;
 	_transparentForwardPass.type = vkutil::MeshpassType::Transparency;
+	_pointShadowPass.type = vkutil::MeshpassType::PointShadow;
 }
 
 void RenderScene::cleanup(VulkanEngine* engine)
 {
-	std::vector<MeshPass*> passes = { &_forwardPass, &_dirShadowPass };
+	std::vector<MeshPass*> passes = { &_forwardPass, &_dirShadowPass, &_pointShadowPass };
 	for (auto pass : passes)
 	{
 		pass->compactedInstanceBuffer.destroy_buffer(engine);
@@ -83,8 +84,17 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 	{
 		if (object->material->original->passShaders[vkutil::MeshpassType::Forward])
 		{
-			LOG_INFO("+1 in shadow pass");
+			LOG_INFO("+1 in directional shadow pass");
 			_dirShadowPass.unbatchedObjects.push_back(handle);
+		}
+	}
+
+	if (object->bDrawPointShadowPass)
+	{
+		if (object->material->original->passShaders[vkutil::MeshpassType::PointShadow])
+		{
+			LOG_INFO("+1 in point shadow pass");
+			_pointShadowPass.unbatchedObjects.push_back(handle);
 		}
 	}
 
@@ -124,39 +134,50 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 
 void RenderScene::update_object(Handle<RenderableObject> objectID)
 {
-	auto& passInidices = get_renderable_object(objectID)->passIndeces;
+	auto& passIndices = get_renderable_object(objectID)->passIndeces;
 
-	if (passInidices[vkutil::MeshpassType::Forward] != -1)
+	if (passIndices[vkutil::MeshpassType::Forward] != -1)
 	{
 		Handle<PassObject> handle;
-	    handle.handle = passInidices[vkutil::MeshpassType::Forward];
+	    handle.handle = passIndices[vkutil::MeshpassType::Forward];
 
 	    _forwardPass.objectToDelete.push_back(handle);
 	    _forwardPass.unbatchedObjects.push_back(objectID);
 
-	    passInidices[vkutil::MeshpassType::Forward] = -1;
+	    passIndices[vkutil::MeshpassType::Forward] = -1;
 	}
 
-	if (passInidices[vkutil::MeshpassType::Transparency] != -1)
+	if (passIndices[vkutil::MeshpassType::Transparency] != -1)
 	{
 		Handle<PassObject> handle;
-	    handle.handle = passInidices[vkutil::MeshpassType::Transparency];
+	    handle.handle = passIndices[vkutil::MeshpassType::Transparency];
 
 	    _transparentForwardPass.objectToDelete.push_back(handle);
 	    _transparentForwardPass.unbatchedObjects.push_back(objectID);
 
-	    passInidices[vkutil::MeshpassType::Transparency] = -1;
+	    passIndices[vkutil::MeshpassType::Transparency] = -1;
 	}
 
-	if (passInidices[vkutil::MeshpassType::DirectionalShadow] != -1)
+	if (passIndices[vkutil::MeshpassType::DirectionalShadow] != -1)
 	{
 		Handle<PassObject> handle;
-	    handle.handle = passInidices[vkutil::MeshpassType::DirectionalShadow];
+	    handle.handle = passIndices[vkutil::MeshpassType::DirectionalShadow];
 
 	    _dirShadowPass.objectToDelete.push_back(handle);
 	    _dirShadowPass.unbatchedObjects.push_back(objectID);
 
-	    passInidices[vkutil::MeshpassType::DirectionalShadow] = -1;
+	    passIndices[vkutil::MeshpassType::DirectionalShadow] = -1;
+	}
+
+	if (passIndices[vkutil::MeshpassType::PointShadow] != -1)
+	{
+		Handle<PassObject> handle;
+		handle.handle = passIndices[vkutil::MeshpassType::PointShadow];
+
+		_pointShadowPass.objectToDelete.push_back(handle);
+		_pointShadowPass.unbatchedObjects.push_back(objectID);
+
+		passIndices[vkutil::MeshpassType::PointShadow] = -1;
 	}
 
 	if (get_renderable_object(objectID)->updateIndex == (uint32_t)-1)
@@ -313,31 +334,35 @@ void RenderScene::build_batches()
 	// I have to read how async works
 	auto forward = std::async(std::launch::async, [&]{ refresh_pass(&_forwardPass); });
 	auto shadow = std::async(std::launch::async, [&]{ refresh_pass(&_dirShadowPass); });
+	auto pointShadow = std::async(std::launch::async, [&]{ refresh_pass(&_pointShadowPass); });
 	//auto transparent = std::async(std::launch::async, [&]{ refresh_pass(&_transparentForwardPass); });
 
 	//transparent.get();
+	pointShadow.get();
 	shadow.get();
 	forward.get();
 }
 
 void RenderScene::refresh_pass(RenderScene::MeshPass* meshPass)
 {
+	LOG_INFO("Start refreshin pass");
 	// I need to test if refresh passes works slow when I separate it into several functions 
 	meshPass->needsIndirectRefresh = true;
 	meshPass->needsInstanceRefresh = true;
-
+	
 	delete_batches(meshPass);
-
+	LOG_INFO("Before filling pass objects");
 	std::vector<Handle<PassObject>> passObjectHandles;
 	fill_pass_objects(meshPass, passObjectHandles);
-
+	LOG_INFO("Before filling flat batches");
 	fill_flat_batches(meshPass, passObjectHandles);
 	meshPass->batches.clear();
 	
 	meshPass->batches.reserve(meshPass->flatBatches.size());
+	LOG_INFO("Before filling indirect batches");
 	build_indirect_batches(meshPass, meshPass->batches, meshPass->flatBatches);
 	meshPass->multibatches.clear();
-
+	LOG_INFO("Before filling multi batches");
 	fill_multi_batches(meshPass);
 }
 
@@ -410,6 +435,9 @@ RenderScene::MeshPass* RenderScene::get_mesh_pass(vkutil::MeshpassType type)
 			break;
 		case vkutil::MeshpassType::Transparency:
 			pass = &_transparentForwardPass;
+			break;
+		case vkutil::MeshpassType::PointShadow:
+			pass = &_pointShadowPass;
 			break;
 		case vkutil::MeshpassType::None:
 			LOG_ERROR("There are no mesh pass");

@@ -26,7 +26,7 @@ namespace vkutil
 
 			RenderPassBuilder& add_subpass(VkPipelineBindPoint pipelineType);
 			
-		    void build(VkDevice& device, VkRenderPass& renderPass);
+		    void build(VkDevice& device, VkRenderPass& renderPass, void* pNext = nullptr);
 			
 		private:
 			struct AttachmentInfo
