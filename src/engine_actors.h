@@ -10,6 +10,7 @@ namespace actors
 		glm::vec4 positionAndAttRadius;
 		float sourceRadius;
 		float farPlane;	// I have to think about this field
+		float data1, data2;
 		glm::mat4 lightSpaceMat[6];
 	};
 
