@@ -323,6 +323,14 @@ namespace vkutil
 				vkDestroyPipelineLayout(device, pass->layout, nullptr);
 				pass->effect->destroy_shader_modules();
 			}
+
+			pass = templ.second.passShaders[vkutil::MeshpassType::PointShadow];
+			if (pass != nullptr)
+			{
+				vkDestroyPipeline(device, pass->pipeline, nullptr);
+				vkDestroyPipelineLayout(device, pass->layout, nullptr);
+				pass->effect->destroy_shader_modules();
+			}
 		}
 	}
 

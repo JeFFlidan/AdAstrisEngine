@@ -437,6 +437,6 @@ class VulkanEngine
 		void bake_shadow_maps(VkCommandBuffer cmd);
 		void draw_dir_lights_shadow_pass(VkCommandBuffer cmd);
 		void draw_point_lights_shadow_pass(VkCommandBuffer cmd);
-		void draw_objects_in_shadow_pass(VkCommandBuffer cmd, RenderScene::MeshPass& meshPass, uint32_t id);
+		void draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet, RenderScene::MeshPass& meshPass, uint32_t id);
 		void depth_reduce(VkCommandBuffer cmd);
 };

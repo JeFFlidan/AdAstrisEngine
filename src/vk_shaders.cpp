@@ -108,7 +108,6 @@ namespace vkutil
 
 					if (bind->count == 0)
 					{
-						LOG_INFO("Set {}", set->set);
 						// It means that binding is non-uniform array
 						binding.descriptorCount = 100;
 					}

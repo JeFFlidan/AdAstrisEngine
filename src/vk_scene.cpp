@@ -42,6 +42,10 @@ void RenderScene::cleanup(VulkanEngine* engine)
 	{
 		shadowMap.dirLightBuffer.destroy_buffer(engine);
 	}
+	for (auto& shadowMap : _pointShadowMaps)
+	{
+		shadowMap.pointLightBuffer.destroy_buffer(engine);
+	}
 }
 
 void RenderScene::register_object_batch(MeshObject* first, uint32_t count)
@@ -235,7 +239,6 @@ void RenderScene::fill_instances_array(GPUInstance* data, MeshPass& pass)
 		{
 			data[dataIndex].batchID = i;
 			data[dataIndex].objectID = pass.get(pass.flatBatches[j + batch.first].object)->original.handle;
-			LOG_INFO("Instance object ID: {}", data[dataIndex].objectID);
 			++dataIndex;
 		}
 	}
@@ -345,24 +348,20 @@ void RenderScene::build_batches()
 
 void RenderScene::refresh_pass(RenderScene::MeshPass* meshPass)
 {
-	LOG_INFO("Start refreshin pass");
 	// I need to test if refresh passes works slow when I separate it into several functions 
 	meshPass->needsIndirectRefresh = true;
 	meshPass->needsInstanceRefresh = true;
 	
 	delete_batches(meshPass);
-	LOG_INFO("Before filling pass objects");
+
 	std::vector<Handle<PassObject>> passObjectHandles;
 	fill_pass_objects(meshPass, passObjectHandles);
-	LOG_INFO("Before filling flat batches");
 	fill_flat_batches(meshPass, passObjectHandles);
 	meshPass->batches.clear();
 	
 	meshPass->batches.reserve(meshPass->flatBatches.size());
-	LOG_INFO("Before filling indirect batches");
 	build_indirect_batches(meshPass, meshPass->batches, meshPass->flatBatches);
 	meshPass->multibatches.clear();
-	LOG_INFO("Before filling multi batches");
 	fill_multi_batches(meshPass);
 }
 

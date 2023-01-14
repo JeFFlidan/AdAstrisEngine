@@ -85,23 +85,6 @@ struct Attachment : public Texture
 	void destroy_attachment(VulkanEngine* engine);
 };
 
-//First of all, multi* created for shadow mapping. Maybe can be used for other purposes. Not final solution cause I dunno is it a good approach
-struct MultiTexture
-{   // Texture with several layers. I think, this struct can be used for cube map in the future
-	AllocatedImage imageData;
-	std::vector<VkImageView> imageViews;
-
-	void destroy_multi_texture(VulkanEngine* engine);
-};
-
-struct MultiAttachment : MultiTexture
-{   // Attachment with several layers.
-	VkFormat format;
-	VkExtent3D extent;
-
-	void destroy_multi_attachment(VulkanEngine* engine);
-};
-
 struct DirShadowMap
 {
 	// Struct for directional light's shadow

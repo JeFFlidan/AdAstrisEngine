@@ -85,21 +85,25 @@ void main()
 	vec3 dirLightsL0 = vec3(0.0);
 	vec3 pointLightsL0 = vec3(0.0);
 	vec3 spotLightsL0 = vec3(0.0);
-	float shadow = 0.0;
+	float dirShadow = 0.0;
+	float pointShadow = 0.0;
 	
 	for (int i = 0; i != sceneData.dirLightsAmount; ++i)
 	{
 		dirLightsL0 += calculateDirectionLight(F0, normal, view, dirLights.casters[i], albedo, roughness, metallic);
-		shadow = calculateDirLightShadow(dirLights.casters[i], normal, i);
+		dirShadow = calculateDirLightShadow(dirLights.casters[i], normal, i);
 	}
 
-	dirLightsL0 *= (1.0 - shadow);
+	dirLightsL0 *= (1.0 - dirShadow);
+	//dirLightsL0 *= 0.0;
 
 	for (int i = 0; i != sceneData.pointLightsAmount; ++i)
 	{
 		pointLightsL0 += calculatePointLight(F0, normal, view, pointLights.casters[i], albedo, roughness, metallic);
-		calculatePointLightShadow(pointLights.casters[i], normal, i);
+		pointShadow = calculatePointLightShadow(pointLights.casters[i], normal, i);
 	}
+
+	pointLightsL0 *= (1.0 - pointShadow);
 
 	for (int i = 0; i != sceneData.spotLightsAmount; ++i)
 	{
@@ -288,8 +292,8 @@ float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id)
 		return 0.0;
 
 	vec3 L = normalize(vec3(-dirLight.direction));
-	float bias = max(0.05 * (1.0 - dot(N, L)), 0.005);
-		
+	//float bias = max(0.05 * (1.0 - dot(N, L)), 0.005);
+	float bias = 0.0035;	
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(sampler2D(dirShadowMaps[id], shadowSamp), 0);
 	for (int x = -1; x <= 1; ++x)
@@ -307,9 +311,32 @@ float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id)
 	return shadow;
 }
 
+vec3 sampleOffsetDirections[20] = vec3[]
+(
+	vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1),
+	vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+	vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+	vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+	vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);  
+
 float calculatePointLightShadow(PointLight pointLight, vec3 N, int id)
 {
-	vec3 test = texture(nonuniformEXT(samplerCube(pointShadowMaps[id], shadowSamp)), vec3(0.2)).xyz;
-	return 0.0;
+	vec3 lightToFrag = fragPos - vec3(pointLight.positionAndAttRadius);
+	float currentDepth = length(lightToFrag);
+	float bias = 0.05;
+	float shadow = 0.0;
+	int samples = 20;
+	float distRadius = 0.05;
+	for (int i = 0; i != samples; ++i)
+	{
+		vec3 coords = lightToFrag + sampleOffsetDirections[i] * distRadius;
+		float closestDepth = texture(nonuniformEXT(samplerCube(pointShadowMaps[id], shadowSamp)), coords).r;
+		closestDepth *= pointLight.farPlane;
+		if (currentDepth - bias > closestDepth)
+			shadow += 1.0;
+	}
+	shadow /= float(samples);
+	return shadow;
 }
 

@@ -12,6 +12,7 @@ struct PointLight
 	vec4 positionAndAttRadius;
 	float sourceRadius;
 	float farPlane;
+	float data1, data2;
 	mat4 lightSpaceMat[6];
 };
 

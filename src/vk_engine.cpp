@@ -5,9 +5,11 @@
 #include "engine_actors.h"
 #include "glm/common.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
+#include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/fwd.hpp"
 #include "glm/geometric.hpp"
+#include "glm/trigonometric.hpp"
 #include "material_asset.h"
 #include "mesh_asset.h"
 #include "prefab_asset.h"
@@ -561,20 +563,20 @@ void VulkanEngine::init_shadow_maps()
 	};
 
 	actors::DirectionLight dirLight;
-	float nearPlane = 0.01f, farPlane = 100.0f;
-	dirLight.direction = glm::vec4(-10.0f, -50.0f, -5.0f, 0.0f);
+	float nearPlane = 0.01f, farPlane = 600.0f;
+	dirLight.direction = glm::vec4(-25.0f, -75.0f, -25.0f, 0.0f);
 	dirLight.direction = glm::normalize(dirLight.direction);
-	dirLight.lightProjMat = glm::ortho(-farPlane, farPlane, -farPlane, farPlane, nearPlane, farPlane);
+	dirLight.lightProjMat = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, nearPlane, farPlane);
 	dirLight.lightProjMat[1][1] *= -1;
-	glm::vec3 position = glm::vec3(dirLight.direction) * -farPlane;
+	glm::vec3 position = glm::vec3(dirLight.direction) * ((-farPlane) * 0.75f);
 	dirLight.lightViewMat = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	dirLight.colorAndIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
 	_renderScene._dirLights.push_back(dirLight);
 
 	actors::PointLight pointLight;
 	pointLight.sourceRadius = 0.0f;
-	pointLight.colorAndIntensity = glm::vec4(0.0f, 0.8f, 0.25f, 1800.0f);
-	pointLight.positionAndAttRadius = glm::vec4(10.0f, 25.0f, 25.0f, 1000.0f);
+	pointLight.colorAndIntensity = glm::vec4(1.0f, 0.0f, 0.0f, 5000.0f);
+	pointLight.positionAndAttRadius = glm::vec4(30.0f, 30.0f, 25.0f, 1000.0f);
 	_renderScene._pointLights.push_back(pointLight);
 
 	actors::SpotLight spotLight;
@@ -614,7 +616,7 @@ void VulkanEngine::init_shadow_maps()
 		});
 	}
 
-	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+	VkSamplerCreateInfo samplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
 	samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 	VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &_shadowMapSampler));
 
@@ -663,6 +665,13 @@ void VulkanEngine::init_shadow_maps()
 
 		VkFramebuffer& framebuffer = tempMap.framebuffer;
 		VK_CHECK(vkCreateFramebuffer(_device, &framebufferInfo, nullptr, &framebuffer));
+
+		_mainDeletionQueue.push_function([=](){
+			vkDestroyFramebuffer(_device, tempMap.framebuffer, nullptr);
+			vkDestroyRenderPass(_device, tempMap.renderPass, nullptr);
+			vkDestroyImageView(_device, attachment.imageView, nullptr);
+			vmaDestroyImage(_allocator, attachment.imageData.image, attachment.imageData.allocation);
+		});
 
 		_renderScene._pointShadowMaps.push_back(tempMap);
 	}
@@ -865,7 +874,7 @@ void VulkanEngine::draw()
 		bake_shadow_maps(cmd);
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, _afterShadowsBarriers.size(), _afterShadowsBarriers.data());
 		_afterShadowsBarriers.clear();
-		//_renderScene._needsBakeLightMaps = false;
+		_renderScene._needsBakeLightMaps = false;
 	}	
 	
 	draw_forward_pass(cmd, swapchainImageIndex);
@@ -1257,16 +1266,40 @@ void VulkanEngine::setup_point_light_space_matrix(actors::PointLight& pointLight
 	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, nearPlane, farPlane);
 
 	glm::vec3 pos = glm::vec3(pointLight.positionAndAttRadius);
+	
 	pointLight.lightSpaceMat[0] = shadowProj * glm::lookAt(pos, pos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 	pointLight.lightSpaceMat[1] = shadowProj * glm::lookAt(pos, pos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 	pointLight.lightSpaceMat[2] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	pointLight.lightSpaceMat[3] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 	pointLight.lightSpaceMat[4] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 	pointLight.lightSpaceMat[5] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+
+	/*glm::mat4 viewMatrix = glm::mat4(1.0f);
+	viewMatrix = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	pointLight.lightSpaceMat[0] = shadowProj * viewMatrix;
+	shadowMap.lightViewMat = viewMatrix;
+	
+	viewMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	pointLight.lightSpaceMat[1] = shadowProj * viewMatrix;
+
+	viewMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	pointLight.lightSpaceMat[2] = shadowProj * viewMatrix;
+
+	viewMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	pointLight.lightSpaceMat[3] = shadowProj * viewMatrix;
+
+	viewMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	pointLight.lightSpaceMat[4] = shadowProj * viewMatrix;
+
+	viewMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	pointLight.lightSpaceMat[5] = shadowProj * viewMatrix;*/
+
 	pointLight.farPlane = farPlane;
 
 	shadowMap.lightProjMat = shadowProj;
-	shadowMap.lightViewMat = glm::lookAt(pos, pos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	shadowMap.lightViewMat = glm::lookAt(pos, pos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 }
 
 AllocatedBuffer VulkanEngine::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
