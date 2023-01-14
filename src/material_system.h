@@ -50,6 +50,7 @@ namespace vkutil
 		Forward = 1,
 		Transparency = 2,
 		DirectionalShadow = 3,
+		PointShadow = 4,
 	};
 	
 	struct ShaderParameters
@@ -80,6 +81,8 @@ namespace vkutil
 						return data[1];
 					case MeshpassType::DirectionalShadow:
 						return data[2];
+					case MeshpassType::PointShadow:
+						return data[3];
 				}
 
 				return data[0];
@@ -87,12 +90,12 @@ namespace vkutil
 
 			void clear(T&& val)
 			{
-				for (int i = 0; i != 3; ++i)
+				for (int i = 0; i != 4; ++i)
 					data[i] = val;
 			}
 
 		private:
-			std::array<T, 3> data;
+			std::array<T, 4> data;
 	};
 
 	struct ShaderPass
@@ -159,6 +162,7 @@ namespace vkutil
 			PipelineBuilder _postprocessingPipelineBuilder;
 			PipelineBuilder _offscrPipelineBuilder;
 			PipelineBuilder _dirLightShadowPipelineBuilder;
+			PipelineBuilder _pointLightShadowPipelineBuilder;
 			PipelineBuilder _transparencyBuilder;
 
 			std::unordered_map<std::string, EffectTemplate> _templateCache;

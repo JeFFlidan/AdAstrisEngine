@@ -65,7 +65,7 @@ namespace vkutil
 
 		if (_isLastDepthAttachment)
 		{
-			LOG_ERROR("It already has one depth attachment but the older one attachemnt will be overwritten!");
+			LOG_WARNING("It already has one depth attachment but the older one attachemnt will be overwritten!");
 		}
 		else
 		{
@@ -126,7 +126,7 @@ namespace vkutil
 		return *this;
 	}
 
-	void RenderPassBuilder::build(VkDevice& device, VkRenderPass& renderPass)
+	void RenderPassBuilder::build(VkDevice& device, VkRenderPass& renderPass, void* pNext)
 	{
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -136,6 +136,7 @@ namespace vkutil
 		renderPassInfo.pSubpasses = _subpasses.data();
 		renderPassInfo.dependencyCount = _dependencies.size();
 		renderPassInfo.pDependencies = _dependencies.data();
+		renderPassInfo.pNext = pNext;
 
 		VkResult result = vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass);
 		if (result != VK_SUCCESS)

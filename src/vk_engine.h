@@ -169,6 +169,7 @@ struct MeshObject
 
 	uint32_t bDrawForwardPass{ 1 };
 	uint32_t bDrawShadowPass{ 1 };
+	uint32_t bDrawPointShadowPass{ 1 };
 };
 
 // structs for culling
@@ -364,9 +365,6 @@ class VulkanEngine
 		
 		Mesh* get_mesh(const std::string& name);
 
-		void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
-		void draw_output_quad(VkCommandBuffer cmd);
-
 		AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
 	private:
@@ -392,7 +390,17 @@ class VulkanEngine
 			VkExtent3D imageExtent, 
 			VkFormat format,
 			VkImageUsageFlags usageFlags, 
+			VkImageAspectFlags aspectFlags,
+			uint32_t layerCount = 1);
+
+		void create_cube_map(
+			Texture& texture,
+			VkExtent3D imageExtent,
+			VkFormat format,
+			VkImageUsageFlags usageFlags,
 			VkImageAspectFlags aspectFlags);
+
+		void setup_point_light_space_matrix(actors::PointLight& pointLight, PointShadowMap& shadowMap, VkExtent3D extent);
 
 		std::vector<IndirectBatch> compact_draws(RenderObject* objects, int count);
 		void allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes);
@@ -428,5 +436,7 @@ class VulkanEngine
 		void submit(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void bake_shadow_maps(VkCommandBuffer cmd);
 		void draw_dir_lights_shadow_pass(VkCommandBuffer cmd);
+		void draw_point_lights_shadow_pass(VkCommandBuffer cmd);
+		void draw_objects_in_shadow_pass(VkCommandBuffer cmd, RenderScene::MeshPass& meshPass, uint32_t id);
 		void depth_reduce(VkCommandBuffer cmd);
 };

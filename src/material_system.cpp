@@ -110,9 +110,11 @@ namespace vkutil
 		pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
 
 		pipelineBuilder._vertexDescription = Mesh::get_vertex_description();
-		
+
+		// I have to think about one pipeline builder for passes below
 	    _offscrPipelineBuilder = pipelineBuilder;
 	    _dirLightShadowPipelineBuilder = pipelineBuilder;
+	    _pointLightShadowPipelineBuilder = pipelineBuilder;
 		
 		pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS_OR_EQUAL);
 
@@ -207,28 +209,36 @@ namespace vkutil
 			"/shaders/dir_light_depth_map.vert.spv",
 			"/shaders/dir_light_depth_map.frag.spv"
 		});
+		ShaderEffect* pointLightShadowEffect = build_shader_effect({
+			"/shaders/point_light_depth_map.vert.spv",
+			"/shaders/point_light_depth_map.frag.spv"
+		});
 			
 		//ShaderEffect* coloredLitEffect = build_shader_effect({
 		//	"/shaders/mesh.vert.spv",
 		//	"/shaders/default_lit.frag.spv"});
 
 		DirShadowMap& shadowMap = _engine->_renderScene._dirShadowMaps[0];
+		PointShadowMap& pointShadowMap = _engine->_renderScene._pointShadowMaps[0];
 		
 		ShaderPass* texturedLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, texturedLitEffect);
 		ShaderPass* postrpocessingPass = build_shader_pass(_engine->_renderPass, _postprocessingPipelineBuilder, postprocessingEffect);
 		ShaderPass* dirLightShadowPass = build_shader_pass(shadowMap.renderPass, _dirLightShadowPipelineBuilder, dirLightShadowEffect);
+		ShaderPass* pointLightShadowPass = build_shader_pass(pointShadowMap.renderPass, _pointLightShadowPipelineBuilder, pointLightShadowEffect);
 		//ShaderPass* coloredLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, coloredLitEffect);
 
 		EffectTemplate effectTemplate;
 		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = dirLightShadowPass;
 		effectTemplate.passShaders[MeshpassType::Transparency] = nullptr;
 		effectTemplate.passShaders[MeshpassType::Forward] = texturedLitPass;
+		effectTemplate.passShaders[MeshpassType::PointShadow] = pointLightShadowPass;
 		effectTemplate.defaultParameters = nullptr;
 		effectTemplate.transparency = assets::MaterialMode::OPAQUE;
 		_templateCache["PBR_opaque"] = effectTemplate;
 
 		effectTemplate.passShaders[MeshpassType::Forward] = postrpocessingPass;
 		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = nullptr;
+		effectTemplate.passShaders[MeshpassType::PointShadow] = nullptr;
 		_templateCache["Postprocessing"] = effectTemplate;
 	}
 
