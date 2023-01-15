@@ -105,7 +105,7 @@ namespace vkutil
 		pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 		
 		pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
-		pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL);
+		pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT);
 		pipelineBuilder._multisampling = vkinit::multisampling_state_create_info();
 		pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
 
@@ -113,13 +113,14 @@ namespace vkutil
 
 		// I have to think about one pipeline builder for passes below
 	    _offscrPipelineBuilder = pipelineBuilder;
+	    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 	    _dirLightShadowPipelineBuilder = pipelineBuilder;
 	    _pointLightShadowPipelineBuilder = pipelineBuilder;
 		
 		pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS_OR_EQUAL);
 
 		pipelineBuilder._vertexDescription = Plane::get_vertex_description();
-		
+		pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL);
 	    _postprocessingPipelineBuilder = pipelineBuilder;
 	}
 
