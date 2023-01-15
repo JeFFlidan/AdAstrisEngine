@@ -283,7 +283,7 @@ float calculateSpotLightAttenuation(SpotLight spotLight, vec3 unormalizedLightVe
 
 float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id)
 {
-	vec4 fragPosLightSpace = dirLight.lightProjMat * dirLight.lightViewMat * vec4(fragPos, 1.0);
+	vec4 fragPosLightSpace = dirLight.lightSpaceMat * vec4(fragPos, 1.0);
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	projCoords.xy = projCoords.xy * 0.5 + 0.5;
 	float currentDepth = projCoords.z;

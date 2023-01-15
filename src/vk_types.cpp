@@ -77,9 +77,3 @@ void Attachment::destroy_attachment(VulkanEngine* engine)
 	destroy_texture(engine);
 }
 
-void DirShadowMap::destroy_shadow_map(VulkanEngine* engine)
-{
-	vkDestroyFramebuffer(engine->_device, framebuffer, nullptr);
-	attachment.destroy_attachment(engine);
-}
-

@@ -400,7 +400,7 @@ class VulkanEngine
 			VkImageUsageFlags usageFlags,
 			VkImageAspectFlags aspectFlags);
 
-		void setup_point_light_space_matrix(actors::PointLight& pointLight, PointShadowMap& shadowMap, VkExtent3D extent);
+		void setup_point_light_space_matrix(actors::PointLight& pointLight, ShadowMap& shadowMap, VkExtent3D extent);
 
 		std::vector<IndirectBatch> compact_draws(RenderObject* objects, int count);
 		void allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes);

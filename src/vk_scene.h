@@ -162,9 +162,9 @@ class RenderScene
 		AllocatedBufferT<actors::SpotLight> _spotLightsBuffer;
 
 		bool _needsBakeLightMaps{ true };
-		std::vector<DirShadowMap> _dirShadowMaps;
+		std::vector<ShadowMap> _dirShadowMaps;
 		std::vector<VkDescriptorImageInfo> _dirShadowMapsInfos;
-		std::vector<PointShadowMap> _pointShadowMaps;
+		std::vector<ShadowMap> _pointShadowMaps;
 		std::vector<VkDescriptorImageInfo> _pointShadowMapsInfos;
 
 		// I have to think how to make many passes for many lights

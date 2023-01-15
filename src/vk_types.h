@@ -85,27 +85,16 @@ struct Attachment : public Texture
 	void destroy_attachment(VulkanEngine* engine);
 };
 
-struct DirShadowMap
-{
-	// Struct for directional light's shadow
-	Attachment attachment;
-	VkFramebuffer framebuffer{ VK_NULL_HANDLE };
-	VkRenderPass renderPass{ VK_NULL_HANDLE };
-	AllocatedBuffer dirLightBuffer;		// It's an uniform buffer to bake shadow maps
-
-	void destroy_shadow_map(VulkanEngine* engine);
-};
-
-struct PointShadowMap
+struct ShadowMap
 {
 	Attachment attachment;
 	VkFramebuffer framebuffer{ VK_NULL_HANDLE };
 	VkRenderPass renderPass{ VK_NULL_HANDLE };
-	AllocatedBuffer pointLightBuffer;
+	AllocatedBuffer lightBuffer;
 
 	glm::mat4 lightProjMat;
 	glm::mat4 lightViewMat;
 
-	void destroy_shadow_map(VulkanEngine* engine);
+	static void destroy_shadow_map(VulkanEngine* engine, ShadowMap* shadowMap);
 };
 
