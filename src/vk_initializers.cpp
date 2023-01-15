@@ -64,7 +64,7 @@ namespace vkinit
 		return info;
 	}
 
-	VkPipelineRasterizationStateCreateInfo rasterization_state_create_info(VkPolygonMode polygonMode)
+	VkPipelineRasterizationStateCreateInfo rasterization_state_create_info(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace)
 	{
 		VkPipelineRasterizationStateCreateInfo info{};
 		info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -76,8 +76,8 @@ namespace vkinit
 		info.polygonMode = polygonMode;
 		info.lineWidth = 1.0f;
 
-		info.cullMode = VK_CULL_MODE_NONE;
-		info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		info.cullMode = cullMode;
+		info.frontFace = frontFace;
 
 		info.depthBiasEnable = VK_FALSE;
 		info.depthBiasConstantFactor = 0.0f;
