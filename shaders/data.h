@@ -2,8 +2,7 @@ struct DirectionLight
 {
 	vec4 direction;
 	vec4 colorAndIntensity;	// w = intensity
-	mat4 lightViewMat;
-	mat4 lightProjMat;
+	mat4 lightSpaceMat;
 };
 
 struct PointLight
@@ -22,5 +21,6 @@ struct SpotLight
 	vec4 positionAndDistance;
 	vec4 spotDirAndInnerConeRadius;
 	float outerConeRadius;
+	mat4 lightSpaceMat;
 };
 

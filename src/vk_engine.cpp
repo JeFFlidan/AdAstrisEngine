@@ -566,10 +566,7 @@ void VulkanEngine::init_shadow_maps()
 	float nearPlane = 0.01f, farPlane = 600.0f;
 	dirLight.direction = glm::vec4(-25.0f, -75.0f, -25.0f, 0.0f);
 	dirLight.direction = glm::normalize(dirLight.direction);
-	dirLight.lightProjMat = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, nearPlane, farPlane);
-	dirLight.lightProjMat[1][1] *= -1;
-	glm::vec3 position = glm::vec3(dirLight.direction) * ((-farPlane) * 0.75f);
-	dirLight.lightViewMat = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
 	dirLight.colorAndIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
 	_renderScene._dirLights.push_back(dirLight);
 
@@ -589,7 +586,7 @@ void VulkanEngine::init_shadow_maps()
 
 	for (int i = 0; i != _renderScene._dirLights.size(); ++i)
 	{
-		DirShadowMap tempMap;
+		ShadowMap tempMap;
 		create_attachment(
 			tempMap.attachment,
 			lightShadowMapExtent,
@@ -597,6 +594,16 @@ void VulkanEngine::init_shadow_maps()
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_IMAGE_ASPECT_DEPTH_BIT
 		);
+
+		actors::DirectionLight& dirLight = _renderScene._dirLights[i];
+
+		tempMap.lightProjMat = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, nearPlane, farPlane);
+		tempMap.lightProjMat[1][1] *= -1;
+		
+		glm::vec3 position = glm::vec3(dirLight.direction) * ((-farPlane) * 0.75f);
+		tempMap.lightViewMat = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		dirLight.lightSpaceMat = tempMap.lightProjMat * tempMap.lightViewMat;
 
 		vkutil::RenderPassBuilder::begin()
 			.add_depth_attachment(tempMap.attachment.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
@@ -626,7 +633,7 @@ void VulkanEngine::init_shadow_maps()
 
 	for (int i = 0; i != _renderScene._pointLights.size(); ++i)
 	{
-		PointShadowMap tempMap;
+		ShadowMap tempMap;
 		actors::PointLight& pointLight = _renderScene._pointLights[i];
 
 		setup_point_light_space_matrix(pointLight, tempMap, lightShadowMapExtent);
@@ -1258,7 +1265,7 @@ void VulkanEngine::create_cube_map(
 	texture.imageView = tempView;
 }
 
-void VulkanEngine::setup_point_light_space_matrix(actors::PointLight& pointLight, PointShadowMap& shadowMap, VkExtent3D extent)
+void VulkanEngine::setup_point_light_space_matrix(actors::PointLight& pointLight, ShadowMap& shadowMap, VkExtent3D extent)
 {
 	float aspect = (float)extent.width / (float)extent.height;
 	float nearPlane = 0.1f;

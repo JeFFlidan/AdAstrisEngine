@@ -4,6 +4,7 @@
 #include "vk_engine.h"
 #include "vk_initializers.h"
 #include "vk_mesh.h"
+#include "vk_types.h"
 
 #include <iostream>
 #include <limits>
@@ -219,8 +220,8 @@ namespace vkutil
 		//	"/shaders/mesh.vert.spv",
 		//	"/shaders/default_lit.frag.spv"});
 
-		DirShadowMap& shadowMap = _engine->_renderScene._dirShadowMaps[0];
-		PointShadowMap& pointShadowMap = _engine->_renderScene._pointShadowMaps[0];
+		ShadowMap& shadowMap = _engine->_renderScene._dirShadowMaps[0];
+		ShadowMap& pointShadowMap = _engine->_renderScene._pointShadowMaps[0];
 		
 		ShaderPass* texturedLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, texturedLitEffect);
 		ShaderPass* postrpocessingPass = build_shader_pass(_engine->_renderPass, _postprocessingPipelineBuilder, postprocessingEffect);

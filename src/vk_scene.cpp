@@ -40,11 +40,11 @@ void RenderScene::cleanup(VulkanEngine* engine)
 
 	for (auto& shadowMap : _dirShadowMaps)
 	{
-		shadowMap.dirLightBuffer.destroy_buffer(engine);
+		shadowMap.lightBuffer.destroy_buffer(engine);
 	}
 	for (auto& shadowMap : _pointShadowMaps)
 	{
-		shadowMap.pointLightBuffer.destroy_buffer(engine);
+		shadowMap.lightBuffer.destroy_buffer(engine);
 	}
 }
 

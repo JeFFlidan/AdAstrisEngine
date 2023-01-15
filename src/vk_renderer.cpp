@@ -303,7 +303,7 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 	{
 		auto dirLight = _renderScene._dirLights[i];
 		size_t allocSize = sizeof(actors::DirectionLight);
-		AllocatedBuffer& buffer = _renderScene._dirShadowMaps[i].dirLightBuffer;
+		AllocatedBuffer& buffer = _renderScene._dirShadowMaps[i].lightBuffer;
 		reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		buffer.copy_from(this, &dirLight, allocSize);
 	}
@@ -322,10 +322,10 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 
 	for (int i = 0; i != _renderScene._pointLights.size(); ++i)
 	{
-		PointShadowMap& shadowMap = _renderScene._pointShadowMaps[i];
+		ShadowMap& shadowMap = _renderScene._pointShadowMaps[i];
 		auto pointLight = _renderScene._pointLights[i];
 		size_t allocSize = sizeof(actors::PointLight);
-		AllocatedBuffer& buffer = shadowMap.pointLightBuffer;
+		AllocatedBuffer& buffer = shadowMap.lightBuffer;
 		reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		buffer.copy_from(this, &pointLight, allocSize);
 
@@ -365,15 +365,15 @@ void VulkanEngine::draw_dir_lights_shadow_pass(VkCommandBuffer cmd)
 		vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
 		
 		actors::DirectionLight& dirLight = _renderScene._dirLights[i];
-		DirShadowMap& shadowMap = _renderScene._dirShadowMaps[i];
+		ShadowMap& shadowMap = _renderScene._dirShadowMaps[i];
 
 		CullParams cullParams;
 		cullParams.frustumCull = true;
 		cullParams.occlusionCull = false;
 		cullParams.aabb = false;
 		cullParams.drawDist = 9999999;
-		cullParams.viewMatrix = dirLight.lightViewMat;
-		cullParams.projMatrix = dirLight.lightProjMat;
+		cullParams.viewMatrix = shadowMap.lightViewMat;
+		cullParams.projMatrix = shadowMap.lightProjMat;
 
 		culling(_renderScene._dirShadowPass, cmd, cullParams);
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
@@ -421,7 +421,7 @@ void VulkanEngine::draw_point_lights_shadow_pass(VkCommandBuffer cmd)
 		vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
 
 		actors::PointLight& pointLight = _renderScene._pointLights[i];
-		PointShadowMap& shadowMap = _renderScene._pointShadowMaps[i];
+		ShadowMap& shadowMap = _renderScene._pointShadowMaps[i];
 
 		CullParams cullParams;
 		cullParams.frustumCull = true;
@@ -454,34 +454,30 @@ void VulkanEngine::draw_point_lights_shadow_pass(VkCommandBuffer cmd)
 void VulkanEngine::draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet, RenderScene::MeshPass& meshPass, uint32_t id)
 {
 	VkDescriptorBufferInfo shadowMapBufferInfo;
-	VkRenderPassBeginInfo rpInfo;
-	VkExtent2D extent;
 
+	ShadowMap shadowMap;
+	
 	switch(meshPass.type)
 	{
 		case vkutil::MeshpassType::DirectionalShadow:
 		{
-			DirShadowMap& shadowMap = _renderScene._dirShadowMaps[id];
-			shadowMapBufferInfo = shadowMap.dirLightBuffer.get_info();
-			extent = { shadowMap.attachment.extent.width, shadowMap.attachment.extent.height };
-			rpInfo = vkinit::renderpass_begin_info(shadowMap.renderPass, extent, shadowMap.framebuffer);
+			shadowMap = _renderScene._dirShadowMaps[id];
 			break;
 		}
 		case vkutil::MeshpassType::PointShadow:
 		{
-			PointShadowMap& shadowMap = _renderScene._pointShadowMaps[id];
-			shadowMapBufferInfo = shadowMap.pointLightBuffer.get_info();
-			extent = { shadowMap.attachment.extent.width, shadowMap.attachment.extent.height };
-			rpInfo = vkinit::renderpass_begin_info(shadowMap.renderPass, extent, shadowMap.framebuffer);
+			shadowMap = _renderScene._pointShadowMaps[id];
 			break;
 		}
 		case vkutil::MeshpassType::Forward:
 		case vkutil::MeshpassType::Transparency:
 		case vkutil::MeshpassType::None:
-			LOG_WARNING("This function was created only for shadow passes");
+			LOG_WARNING("This function was created only for shader passes");
 			return;
 	}
-
+	
+	shadowMapBufferInfo = shadowMap.lightBuffer.get_info();
+	
 	VkDescriptorSet lightDataDescriptorSet;
 	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
 		.bind_buffer(0, &shadowMapBufferInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
@@ -489,6 +485,9 @@ void VulkanEngine::draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptor
 
 	VkClearValue depthClear;
 	depthClear.depthStencil.depth = 1.f;
+
+	VkExtent2D extent = { shadowMap.attachment.extent.width, shadowMap.attachment.extent.height };
+	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(shadowMap.renderPass, extent, shadowMap.framebuffer);
 	rpInfo.clearValueCount = 1;
 	rpInfo.pClearValues = &depthClear;
 
