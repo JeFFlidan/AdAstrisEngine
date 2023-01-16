@@ -43,20 +43,6 @@ struct DeletionQueue
 	}
 };
 
-struct MeshPushConstants
-{
-	glm::vec4 data;
-	glm::mat4 render_matrix;
-};
-
-struct RenderObject
-{
-	Mesh* mesh;
-	vkutil::Material* material;
-	glm::mat4 transformMatrix;
-	glm::vec4 color;
-};
-
 struct GPUCameraData
 {
 	glm::mat4 view;
@@ -67,11 +53,6 @@ struct GPUCameraData
 
 struct GPUSceneData
 {
-	/*glm::vec4 fogColor;
-	glm::vec4 forDistances;
-	glm::vec4 ambientColor;
-	glm::vec4 sunlightDirection;
-	glm::vec4 sunlightColor;*/
 	uint32_t dirLightsAmount;
 	uint32_t pointLightsAmount;
 	uint32_t spotLightsAmount;
@@ -101,17 +82,7 @@ struct FrameData
 	VkCommandBuffer _mainCommandBuffer;
 
 	AllocatedBuffer _cameraBuffer;
-	VkDescriptorSet _globalDescriptor;
-
 	AllocatedBuffer _sceneDataBuffer;
-
-	AllocatedBuffer _objectBuffer;
-	VkDescriptorSet _objectDescriptor;
-
-	VkDescriptorSet _texturesDescriptor{VK_NULL_HANDLE};
-	VkDescriptorSet _outputQuadTexture{VK_NULL_HANDLE};
-
-	AllocatedBuffer _indirectCommandsBuffer;
 
 	DescriptorAllocator _dynamicDescriptorAllocator;
 
@@ -146,13 +117,6 @@ struct IndirectBatch
 	vkutil::Material* material;
 	uint32_t first;
 	uint32_t count;
-};
-
-struct PrefabElementsNames
-{
-	std::string meshName;
-	std::string materialName;
-	//std::vector<std::string> textureNames;
 };
 
 struct MeshObject
@@ -264,19 +228,12 @@ class VulkanEngine
 		std::vector<VkFramebuffer> _offscrFramebuffers;
 		VkFramebuffer _dirLightShadowFramebuffer;
 
-		VkDescriptorSetLayout _globalSetLayout;
-		VkDescriptorSetLayout _objectSetLayout;
-		VkDescriptorSetLayout _texturesSetLayout;
-		VkDescriptorSetLayout _singleTextureSetLayout;
-		VkDescriptorPool _descriptorPool;
-
 		DescriptorAllocator _descriptorAllocator;
 		DescriptorLayoutCache _descriptorLayoutCache;
 
 		vkutil::MaterialSystem _materialSystem;
 		RenderScene _renderScene;
 
-		Attachment _depthImage;
 		Attachment _offscrDepthImage;
 		Attachment _offscrColorImage;
 		VkSampler _offscrColorSampler;
@@ -305,7 +262,6 @@ class VulkanEngine
 
 		DeletionQueue _mainDeletionQueue;
 
-		std::vector<RenderObject> _renderables;
 		std::vector<MeshObject> _meshObjects;
 
 		std::unordered_map<std::string, Mesh> _meshes;
@@ -314,14 +270,10 @@ class VulkanEngine
 		std::vector<Texture> _normalTextures;
 		std::vector<Texture> _armTextures;
 
-		std::vector<VkDescriptorImageInfo> _baseColorImageInfos;
-		std::vector<VkDescriptorImageInfo> _normalImageInfos;
 		VkSampler _textureSampler;
-		std::vector<VkDescriptorImageInfo> _armImageInfos;
 
 		VkSampler _shadowMapSampler;
 
-		std::vector<PrefabElementsNames> _meshAndMaterialNames;
 		Plane _outputQuad;
 
 		GPUSceneData _sceneParameters;
@@ -364,8 +316,6 @@ class VulkanEngine
 		//run main loop
 		void run();
 		
-		Mesh* get_mesh(const std::string& name);
-
 		AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
 	private:
@@ -378,8 +328,8 @@ class VulkanEngine
 		void init_framebuffers();
 		void init_shadow_maps();
 		void init_sync_structures();
-		void init_scene();
-		void init_descriptors();
+		void init_output_quad();
+		void init_buffers();
 		void init_pipelines();
 		void setup_compute_pipeline(vkutil::Shader* shader, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout);
 		size_t pad_uniform_buffer_size(size_t originalSize);
@@ -402,9 +352,6 @@ class VulkanEngine
 			VkImageAspectFlags aspectFlags);
 
 		void setup_point_light_space_matrix(actors::PointLight& pointLight, ShadowMap& shadowMap, VkExtent3D extent);
-
-		std::vector<IndirectBatch> compact_draws(RenderObject* objects, int count);
-		void allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes);
 
 		void reallocate_buffer(AllocatedBuffer& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 		{
@@ -436,9 +383,7 @@ class VulkanEngine
 		void draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void submit(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void bake_shadow_maps(VkCommandBuffer cmd);
-		void draw_dir_lights_shadow_pass(VkCommandBuffer cmd);
-		void draw_point_lights_shadow_pass(VkCommandBuffer cmd);
-		void draw_spot_lights_shadow_pass(VkCommandBuffer cmd);
+		void draw_shadow_pass(VkCommandBuffer cmd, vkutil::MeshpassType passType);
 		void draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet, RenderScene::MeshPass& meshPass, uint32_t id);
 		void depth_reduce(VkCommandBuffer cmd);
 };

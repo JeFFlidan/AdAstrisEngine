@@ -152,7 +152,6 @@ class RenderScene
 		std::vector<VkDescriptorImageInfo> _baseColorInfos;
 		std::vector<VkDescriptorImageInfo> _normalInfos;
 		std::vector<VkDescriptorImageInfo> _armInfos;
-		VkSampler _textureSampler;
 
 		std::vector<actors::DirectionLight> _dirLights;
 		std::vector<actors::PointLight> _pointLights;

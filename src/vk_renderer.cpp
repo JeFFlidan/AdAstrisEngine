@@ -315,7 +315,7 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 		buffer.copy_from(this, &dirLight, allocSize);
 	}
 
-	draw_dir_lights_shadow_pass(cmd);
+	draw_shadow_pass(cmd, vkutil::MeshpassType::DirectionalShadow);
 
 	for (auto& shadowMap : _renderScene._dirShadowMaps)
 	{
@@ -344,7 +344,7 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 		_renderScene._pointShadowMapsInfos.push_back(info);
 	}
 
-	draw_point_lights_shadow_pass(cmd);
+	draw_shadow_pass(cmd, vkutil::MeshpassType::PointShadow);
 
 	for (int i = 0; i != _renderScene._spotLights.size(); ++i)
 	{
@@ -363,13 +363,41 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 		_renderScene._spotShadowMapsInfos.push_back(info);
 	}
 
-	draw_spot_lights_shadow_pass(cmd);
+	draw_shadow_pass(cmd, vkutil::MeshpassType::SpotShadow);
 }
 
-void VulkanEngine::draw_dir_lights_shadow_pass(VkCommandBuffer cmd)
+void VulkanEngine::draw_shadow_pass(VkCommandBuffer cmd, vkutil::MeshpassType passType)
 {
-	auto& meshPass = _renderScene._dirShadowPass;
-	
+	std::vector<ShadowMap> shadowMaps;
+	RenderScene::MeshPass* meshPass;
+
+	switch(passType)
+	{
+		case vkutil::MeshpassType::DirectionalShadow:
+		{
+			shadowMaps = _renderScene._dirShadowMaps;
+			meshPass = &_renderScene._dirShadowPass;
+			break;
+		}
+		case vkutil::MeshpassType::PointShadow:
+		{
+			shadowMaps = _renderScene._pointShadowMaps;
+			meshPass = &_renderScene._pointShadowPass;
+			break;
+		}
+		case vkutil::MeshpassType::SpotShadow:
+		{
+			shadowMaps = _renderScene._spotShadowMaps;
+			meshPass = &_renderScene._spotShadowPass;
+			break;
+		}
+		case vkutil::MeshpassType::Forward:
+		case vkutil::MeshpassType::Transparency:
+		case vkutil::MeshpassType::None:
+			LOG_WARNING("This function was created for shadow passes");
+			return;
+	}
+
 	vkutil::ShaderPass* prevMaterial = nullptr;
 	VkDeviceSize offset = 0;
 
@@ -377,7 +405,7 @@ void VulkanEngine::draw_dir_lights_shadow_pass(VkCommandBuffer cmd)
 	depthClear.depthStencil.depth = 1.f;
 	
 	VkDescriptorBufferInfo objectDataBufferInfo = _renderScene._objectDataBuffer.get_info(true);
-	VkDescriptorBufferInfo finalInstanceBufferInfo = meshPass.compactedInstanceBuffer.get_info(true);
+	VkDescriptorBufferInfo finalInstanceBufferInfo = meshPass->compactedInstanceBuffer.get_info(true);
 
 	VkDescriptorSet dirShadowsDescriptorSet;
 	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
@@ -385,13 +413,13 @@ void VulkanEngine::draw_dir_lights_shadow_pass(VkCommandBuffer cmd)
 		.bind_buffer(1, &finalInstanceBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
 		.build(dirShadowsDescriptorSet);
 	
-	for (int i = 0; i != _renderScene._dirLights.size(); ++i)
+	for (int i = 0; i != shadowMaps.size(); ++i)
 	{
 		vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
 		vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
 		
-		actors::DirectionLight& dirLight = _renderScene._dirLights[i];
-		ShadowMap& shadowMap = _renderScene._dirShadowMaps[i];
+		//actors::DirectionLight& dirLight = _renderScene._dirLights[i];
+		ShadowMap& shadowMap = shadowMaps[i];
 
 		CullParams cullParams;
 		cullParams.frustumCull = true;
@@ -401,126 +429,14 @@ void VulkanEngine::draw_dir_lights_shadow_pass(VkCommandBuffer cmd)
 		cullParams.viewMatrix = shadowMap.lightViewMat;
 		cullParams.projMatrix = shadowMap.lightProjMat;
 
-		culling(_renderScene._dirShadowPass, cmd, cullParams);
+		culling(*meshPass, cmd, cullParams);
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
 			0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
 
 		_afterCullingBufferBarriers.clear();
 
-		draw_objects_in_shadow_pass(cmd, dirShadowsDescriptorSet, meshPass, i);
+		draw_objects_in_shadow_pass(cmd, dirShadowsDescriptorSet, *meshPass, i);
 		
-		VkImage& image = shadowMap.attachment.imageData.image;
-		VkImageMemoryBarrier imageBarrier = vkinit::image_barrier(image,
-			VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-			VK_ACCESS_SHADER_READ_BIT,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			VK_IMAGE_ASPECT_DEPTH_BIT);
-
-		_afterShadowsBarriers.push_back(imageBarrier);
-	}
-}
-
-void VulkanEngine::draw_point_lights_shadow_pass(VkCommandBuffer cmd)
-{
-	auto& meshPass = _renderScene._pointShadowPass;
-	
-	VkDeviceSize offset = 0;
-
-	vkutil::ShaderPass* prevMaterial = nullptr;
-
-	VkClearValue depthClear;
-	depthClear.depthStencil.depth = 1.f;
-
-	VkDescriptorBufferInfo objectDataBufferInfo = _renderScene._objectDataBuffer.get_info(true);
-	VkDescriptorBufferInfo finalInstanceBufferInfo = meshPass.compactedInstanceBuffer.get_info(true);
-
-	VkDescriptorSet globalDescriptorSet;
-	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
-		.bind_buffer(0, &objectDataBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.bind_buffer(1, &finalInstanceBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.build(globalDescriptorSet);
-	
-	for (int i = 0; i != _renderScene._pointLights.size(); ++i)
-	{
-		vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
-		vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
-
-		actors::PointLight& pointLight = _renderScene._pointLights[i];
-		ShadowMap& shadowMap = _renderScene._pointShadowMaps[i];
-
-		CullParams cullParams;
-		cullParams.frustumCull = true;
-		cullParams.occlusionCull = false;
-		cullParams.aabb = false;
-		cullParams.drawDist = 9999999;
-		cullParams.viewMatrix = shadowMap.lightViewMat;
-		cullParams.projMatrix = shadowMap.lightProjMat;
-
-		culling(_renderScene._pointShadowPass, cmd, cullParams);
-		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-			0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
-
-		_afterCullingBufferBarriers.clear();
-
-		draw_objects_in_shadow_pass(cmd, globalDescriptorSet, meshPass, i);
-
-		VkImage& image = shadowMap.attachment.imageData.image;
-		VkImageMemoryBarrier imageBarrier = vkinit::image_barrier(image,
-			VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-			VK_ACCESS_SHADER_READ_BIT,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			VK_IMAGE_ASPECT_DEPTH_BIT);
-
-		_afterShadowsBarriers.push_back(imageBarrier);
-	}
-}
-
-void VulkanEngine::draw_spot_lights_shadow_pass(VkCommandBuffer cmd)
-{
-	auto& meshPass = _renderScene._spotShadowPass;
-
-	VkDeviceSize offset = 0;
-
-	vkutil::ShaderPass* prevMaterial = nullptr;
-
-	VkClearValue depthClear;
-	depthClear.depthStencil.depth = 1.f;
-
-	VkDescriptorBufferInfo objectDataBufferInfo = _renderScene._objectDataBuffer.get_info(true);
-	VkDescriptorBufferInfo finalInstanceBufferInfo = meshPass.compactedInstanceBuffer.get_info(true);
-
-	VkDescriptorSet globalDescriptorSet;
-	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
-		.bind_buffer(0, &objectDataBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.bind_buffer(1, &finalInstanceBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.build(globalDescriptorSet);
-	
-	for (int i = 0; i != _renderScene._spotLights.size(); ++i)
-	{
-		vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
-		vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
-
-		actors::SpotLight& spotLight = _renderScene._spotLights[i];
-		ShadowMap& shadowMap = _renderScene._spotShadowMaps[i];
-
-		CullParams cullParams;
-		cullParams.frustumCull = true;
-		cullParams.occlusionCull = false;
-		cullParams.aabb = false;
-		cullParams.drawDist = 9999999;
-		cullParams.viewMatrix = shadowMap.lightViewMat;
-		cullParams.projMatrix = shadowMap.lightProjMat;
-
-		culling(_renderScene._spotShadowPass, cmd, cullParams);
-		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-			0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
-
-		_afterCullingBufferBarriers.clear();
-
-		draw_objects_in_shadow_pass(cmd, globalDescriptorSet, meshPass, i);
-
 		VkImage& image = shadowMap.attachment.imageData.image;
 		VkImageMemoryBarrier imageBarrier = vkinit::image_barrier(image,
 			VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,

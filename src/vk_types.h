@@ -95,6 +95,6 @@ struct ShadowMap
 	glm::mat4 lightProjMat;
 	glm::mat4 lightViewMat;
 
-	static void destroy_shadow_map(VulkanEngine* engine, ShadowMap* shadowMap);
+	static void destroy_shadow_map(VulkanEngine* engine, ShadowMap shadowMap);
 };
 
