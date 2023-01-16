@@ -19,8 +19,11 @@ namespace actors
 		glm::vec4 colorAndIntensity;	// Intensity in lm
 		glm::vec4 positionAndDistance;
 		glm::vec4 spotDirAndInnerConeRadius;
-		float outerConeRadius;
 		glm::mat4 lightSpaceMat;
+		float outerConeRadius;
+		float nearPlane;
+		float farPlane;
+		float data1 = 0.0;
 	};
 
 	struct DirectionLight

@@ -82,6 +82,7 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImag
 	VkDescriptorSet texturesDescriptorSet3;
 	VkDescriptorSet dirShadowMapsDescriptorSet;
 	VkDescriptorSet pointShadowMapsDescriptorSet;
+	VkDescriptorSet spotShadowMapsDescriptorSet;
 
 	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
 		.bind_buffer(0, &dirLightsInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -120,6 +121,10 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImag
 		.bind_image(0, _renderScene._pointShadowMapsInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._pointShadowMapsInfos.size())
 		.build_non_uniform(pointShadowMapsDescriptorSet, _renderScene._pointShadowMapsInfos.size());
 
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_image(0, _renderScene._spotShadowMapsInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._spotShadowMapsInfos.size())
+		.build_non_uniform(spotShadowMapsDescriptorSet, _renderScene._spotShadowMapsInfos.size());
+
 	std::vector<VkDescriptorSet> sets = {
 		globalDescriptorSet,
 		objectDescriptorSet,
@@ -127,7 +132,8 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImag
 		texturesDescriptorSet2,
 		texturesDescriptorSet3,
 		dirShadowMapsDescriptorSet,
-		pointShadowMapsDescriptorSet};
+		pointShadowMapsDescriptorSet,
+		spotShadowMapsDescriptorSet};
 
 	vkutil::ShaderPass* prevMaterial = nullptr;
 	
@@ -295,6 +301,7 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 {
 	_renderScene._dirShadowMapsInfos.clear();
 	_renderScene._pointShadowMapsInfos.clear();
+	_renderScene._spotShadowMapsInfos.clear();
 	size_t size = sizeof(glm::mat4) * _renderScene._dirLights.size();
 
 	float nearPlane = 0.1f, farPlane = 85.0f;
@@ -338,6 +345,25 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 	}
 
 	draw_point_lights_shadow_pass(cmd);
+
+	for (int i = 0; i != _renderScene._spotLights.size(); ++i)
+	{
+		ShadowMap& shadowMap = _renderScene._spotShadowMaps[i];
+		auto spotLight = _renderScene._spotLights[i];
+		size_t allocSize = sizeof(actors::SpotLight);
+		AllocatedBuffer& buffer = shadowMap.lightBuffer;
+		reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		buffer.copy_from(this, &spotLight, allocSize);
+
+		VkDescriptorImageInfo info;
+		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		info.imageView = shadowMap.attachment.imageView;
+		info.sampler = nullptr;
+
+		_renderScene._spotShadowMapsInfos.push_back(info);
+	}
+
+	draw_spot_lights_shadow_pass(cmd);
 }
 
 void VulkanEngine::draw_dir_lights_shadow_pass(VkCommandBuffer cmd)
@@ -451,6 +477,62 @@ void VulkanEngine::draw_point_lights_shadow_pass(VkCommandBuffer cmd)
 	}
 }
 
+void VulkanEngine::draw_spot_lights_shadow_pass(VkCommandBuffer cmd)
+{
+	auto& meshPass = _renderScene._spotShadowPass;
+
+	VkDeviceSize offset = 0;
+
+	vkutil::ShaderPass* prevMaterial = nullptr;
+
+	VkClearValue depthClear;
+	depthClear.depthStencil.depth = 1.f;
+
+	VkDescriptorBufferInfo objectDataBufferInfo = _renderScene._objectDataBuffer.get_info(true);
+	VkDescriptorBufferInfo finalInstanceBufferInfo = meshPass.compactedInstanceBuffer.get_info(true);
+
+	VkDescriptorSet globalDescriptorSet;
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_buffer(0, &objectDataBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_buffer(1, &finalInstanceBufferInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.build(globalDescriptorSet);
+	
+	for (int i = 0; i != _renderScene._spotLights.size(); ++i)
+	{
+		vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
+		vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
+
+		actors::SpotLight& spotLight = _renderScene._spotLights[i];
+		ShadowMap& shadowMap = _renderScene._spotShadowMaps[i];
+
+		CullParams cullParams;
+		cullParams.frustumCull = true;
+		cullParams.occlusionCull = false;
+		cullParams.aabb = false;
+		cullParams.drawDist = 9999999;
+		cullParams.viewMatrix = shadowMap.lightViewMat;
+		cullParams.projMatrix = shadowMap.lightProjMat;
+
+		culling(_renderScene._spotShadowPass, cmd, cullParams);
+		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+			0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
+
+		_afterCullingBufferBarriers.clear();
+
+		draw_objects_in_shadow_pass(cmd, globalDescriptorSet, meshPass, i);
+
+		VkImage& image = shadowMap.attachment.imageData.image;
+		VkImageMemoryBarrier imageBarrier = vkinit::image_barrier(image,
+			VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+			VK_ACCESS_SHADER_READ_BIT,
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			VK_IMAGE_ASPECT_DEPTH_BIT);
+
+		_afterShadowsBarriers.push_back(imageBarrier);
+	}
+}
+
 void VulkanEngine::draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet, RenderScene::MeshPass& meshPass, uint32_t id)
 {
 	VkDescriptorBufferInfo shadowMapBufferInfo;
@@ -467,6 +549,11 @@ void VulkanEngine::draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptor
 		case vkutil::MeshpassType::PointShadow:
 		{
 			shadowMap = _renderScene._pointShadowMaps[id];
+			break;
+		}
+		case vkutil::MeshpassType::SpotShadow:
+		{
+			shadowMap = _renderScene._spotShadowMaps[id];
 			break;
 		}
 		case vkutil::MeshpassType::Forward:
@@ -697,6 +784,7 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 		&_renderScene._forwardPass,
 		&_renderScene._dirShadowPass,
 		&_renderScene._pointShadowPass,
+		&_renderScene._spotShadowPass,
 		&_renderScene._transparentForwardPass
 	};
 

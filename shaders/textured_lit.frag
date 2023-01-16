@@ -43,6 +43,7 @@ layout(set = 3, binding = 0) uniform texture2D normalTextures[];
 layout(set = 4, binding = 0) uniform texture2D armTextures[];
 layout(set = 5, binding = 0) uniform texture2D dirShadowMaps[];
 layout(set = 6, binding = 0) uniform textureCube pointShadowMaps[];
+layout(set = 7, binding = 0) uniform texture2D spotShadowMaps[];
 
 const float PI = 3.14159265359;
 
@@ -64,6 +65,7 @@ vec3 calculateSpotLight(vec3 F0, vec3 N, vec3 V, SpotLight spotLight, vec3 albed
 
 float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id);
 float calculatePointLightShadow(PointLight pointLight, vec3 N, int id);
+float calculateSpotLightShadow(SpotLight spotLight, vec3 N, int id);
 
 void main()
 {
@@ -77,6 +79,8 @@ void main()
 	float roughness = arm.g;
 	float metallic = arm.b;
 
+	float test = 0.0;
+
 	vec3 view = normalize(viewPos - fragPos);
 
 	vec3 F0 = vec3(0.04);
@@ -87,6 +91,7 @@ void main()
 	vec3 spotLightsL0 = vec3(0.0);
 	float dirShadow = 0.0;
 	float pointShadow = 0.0;
+	float spotShadow = 0.0;
 	
 	for (int i = 0; i != sceneData.dirLightsAmount; ++i)
 	{
@@ -95,7 +100,7 @@ void main()
 	}
 
 	dirLightsL0 *= (1.0 - dirShadow);
-	//dirLightsL0 *= 0.0;
+	dirLightsL0 *= 0.0;
 
 	for (int i = 0; i != sceneData.pointLightsAmount; ++i)
 	{
@@ -108,7 +113,10 @@ void main()
 	for (int i = 0; i != sceneData.spotLightsAmount; ++i)
 	{
 		spotLightsL0 += calculateSpotLight(F0, normal, view, spotLights.casters[i], albedo, roughness, metallic);
+		spotShadow = calculateSpotLightShadow(spotLights.casters[i], normal, i);
 	}
+
+	spotLightsL0 *= (1.0 - spotShadow);
 
 	vec3 ambient = vec3(0.01) * albedo * ao;
 	vec3 finalColor = ambient + (spotLightsL0 + dirLightsL0 + pointLightsL0);
@@ -337,6 +345,28 @@ float calculatePointLightShadow(PointLight pointLight, vec3 N, int id)
 			shadow += 1.0;
 	}
 	shadow /= float(samples);
+	return shadow;
+}
+
+float calculateSpotLightShadow(SpotLight spotLight, vec3 N, int id)
+{
+	vec4 fragPosLightSpace = spotLight.lightSpaceMat * vec4(fragPos, 1.0);
+	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	projCoords.xy = projCoords.xy * 0.5 + 0.5;
+	float currentDepth = projCoords.z;
+	
+	if (currentDepth > 1.0)
+		return 0.0;
+
+	//vec3 L = normalize(vec3(-dirLight.direction));
+	//float bias = max(0.05 * (1.0 - dot(N, L)), 0.005);
+	float bias = 0.00035;
+	float shadow = 0.0;
+
+	float pcfDepth = texture(nonuniformEXT(sampler2D(spotShadowMaps[id], shadowSamp)), projCoords.xy).r;
+			
+	shadow = currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+
 	return shadow;
 }
 

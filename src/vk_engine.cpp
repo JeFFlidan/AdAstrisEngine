@@ -577,10 +577,10 @@ void VulkanEngine::init_shadow_maps()
 	_renderScene._pointLights.push_back(pointLight);
 
 	actors::SpotLight spotLight;
-	spotLight.colorAndIntensity = glm::vec4(0.0f, 0.0f, 1.0f, 1800.0f);
-	spotLight.positionAndDistance = glm::vec4(13.0f, 8.0f, 5.0f, 40.0f);
+	spotLight.colorAndIntensity = glm::vec4(0.0f, 0.0f, 1.0f, 5000.0f);
+	spotLight.positionAndDistance = glm::vec4(13.0f, 8.0f, 9.0f, 300.0f);
 	float innerConeRadius = glm::cos(glm::radians(10.0f));
-	spotLight.spotDirAndInnerConeRadius = glm::vec4(0.0f, 0.0f, -2.0f, innerConeRadius);
+	spotLight.spotDirAndInnerConeRadius = glm::vec4(-2.0f, 0.0f, -10.0f, innerConeRadius);
 	spotLight.outerConeRadius = glm::cos(glm::radians(65.0f));
 	_renderScene._spotLights.push_back(spotLight);
 
@@ -681,6 +681,50 @@ void VulkanEngine::init_shadow_maps()
 		});
 
 		_renderScene._pointShadowMaps.push_back(tempMap);
+	}
+
+	for (int i = 0; i != _renderScene._spotLights.size(); ++i)
+	{
+		ShadowMap tempMap;
+		actors::SpotLight& spotLight = _renderScene._spotLights[i];
+
+		float aspect = (float)lightShadowMapExtent.width / (float)lightShadowMapExtent.height;
+		float nearPlane = 0.1f;
+		float farPlane = 100.0f;
+		tempMap.lightProjMat = glm::perspective(glm::radians(90.0f), aspect, nearPlane, farPlane);
+		glm::vec3 pos = glm::vec3(spotLight.positionAndDistance);
+		glm::vec3 center = pos + glm::vec3(spotLight.spotDirAndInnerConeRadius);
+		//center = glm::vec3(spotLight.spotDirAndInnerConeRadius) - glm::vec3(spotLight.positionAndDistance);
+		tempMap.lightViewMat = glm::lookAt(pos, center, glm::vec3(0.0f, 1.0f, 0.0f));
+
+		spotLight.lightSpaceMat = tempMap.lightProjMat * tempMap.lightViewMat;
+		spotLight.nearPlane = nearPlane;
+		spotLight.farPlane = farPlane;
+
+		create_attachment(
+			tempMap.attachment,
+			lightShadowMapExtent,
+			VK_FORMAT_D32_SFLOAT,
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_ASPECT_DEPTH_BIT
+		);
+		
+		vkutil::RenderPassBuilder::begin()
+			.add_depth_attachment(tempMap.attachment.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
+			.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
+			.build(_device, tempMap.renderPass);
+
+		VkImageView* attach = &tempMap.attachment.imageView;
+		VkFramebufferCreateInfo info = vkinit::framebuffer_create_info(attach, 1, tempMap.renderPass, tempMap.attachment.extent);
+		VK_CHECK(vkCreateFramebuffer(_device, &info, nullptr, &tempMap.framebuffer));
+		_renderScene._spotShadowMaps.push_back(tempMap);
+
+		_mainDeletionQueue.push_function([=](){
+			vkDestroyFramebuffer(_device, tempMap.framebuffer, nullptr);
+			vkDestroyRenderPass(_device, tempMap.renderPass, nullptr);
+			vkDestroyImageView(_device, tempMap.attachment.imageView, nullptr);
+			vmaDestroyImage(_allocator, tempMap.attachment.imageData.image, tempMap.attachment.imageData.allocation);
+		});
 	}
 }
 
@@ -873,6 +917,7 @@ void VulkanEngine::draw()
 	prepare_gpu_indirect_buffer(cmd, _renderScene._pointShadowPass);
 	prepare_gpu_indirect_buffer(cmd, _renderScene._dirShadowPass);
 	prepare_gpu_indirect_buffer(cmd, _renderScene._forwardPass);
+	prepare_gpu_indirect_buffer(cmd, _renderScene._spotShadowPass);
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, _beforeCullingBufferBarriers.size(), _beforeCullingBufferBarriers.data(), 0, nullptr);
 	_beforeCullingBufferBarriers.clear();
 
@@ -1000,7 +1045,9 @@ void VulkanEngine::run()
 
 void VulkanEngine::parse_prefabs()
 {
+	LOG_INFO("Before buildin default templates");
 	_materialSystem.build_default_templates();
+	LOG_INFO("After building default templates");
 	std::string assetsPath = _projectPath + "/assets/";
 	fs::path direcory{ assetsPath };
 	
