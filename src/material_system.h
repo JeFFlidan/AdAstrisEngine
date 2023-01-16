@@ -1,5 +1,6 @@
 #pragma once
 
+#include "material_system.h"
 #include "vk_mesh.h"
 #include "vk_types.h"
 #include "logger.h"
@@ -51,6 +52,7 @@ namespace vkutil
 		Transparency = 2,
 		DirectionalShadow = 3,
 		PointShadow = 4,
+		SpotShadow = 5,
 	};
 	
 	struct ShaderParameters
@@ -83,6 +85,8 @@ namespace vkutil
 						return data[2];
 					case MeshpassType::PointShadow:
 						return data[3];
+					case MeshpassType::SpotShadow:
+						return data[4];
 				}
 
 				return data[0];
@@ -90,12 +94,12 @@ namespace vkutil
 
 			void clear(T&& val)
 			{
-				for (int i = 0; i != 4; ++i)
+				for (int i = 0; i != 5; ++i)
 					data[i] = val;
 			}
 
 		private:
-			std::array<T, 4> data;
+			std::array<T, 5> data;
 	};
 
 	struct ShaderPass
@@ -161,8 +165,9 @@ namespace vkutil
 
 			PipelineBuilder _postprocessingPipelineBuilder;
 			PipelineBuilder _offscrPipelineBuilder;
-			PipelineBuilder _dirLightShadowPipelineBuilder;
-			PipelineBuilder _pointLightShadowPipelineBuilder;
+			PipelineBuilder _dirShadowPipelineBuilder;
+			PipelineBuilder _pointShadowPipelineBuilder;
+			PipelineBuilder _spotShadowPipelineBuilder;
 			PipelineBuilder _transparencyBuilder;
 
 			std::unordered_map<std::string, EffectTemplate> _templateCache;

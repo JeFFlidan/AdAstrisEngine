@@ -115,8 +115,10 @@ namespace vkutil
 		// I have to think about one pipeline builder for passes below
 	    _offscrPipelineBuilder = pipelineBuilder;
 	    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-	    _dirLightShadowPipelineBuilder = pipelineBuilder;
-	    _pointLightShadowPipelineBuilder = pipelineBuilder;
+	    _dirShadowPipelineBuilder = pipelineBuilder;
+	    _pointShadowPipelineBuilder = pipelineBuilder;
+	    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+	    _spotShadowPipelineBuilder = pipelineBuilder;
 		
 		pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS_OR_EQUAL);
 
@@ -207,13 +209,17 @@ namespace vkutil
 		ShaderEffect* postprocessingEffect = build_shader_effect({
 		    "/shaders/postprocessing.vert.spv",
 			"/shaders/postprocessing.frag.spv"});
-		ShaderEffect* dirLightShadowEffect = build_shader_effect({
+		ShaderEffect* dirShadowEffect = build_shader_effect({
 			"/shaders/dir_light_depth_map.vert.spv",
 			"/shaders/dir_light_depth_map.frag.spv"
 		});
-		ShaderEffect* pointLightShadowEffect = build_shader_effect({
+		ShaderEffect* pointShadowEffect = build_shader_effect({
 			"/shaders/point_light_depth_map.vert.spv",
 			"/shaders/point_light_depth_map.frag.spv"
+		});
+		ShaderEffect* spotShadowEffect = build_shader_effect({
+			"/shaders/spot_light_depth_map.vert.spv",
+			"/shaders/spot_light_depth_map.frag.spv"
 		});
 			
 		//ShaderEffect* coloredLitEffect = build_shader_effect({
@@ -222,18 +228,21 @@ namespace vkutil
 
 		ShadowMap& shadowMap = _engine->_renderScene._dirShadowMaps[0];
 		ShadowMap& pointShadowMap = _engine->_renderScene._pointShadowMaps[0];
+		ShadowMap& spotShadowMap = _engine->_renderScene._spotShadowMaps[0];
 		
 		ShaderPass* texturedLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, texturedLitEffect);
 		ShaderPass* postrpocessingPass = build_shader_pass(_engine->_renderPass, _postprocessingPipelineBuilder, postprocessingEffect);
-		ShaderPass* dirLightShadowPass = build_shader_pass(shadowMap.renderPass, _dirLightShadowPipelineBuilder, dirLightShadowEffect);
-		ShaderPass* pointLightShadowPass = build_shader_pass(pointShadowMap.renderPass, _pointLightShadowPipelineBuilder, pointLightShadowEffect);
+		ShaderPass* dirShadowPass = build_shader_pass(shadowMap.renderPass, _dirShadowPipelineBuilder, dirShadowEffect);
+		ShaderPass* pointShadowPass = build_shader_pass(pointShadowMap.renderPass, _pointShadowPipelineBuilder, pointShadowEffect);
+		ShaderPass* spotShadowPass = build_shader_pass(spotShadowMap.renderPass, _spotShadowPipelineBuilder, spotShadowEffect);
 		//ShaderPass* coloredLitPass = build_shader_pass(_engine->_offscrRenderPass, _offscrPipelineBuilder, coloredLitEffect);
 
 		EffectTemplate effectTemplate;
-		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = dirLightShadowPass;
+		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = dirShadowPass;
 		effectTemplate.passShaders[MeshpassType::Transparency] = nullptr;
 		effectTemplate.passShaders[MeshpassType::Forward] = texturedLitPass;
-		effectTemplate.passShaders[MeshpassType::PointShadow] = pointLightShadowPass;
+		effectTemplate.passShaders[MeshpassType::PointShadow] = pointShadowPass;
+		effectTemplate.passShaders[MeshpassType::SpotShadow] = spotShadowPass;
 		effectTemplate.defaultParameters = nullptr;
 		effectTemplate.transparency = assets::MaterialMode::OPAQUE;
 		_templateCache["PBR_opaque"] = effectTemplate;
@@ -241,6 +250,7 @@ namespace vkutil
 		effectTemplate.passShaders[MeshpassType::Forward] = postrpocessingPass;
 		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = nullptr;
 		effectTemplate.passShaders[MeshpassType::PointShadow] = nullptr;
+		effectTemplate.passShaders[MeshpassType::SpotShadow] = nullptr;
 		_templateCache["Postprocessing"] = effectTemplate;
 	}
 
@@ -318,7 +328,7 @@ namespace vkutil
 				pass->effect->destroy_shader_modules();
 			}
 
-			pass = templ.second.passShaders[vkutil::MeshpassType::DirectionalShadow];
+			pass = templ.second.passShaders[MeshpassType::DirectionalShadow];
 			if (pass != nullptr)
 			{
 				vkDestroyPipeline(device, pass->pipeline, nullptr);
@@ -326,7 +336,15 @@ namespace vkutil
 				pass->effect->destroy_shader_modules();
 			}
 
-			pass = templ.second.passShaders[vkutil::MeshpassType::PointShadow];
+			pass = templ.second.passShaders[MeshpassType::PointShadow];
+			if (pass != nullptr)
+			{
+				vkDestroyPipeline(device, pass->pipeline, nullptr);
+				vkDestroyPipelineLayout(device, pass->layout, nullptr);
+				pass->effect->destroy_shader_modules();
+			}
+
+			pass = templ.second.passShaders[MeshpassType::SpotShadow];
 			if (pass != nullptr)
 			{
 				vkDestroyPipeline(device, pass->pipeline, nullptr);

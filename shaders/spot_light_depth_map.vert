@@ -18,14 +18,13 @@ layout(set = 0, binding = 1) buffer readonly InstanceBuffer
 	uint IDs[];
 } instanceBuffer;
 
-layout(set = 1, binding = 0) uniform DirLightData
+layout(set = 1, binding = 0) uniform SpotLightData
 {
-	DirectionLight dirLight;
+	SpotLight spotLight;
 };
 
 void main()
 {
 	uint id = instanceBuffer.IDs[gl_InstanceIndex];
-	gl_Position = dirLight.lightSpaceMat * objectBuffer.data[id].model * vec4(aPos, 1.0);
+	gl_Position = spotLight.lightSpaceMat * objectBuffer.data[id].model * vec4(aPos, 1.0);
 }
-

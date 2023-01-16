@@ -5,6 +5,7 @@
 #include "vk_engine.h"
 #include "vk_initializers.h"
 
+#include <atomic>
 #include <iostream>
 #include <future>
 #include <algorithm>
@@ -20,11 +21,12 @@ void RenderScene::init()
 	_dirShadowPass.type = vkutil::MeshpassType::DirectionalShadow;
 	_transparentForwardPass.type = vkutil::MeshpassType::Transparency;
 	_pointShadowPass.type = vkutil::MeshpassType::PointShadow;
+	_spotShadowPass.type = vkutil::MeshpassType::SpotShadow;
 }
 
 void RenderScene::cleanup(VulkanEngine* engine)
 {
-	std::vector<MeshPass*> passes = { &_forwardPass, &_dirShadowPass, &_pointShadowPass };
+	std::vector<MeshPass*> passes = { &_forwardPass, &_dirShadowPass, &_pointShadowPass, &_spotShadowPass };
 	for (auto pass : passes)
 	{
 		pass->compactedInstanceBuffer.destroy_buffer(engine);
@@ -43,6 +45,10 @@ void RenderScene::cleanup(VulkanEngine* engine)
 		shadowMap.lightBuffer.destroy_buffer(engine);
 	}
 	for (auto& shadowMap : _pointShadowMaps)
+	{
+		shadowMap.lightBuffer.destroy_buffer(engine);
+	}
+	for (auto& shadowMap : _spotShadowMaps)
 	{
 		shadowMap.lightBuffer.destroy_buffer(engine);
 	}
@@ -99,6 +105,15 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 		{
 			LOG_INFO("+1 in point shadow pass");
 			_pointShadowPass.unbatchedObjects.push_back(handle);
+		}
+	}
+
+	if (object->bDrawSpotShadowPass)
+	{
+		if (object->material->original->passShaders[vkutil::MeshpassType::SpotShadow])
+		{
+			LOG_INFO("+1 in spot shadow pass");
+			_spotShadowPass.unbatchedObjects.push_back(handle);
 		}
 	}
 
@@ -182,6 +197,17 @@ void RenderScene::update_object(Handle<RenderableObject> objectID)
 		_pointShadowPass.unbatchedObjects.push_back(objectID);
 
 		passIndices[vkutil::MeshpassType::PointShadow] = -1;
+	}
+
+	if (passIndices[vkutil::MeshpassType::SpotShadow] != -1)
+	{
+		Handle<PassObject> handle;
+		handle.handle = passIndices[vkutil::MeshpassType::SpotShadow];
+
+		_spotShadowPass.objectToDelete.push_back(handle);
+		_spotShadowPass.unbatchedObjects.push_back(objectID);
+
+		passIndices[vkutil::MeshpassType::SpotShadow] = -1;
 	}
 
 	if (get_renderable_object(objectID)->updateIndex == (uint32_t)-1)
@@ -338,9 +364,11 @@ void RenderScene::build_batches()
 	auto forward = std::async(std::launch::async, [&]{ refresh_pass(&_forwardPass); });
 	auto shadow = std::async(std::launch::async, [&]{ refresh_pass(&_dirShadowPass); });
 	auto pointShadow = std::async(std::launch::async, [&]{ refresh_pass(&_pointShadowPass); });
+	auto spotShadow = std::async(std::launch::async, [&]{ refresh_pass(&_spotShadowPass); });
 	//auto transparent = std::async(std::launch::async, [&]{ refresh_pass(&_transparentForwardPass); });
 
 	//transparent.get();
+	spotShadow.get();
 	pointShadow.get();
 	shadow.get();
 	forward.get();
@@ -437,6 +465,9 @@ RenderScene::MeshPass* RenderScene::get_mesh_pass(vkutil::MeshpassType type)
 			break;
 		case vkutil::MeshpassType::PointShadow:
 			pass = &_pointShadowPass;
+			break;
+		case vkutil::MeshpassType::SpotShadow:
+			pass = &_spotShadowPass;
 			break;
 		case vkutil::MeshpassType::None:
 			LOG_ERROR("There are no mesh pass");

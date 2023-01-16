@@ -170,6 +170,7 @@ struct MeshObject
 	uint32_t bDrawForwardPass{ 1 };
 	uint32_t bDrawShadowPass{ 1 };
 	uint32_t bDrawPointShadowPass{ 1 };
+	uint32_t bDrawSpotShadowPass{ 1 };
 };
 
 // structs for culling
@@ -437,6 +438,7 @@ class VulkanEngine
 		void bake_shadow_maps(VkCommandBuffer cmd);
 		void draw_dir_lights_shadow_pass(VkCommandBuffer cmd);
 		void draw_point_lights_shadow_pass(VkCommandBuffer cmd);
+		void draw_spot_lights_shadow_pass(VkCommandBuffer cmd);
 		void draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet, RenderScene::MeshPass& meshPass, uint32_t id);
 		void depth_reduce(VkCommandBuffer cmd);
 };

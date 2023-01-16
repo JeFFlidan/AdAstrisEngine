@@ -20,7 +20,17 @@ struct SpotLight
 	vec4 colorAndIntensity;
 	vec4 positionAndDistance;
 	vec4 spotDirAndInnerConeRadius;
-	float outerConeRadius;
 	mat4 lightSpaceMat;
+	float outerConeRadius;
+	float nearPlane;
+	float farPlane;
+	float data;
+};
+
+struct ObjectData
+{
+	mat4 model;
+	vec4 radius;
+	vec4 extents;
 };
 
