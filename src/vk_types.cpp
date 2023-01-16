@@ -77,3 +77,11 @@ void Attachment::destroy_attachment(VulkanEngine* engine)
 	destroy_texture(engine);
 }
 
+void ShadowMap::destroy_shadow_map(VulkanEngine* engine, ShadowMap shadowMap)
+{
+	vkDestroyFramebuffer(engine->_device, shadowMap.framebuffer, nullptr);
+	vkDestroyRenderPass(engine->_device, shadowMap.renderPass, nullptr);
+	vkDestroyImageView(engine->_device, shadowMap.attachment.imageView, nullptr);
+	vmaDestroyImage(engine->_allocator, shadowMap.attachment.imageData.image, shadowMap.attachment.imageData.allocation);
+}
+

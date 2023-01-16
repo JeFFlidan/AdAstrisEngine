@@ -130,10 +130,10 @@ void VulkanEngine::init()
 	init_renderpasses();
 	init_framebuffers();
 	init_shadow_maps();
-	init_descriptors();
+	init_buffers();
 	init_pipelines();
 	parse_prefabs();
-	init_scene();
+	init_output_quad();
 	init_imgui();
 	
 	//everything went fine
@@ -613,13 +613,11 @@ void VulkanEngine::init_shadow_maps()
 		VkImageView* attach = &tempMap.attachment.imageView;
 		VkFramebufferCreateInfo info = vkinit::framebuffer_create_info(attach, 1, tempMap.renderPass, tempMap.attachment.extent);
 		VK_CHECK(vkCreateFramebuffer(_device, &info, nullptr, &tempMap.framebuffer));
+
 		_renderScene._dirShadowMaps.push_back(tempMap);
 
 		_mainDeletionQueue.push_function([=](){
-			vkDestroyFramebuffer(_device, tempMap.framebuffer, nullptr);
-			vkDestroyRenderPass(_device, tempMap.renderPass, nullptr);
-			vkDestroyImageView(_device, tempMap.attachment.imageView, nullptr);
-			vmaDestroyImage(_allocator, tempMap.attachment.imageData.image, tempMap.attachment.imageData.allocation);
+			ShadowMap::destroy_shadow_map(this, tempMap);
 		});
 	}
 
@@ -673,14 +671,11 @@ void VulkanEngine::init_shadow_maps()
 		VkFramebuffer& framebuffer = tempMap.framebuffer;
 		VK_CHECK(vkCreateFramebuffer(_device, &framebufferInfo, nullptr, &framebuffer));
 
-		_mainDeletionQueue.push_function([=](){
-			vkDestroyFramebuffer(_device, tempMap.framebuffer, nullptr);
-			vkDestroyRenderPass(_device, tempMap.renderPass, nullptr);
-			vkDestroyImageView(_device, attachment.imageView, nullptr);
-			vmaDestroyImage(_allocator, attachment.imageData.image, attachment.imageData.allocation);
-		});
-
 		_renderScene._pointShadowMaps.push_back(tempMap);
+		
+		_mainDeletionQueue.push_function([=](){
+			ShadowMap::destroy_shadow_map(this, tempMap);
+		});
 	}
 
 	for (int i = 0; i != _renderScene._spotLights.size(); ++i)
@@ -717,13 +712,11 @@ void VulkanEngine::init_shadow_maps()
 		VkImageView* attach = &tempMap.attachment.imageView;
 		VkFramebufferCreateInfo info = vkinit::framebuffer_create_info(attach, 1, tempMap.renderPass, tempMap.attachment.extent);
 		VK_CHECK(vkCreateFramebuffer(_device, &info, nullptr, &tempMap.framebuffer));
+
 		_renderScene._spotShadowMaps.push_back(tempMap);
 
 		_mainDeletionQueue.push_function([=](){
-			vkDestroyFramebuffer(_device, tempMap.framebuffer, nullptr);
-			vkDestroyRenderPass(_device, tempMap.renderPass, nullptr);
-			vkDestroyImageView(_device, tempMap.attachment.imageView, nullptr);
-			vmaDestroyImage(_allocator, tempMap.attachment.imageData.image, tempMap.attachment.imageData.allocation);
+			ShadowMap::destroy_shadow_map(this, tempMap);
 		});
 	}
 }
@@ -754,7 +747,7 @@ void VulkanEngine::init_sync_structures()
 	});
 }
 
-void VulkanEngine::init_descriptors()
+void VulkanEngine::init_buffers()
 {
 	LOG_INFO("Init descriptors");
 	const size_t sceneParamBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(GPUSceneData));
@@ -762,9 +755,6 @@ void VulkanEngine::init_descriptors()
 
 	for (int i = 0; i != FRAME_OVERLAP; ++i)
 	{
-		const int MAX_OBJECTS = 10000;
-		_frames[i]._objectBuffer = create_buffer(sizeof(GPUObjectData) * MAX_OBJECTS, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU); 
-
 		_frames[i]._cameraBuffer = create_buffer(sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 		_frames[i]._sceneDataBuffer.create_buffer(this, sizeof(GPUSceneData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -779,7 +769,6 @@ void VulkanEngine::init_descriptors()
 	{
 		_mainDeletionQueue.push_function([=](){
 			vmaDestroyBuffer(_allocator, _frames[i]._sceneDataBuffer._buffer, _frames[i]._sceneDataBuffer._allocation);
-			vmaDestroyBuffer(_allocator, _frames[i]._objectBuffer._buffer, _frames[i]._objectBuffer._allocation);
 			vmaDestroyBuffer(_allocator, _frames[i]._cameraBuffer._buffer, _frames[i]._cameraBuffer._allocation);
 		});
 	}
@@ -830,7 +819,7 @@ void VulkanEngine::setup_compute_pipeline(vkutil::Shader* shader, VkPipeline& pi
 	pipeline = builder.build_pipeline(_device);
 }
 
-void VulkanEngine::init_scene()
+void VulkanEngine::init_output_quad()
 {
 	size_t outputQuadVertBufferSize = _outputQuad._vertices.size() * sizeof(Vertex);
 	AllocatedBuffer vertexStagingBuffer = create_buffer(outputQuadVertBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
@@ -860,20 +849,6 @@ void VulkanEngine::init_scene()
 	vkutil::MaterialData materialData;
 	materialData.baseTemplate = "Postprocessing";
 	_materialSystem.build_material("Postprocessing", materialData);
-	for (int i = 0; i != 2; ++i)
-	{
-		_frames[i]._indirectCommandsBuffer = create_buffer(
-			1000 * sizeof(VkDrawIndexedIndirectCommand),
-			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |  VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-			VMA_MEMORY_USAGE_GPU_ONLY);
-	}
-	
-	_mainDeletionQueue.push_function([=](){
-		for (int i = 0; i != 2; ++i)
-		{
-			vmaDestroyBuffer(_allocator, _frames[i]._indirectCommandsBuffer._buffer, _frames[i]._indirectCommandsBuffer._allocation);
-		}
-	});
 }
 
 void VulkanEngine::draw()
@@ -1142,81 +1117,6 @@ void VulkanEngine::parse_prefabs()
 	});
 
 	fill_renderable_objects();
-}
-
-void VulkanEngine::allocate_global_vertex_and_index_buffer(std::vector<Mesh> meshes)
-{
-	auto start = std::chrono::high_resolution_clock::now();
-
-	for (int i = 0; i != meshes.size(); ++i)
-	{
-		_globalVertexBufferSize += meshes[i]._vertices.size();
-		_globalIndexBufferSize += meshes[i]._indices.size();
-	}
-
-	std::vector<assets::Vertex_f32_PNCV> vertices(_globalVertexBufferSize);
-	std::vector<uint32_t> indices(_globalIndexBufferSize);
-
-	size_t previousVerticesSize = 0;
-	size_t previousIndicesSize = 0;
-
-	for (int i = 0; i != meshes.size(); ++i)
-	{
-		memcpy(vertices.data() + previousVerticesSize, meshes[i]._vertices.data(), meshes[i]._vertices.size() * sizeof(assets::Vertex_f32_PNCV));
-	    previousVerticesSize += meshes[i]._vertices.size();
-
-	    memcpy(indices.data() + previousIndicesSize, meshes[i]._indices.data(), meshes[i]._indices.size() * sizeof(uint32_t));
-	    previousIndicesSize += meshes[i]._indices.size();
-	}
-
-	AllocatedBuffer vertexStagingBuffer(this, _globalVertexBufferSize * sizeof(assets::Vertex_f32_PNCV),
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-	
-	AllocatedBuffer indexStagingBuffer(this, _globalIndexBufferSize * sizeof(uint32_t),
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-
-	vertexStagingBuffer.copy_from(this, (void*)vertices.data(), vertices.size() * sizeof(assets::Vertex_f32_PNCV));
-	indexStagingBuffer.copy_from(this, (void*)indices.data(), indices.size() * sizeof(uint32_t));
-
-	_globalVertexBuffer.create_buffer(this, _globalVertexBufferSize * sizeof(assets::Vertex_f32_PNCV),
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		VMA_MEMORY_USAGE_GPU_ONLY);
-	
-	_globalIndexBuffer.create_buffer(this, _globalIndexBufferSize * sizeof(uint32_t),
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-		VMA_MEMORY_USAGE_GPU_ONLY);
-
-	immediate_submit([&](VkCommandBuffer cmd){
-	    AllocatedBuffer::copy_buffer_cmd(this, cmd, &vertexStagingBuffer, &_globalVertexBuffer);
-	    AllocatedBuffer::copy_buffer_cmd(this, cmd, &indexStagingBuffer, &_globalIndexBuffer);
-	});
-	
-	_mainDeletionQueue.push_function([=](){
-		vmaDestroyBuffer(_allocator, _globalVertexBuffer._buffer, _globalVertexBuffer._allocation);
-		vmaDestroyBuffer(_allocator, _globalIndexBuffer._buffer, _globalIndexBuffer._allocation);
-	});
-	
-	vmaDestroyBuffer(_allocator, vertexStagingBuffer._buffer, vertexStagingBuffer._allocation);
-	vmaDestroyBuffer(_allocator, indexStagingBuffer._buffer, indexStagingBuffer._allocation);
-
-	auto end = std::chrono::high_resolution_clock::now();
-
-	auto diff = end - start;
-
-	LOG_INFO("allocating mesh buffers took {} {}", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / 1000000.0, "ms");
-}
-
-Mesh* VulkanEngine::get_mesh(const std::string& name)
-{
-	auto it = _meshes.find(name);
-	if (it == _meshes.end())
-	{
-		return nullptr;
-	}
-	else
-	{
-		return &(*it).second;
-	}
 }
 
 FrameData& VulkanEngine::get_current_frame()
