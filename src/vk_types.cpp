@@ -1,6 +1,8 @@
 #include "vk_types.h"
+#include "engine_actors.h"
 #include "vk_engine.h"
 #include "logger.h"
+#include <stdint.h>
 #include <vulkan/vulkan_core.h>
 
 AllocatedBuffer::AllocatedBuffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
@@ -83,5 +85,83 @@ void ShadowMap::destroy_shadow_map(VulkanEngine* engine, ShadowMap shadowMap)
 	vkDestroyRenderPass(engine->_device, shadowMap.renderPass, nullptr);
 	vkDestroyImageView(engine->_device, shadowMap.attachment.imageView, nullptr);
 	vmaDestroyImage(engine->_allocator, shadowMap.attachment.imageData.image, shadowMap.attachment.imageData.allocation);
+}
+
+void ShadowMap::create_light_space_matrices(VulkanEngine* engine, LightType lightType, uint32_t lightId, ShadowMap& shadowMap)
+{
+	switch (lightType)
+	{
+		case LightType::DirectionalLight:
+		{
+			auto& dirLight = engine->_renderScene._dirLights[lightId];
+			float nearPlane = 0.01f, farPlane = 600.0f;
+	
+			shadowMap.lightProjMat = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, nearPlane, farPlane);
+			shadowMap.lightProjMat[1][1] *= -1;
+
+			glm::vec3 position = glm::vec3(dirLight.direction) * ((-farPlane) * 0.75f);
+			shadowMap.lightViewMat = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+			dirLight.lightSpaceMat = shadowMap.lightProjMat * shadowMap.lightViewMat;
+		
+			break;
+		}
+		case LightType::PointLight:
+		{
+			auto& pointLight = engine->_renderScene._pointLights[lightId];
+
+			VkExtent3D extent = shadowMap.attachment.extent;
+			float aspect = (float)extent.width / (float)extent.height;
+			float nearPlane = 0.1f;
+			float farPlane = 1024.0f;
+			glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, nearPlane, farPlane);
+
+			glm::vec3 pos = glm::vec3(pointLight.positionAndAttRadius);
+
+			pointLight.lightSpaceMat[0] = shadowProj * glm::lookAt(pos, pos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+			pointLight.lightSpaceMat[1] = shadowProj * glm::lookAt(pos, pos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+			pointLight.lightSpaceMat[2] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			pointLight.lightSpaceMat[3] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+			pointLight.lightSpaceMat[4] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+			pointLight.lightSpaceMat[5] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+
+			pointLight.farPlane = farPlane;
+
+			shadowMap.lightProjMat = shadowProj;
+			shadowMap.lightViewMat = glm::lookAt(pos, pos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+			
+			break;
+		}
+		case LightType::SpotLight:
+		{
+			auto& spotLight = engine->_renderScene._spotLights[lightId];
+
+			VkExtent3D extent = shadowMap.attachment.extent;
+			float aspect = (float)extent.width / (float)extent.height;
+			float nearPlane = 0.1f;
+			float farPlane = 1024.0f;
+
+			glm::mat4 shadowProj = glm::perspective(glm::radians(120.0f), aspect, nearPlane, farPlane);
+			shadowProj[1][1] *= -1;
+			shadowMap.lightProjMat = shadowProj;
+			glm::vec3 pos = glm::vec3(spotLight.positionAndDistance);
+
+			float rx = spotLight.rotationAndInnerConeRadius.x;
+			float ry = spotLight.rotationAndInnerConeRadius.y;
+			float rz = spotLight.rotationAndInnerConeRadius.z;
+
+			glm::vec3 dir;
+			dir.x = glm::cos(ry) * glm::cos(rx);
+			dir.y = glm::sin(rx);
+			dir.z = glm::sin(ry) * glm::cos(rx);
+
+			glm::mat4 viewMat = glm::lookAt(pos, pos + dir, glm::vec3(0.0f, 1.0f, 0.0f));
+			shadowMap.lightViewMat = viewMat;
+
+			spotLight.lightSpaceMat = shadowMap.lightProjMat * shadowMap.lightViewMat;
+			
+			break;
+		}
+	}
 }
 

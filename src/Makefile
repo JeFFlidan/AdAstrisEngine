@@ -177,6 +177,30 @@ material_system.cpp.s:
 	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/material_system.cpp.s
 .PHONY : material_system.cpp.s
 
+user_interface.obj: user_interface.cpp.obj
+.PHONY : user_interface.obj
+
+# target to build an object file
+user_interface.cpp.obj:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/user_interface.cpp.obj
+.PHONY : user_interface.cpp.obj
+
+user_interface.i: user_interface.cpp.i
+.PHONY : user_interface.i
+
+# target to preprocess a source file
+user_interface.cpp.i:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/user_interface.cpp.i
+.PHONY : user_interface.cpp.i
+
+user_interface.s: user_interface.cpp.s
+.PHONY : user_interface.s
+
+# target to generate assembly for a file
+user_interface.cpp.s:
+	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/user_interface.cpp.s
+.PHONY : user_interface.cpp.s
+
 vk_camera.obj: vk_camera.cpp.obj
 .PHONY : vk_camera.obj
 
@@ -457,6 +481,9 @@ help:
 	@echo ... material_system.obj
 	@echo ... material_system.i
 	@echo ... material_system.s
+	@echo ... user_interface.obj
+	@echo ... user_interface.i
+	@echo ... user_interface.s
 	@echo ... vk_camera.obj
 	@echo ... vk_camera.i
 	@echo ... vk_camera.s

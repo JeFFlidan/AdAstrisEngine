@@ -1,5 +1,8 @@
 ﻿#include "vk_engine.h"
+#include "SDL_events.h"
+#include "SDL_mouse.h"
 #include "SDL_stdinc.h"
+#include "SDL_surface.h"
 #include "SDL_video.h"
 #include "asset_loader.h"
 #include "engine_actors.h"
@@ -134,7 +137,8 @@ void VulkanEngine::init()
 	init_pipelines();
 	parse_prefabs();
 	init_output_quad();
-	init_imgui();
+	_userInterface.init_ui(this);
+	//init_imgui();
 	
 	//everything went fine
 	_isInitialized = true;
@@ -422,6 +426,7 @@ void VulkanEngine::init_swapchain()
 
 void VulkanEngine::init_imgui()
 {
+
 	VkDescriptorPoolSize pool_sizes[] = {
 		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -580,7 +585,10 @@ void VulkanEngine::init_shadow_maps()
 	spotLight.colorAndIntensity = glm::vec4(0.0f, 0.0f, 1.0f, 5000.0f);
 	spotLight.positionAndDistance = glm::vec4(13.0f, 8.0f, 9.0f, 300.0f);
 	float innerConeRadius = glm::cos(glm::radians(10.0f));
-	spotLight.spotDirAndInnerConeRadius = glm::vec4(-2.0f, 0.0f, -10.0f, innerConeRadius);
+	float rx = glm::radians(10.0f);
+	float ry = glm::radians(25.0f);
+	float rz = glm::radians(0.0f);
+	spotLight.rotationAndInnerConeRadius = glm::vec4(rx, ry, rz, innerConeRadius);
 	spotLight.outerConeRadius = glm::cos(glm::radians(65.0f));
 	_renderScene._spotLights.push_back(spotLight);
 
@@ -597,13 +605,7 @@ void VulkanEngine::init_shadow_maps()
 
 		actors::DirectionLight& dirLight = _renderScene._dirLights[i];
 
-		tempMap.lightProjMat = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, nearPlane, farPlane);
-		tempMap.lightProjMat[1][1] *= -1;
-		
-		glm::vec3 position = glm::vec3(dirLight.direction) * ((-farPlane) * 0.75f);
-		tempMap.lightViewMat = glm::lookAt(position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-		dirLight.lightSpaceMat = tempMap.lightProjMat * tempMap.lightViewMat;
+		ShadowMap::create_light_space_matrices(this, LightType::DirectionalLight, i, tempMap);
 
 		vkutil::RenderPassBuilder::begin()
 			.add_depth_attachment(tempMap.attachment.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
@@ -634,7 +636,7 @@ void VulkanEngine::init_shadow_maps()
 		ShadowMap tempMap;
 		actors::PointLight& pointLight = _renderScene._pointLights[i];
 
-		setup_point_light_space_matrix(pointLight, tempMap, lightShadowMapExtent);
+		ShadowMap::create_light_space_matrices(this, LightType::PointLight, i, tempMap);
 		
 		Attachment& attachment = tempMap.attachment;
 		attachment.format = VK_FORMAT_D32_SFLOAT;
@@ -683,19 +685,8 @@ void VulkanEngine::init_shadow_maps()
 		ShadowMap tempMap;
 		actors::SpotLight& spotLight = _renderScene._spotLights[i];
 
-		float aspect = (float)lightShadowMapExtent.width / (float)lightShadowMapExtent.height;
-		float nearPlane = 0.1f;
-		float farPlane = 100.0f;
-		tempMap.lightProjMat = glm::perspective(glm::radians(90.0f), aspect, nearPlane, farPlane);
-		glm::vec3 pos = glm::vec3(spotLight.positionAndDistance);
-		glm::vec3 center = pos + glm::vec3(spotLight.spotDirAndInnerConeRadius);
-		//center = glm::vec3(spotLight.spotDirAndInnerConeRadius) - glm::vec3(spotLight.positionAndDistance);
-		tempMap.lightViewMat = glm::lookAt(pos, center, glm::vec3(0.0f, 1.0f, 0.0f));
-
-		spotLight.lightSpaceMat = tempMap.lightProjMat * tempMap.lightViewMat;
-		spotLight.nearPlane = nearPlane;
-		spotLight.farPlane = farPlane;
-
+		ShadowMap::create_light_space_matrices(this, LightType::SpotLight, i, tempMap);
+		
 		create_attachment(
 			tempMap.attachment,
 			lightShadowMapExtent,
@@ -853,7 +844,7 @@ void VulkanEngine::init_output_quad()
 
 void VulkanEngine::draw()
 {
-	//ImGui::Render();
+	ImGui::Render();
 	LOG_INFO("Start new frame");
 
 	VkCommandBuffer cmd = get_current_frame()._mainCommandBuffer;
@@ -883,7 +874,7 @@ void VulkanEngine::draw()
 	cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 	VK_CHECK(vkBeginCommandBuffer(get_current_frame()._mainCommandBuffer, &cmdBeginInfo));
-
+	LOG_INFO("Before preparing data");
 	prepare_per_frame_data(cmd);
 
 	prepare_data_for_drawing(cmd);		// Prepare per mesh pass data
@@ -896,20 +887,22 @@ void VulkanEngine::draw()
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, _beforeCullingBufferBarriers.size(), _beforeCullingBufferBarriers.data(), 0, nullptr);
 	_beforeCullingBufferBarriers.clear();
 
-	if (_renderScene._needsBakeLightMaps)
+	bake_shadow_maps(cmd);
+	if (!_afterShadowsBarriers.empty())
 	{
-		bake_shadow_maps(cmd);
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, _afterShadowsBarriers.size(), _afterShadowsBarriers.data());
 		_afterShadowsBarriers.clear();
-		_renderScene._needsBakeLightMaps = false;
-	}	
-	
+	}
+
+	//_renderScene._needsBakeLightMaps = false;
+
+	LOG_INFO("Before forward pass");
 	draw_forward_pass(cmd, swapchainImageIndex);
 
 	//ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), get_current_frame()._mainCommandBuffer);
 
 	depth_reduce(cmd);
-
+	LOG_INFO("Before final quad");
 	draw_final_quad(cmd, swapchainImageIndex);
 
 	VK_CHECK(vkEndCommandBuffer(get_current_frame()._mainCommandBuffer));
@@ -931,8 +924,9 @@ void VulkanEngine::run()
 	float lastX = static_cast<float>(_windowExtent.width / 2.0f);
 	float lastY = static_cast<float>(_windowExtent.height / 2.0f);
 	bool firstMouse = true;
+	SDL_bool enableRelMode = SDL_FALSE;
 
-	SDL_SetRelativeMouseMode(SDL_TRUE);
+	SDL_SetRelativeMouseMode(enableRelMode);
 
 	//main loop
 	while (!bQuit)
@@ -942,9 +936,13 @@ void VulkanEngine::run()
 		previous_ticks = currentTicks;
 		elapsed_seconds = delta / static_cast<float>(SDL_GetPerformanceFrequency());
 
+		bool cameraMovement1 = false;
+		int mouseX, mouseY;
+
 		//Handle events on queue
 		while (SDL_PollEvent(&e) != 0)
 		{
+			SDL_PumpEvents();
 			ImGui_ImplSDL2_ProcessEvent(&e);
 
 			//close the window when user alt-f4s or clicks the X button
@@ -973,12 +971,40 @@ void VulkanEngine::run()
 
 			if (e.type == SDL_MOUSEMOTION)
 			{
+				cameraMovement1 = true;
+				SDL_PumpEvents();
+				mouseX = e.motion.xrel;
+				mouseY = e.motion.yrel;
+			}
+		}
+
+		SDL_PumpEvents();
+		const Uint8 *state = SDL_GetKeyboardState(nullptr);
+		int x, y;
+		Uint32 mouseState = SDL_GetMouseState(&x, &y);
+		if (SDL_BUTTON(3) & mouseState)
+		{
+			if (!enableRelMode)
+			{
+				enableRelMode = SDL_TRUE;
+				SDL_SetRelativeMouseMode(enableRelMode);
+			}
+			
+			if (state[SDL_SCANCODE_W])
+				camera.process_keyboard(FORWARD, elapsed_seconds);
+			if (state[SDL_SCANCODE_S])
+				camera.process_keyboard(BACKWARD, elapsed_seconds);
+			if (state[SDL_SCANCODE_A])
+				camera.process_keyboard(LEFT, elapsed_seconds);
+			if (state[SDL_SCANCODE_D])
+				camera.process_keyboard(RIGHT, elapsed_seconds);
+
+			if (cameraMovement1)
+			{
 				float xPos, yPos;
 
-				SDL_PumpEvents();
-
-				xPos = static_cast<float>(e.motion.xrel);
-				yPos = static_cast<float>(e.motion.yrel);
+				xPos = static_cast<float>(mouseX);
+				yPos = static_cast<float>(mouseY);
 				if (firstMouse)
 				{
 					xPos = 0.0f;
@@ -992,28 +1018,18 @@ void VulkanEngine::run()
 				camera.process_mouse_movement(xPos, yPos);
 			}
 		}
-
-		//if (bQuit)
-			//break;
-		//SDL_SetRelativeMouseMode(SDL_TRUE);
-		SDL_PumpEvents();
-		const Uint8 *state = SDL_GetKeyboardState(nullptr);
-		if (state[SDL_SCANCODE_W])
-			camera.process_keyboard(FORWARD, elapsed_seconds);
-		if (state[SDL_SCANCODE_S])
-			camera.process_keyboard(BACKWARD, elapsed_seconds);
-		if (state[SDL_SCANCODE_A])
-			camera.process_keyboard(LEFT, elapsed_seconds);
-		if (state[SDL_SCANCODE_D])
-			camera.process_keyboard(RIGHT, elapsed_seconds);
-		//SDL_SetRelativeMouseMode(SDL_FALSE);
-
-		//ImGui_ImplVulkan_NewFrame();
-		//ImGui_ImplSDL2_NewFrame(_window);
-
-		//ImGui::NewFrame();
+		else
+		{
+			if (enableRelMode)
+			{
+				enableRelMode = SDL_FALSE;
+				SDL_SetRelativeMouseMode(enableRelMode);
+				SDL_WarpMouseInWindow(_window, _windowExtent.width / 2, _windowExtent.height / 2);
+			}
+		}
 
 		//ImGui::ShowDemoWindow();
+		_userInterface.draw_ui(this);
 		draw();
 	}
 }
@@ -1210,50 +1226,6 @@ void VulkanEngine::create_cube_map(
 	VkImageView tempView;
 	VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &tempView));
 	texture.imageView = tempView;
-}
-
-void VulkanEngine::setup_point_light_space_matrix(actors::PointLight& pointLight, ShadowMap& shadowMap, VkExtent3D extent)
-{
-	float aspect = (float)extent.width / (float)extent.height;
-	float nearPlane = 0.1f;
-	float farPlane = 1024.0f;
-	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, nearPlane, farPlane);
-
-	glm::vec3 pos = glm::vec3(pointLight.positionAndAttRadius);
-	
-	pointLight.lightSpaceMat[0] = shadowProj * glm::lookAt(pos, pos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-	pointLight.lightSpaceMat[1] = shadowProj * glm::lookAt(pos, pos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-	pointLight.lightSpaceMat[2] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	pointLight.lightSpaceMat[3] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-	pointLight.lightSpaceMat[4] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-	pointLight.lightSpaceMat[5] = shadowProj * glm::lookAt(pos, pos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f));
-
-	/*glm::mat4 viewMatrix = glm::mat4(1.0f);
-	viewMatrix = glm::rotate(viewMatrix, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	pointLight.lightSpaceMat[0] = shadowProj * viewMatrix;
-	shadowMap.lightViewMat = viewMatrix;
-	
-	viewMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	viewMatrix = glm::rotate(viewMatrix, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	pointLight.lightSpaceMat[1] = shadowProj * viewMatrix;
-
-	viewMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	pointLight.lightSpaceMat[2] = shadowProj * viewMatrix;
-
-	viewMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	pointLight.lightSpaceMat[3] = shadowProj * viewMatrix;
-
-	viewMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	pointLight.lightSpaceMat[4] = shadowProj * viewMatrix;
-
-	viewMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	pointLight.lightSpaceMat[5] = shadowProj * viewMatrix;*/
-
-	pointLight.farPlane = farPlane;
-
-	shadowMap.lightProjMat = shadowProj;
-	shadowMap.lightViewMat = glm::lookAt(pos, pos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
 }
 
 AllocatedBuffer VulkanEngine::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)

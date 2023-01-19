@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
 #include <future>
+#include <algorithm>
 
 inline uint32_t get_group_count(uint32_t threadCount, uint32_t localSize)
 {
@@ -193,6 +194,8 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImag
 		vkCmdDrawIndexedIndirect(cmd, meshPass.drawIndirectBuffer._buffer, offset, multibatch.count, stride);
 	}
 
+	//_userInterface.render_ui(this);
+
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
 }
 
@@ -251,6 +254,8 @@ void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageI
 	vkCmdBindVertexBuffers(cmd, 0, 1, &_outputQuad._vertexBuffer._buffer, &offset);
 	vkCmdDraw(cmd, _outputQuad._vertices.size(), 1, 0, 0);
 
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), get_current_frame()._mainCommandBuffer);
+		
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
 }
 
@@ -299,71 +304,116 @@ void VulkanEngine::submit(VkCommandBuffer cmd, uint32_t swapchainImageIndex)
 
 void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 {
-	_renderScene._dirShadowMapsInfos.clear();
-	_renderScene._pointShadowMapsInfos.clear();
-	_renderScene._spotShadowMapsInfos.clear();
 	size_t size = sizeof(glm::mat4) * _renderScene._dirLights.size();
 
+	std::vector<bool>& dirMaps = _renderScene._bNeedsBakeDirShadows;
+	std::vector<bool>& pointMaps = _renderScene._bNeedsBakePointShadows;
+	std::vector<bool>& spotMaps = _renderScene._bNeedsBakeSpotShadows;
+	
 	float nearPlane = 0.1f, farPlane = 85.0f;
 
-	for (int i = 0; i != _renderScene._dirLights.size(); ++i)
+	RenderScene* scene = &_renderScene;
+	
+	size_t dirLightsBufSize = sizeof(actors::DirectionLight) * scene->_dirLights.size();
+	size_t pointLightsBufSize = sizeof(actors::PointLight) * scene->_pointLights.size();
+	size_t spotLightsBufSize = sizeof(actors::SpotLight) * scene->_spotLights.size();
+	
+	std::vector<bool>& dirLights = _renderScene._bNeedsRealoadingDirLights;
+	std::vector<bool>& pointLights = _renderScene._bNeedsReloadingPointLights;
+	std::vector<bool>& spotLights = _renderScene._bNeedsReloadingSpotLights;
+		
+	if (std::find(dirMaps.begin(), dirMaps.end(), true) != dirMaps.end())
 	{
-		auto dirLight = _renderScene._dirLights[i];
-		size_t allocSize = sizeof(actors::DirectionLight);
-		AllocatedBuffer& buffer = _renderScene._dirShadowMaps[i].lightBuffer;
-		reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-		buffer.copy_from(this, &dirLight, allocSize);
+		LOG_INFO("Bake dir lights");
+		_renderScene._dirShadowMapsInfos.clear();
+		for (int i = 0; i != _renderScene._dirLights.size(); ++i)
+		{
+			auto& dirLight = _renderScene._dirLights[i];
+			auto& shadowMap = _renderScene._dirShadowMaps[i];
+
+			ShadowMap::create_light_space_matrices(this, LightType::DirectionalLight, i, shadowMap);
+			size_t allocSize = sizeof(actors::DirectionLight);
+			AllocatedBuffer& buffer = _renderScene._dirShadowMaps[i].lightBuffer;
+			reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			buffer.copy_from(this, &dirLight, allocSize);
+		}
+
+		reallocate_light_buffer(LightType::DirectionalLight);
+
+		draw_shadow_pass(cmd, vkutil::MeshpassType::DirectionalShadow);
+
+		for (auto& shadowMap : _renderScene._dirShadowMaps)
+		{
+			VkDescriptorImageInfo info;
+			info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			info.imageView = shadowMap.attachment.imageView;
+			info.sampler = nullptr;
+
+			_renderScene._dirShadowMapsInfos.push_back(info);
+		}
+
+		dirMaps = { false };
 	}
 
-	draw_shadow_pass(cmd, vkutil::MeshpassType::DirectionalShadow);
-
-	for (auto& shadowMap : _renderScene._dirShadowMaps)
+	if (std::find(pointMaps.begin(), pointMaps.end(), true) != pointMaps.end())
 	{
-		VkDescriptorImageInfo info;
-		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		info.imageView = shadowMap.attachment.imageView;
-		info.sampler = nullptr;
+		LOG_INFO("Bake point lights");
+		_renderScene._pointShadowMapsInfos.clear();
+		for (int i = 0; i != _renderScene._pointLights.size(); ++i)
+		{
+			ShadowMap& shadowMap = _renderScene._pointShadowMaps[i];
+			auto& pointLight = _renderScene._pointLights[i];
 
-		_renderScene._dirShadowMapsInfos.push_back(info);
+			ShadowMap::create_light_space_matrices(this, LightType::PointLight, i, shadowMap);
+			size_t allocSize = sizeof(actors::PointLight);
+			AllocatedBuffer& buffer = shadowMap.lightBuffer;
+			reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			buffer.copy_from(this, &pointLight, allocSize);
+
+			VkDescriptorImageInfo info;
+			info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			info.imageView = shadowMap.attachment.imageView;
+			info.sampler = nullptr;
+
+			_renderScene._pointShadowMapsInfos.push_back(info);
+		}
+
+		reallocate_light_buffer(LightType::PointLight);
+
+		draw_shadow_pass(cmd, vkutil::MeshpassType::PointShadow);
+
+		pointMaps = { false };
 	}
 
-	for (int i = 0; i != _renderScene._pointLights.size(); ++i)
+	if (std::find(spotMaps.begin(), spotMaps.end(), true) != spotMaps.end())
 	{
-		ShadowMap& shadowMap = _renderScene._pointShadowMaps[i];
-		auto pointLight = _renderScene._pointLights[i];
-		size_t allocSize = sizeof(actors::PointLight);
-		AllocatedBuffer& buffer = shadowMap.lightBuffer;
-		reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-		buffer.copy_from(this, &pointLight, allocSize);
+		LOG_INFO("Bake spot lights");
+		_renderScene._spotShadowMapsInfos.clear();
+		for (int i = 0; i != _renderScene._spotLights.size(); ++i)
+		{
+			ShadowMap& shadowMap = _renderScene._spotShadowMaps[i];
+			auto& spotLight = _renderScene._spotLights[i];
 
-		VkDescriptorImageInfo info;
-		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		info.imageView = shadowMap.attachment.imageView;
-		info.sampler = nullptr;
+			ShadowMap::create_light_space_matrices(this, LightType::SpotLight, i, shadowMap);
+			size_t allocSize = sizeof(actors::SpotLight);
+			AllocatedBuffer& buffer = shadowMap.lightBuffer;
+			reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			buffer.copy_from(this, &spotLight, allocSize);
 
-		_renderScene._pointShadowMapsInfos.push_back(info);
+			VkDescriptorImageInfo info;
+			info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			info.imageView = shadowMap.attachment.imageView;
+			info.sampler = nullptr;
+
+			_renderScene._spotShadowMapsInfos.push_back(info);
+		}
+
+		reallocate_light_buffer(LightType::SpotLight);
+
+		draw_shadow_pass(cmd, vkutil::MeshpassType::SpotShadow);
+
+		spotMaps = { false };
 	}
-
-	draw_shadow_pass(cmd, vkutil::MeshpassType::PointShadow);
-
-	for (int i = 0; i != _renderScene._spotLights.size(); ++i)
-	{
-		ShadowMap& shadowMap = _renderScene._spotShadowMaps[i];
-		auto spotLight = _renderScene._spotLights[i];
-		size_t allocSize = sizeof(actors::SpotLight);
-		AllocatedBuffer& buffer = shadowMap.lightBuffer;
-		reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-		buffer.copy_from(this, &spotLight, allocSize);
-
-		VkDescriptorImageInfo info;
-		info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		info.imageView = shadowMap.attachment.imageView;
-		info.sampler = nullptr;
-
-		_renderScene._spotShadowMapsInfos.push_back(info);
-	}
-
-	draw_shadow_pass(cmd, vkutil::MeshpassType::SpotShadow);
 }
 
 void VulkanEngine::draw_shadow_pass(VkCommandBuffer cmd, vkutil::MeshpassType passType)
@@ -535,6 +585,63 @@ void VulkanEngine::draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptor
 	vkCmdEndRenderPass(cmd);
 }
 
+void VulkanEngine::reallocate_light_buffer(LightType lightType)
+{
+	RenderScene* scene = &_renderScene;
+
+	switch (lightType)
+	{
+		case (LightType::DirectionalLight):
+		{
+			size_t dirLightsBufSize = sizeof(actors::DirectionLight) * scene->_dirLights.size();
+			std::vector<bool>& dirLights = _renderScene._bNeedsRealoadingDirLights;
+			std::vector<bool>& dirMaps = _renderScene._bNeedsBakeDirShadows;
+			
+			reallocate_buffer(scene->_dirLightsBuffer, dirLightsBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+			AllocatedBufferT<actors::DirectionLight> tempBuffer(this, dirLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+			tempBuffer.copy_from(this, scene->_dirLights.data(), dirLightsBufSize);
+			immediate_submit([&](VkCommandBuffer cmd){
+				AllocatedBufferT<actors::DirectionLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_dirLightsBuffer);
+			});
+			tempBuffer.destroy_buffer(this);
+
+			dirLights = { false };
+		}
+		case (LightType::SpotLight):
+		{
+			size_t spotLightsBufSize = sizeof(actors::SpotLight) * scene->_spotLights.size();
+			std::vector<bool>& spotLights = _renderScene._bNeedsReloadingSpotLights;
+			std::vector<bool>& spotMaps = _renderScene._bNeedsBakeSpotShadows;
+		
+			reallocate_buffer(scene->_spotLightsBuffer, spotLightsBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+			AllocatedBufferT<actors::SpotLight> tempBuffer(this, spotLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+			tempBuffer.copy_from(this, scene->_spotLights.data(), spotLightsBufSize);
+			immediate_submit([&](VkCommandBuffer cmd){
+				AllocatedBufferT<actors::SpotLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_spotLightsBuffer);
+			});
+			tempBuffer.destroy_buffer(this);
+
+			spotLights = { false };
+		}
+		case (LightType::PointLight):
+		{
+			size_t pointLightsBufSize = sizeof(actors::PointLight) * scene->_pointLights.size();
+			std::vector<bool>& pointLights = _renderScene._bNeedsReloadingPointLights;
+			std::vector<bool>& pointMaps = _renderScene._bNeedsBakePointShadows;
+		
+			reallocate_buffer(scene->_pointLightsBuffer, pointLightsBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+			AllocatedBufferT<actors::PointLight> tempBuffer(this, pointLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+			tempBuffer.copy_from(this, scene->_pointLights.data(), pointLightsBufSize);
+			immediate_submit([&](VkCommandBuffer cmd){
+				AllocatedBufferT<actors::PointLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_pointLightsBuffer);
+			});
+			tempBuffer.destroy_buffer(this);
+
+			pointLights = { false };
+		}
+	}
+}
+
 void VulkanEngine::culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd, CullParams cullParams)
 {
 	VkDescriptorBufferInfo objectDataBufferInfo = _renderScene._objectDataBuffer.get_info(true);
@@ -664,36 +771,25 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 	size_t pointLightsBufSize = sizeof(actors::PointLight) * scene->_pointLights.size();
 	size_t spotLightsBufSize = sizeof(actors::SpotLight) * scene->_spotLights.size();
 
-	if (dirLightsBufSize != scene->_dirLightsBuffer._bufferSize)
+	std::vector<bool>& dirLights = _renderScene._bNeedsRealoadingDirLights;
+	std::vector<bool>& pointLights = _renderScene._bNeedsReloadingPointLights;
+	std::vector<bool>& spotLights = _renderScene._bNeedsReloadingSpotLights;
+
+	std::vector<bool>& dirMaps = _renderScene._bNeedsBakeDirShadows;
+	std::vector<bool>& pointMaps = _renderScene._bNeedsBakePointShadows;
+	std::vector<bool>& spotMaps = _renderScene._bNeedsBakeSpotShadows;
+
+	if (std::find(dirLights.begin(), dirLights.end(), true) != dirLights.end() && std::find(dirMaps.begin(), dirMaps.end(), true) == dirMaps.end())
 	{
-		reallocate_buffer(scene->_dirLightsBuffer, dirLightsBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-		AllocatedBufferT<actors::DirectionLight> tempBuffer(this, dirLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-		tempBuffer.copy_from(this, scene->_dirLights.data(), dirLightsBufSize);
-		immediate_submit([&](VkCommandBuffer cmd){
-			AllocatedBufferT<actors::DirectionLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_dirLightsBuffer);
-		});
-		tempBuffer.destroy_buffer(this);
+		reallocate_light_buffer(LightType::DirectionalLight);
 	}
-	if (spotLightsBufSize != scene->_spotLightsBuffer._bufferSize)
+	if (std::find(spotLights.begin(), spotLights.end(), true) != spotLights.end() && std::find(spotMaps.begin(), spotMaps.end(), true) == spotMaps.end())
 	{
-		reallocate_buffer(scene->_spotLightsBuffer, spotLightsBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-		AllocatedBufferT<actors::SpotLight> tempBuffer(this, spotLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-		tempBuffer.copy_from(this, scene->_spotLights.data(), spotLightsBufSize);
-		immediate_submit([&](VkCommandBuffer cmd){
-			AllocatedBufferT<actors::SpotLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_spotLightsBuffer);
-		});
-		tempBuffer.destroy_buffer(this);
+		reallocate_light_buffer(LightType::SpotLight);
 	}
-	if (pointLightsBufSize != scene->_pointLightsBuffer._bufferSize)
-	{
-		reallocate_buffer(scene->_pointLightsBuffer, pointLightsBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-		AllocatedBufferT<actors::PointLight> tempBuffer(this, pointLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-		tempBuffer.copy_from(this, scene->_pointLights.data(), pointLightsBufSize);
-		immediate_submit([&](VkCommandBuffer cmd){
-			AllocatedBufferT<actors::PointLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_pointLightsBuffer);
-		});
-		//AllocatedBufferT<actors::PointLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_pointLightsBuffer);
-		tempBuffer.destroy_buffer(this);
+	if (std::find(pointLights.begin(), pointLights.end(), true) != pointLights.end() && std::find(pointMaps.begin(), pointMaps.end(), true) == pointMaps.end())
+	{		
+		reallocate_light_buffer(LightType::PointLight);
 	}
 	
 	std::vector<RenderScene::MeshPass*> passes = {

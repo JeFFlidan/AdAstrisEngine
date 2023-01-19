@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "engine_actors.h"
+
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
@@ -85,6 +87,14 @@ struct Attachment : public Texture
 	void destroy_attachment(VulkanEngine* engine);
 };
 
+
+enum LightType
+{
+	DirectionalLight,
+	SpotLight,
+	PointLight
+};
+
 struct ShadowMap
 {
 	Attachment attachment;
@@ -96,5 +106,10 @@ struct ShadowMap
 	glm::mat4 lightViewMat;
 
 	static void destroy_shadow_map(VulkanEngine* engine, ShadowMap shadowMap);
+	/** Can be used for every type of light.
+	Creates projection and view matrices which are stored in ShadowMap.
+	Stores projection * view matrix in the light actor.
+	*/
+	static void create_light_space_matrices(VulkanEngine* engine, LightType lightType, uint32_t lightId, ShadowMap& shadowMap);
 };
 

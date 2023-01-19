@@ -159,6 +159,12 @@ class RenderScene
 		AllocatedBufferT<actors::DirectionLight> _dirLightsBuffer;
 		AllocatedBufferT<actors::PointLight> _pointLightsBuffer;
 		AllocatedBufferT<actors::SpotLight> _spotLightsBuffer;
+		std::vector<bool> _bNeedsRealoadingDirLights{ true };
+		std::vector<bool> _bNeedsReloadingSpotLights{ true };
+		std::vector<bool> _bNeedsReloadingPointLights{ true };
+		std::vector<bool> _bNeedsBakeDirShadows{ true };
+		std::vector<bool> _bNeedsBakeSpotShadows{ true };
+		std::vector<bool> _bNeedsBakePointShadows{ true };
 
 		bool _needsBakeLightMaps{ true };
 		std::vector<ShadowMap> _dirShadowMaps;
