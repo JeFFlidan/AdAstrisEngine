@@ -14,13 +14,6 @@ layout(location = 0) out vec3 fragPos;
 layout(location = 1) out vec3 lightPosition;
 layout(location = 2) out float farPlane;
 
-struct ObjectData
-{
-	mat4 model;
-	vec4 radius;
-	vec4 extents;
-};
-
 layout(set = 0, binding = 0) readonly buffer ObjectBuffer
 {
 	ObjectData data[];

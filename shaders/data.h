@@ -3,6 +3,9 @@ struct DirectionLight
 	vec4 direction;
 	vec4 colorAndIntensity;	// w = intensity
 	mat4 lightSpaceMat;
+	int isVisible;
+	int castShadows;
+	int data1, data2;
 };
 
 struct PointLight
@@ -11,7 +14,8 @@ struct PointLight
 	vec4 positionAndAttRadius;
 	float sourceRadius;
 	float farPlane;
-	float data1, data2;
+	int isVisible;
+	int castShadows;
 	mat4 lightSpaceMat[6];
 };
 
@@ -22,9 +26,9 @@ struct SpotLight
 	vec4 spotDirAndInnerConeRadius;
 	mat4 lightSpaceMat;
 	float outerConeRadius;
-	float nearPlane;
+	int isVisible;
+	int castShadows;
 	float farPlane;
-	float data;
 };
 
 struct ObjectData

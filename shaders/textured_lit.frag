@@ -95,25 +95,47 @@ void main()
 	
 	for (int i = 0; i != sceneData.dirLightsAmount; ++i)
 	{
-		dirLightsL0 += calculateDirectionLight(F0, normal, view, dirLights.casters[i], albedo, roughness, metallic);
-		dirShadow = calculateDirLightShadow(dirLights.casters[i], normal, i);
+		DirectionLight dirLight = dirLights.casters[i];
+		if (dirLight.isVisible != 0)
+		{
+			dirLightsL0 += calculateDirectionLight(F0, normal, view, dirLight, albedo, roughness, metallic);
+			if (dirLight.castShadows != 0)
+			{
+				dirShadow = calculateDirLightShadow(dirLights.casters[i], normal, i);
+			}
+		}
 	}
 
 	dirLightsL0 *= (1.0 - dirShadow);
-	dirLightsL0 *= 0.0;
+	//dirLightsL0 *= 0.0;
 
 	for (int i = 0; i != sceneData.pointLightsAmount; ++i)
 	{
-		pointLightsL0 += calculatePointLight(F0, normal, view, pointLights.casters[i], albedo, roughness, metallic);
-		pointShadow = calculatePointLightShadow(pointLights.casters[i], normal, i);
+		PointLight pointLight = pointLights.casters[i];
+		if (pointLight.isVisible != 0)
+		{
+			pointLightsL0 += calculatePointLight(F0, normal, view, pointLight, albedo, roughness, metallic);
+			if (pointLight.castShadows != 0)
+			{
+				pointShadow = calculatePointLightShadow(pointLights.casters[i], normal, i);
+			}
+		}
 	}
 
 	pointLightsL0 *= (1.0 - pointShadow);
 
 	for (int i = 0; i != sceneData.spotLightsAmount; ++i)
 	{
-		spotLightsL0 += calculateSpotLight(F0, normal, view, spotLights.casters[i], albedo, roughness, metallic);
-		spotShadow = calculateSpotLightShadow(spotLights.casters[i], normal, i);
+		SpotLight spotLight = spotLights.casters[i];
+		if (spotLight.isVisible != 0)
+		{
+			spotLightsL0 += calculateSpotLight(F0, normal, view, spotLight, albedo, roughness, metallic);
+			if (spotLight.castShadows != 0)
+			{
+				spotShadow = calculateSpotLightShadow(spotLights.casters[i], normal, i);
+				//spotShadow = calculatePointLightShadow(spotLight, normal, i);
+			}
+		}
 	}
 
 	spotLightsL0 *= (1.0 - spotShadow);
@@ -273,7 +295,12 @@ float getAngleAtt(SpotLight spotLight, vec3 normalizedLightVector)
 {
 	float spotScale = 1.0f / max(0.001, spotLight.spotDirAndInnerConeRadius.w - spotLight.outerConeRadius);
 	float spotOffset = -spotLight.outerConeRadius * spotScale;
-	vec3 dir = normalize(vec3(spotLight.spotDirAndInnerConeRadius.xyz));
+	//vec3 dir = normalize(15.0 * vec3(spotLight.spotDirAndInnerConeRadius.xyz));
+	vec3 temp = vec3(spotLight.spotDirAndInnerConeRadius);
+	vec3 dir;
+	dir.x = cos(temp.y) * cos(temp.x);
+	dir.y = sin(temp.x);
+	dir.z = sin(temp.y) * cos(temp.x);
 	float cd = dot(-dir, normalizedLightVector);
 	float attenuation = clamp(cd * spotScale + spotOffset, 0.0, 1.0);
 	attenuation *= attenuation;
@@ -345,6 +372,7 @@ float calculatePointLightShadow(PointLight pointLight, vec3 N, int id)
 			shadow += 1.0;
 	}
 	shadow /= float(samples);
+
 	return shadow;
 }
 
@@ -352,20 +380,17 @@ float calculateSpotLightShadow(SpotLight spotLight, vec3 N, int id)
 {
 	vec4 fragPosLightSpace = spotLight.lightSpaceMat * vec4(fragPos, 1.0);
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+
 	projCoords.xy = projCoords.xy * 0.5 + 0.5;
+
 	float currentDepth = projCoords.z;
 	
-	if (currentDepth > 1.0)
-		return 0.0;
-
-	//vec3 L = normalize(vec3(-dirLight.direction));
-	//float bias = max(0.05 * (1.0 - dot(N, L)), 0.005);
 	float bias = 0.00035;
 	float shadow = 0.0;
 
-	float pcfDepth = texture(nonuniformEXT(sampler2D(spotShadowMaps[id], shadowSamp)), projCoords.xy).r;
-			
-	shadow = currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+	float closestDepth = texture(nonuniformEXT(sampler2D(spotShadowMaps[id], shadowSamp)), projCoords.xy).r;
+
+	shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
 
 	return shadow;
 }

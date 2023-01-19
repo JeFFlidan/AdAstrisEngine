@@ -10,7 +10,8 @@ namespace actors
 		glm::vec4 positionAndAttRadius;
 		float sourceRadius;
 		float farPlane;	// I have to think about this field
-		float data1, data2;
+		int isVisible{ 1 };
+		int castShadows{ 1 };
 		glm::mat4 lightSpaceMat[6];
 	};
 
@@ -18,12 +19,12 @@ namespace actors
 	{
 		glm::vec4 colorAndIntensity;	// Intensity in lm
 		glm::vec4 positionAndDistance;
-		glm::vec4 spotDirAndInnerConeRadius;
+		glm::vec4 rotationAndInnerConeRadius;
 		glm::mat4 lightSpaceMat;
 		float outerConeRadius;
-		float nearPlane;
+		int isVisible{ 1 };
+		int castShadows{ 1 };
 		float farPlane;
-		float data1 = 0.0;
 	};
 
 	struct DirectionLight
@@ -31,6 +32,9 @@ namespace actors
 		glm::vec4 direction;
 		glm::vec4 colorAndIntensity;	// w = intensity
 		glm::mat4 lightSpaceMat;
+		int isVisible{ 0 };
+		int castShadows{ 1 };
+		int data1, data2;
 	};
 }
 

@@ -3,11 +3,13 @@
 
 #pragma once
 
+#include "user_interface.h"
 #include "vk_types.h"
 #include "vk_mesh.h"
 #include "material_system.h"
 #include "vk_scene.h"
 #include "engine_actors.h"
+#include <user_interface.h>
 #include <stdint.h>
 #include <vk_descriptors.h>
 #include <vk_camera.h>
@@ -233,6 +235,7 @@ class VulkanEngine
 
 		vkutil::MaterialSystem _materialSystem;
 		RenderScene _renderScene;
+		ui::UserInterface _userInterface;
 
 		Attachment _offscrDepthImage;
 		Attachment _offscrColorImage;
@@ -318,6 +321,15 @@ class VulkanEngine
 		
 		AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
+		// I have to make static create_attachment method for Attachment class
+		void create_attachment(
+			Attachment& attachment, 
+			VkExtent3D imageExtent, 
+			VkFormat format,
+			VkImageUsageFlags usageFlags, 
+			VkImageAspectFlags aspectFlags,
+			uint32_t layerCount = 1);
+
 	private:
 		void init_vulkan();
 		void init_engine_systems();
@@ -336,22 +348,12 @@ class VulkanEngine
 
 		void refresh_swapchain();
 
-		void create_attachment(
-			Attachment& attachment, 
-			VkExtent3D imageExtent, 
-			VkFormat format,
-			VkImageUsageFlags usageFlags, 
-			VkImageAspectFlags aspectFlags,
-			uint32_t layerCount = 1);
-
 		void create_cube_map(
 			Texture& texture,
 			VkExtent3D imageExtent,
 			VkFormat format,
 			VkImageUsageFlags usageFlags,
 			VkImageAspectFlags aspectFlags);
-
-		void setup_point_light_space_matrix(actors::PointLight& pointLight, ShadowMap& shadowMap, VkExtent3D extent);
 
 		void reallocate_buffer(AllocatedBuffer& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 		{
@@ -385,5 +387,6 @@ class VulkanEngine
 		void bake_shadow_maps(VkCommandBuffer cmd);
 		void draw_shadow_pass(VkCommandBuffer cmd, vkutil::MeshpassType passType);
 		void draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet, RenderScene::MeshPass& meshPass, uint32_t id);
+		void reallocate_light_buffer(LightType lightType);
 		void depth_reduce(VkCommandBuffer cmd);
 };
