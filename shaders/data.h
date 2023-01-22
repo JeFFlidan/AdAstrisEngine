@@ -34,7 +34,11 @@ struct SpotLight
 struct ObjectData
 {
 	mat4 model;
-	vec4 radius;
+	vec4 sphereBounds;
 	vec4 extents;
+
+	uint baseColorTexId;
+	uint normalTexId;
+	uint armTexId;
 };
 

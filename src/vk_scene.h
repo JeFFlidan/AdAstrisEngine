@@ -48,6 +48,10 @@ struct RenderableObject
 	Handle<DrawMesh> meshID;
 	Handle<vkutil::Material> material;
 
+	uint32_t baseColorTexId;
+	uint32_t normalTexId;
+	uint32_t armTexId;
+
 	uint32_t updateIndex;
 	uint32_t customSortKey{0};
 

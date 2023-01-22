@@ -76,7 +76,7 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 	Handle<RenderableObject> handle;
 	handle.handle = static_cast<uint32_t>(_renderables.size());
 	
-	_renderables.push_back(newObj);
+	//_renderables.push_back(newObj);
 
 	if (object->bDrawForwardPass)
 	{
@@ -124,6 +124,8 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 		imageInfo.imageView = object->baseColor;
 		imageInfo.sampler = nullptr;
 
+		newObj.baseColorTexId = _baseColorInfos.size();
+
 		_baseColorInfos.push_back(imageInfo);
 	}
 	
@@ -134,6 +136,8 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 		imageInfo.imageView = object->normal;
 		imageInfo.sampler = nullptr;
 
+		newObj.normalTexId = _normalInfos.size();
+
 		_normalInfos.push_back(imageInfo);
 	}
 	
@@ -143,9 +147,13 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo.imageView = object->arm;
 		imageInfo.sampler = nullptr;
+
+		newObj.armTexId = _armInfos.size();
 	
 		_armInfos.push_back(imageInfo);
 	}
+
+	_renderables.push_back(newObj);
 
 	update_object(handle);
 	return handle;
@@ -286,10 +294,14 @@ void RenderScene::fill_object_data(GPUObjectData* data)
 void RenderScene::write_object(GPUObjectData* target, Handle<RenderableObject> objectID)
 {
 	GPUObjectData tempData;
-	tempData.model = get_renderable_object(objectID)->transformMatrix;
-	Mesh* mesh = get_mesh(get_renderable_object(objectID)->meshID)->original;
+	RenderableObject* obj = get_renderable_object(objectID);
+	tempData.model = obj->transformMatrix;
+	Mesh* mesh = get_mesh(obj->meshID)->original;
 	tempData.extents = glm::vec4(mesh->_bounds.extents, mesh->_bounds.radius);
 	tempData.originRad = glm::vec4(mesh->_bounds.origin, mesh->_bounds.radius);
+	tempData.baseColorTexId = obj->baseColorTexId;
+	tempData.normalTexId = obj->normalTexId;
+	tempData.armTexId = obj->armTexId;
 
 	memcpy(target, &tempData, sizeof(GPUObjectData));
 }
