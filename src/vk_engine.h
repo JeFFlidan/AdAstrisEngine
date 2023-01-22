@@ -66,6 +66,10 @@ struct GPUObjectData
 	glm::mat4 model;
 	glm::vec4 originRad;	// bound
 	glm::vec4 extents;	// bound
+	
+	uint32_t baseColorTexId;
+	uint32_t normalTexId;
+	uint32_t armTexId;
 };
 
 struct UploadContext

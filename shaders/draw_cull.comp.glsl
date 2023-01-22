@@ -1,5 +1,9 @@
 #version 450
 
+#extension GL_GOOGLE_include_directive : require
+
+#include "data.h"
+
 layout(local_size_x = 256) in;
 
 layout(set = 0, binding = 5) uniform CameraBuffer
@@ -39,12 +43,12 @@ layout(push_constant) uniform constants
 
 layout(set = 0, binding = 4) uniform sampler2D depthPyramid;
 
-struct ObjectData
+/*struct ObjectData
 {
 	mat4 model;
 	vec4 sphereBounds;
 	vec4 extents;
-};
+};*/
 
 layout(std140, set = 0, binding = 0) readonly buffer ObjectBuffer
 {

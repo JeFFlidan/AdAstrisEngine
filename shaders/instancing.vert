@@ -22,12 +22,12 @@ layout(set = 0, binding = 3) uniform CameraBuffer
 	vec4 cameraPosition;
 } cameraBuffer;
 
-struct ObjectData
+/*struct ObjectData
 {
 	mat4 model;
 	vec4 radius;
 	vec4 extents;
-};
+};*/
 
 layout(set = 1, binding = 0) buffer readonly ObjectBuffer
 {

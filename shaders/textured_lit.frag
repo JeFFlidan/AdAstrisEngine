@@ -38,12 +38,22 @@ layout(set = 0, binding = 4) uniform SceneData
 	uint spotLightsAmount;
 } sceneData;
 
+layout(set = 1, binding = 0) buffer readonly ObjectBuffer
+{
+	ObjectData data[];
+} objectBuffer;
+
 layout(set = 2, binding = 0) uniform texture2D baseColorTextures[];
 layout(set = 3, binding = 0) uniform texture2D normalTextures[];
 layout(set = 4, binding = 0) uniform texture2D armTextures[];
 layout(set = 5, binding = 0) uniform texture2D dirShadowMaps[];
 layout(set = 6, binding = 0) uniform textureCube pointShadowMaps[];
 layout(set = 7, binding = 0) uniform texture2D spotShadowMaps[];
+
+/*layout(set = 1, binding = 0) buffer readonly ObjectBuffer
+{
+	ObjectData data[];
+} objectBuffer;*/
 
 const float PI = 3.14159265359;
 
@@ -69,12 +79,16 @@ float calculateSpotLightShadow(SpotLight spotLight, vec3 N, int id);
 
 void main()
 {
-	vec3 albedo = texture(nonuniformEXT(sampler2D(baseColorTextures[id], samp)), texCoord).xyz;
+	uint baseColorTexId = objectBuffer.data[id].baseColorTexId;
+	uint normalTexId = objectBuffer.data[id].normalTexId;
+	uint armTexId = objectBuffer.data[id].armTexId;
+
+	vec3 albedo = texture(nonuniformEXT(sampler2D(baseColorTextures[baseColorTexId], samp)), texCoord).xyz;
 	albedo = pow(albedo, vec3(2.2));
-	vec3 normal = texture(nonuniformEXT(sampler2D(normalTextures[id], samp)), texCoord).xyz;
+	vec3 normal = texture(nonuniformEXT(sampler2D(normalTextures[normalTexId], samp)), texCoord).xyz;
 	normal = normal * 2.0 - 1.0;
 	normal = normalize(TBN * normal);
-	vec3 arm = texture(nonuniformEXT(sampler2D(armTextures[id], samp)), texCoord).xyz;
+	vec3 arm = texture(nonuniformEXT(sampler2D(armTextures[armTexId], samp)), texCoord).xyz;
 	float ao = arm.r;
 	float roughness = arm.g;
 	float metallic = arm.b;

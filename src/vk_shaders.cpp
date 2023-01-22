@@ -92,6 +92,13 @@ namespace vkutil
 			std::vector<SpvReflectDescriptorSet*> descriptorSets(descriptorSetAmount);
 			spvReflectEnumerateDescriptorSets(&shaderModule, &descriptorSetAmount, descriptorSets.data());
 
+			std::sort(descriptorSets.begin(), descriptorSets.end(),
+				[](SpvReflectDescriptorSet* first, SpvReflectDescriptorSet* second){
+					if (first->set < second->set)
+						return true;
+					return false;
+			});
+
 			for (SpvReflectDescriptorSet* set : descriptorSets)
 			{
 				bool needsSorting = false;
