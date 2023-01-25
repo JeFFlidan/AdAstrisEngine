@@ -25,6 +25,7 @@
 #include <vulkan/vulkan_core.h>
 
 //#define VK_RELEASE 1
+#define NODE_COUNT 20
 
 struct DeletionQueue
 {
@@ -95,6 +96,35 @@ struct FrameData
 	DeletionQueue _frameDeletionQueue;
 };
 
+// Data for the first pass in oit algorithm
+struct TransparencyFirstPassData
+{
+	struct Node
+	{
+		glm::vec4 color;
+		float depth;
+		uint32_t next;
+	};
+
+	struct GeometryInfo
+	{
+		uint32_t count;
+		uint32_t maxNodeCount;
+	};
+
+	VkFramebuffer framebuffer;
+	VkRenderPass renderPass;
+	Texture headIndex;
+	AllocatedBufferT<Node> nodes;
+	AllocatedBufferT<GeometryInfo> geometryInfo;
+
+	// Not final approach. I have to think how to add it to the transparency pass.
+	vkutil::PipelineBuilder pipelineBuilder;
+	vkutil::ShaderPass* geometryPass;
+	void setup_pipeline_builder();
+	void create_shader_pass(VulkanEngine* engine);
+};
+
 struct Vertex
 {
 	glm::vec3 position;
@@ -141,6 +171,7 @@ struct MeshObject
 	uint32_t bDrawShadowPass{ 1 };
 	uint32_t bDrawPointShadowPass{ 1 };
 	uint32_t bDrawSpotShadowPass{ 1 };
+	uint32_t bDrawTransparencyPass{ 0 };
 };
 
 // structs for culling
@@ -229,9 +260,13 @@ class VulkanEngine
 		uint32_t _graphicsQueueFamily;
 
 		VkRenderPass _renderPass;
-		VkRenderPass _offscrRenderPass;
+		VkRenderPass _mainOpaqueRenderPass;
+		VkRenderPass _transparencyRenderPass;
+		//VkRenderPass _transparencyRenderPass;
 		std::vector<VkFramebuffer> _framebuffers;
-		std::vector<VkFramebuffer> _offscrFramebuffers;
+		std::vector<VkFramebuffer> _mainOpaqueFramebuffers;
+		VkFramebuffer _transparencyFramebuffer;
+		//VkFramebuffer _transparencyFramebuffer;
 		VkFramebuffer _dirLightShadowFramebuffer;
 
 		DescriptorAllocator _descriptorAllocator;
@@ -241,9 +276,11 @@ class VulkanEngine
 		RenderScene _renderScene;
 		ui::UserInterface _userInterface;
 
-		Attachment _offscrDepthImage;
-		Attachment _offscrColorImage;
-		VkSampler _offscrColorSampler;
+		Attachment _mainOpaqueDepthAttach;
+		Attachment _mainOpaqueColorAttach;
+		Attachment _transparencyColorAttach;
+		Attachment _transparencyDepthAttach;
+		VkSampler _mainOpaqueSampler;
 
 		// Depth map data for culling
 		Texture _depthPyramid;
@@ -253,6 +290,9 @@ class VulkanEngine
 		int _depthPyramidWidth;
 		int _depthPyramidHeight;
 		int _depthPyramidLevels;
+
+		//Texture _headIndex;
+		TransparencyFirstPassData _transparencyData;
 
 		std::vector<VkBufferMemoryBarrier> _beforeCullingBufferBarriers;
 		std::vector<VkBufferMemoryBarrier> _afterCullingBufferBarriers;		// I should execute those barriers before drawing
@@ -343,6 +383,7 @@ class VulkanEngine
 		void init_renderpasses();
 		void init_framebuffers();
 		void init_shadow_maps();
+		void init_first_pass_data_for_oit();
 		void init_sync_structures();
 		void init_output_quad();
 		void init_buffers();
@@ -386,6 +427,7 @@ class VulkanEngine
 		void fill_renderable_objects();
 		void culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd, CullParams cullParams);
 		void draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
+		void draw_tranparency_pass(VkCommandBuffer cmd);
 		void draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void submit(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void bake_shadow_maps(VkCommandBuffer cmd);
