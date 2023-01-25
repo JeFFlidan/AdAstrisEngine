@@ -71,6 +71,11 @@
 		}															 \
 	} while (0)
 
+//#define NODE_COUNT 20
+
+using GeometryInfo = TransparencyFirstPassData::GeometryInfo;
+using Node = TransparencyFirstPassData::Node;
+
 namespace fs = std::filesystem;
 
 uint32_t get_image_mip_levels(uint32_t width, uint32_t height);
@@ -162,12 +167,17 @@ void VulkanEngine::cleanup()
 		for (int i = 0; i != _swapchainImages.size(); ++i)
 		{
 			vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
-			vkDestroyFramebuffer(_device, _offscrFramebuffers[i], nullptr);
+			vkDestroyFramebuffer(_device, _mainOpaqueFramebuffers[i], nullptr);
 			vkDestroyFramebuffer(_device, _framebuffers[i], nullptr);
 		}
 
-		_offscrColorImage.destroy_attachment(this);
-		_offscrDepthImage.destroy_attachment(this);
+		vkDestroyFramebuffer(_device, _transparencyFramebuffer, nullptr);
+		vkDestroyFramebuffer(_device, _transparencyData.framebuffer, nullptr);
+
+		_mainOpaqueColorAttach.destroy_attachment(this);
+		_mainOpaqueDepthAttach.destroy_attachment(this);
+		_transparencyColorAttach.destroy_attachment(this);
+		_transparencyDepthAttach.destroy_attachment(this);
 		_depthPyramid.destroy_texture(this);
 
 		for (int i = 0; i != _depthPyramidLevels; ++i)
@@ -246,8 +256,24 @@ void VulkanEngine::init_vulkan()
 		.value();
 
 	LOG_INFO("Finished picking up physical device");
+	
+	VkPhysicalDeviceFeatures supportedPhysicalDeviceFeatures;
+	vkGetPhysicalDeviceFeatures(_chosenGPU, &supportedPhysicalDeviceFeatures);
+
+	VkPhysicalDeviceFeatures enabledFeatures;
+	if (supportedPhysicalDeviceFeatures.fragmentStoresAndAtomics != VK_TRUE)
+	{
+		LOG_ERROR("This device doesn't support fragment stores and atomics");
+	}
+	else
+	{
+		enabledFeatures.fragmentStoresAndAtomics = VK_TRUE;
+	}
 
 	vkb::DeviceBuilder deviceBuilder{physicalDevice};
+
+	deviceBuilder.add_pNext(&enabledFeatures);
+	
 	VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features = {};
 	shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
 	shader_draw_parameters_features.pNext = nullptr;
@@ -279,6 +305,9 @@ void VulkanEngine::init_vulkan()
 	LOG_INFO("The GPU has a minimum buffer alignment of {}", _gpuProperties.limits.minUniformBufferOffsetAlignment)
 }
 
+/** Used to init material, render scene and other systems.
+Also used to get important information about hardware, etc.
+*/
 void VulkanEngine::init_engine_systems()
 {
 	_projectPath = fs::current_path().string();
@@ -326,26 +355,54 @@ void VulkanEngine::init_swapchain()
 	 };
 
 	create_attachment(
-		_offscrColorImage,
+		_mainOpaqueColorAttach,
 		imageExtent, 
 		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	create_attachment(
-		_offscrDepthImage,
+		_mainOpaqueDepthAttach,
 		imageExtent, 
 		VK_FORMAT_D32_SFLOAT,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_IMAGE_ASPECT_DEPTH_BIT
 	);
+
+	create_attachment(
+		_transparencyColorAttach,
+		imageExtent,
+		VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT
+	);
+
+	create_attachment(
+		_transparencyDepthAttach,
+		imageExtent,
+		VK_FORMAT_D32_SFLOAT,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_IMAGE_ASPECT_DEPTH_BIT
+	);
 	
 	VkSamplerCreateInfo imgSamplerInfo = vkinit::sampler_create_info(VK_FILTER_NEAREST);
-	vkCreateSampler(_device, &imgSamplerInfo, nullptr, &_offscrColorSampler);
+	vkCreateSampler(_device, &imgSamplerInfo, nullptr, &_mainOpaqueSampler);
 
 	_mainDeletionQueue.push_function([=](){
-		vkDestroySampler(_device, _offscrColorSampler, nullptr);
+		vkDestroySampler(_device, _mainOpaqueSampler, nullptr);
 	});
+
+	VmaAllocationCreateInfo img_allocinfo{};
+	img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	img_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);	// VMA allocate 
+	
+	// create image for order independent transparency
+	VkImageCreateInfo headIndexImageInfo = vkinit::image_create_info(VK_FORMAT_R32_UINT,
+		(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT),
+		imageExtent);
+
+	Texture& headIndex = _transparencyData.headIndex;
+	vmaCreateImage(_allocator, &headIndexImageInfo, &img_allocinfo, &headIndex.imageData.image, &headIndex.imageData.allocation, nullptr);
 
 	// setup depth pyramid to make culling
 	_depthPyramidWidth = previous_pow2(_windowExtent.width);
@@ -357,10 +414,6 @@ void VulkanEngine::init_swapchain()
 		static_cast<uint32_t>(_depthPyramidHeight),
 		1
 	};
-
-	VmaAllocationCreateInfo img_allocinfo{};
-	img_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-	img_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);	// VMA allocate 
 	
 	VkImageCreateInfo pyramidImageInfo = vkinit::image_create_info(VK_FORMAT_R32_SFLOAT,
 		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
@@ -508,20 +561,42 @@ void VulkanEngine::init_commands()
 void VulkanEngine::init_renderpasses()
 {
 	vkutil::RenderPassBuilder::begin()
-		.add_color_attachment(_offscrColorImage.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-		.add_depth_attachment(_offscrDepthImage.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
+		.add_color_attachment(_mainOpaqueColorAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+		.add_depth_attachment(_mainOpaqueDepthAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
 		.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
-		.build(_device, _offscrRenderPass);
+		.build(_device, _mainOpaqueRenderPass);
+
+	vkutil::RenderPassBuilder::begin()
+		.add_color_attachment(_transparencyColorAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+		.add_depth_attachment(_transparencyDepthAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
+		.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
+		.build(_device, _transparencyRenderPass);
 	
 	vkutil::RenderPassBuilder::begin()
 		.add_color_attachment(_swapchainImageFormat, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
 		.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
 		.build(_device, _renderPass);
 
-	_mainDeletionQueue.push_function([=](){ vkDestroyRenderPass(_device, _renderPass, nullptr); });
-	_mainDeletionQueue.push_function([=](){ vkDestroyRenderPass(_device, _offscrRenderPass, nullptr); });
+	VkSubpassDescription subpassDescription = {};
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	VkRenderPassCreateInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.pNext = nullptr;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpassDescription;
+	renderPassInfo.attachmentCount = 0;
+	VK_CHECK(vkCreateRenderPass(_device, &renderPassInfo, nullptr, &_transparencyData.renderPass));
+		
+	_mainDeletionQueue.push_function([=](){
+		vkDestroyRenderPass(_device, _transparencyData.renderPass, nullptr);
+		vkDestroyRenderPass(_device, _renderPass, nullptr);
+		vkDestroyRenderPass(_device, _transparencyRenderPass, nullptr);
+		vkDestroyRenderPass(_device, _mainOpaqueRenderPass, nullptr);
+	});
 }
 
+/** Used to init framebuffers which are based on ths size of the main viewport.
+*/
 void VulkanEngine::init_framebuffers()
 {
 	LOG_INFO("Init framebuffers");
@@ -537,7 +612,7 @@ void VulkanEngine::init_framebuffers()
 	const uint32_t swapchainImagecount = _swapchainImages.size();
 	_framebuffers = std::vector<VkFramebuffer>(swapchainImagecount);
 
-	_offscrFramebuffers = std::vector<VkFramebuffer>(swapchainImagecount);
+	_mainOpaqueFramebuffers = std::vector<VkFramebuffer>(swapchainImagecount);
 
 	for (int i = 0; i != swapchainImagecount; ++i)
 	{
@@ -549,14 +624,27 @@ void VulkanEngine::init_framebuffers()
 		fbInfo.attachmentCount = 1;
 		VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_framebuffers[i]));
 
-		attachments[0] = _offscrColorImage.imageView;
-		attachments[1] = _offscrDepthImage.imageView;
+		attachments[0] = _mainOpaqueColorAttach.imageView;
+		attachments[1] = _mainOpaqueDepthAttach.imageView;
 
-		fbInfo.renderPass = _offscrRenderPass;
+		fbInfo.renderPass = _mainOpaqueRenderPass;
 		fbInfo.attachmentCount = 2;
 		fbInfo.pAttachments = attachments;
-		VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_offscrFramebuffers[i]));
+		VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_mainOpaqueFramebuffers[i]));
 	}
+
+	fbInfo.width = _windowExtent.width;
+	fbInfo.height = _windowExtent.height;
+	fbInfo.attachmentCount = 0;
+	fbInfo.layers = 1;
+	fbInfo.renderPass = _transparencyData.renderPass;
+	VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_transparencyData.framebuffer));
+
+	VkImageView imageViews[2] = { _transparencyColorAttach.imageView, _transparencyDepthAttach.imageView };
+	fbInfo.attachmentCount = 2;
+	fbInfo.pAttachments = imageViews;
+	fbInfo.renderPass = _transparencyRenderPass;
+	VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_transparencyFramebuffer));
 }
 
 void VulkanEngine::init_shadow_maps()
@@ -751,9 +839,9 @@ void VulkanEngine::init_buffers()
 		_frames[i]._sceneDataBuffer.create_buffer(this, sizeof(GPUSceneData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		
 		VkDescriptorImageInfo offscrColorImgInfo;
-		offscrColorImgInfo.sampler = _offscrColorSampler;
+		offscrColorImgInfo.sampler = _mainOpaqueSampler;
 		offscrColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		offscrColorImgInfo.imageView = _offscrColorImage.imageView;
+		offscrColorImgInfo.imageView = _mainOpaqueColorAttach.imageView;
 	}
 
 	for (int i = 0; i != FRAME_OVERLAP; ++i)
@@ -764,9 +852,42 @@ void VulkanEngine::init_buffers()
 		});
 	}
 
+	GeometryInfo geometryInfo;
+	geometryInfo.count = 0;
+	geometryInfo.maxNodeCount = NODE_COUNT * _windowExtent.width * _windowExtent.height;
+
+	AllocatedBufferT<GeometryInfo> stagingBuffer(
+		this,
+		sizeof(GeometryInfo),
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VMA_MEMORY_USAGE_CPU_ONLY);
+	stagingBuffer.copy_from(this, &geometryInfo, sizeof(GeometryInfo));
+
+	_transparencyData.geometryInfo.create_buffer(
+		this,
+		sizeof(GeometryInfo),
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		VMA_MEMORY_USAGE_GPU_ONLY);
+	
+	immediate_submit([&](VkCommandBuffer cmd){
+		AllocatedBufferT<GeometryInfo>::copy_typed_buffer_cmd(this, cmd, &stagingBuffer, &_transparencyData.geometryInfo);
+	});
+
+	stagingBuffer.destroy_buffer(this);
+
+	_transparencyData.nodes.create_buffer(
+		this,
+		sizeof(Node) * geometryInfo.maxNodeCount,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		VMA_MEMORY_USAGE_GPU_ONLY);
+	
 	_mainDeletionQueue.push_function([=](){
+		vmaDestroyBuffer(_allocator, _transparencyData.geometryInfo._buffer, _transparencyData.geometryInfo._allocation);
 		vmaDestroyBuffer(_allocator, _sceneParameterBuffer._buffer, _sceneParameterBuffer._allocation);
 	});
+
+	_transparencyData.setup_pipeline_builder();
+	_transparencyData.create_shader_pass(this);
 }
 
 void VulkanEngine::init_pipelines()
@@ -898,6 +1019,9 @@ void VulkanEngine::draw()
 
 	LOG_INFO("Before forward pass");
 	draw_forward_pass(cmd, swapchainImageIndex);
+
+	LOG_INFO("Before drawing transparency pass");
+	draw_tranparency_pass(cmd);
 
 	//ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), get_current_frame()._mainCommandBuffer);
 
@@ -1286,12 +1410,12 @@ void VulkanEngine::refresh_swapchain()
 	for (int i = 0; i != _swapchainImages.size(); ++i)
 	{
 		vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
-		vkDestroyFramebuffer(_device, _offscrFramebuffers[i], nullptr);
+		vkDestroyFramebuffer(_device, _mainOpaqueFramebuffers[i], nullptr);
 		vkDestroyFramebuffer(_device, _framebuffers[i], nullptr);
 	}
 
-	_offscrColorImage.destroy_attachment(this);
-	_offscrDepthImage.destroy_attachment(this);
+	_mainOpaqueColorAttach.destroy_attachment(this);
+	_mainOpaqueDepthAttach.destroy_attachment(this);
 	_depthPyramid.destroy_texture(this);
 
 	for (int i = 0; i != _depthPyramidLevels; ++i)
@@ -1306,7 +1430,7 @@ void VulkanEngine::refresh_swapchain()
 	LOG_INFO("Before initing framebuffers");
 	init_framebuffers();
 	LOG_INFO("Before refreshing material system");
-	_materialSystem.refresh_default_templates();
+	//_materialSystem.refresh_default_templates();
 }
 
 // functions for depth pyramid to make culling
@@ -1361,5 +1485,30 @@ VertexInputDescription Plane::get_vertex_description()
 	description.attributes.push_back(uvAttribute);
 
 	return description;
+}
+
+void TransparencyFirstPassData::setup_pipeline_builder()
+{
+	pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
+	pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+
+	pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
+	pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT);
+	pipelineBuilder._multisampling = vkinit::multisampling_state_create_info();
+	pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
+
+	pipelineBuilder._vertexDescription = Mesh::get_vertex_description();
+
+	pipelineBuilder._colorBlendAttachment.colorWriteMask = 0xf;
+}
+
+void TransparencyFirstPassData::create_shader_pass(VulkanEngine* engine)
+{
+	vkutil::ShaderEffect* effect = engine->_materialSystem.build_shader_effect({
+		"/shaders/oit_geometry.vert.spv",
+		"/shaders/oit_geometry.frag.spv"
+	});
+
+	geometryPass = engine->_materialSystem.build_shader_pass(renderPass, pipelineBuilder, effect);
 }
 

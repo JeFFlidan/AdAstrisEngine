@@ -4,9 +4,14 @@ layout(location = 0) in vec2 texCoord;
 
 layout(location = 0) out vec4 fragColor;
 
-layout(set = 0, binding = 0) uniform sampler2D screenTexture;
+layout(set = 0, binding = 0) uniform sampler2D opaqueColorAttach;
+layout(set = 0, binding = 1) uniform sampler2D transparencyColorAttach;
+layout(set = 0, binding = 2) uniform sampler2D opaqueDepthAttach;
+layout(set = 0, binding = 3) uniform sampler2D transparencyDepthAttach;
 
 const float offset = 1.0 / 300.0;
+
+vec4 composeTransparencyAndOpaque();
 
 void main()
 {
@@ -40,9 +45,34 @@ void main()
 	// 	color += sampleTex[i] * kernel[i];
 	// }
 
-	fragColor = texture(screenTexture, texCoord);
-	float average = 0.2126 * fragColor.r + 0.7152 * fragColor.g + 0.0722 * fragColor.b;
+	//fragColor = texture(screenTexture, texCoord);
+	//float average = 0.2126 * fragColor.r + 0.7152 * fragColor.g + 0.0722 * fragColor.b;
 
-	fragColor = vec4(vec3(average), 1.0);
-	fragColor = pow(texture(screenTexture, texCoord), vec4(2.2));
+	//fragColor = vec4(vec3(average), 1.0);
+	//vec4 opaqueColor = pow(texture(opaqueColorAttach, texCoord), vec4(2.2));
+	//fragColor = opaqueColor;
+
+	fragColor = composeTransparencyAndOpaque();
+
+	fragColor = pow(fragColor, vec4(2.2));
+}
+
+vec4 composeTransparencyAndOpaque()
+{
+	ivec2 attachTexCoord = ivec2(gl_FragCoord.xy);
+	float opaqueDepth = texelFetch(opaqueDepthAttach, attachTexCoord, 0).r;
+	float transparencyDepth = texelFetch(transparencyDepthAttach, attachTexCoord, 0).r;
+
+	vec4 color;
+	
+	if (opaqueDepth < transparencyDepth)
+	{
+		color = texelFetch(opaqueColorAttach, attachTexCoord, 0);
+	}
+	else
+	{
+		color = texelFetch(transparencyColorAttach, attachTexCoord, 0);
+	}
+
+	return color;
 }
