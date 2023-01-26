@@ -55,6 +55,13 @@ void main()
 	fragColor = composeTransparencyAndOpaque();
 
 	fragColor = pow(fragColor, vec4(2.2));
+
+	//float average = 0.2126 * fragColor.r + 0.7152 * fragColor.g + 0.0722 * fragColor.b;
+	//fragColor = vec4(vec3(average), 1.0);
+	//fragColor = texture(transparencyColorAttach, texCoord);
+	//fragColor = texture(opaqueColorAttach, texCoord);
+
+	//fragColor = vec4(0.3f);
 }
 
 vec4 composeTransparencyAndOpaque()

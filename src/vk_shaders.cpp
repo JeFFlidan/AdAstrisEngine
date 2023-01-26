@@ -143,6 +143,7 @@ namespace vkutil
 
 			if (pushConstantsCount > 0)
 			{
+				LOG_INFO("Push constant");
 				VkPushConstantRange range;
 				range.offset = blocks[0]->offset;
 				range.size = blocks[0]->size;

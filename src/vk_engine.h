@@ -71,6 +71,7 @@ struct GPUObjectData
 	uint32_t baseColorTexId;
 	uint32_t normalTexId;
 	uint32_t armTexId;
+	uint32_t data;
 };
 
 struct UploadContext
@@ -123,6 +124,7 @@ struct TransparencyFirstPassData
 	vkutil::ShaderPass* geometryPass;
 	void setup_pipeline_builder();
 	void create_shader_pass(VulkanEngine* engine);
+	void cleanup(VulkanEngine* engine);
 };
 
 struct Vertex

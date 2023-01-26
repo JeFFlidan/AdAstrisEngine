@@ -18,6 +18,9 @@
 #include <future>
 #include <algorithm>
 
+using GeometryInfo = TransparencyFirstPassData::GeometryInfo;
+using Node = TransparencyFirstPassData::Node;
+
 inline uint32_t get_group_count(uint32_t threadCount, uint32_t localSize)
 {
 	return (threadCount + localSize - 1) / localSize;
@@ -61,6 +64,8 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImag
 
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
 		0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
+
+	_afterCullingBufferBarriers.clear();
 
 	VkDescriptorImageInfo samplerInfo{};
 	samplerInfo.sampler = _textureSampler;
@@ -197,11 +202,28 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImag
 	//_userInterface.render_ui(this);
 
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
+
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
 }
 
 void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
-{
-	auto& meshPass = _renderScene._transparentForwardPass;
+{	
+	vkCmdFillBuffer(cmd, _transparencyData.geometryInfo._buffer, 0, sizeof(uint32_t), 0);
+
+	VkImageSubresourceRange subresRange{};
+	subresRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresRange.levelCount = 1;
+	subresRange.layerCount = 1;
+
+	VkClearColorValue headImageClearColor;
+	headImageClearColor.uint32[0] = 0xffffffff;
+	vkCmdClearColorImage(cmd, _transparencyData.headIndex.imageData.image, VK_IMAGE_LAYOUT_GENERAL, &headImageClearColor, 1, &subresRange);
+
+	VkMemoryBarrier memBarrier{};
+	memBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+	memBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	memBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1, &memBarrier, 0, nullptr, 0, nullptr);
 
 	VkImageMemoryBarrier imageMemoryBarrier{};
 	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -218,6 +240,8 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 		0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
 
+	auto& meshPass = _renderScene._transparentForwardPass;
+
 	CullParams transpPassCullParams;
 	transpPassCullParams.frustumCull = true;
 	transpPassCullParams.occlusionCull = true;
@@ -227,6 +251,11 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 	transpPassCullParams.projMatrix = camera.get_projection_matrix(_windowExtent.width, _windowExtent.height, true);
 
 	culling(meshPass, cmd, transpPassCullParams);
+
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+		0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
+
+	_afterCullingBufferBarriers.clear();
 
 	VkDescriptorBufferInfo cameraInfo = get_current_frame()._cameraBuffer.get_info();
 	VkDescriptorBufferInfo objectDataInfo = _renderScene._objectDataBuffer.get_info(true);
@@ -262,9 +291,9 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 	depthClear.depthStencil.depth = 1.0f;
 	
 	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_transparencyData.renderPass, _windowExtent, _transparencyData.framebuffer);
-	rpInfo.clearValueCount = 2;
+	rpInfo.clearValueCount = 0;
 	VkClearValue clearValues[2] = { clearValue, depthClear };
-	rpInfo.pClearValues = clearValues;
+	rpInfo.pClearValues = nullptr;
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -285,6 +314,15 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
 	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->layout, 0, 1, &oitGeomDescriptorSet, 0, nullptr);
 
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
+	vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
+
+	std::vector<glm::vec4> colors = {
+		glm::vec4(0.1f, 0.9f, 0.1f, 0.4f),
+		glm::vec4(0.9f, 0.1f, 0.1f, 0.55f)
+	};
+
 	for (int i = 0; i != meshPass.multibatches.size(); ++i)
 	{
 		auto& multibatch = meshPass.multibatches[i];
@@ -292,21 +330,25 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 		VkDeviceSize offset = multibatch.first * sizeof(GPUIndirectObject);
 		uint32_t stride = sizeof(GPUIndirectObject);
 
+		glm::vec4 color = colors[i];
+		vkCmdPushConstants(cmd, shaderPass->layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(glm::vec4), &color);
+
 		vkCmdDrawIndexedIndirect(cmd, meshPass.drawIndirectBuffer._buffer, offset, multibatch.count, stride);
 	}
 
 	vkCmdEndRenderPass(cmd);
-
+	
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
 
 	VkMemoryBarrier memoryBarrier{};
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
 	memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 	memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1,&memoryBarrier, 0, nullptr, 0, nullptr);
 
 	VkDescriptorSet transpDescriptorSet;
-	
+
 	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
 		.bind_buffer(0, &cameraInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
 		.bind_buffer(1, &objectDataInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
@@ -323,6 +365,9 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 
 	vkutil::ShaderPass* prevMaterial = nullptr;
 
+	vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
+	vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);	
+
 	for (int i = 0; i != meshPass.multibatches.size(); ++i)
 	{
 		auto& multibatch = meshPass.multibatches[i];
@@ -337,31 +382,21 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 			prevMaterial = shaderPass;
 		}
 
-		glm::vec4 color = { 0.5f, 0.5f, 0.5f, 0.6f };
-		vkCmdPushConstants(cmd, shaderPass->layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(glm::vec4), &color);
-
 		VkDeviceSize offset = multibatch.first * sizeof(GPUIndirectObject);
 		uint32_t stride = sizeof(GPUIndirectObject);
 
 		vkCmdDrawIndexedIndirect(cmd, meshPass.drawIndirectBuffer._buffer, offset, multibatch.count, stride);
 	}
 
-	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
+	//vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
 
 	vkCmdEndRenderPass(cmd);
+
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
 }
 
 void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex)
 {
-	/*VkImageMemoryBarrier imageMemoryBarrier{};
-	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageMemoryBarrier.image = _mainOpaqueColorAttach.imageData.image;
-	imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-	imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;*/
-
 	VkImageMemoryBarrier colorImgBarrier1{};
 	colorImgBarrier1.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	colorImgBarrier1.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -385,7 +420,7 @@ void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageI
 	
 	vkCmdPipelineBarrier(
 		cmd,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
 		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 		0, 0, nullptr, 0, nullptr, depthImgBarriers.size(), depthImgBarriers.data()
 	);
@@ -427,7 +462,7 @@ void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageI
 	VkDescriptorImageInfo transpDepthImgInfo;
 	transpDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	transpDepthImgInfo.imageView = _transparencyDepthAttach.imageView;
-	transpColorImgInfo.sampler = _mainOpaqueSampler;
+	transpDepthImgInfo.sampler = _mainOpaqueSampler;
 
 	VkDescriptorSet offscrColorImageSet;
 	
