@@ -12,7 +12,7 @@ layout(early_fragment_tests) in;
 	uint next;
 };*/
 
-layout(set = 0, binding = 3) buffer LinkedListBuffer
+layout(set = 0, binding = 3) buffer coherent LinkedListBuffer
 {
 	Node nodes[];
 };

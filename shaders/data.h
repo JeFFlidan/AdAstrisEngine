@@ -40,6 +40,7 @@ struct ObjectData
 	uint baseColorTexId;
 	uint normalTexId;
 	uint armTexId;
+	uint data;
 };
 
 struct CameraData

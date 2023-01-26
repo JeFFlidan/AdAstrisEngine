@@ -264,6 +264,7 @@ void save_material(
 // Temporary solution, it must be replaced by saving prefabs from the engine for the particular project
 void save_prefab(const std::string& directory, const std::string& prefabName)
 {
+	LOG_INFO("Create prefab in function");
 	assets::PrefabInfo info;
 	std::array<float, 16> matrix;
 	for (int i = 0; i != 16; ++i)
@@ -320,6 +321,7 @@ int main(int argc, char* argv[])
 		// Temporary solution, should be removed in the future.
 		if (argc == 3 && strcmp("create_prefab", argv[2]) == 0)
 		{
+			LOG_INFO("Create prefabs");
 			save_material(
 				directory,
 				"door",
@@ -352,10 +354,28 @@ int main(int argc, char* argv[])
 				assets::MaterialMode::OPAQUE
 			);
 
+			save_material(
+				directory,
+				"glass_wall",
+				"PBR_Transparency",
+				std::vector<std::string>{},
+				assets::MaterialMode::TRANSPARENT
+			);
+
+			save_material(
+				directory,
+				"glass_wall_2",
+				"PBR_Transparency",
+				std::vector<std::string>{},
+				assets::MaterialMode::TRANSPARENT
+			);
+
 			//save_prefab(directory.string(), "gun");
 			//save_prefab(directory.string(), "gun2");
-			save_prefab(directory.string(), "door");
+			//save_prefab(directory.string(), "door");
 			save_prefab(directory.string(), "wall");
+			save_prefab(directory.string(), "glass_wall");
+			save_prefab(directory.string(), "glass_wall_2");
 		}
 	}
 }

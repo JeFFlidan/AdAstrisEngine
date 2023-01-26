@@ -26,7 +26,7 @@ void RenderScene::init()
 
 void RenderScene::cleanup(VulkanEngine* engine)
 {
-	std::vector<MeshPass*> passes = { &_forwardPass, &_dirShadowPass, &_pointShadowPass, &_spotShadowPass };
+	std::vector<MeshPass*> passes = { &_forwardPass, &_dirShadowPass, &_pointShadowPass, &_spotShadowPass, &_transparentForwardPass };
 	for (auto pass : passes)
 	{
 		pass->compactedInstanceBuffer.destroy_buffer(engine);
@@ -80,13 +80,18 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 
 	if (object->bDrawForwardPass)
 	{
-		if (object->material->original->passShaders[vkutil::MeshpassType::Transparency])
-		{
-			_transparentForwardPass.unbatchedObjects.push_back(handle);
-		}
 		if (object->material->original->passShaders[vkutil::MeshpassType::Forward])
 		{
 			_forwardPass.unbatchedObjects.push_back(handle);
+		}
+	}
+
+	if (object->bDrawTransparencyPass)
+	{
+		if (object->material->original->passShaders[vkutil::MeshpassType::Transparency])
+		{
+			LOG_INFO("+1 in transparency pass");
+			_transparentForwardPass.unbatchedObjects.push_back(handle);
 		}
 	}
 
@@ -377,9 +382,9 @@ void RenderScene::build_batches()
 	auto shadow = std::async(std::launch::async, [&]{ refresh_pass(&_dirShadowPass); });
 	auto pointShadow = std::async(std::launch::async, [&]{ refresh_pass(&_pointShadowPass); });
 	auto spotShadow = std::async(std::launch::async, [&]{ refresh_pass(&_spotShadowPass); });
-	//auto transparent = std::async(std::launch::async, [&]{ refresh_pass(&_transparentForwardPass); });
+	auto transparent = std::async(std::launch::async, [&]{ refresh_pass(&_transparentForwardPass); });
 
-	//transparent.get();
+	transparent.get();
 	spotShadow.get();
 	pointShadow.get();
 	shadow.get();
