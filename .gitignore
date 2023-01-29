@@ -21,3 +21,6 @@ src/CMakeFiles
 /shaders/*.*.*~
 /*/#*.*#
 /*/.#*.*
+src/file_system/Makefile
+src/file_system/main.cpp
+src/file_system/app.exe
