@@ -179,6 +179,7 @@ class RenderScene
 		std::vector<VkDescriptorImageInfo> _spotShadowMapsInfos;
 
 		// I have to think how to make many passes for many lights
+		MeshPass _deferredPass;
 		MeshPass _forwardPass;
 		MeshPass _dirShadowPass;
 		MeshPass _pointShadowPass;

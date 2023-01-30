@@ -22,11 +22,12 @@ void RenderScene::init()
 	_transparentForwardPass.type = vkutil::MeshpassType::Transparency;
 	_pointShadowPass.type = vkutil::MeshpassType::PointShadow;
 	_spotShadowPass.type = vkutil::MeshpassType::SpotShadow;
+	_deferredPass.type = vkutil::MeshpassType::Deferred;
 }
 
 void RenderScene::cleanup(VulkanEngine* engine)
 {
-	std::vector<MeshPass*> passes = { &_forwardPass, &_dirShadowPass, &_pointShadowPass, &_spotShadowPass, &_transparentForwardPass };
+	std::vector<MeshPass*> passes = { &_forwardPass, &_dirShadowPass, &_pointShadowPass, &_spotShadowPass, &_transparentForwardPass, &_deferredPass };
 	for (auto pass : passes)
 	{
 		pass->compactedInstanceBuffer.destroy_buffer(engine);
@@ -119,6 +120,15 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 		{
 			LOG_INFO("+1 in spot shadow pass");
 			_spotShadowPass.unbatchedObjects.push_back(handle);
+		}
+	}
+
+	if (object->bDrawDeferredPass)
+	{
+		if (object->material->original->passShaders[vkutil::MeshpassType::Deferred])
+		{
+			LOG_INFO("+1 in deferred pass");
+			_deferredPass.unbatchedObjects.push_back(handle);
 		}
 	}
 
@@ -221,6 +231,17 @@ void RenderScene::update_object(Handle<RenderableObject> objectID)
 		_spotShadowPass.unbatchedObjects.push_back(objectID);
 
 		passIndices[vkutil::MeshpassType::SpotShadow] = -1;
+	}
+
+	if (passIndices[vkutil::MeshpassType::Deferred] != -1)
+	{
+		Handle<PassObject> handle;
+		handle.handle = passIndices[vkutil::MeshpassType::Deferred];
+
+		_deferredPass.objectToDelete.push_back(handle);
+		_deferredPass.unbatchedObjects.push_back(objectID);
+
+		passIndices[vkutil::MeshpassType::Deferred] = -1;
 	}
 
 	if (get_renderable_object(objectID)->updateIndex == (uint32_t)-1)
@@ -379,6 +400,7 @@ void RenderScene::build_batches()
 {
 	// I have to read how async works
 	auto forward = std::async(std::launch::async, [&]{ refresh_pass(&_forwardPass); });
+	auto deferred = std::async(std::launch::async, [&]{ refresh_pass(&_deferredPass);});
 	auto shadow = std::async(std::launch::async, [&]{ refresh_pass(&_dirShadowPass); });
 	auto pointShadow = std::async(std::launch::async, [&]{ refresh_pass(&_pointShadowPass); });
 	auto spotShadow = std::async(std::launch::async, [&]{ refresh_pass(&_spotShadowPass); });
@@ -388,6 +410,7 @@ void RenderScene::build_batches()
 	spotShadow.get();
 	pointShadow.get();
 	shadow.get();
+	deferred.get();
 	forward.get();
 }
 

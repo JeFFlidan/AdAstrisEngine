@@ -28,6 +28,7 @@ namespace vkutil
 			VkPipelineRasterizationStateCreateInfo _rasterizer;
 			VkPipelineMultisampleStateCreateInfo _multisampling;
 			VkPipelineColorBlendAttachmentState _colorBlendAttachment;
+			std::vector<VkPipelineColorBlendAttachmentState> _colorBlendManyAttachments;
 			VkPipelineLayout _pipelineLayout;
 			VkDynamicState _dynamicStates[2];
 			VkPipelineDynamicStateCreateInfo _dynamicState;
@@ -53,6 +54,7 @@ namespace vkutil
 		DirectionalShadow = 3,
 		PointShadow = 4,
 		SpotShadow = 5,
+		Deferred = 6,
 	};
 	
 	struct ShaderParameters
@@ -87,6 +89,8 @@ namespace vkutil
 						return data[3];
 					case MeshpassType::SpotShadow:
 						return data[4];
+					case MeshpassType::Deferred:
+						return data[5];
 				}
 
 				return data[0];
@@ -94,12 +98,12 @@ namespace vkutil
 
 			void clear(T&& val)
 			{
-				for (int i = 0; i != 5; ++i)
+				for (int i = 0; i != 6; ++i)
 					data[i] = val;
 			}
 
 		private:
-			std::array<T, 5> data;
+			std::array<T, 6> data;
 	};
 
 	struct ShaderPass
@@ -165,6 +169,7 @@ namespace vkutil
 
 			PipelineBuilder _postprocessingPipelineBuilder;
 			PipelineBuilder _offscrPipelineBuilder;
+			PipelineBuilder _deferredPipelineBuilder;
 			PipelineBuilder _dirShadowPipelineBuilder;
 			PipelineBuilder _pointShadowPipelineBuilder;
 			PipelineBuilder _spotShadowPipelineBuilder;

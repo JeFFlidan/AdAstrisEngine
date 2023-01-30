@@ -48,6 +48,135 @@ void VulkanEngine::fill_renderable_objects()
 	_renderScene.merge_meshes(this);
 }
 
+void VulkanEngine::draw_deferred_pass(VkCommandBuffer cmd)
+{
+	auto& meshPass = _renderScene._deferredPass;
+
+	switch(meshPass.type)
+	{
+		case vkutil::MeshpassType::Deferred:
+			LOG_INFO("Deferred");
+		case vkutil::MeshpassType::Forward:
+			LOG_INFO("Forward");
+	}
+
+	CullParams forwardPassCullParams;
+	forwardPassCullParams.frustumCull = true;
+	forwardPassCullParams.occlusionCull = true;
+	forwardPassCullParams.drawDist = 9999999;
+	forwardPassCullParams.aabb = false;
+	forwardPassCullParams.viewMatrix = camera.get_view_matrix();
+	forwardPassCullParams.projMatrix = camera.get_projection_matrix(_windowExtent.width, _windowExtent.height, true);
+	
+	culling(meshPass, cmd, forwardPassCullParams);
+
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+		0, 0, nullptr, _afterCullingBufferBarriers.size(), _afterCullingBufferBarriers.data(), 0, nullptr);
+
+	_afterCullingBufferBarriers.clear();
+
+	VkDescriptorImageInfo samplerInfo{};
+	samplerInfo.sampler = _textureSampler;
+
+	VkDescriptorBufferInfo objectDataInfo = _renderScene._objectDataBuffer.get_info(true);
+	VkDescriptorBufferInfo instanceInfo = meshPass.compactedInstanceBuffer.get_info(true);
+	VkDescriptorBufferInfo cameraInfo = get_current_frame()._cameraBuffer.get_info();
+
+	VkDescriptorSet globalDescriptorSet;
+	VkDescriptorSet texturesDescriptorSet1;
+	VkDescriptorSet texturesDescriptorSet2;
+	VkDescriptorSet texturesDescriptorSet3;
+	
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_buffer(0, &objectDataInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT))
+		.bind_buffer(1, &instanceInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_buffer(2, &cameraInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_image(3, &samplerInfo, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.build(globalDescriptorSet);
+
+	size_t descriptorsAmount = _renderScene._baseColorInfos.size() + _renderScene._normalInfos.size() + _renderScene._armInfos.size();
+	
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_image(0, _renderScene._baseColorInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._baseColorInfos.size())
+		.build_non_uniform(texturesDescriptorSet1, _renderScene._baseColorInfos.size());
+		
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_image(0, _renderScene._normalInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._normalInfos.size())
+		.build_non_uniform(texturesDescriptorSet2, _renderScene._normalInfos.size());
+
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_image(0, _renderScene._armInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._armInfos.size())
+		.build_non_uniform(texturesDescriptorSet3, _renderScene._armInfos.size());
+
+	std::vector<VkDescriptorSet> sets = {
+		globalDescriptorSet,
+		texturesDescriptorSet1,
+		texturesDescriptorSet2,
+		texturesDescriptorSet3
+	};
+
+	vkutil::ShaderPass* prevMaterial = nullptr;
+	
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
+	vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
+	
+	std::array<VkClearValue, 4> clearValues;
+	clearValues[0].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+	clearValues[1].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+	clearValues[2].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+	clearValues[3].depthStencil.depth = 1.0f;
+
+	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_GBuffer.renderPass, _windowExtent, _GBuffer.framebuffer);
+	rpInfo.clearValueCount = 4;
+	
+	rpInfo.pClearValues = clearValues.data();
+
+	vkCmdBeginRenderPass(get_current_frame()._mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	VkViewport viewport;
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	viewport.width = static_cast<float>(_windowExtent.width);
+	viewport.height = static_cast<float>(_windowExtent.height);
+	VkRect2D scissor;
+	scissor.offset = { 0, 0 };
+	scissor.extent = _windowExtent;
+	vkCmdSetViewport(cmd, 0, 1, &viewport);
+	vkCmdSetScissor(cmd, 0, 1, &scissor);
+	
+	for (int i = 0; i != meshPass.multibatches.size(); ++i)
+	{
+		auto& multibatch = meshPass.multibatches[i];
+		auto& batch = meshPass.batches[multibatch.first];
+
+		auto shaderPass = batch.material.shaderPass;
+
+		if (shaderPass != prevMaterial)
+		{
+			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+			for (int i = 0; i != sets.size(); ++i)
+			{
+				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->layout, i, 1, &sets[i], 0, nullptr);
+			}
+			prevMaterial = shaderPass;
+		}
+
+		VkDeviceSize offset = multibatch.first * sizeof(GPUIndirectObject);
+		uint32_t stride = sizeof(GPUIndirectObject);
+
+		//auto& meshPass = _renderScene._forwardPass;
+
+		vkCmdDrawIndexedIndirect(cmd, meshPass.drawIndirectBuffer._buffer, offset, multibatch.count, stride);
+	}
+
+	//_userInterface.render_ui(this);
+
+	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
+}
+
 void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImageIndex)
 {
 	auto& meshPass = _renderScene._forwardPass;
@@ -677,6 +806,7 @@ void VulkanEngine::draw_shadow_pass(VkCommandBuffer cmd, vkutil::MeshpassType pa
 		}
 		case vkutil::MeshpassType::Forward:
 		case vkutil::MeshpassType::Transparency:
+		case vkutil::MeshpassType::Deferred:
 		case vkutil::MeshpassType::None:
 			LOG_WARNING("This function was created for shadow passes");
 			return;
@@ -758,6 +888,7 @@ void VulkanEngine::draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptor
 		}
 		case vkutil::MeshpassType::Forward:
 		case vkutil::MeshpassType::Transparency:
+		case vkutil::MeshpassType::Deferred:
 		case vkutil::MeshpassType::None:
 			LOG_WARNING("This function was created only for shader passes");
 			return;
@@ -1027,6 +1158,7 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 	}
 	
 	std::vector<RenderScene::MeshPass*> passes = {
+		&_renderScene._deferredPass,
 		&_renderScene._forwardPass,
 		&_renderScene._dirShadowPass,
 		&_renderScene._pointShadowPass,

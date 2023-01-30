@@ -1,4 +1,4 @@
-# Install script for directory: E:/VulkanEngine/third_party
+# Install script for directory: E:/VulkanEngineMain/third_party
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

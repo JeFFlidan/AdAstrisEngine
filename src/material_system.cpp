@@ -41,8 +41,16 @@ namespace vkutil
 		colorBlending.pNext = nullptr;
 		colorBlending.logicOpEnable = VK_FALSE;
 		colorBlending.logicOp = VK_LOGIC_OP_COPY;
-		colorBlending.attachmentCount = 1;
-		colorBlending.pAttachments = &_colorBlendAttachment;
+		if (_colorBlendManyAttachments.empty())
+		{
+			colorBlending.attachmentCount = 1;
+			colorBlending.pAttachments = &_colorBlendAttachment;
+		}
+		else
+		{
+			colorBlending.attachmentCount = _colorBlendManyAttachments.size();
+			colorBlending.pAttachments = _colorBlendManyAttachments.data();
+		}
 
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -114,6 +122,17 @@ namespace vkutil
 
 		// I have to think about one pipeline builder for passes below
 	    _offscrPipelineBuilder = pipelineBuilder;
+
+	    pipelineBuilder._colorBlendManyAttachments = {
+			vkinit::color_blend_attachment_state(),
+			vkinit::color_blend_attachment_state(),
+			vkinit::color_blend_attachment_state()
+	    };
+	    LOG_INFO("Blending info count {}", pipelineBuilder._colorBlendManyAttachments.size());
+		_deferredPipelineBuilder = pipelineBuilder;
+
+		pipelineBuilder._colorBlendManyAttachments.clear();
+	    
 	    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 	    _dirShadowPipelineBuilder = pipelineBuilder;
 	    _pointShadowPipelineBuilder = pipelineBuilder;
@@ -228,6 +247,10 @@ namespace vkutil
 			"/shaders/transparency.vert.spv",
 			"/shaders/transparency.frag.spv"
 		});
+		ShaderEffect* GBufferEffect = build_shader_effect({
+			"/shaders/GBuffer.vert.spv",
+			"/shaders/GBuffer.frag.spv"
+		});
 			
 		//ShaderEffect* coloredLitEffect = build_shader_effect({
 		//	"/shaders/mesh.vert.spv",
@@ -236,16 +259,26 @@ namespace vkutil
 		ShadowMap& shadowMap = _engine->_renderScene._dirShadowMaps[0];
 		ShadowMap& pointShadowMap = _engine->_renderScene._pointShadowMaps[0];
 		ShadowMap& spotShadowMap = _engine->_renderScene._spotShadowMaps[0];
-		
+
+		LOG_INFO("Test 1");
 		ShaderPass* texturedLitPass = build_shader_pass(_engine->_mainOpaqueRenderPass, _offscrPipelineBuilder, texturedLitEffect);
+		LOG_INFO("Test 2");
 		ShaderPass* postrpocessingPass = build_shader_pass(_engine->_renderPass, _postprocessingPipelineBuilder, postprocessingEffect);
+		LOG_INFO("Test 3");
 		ShaderPass* dirShadowPass = build_shader_pass(shadowMap.renderPass, _dirShadowPipelineBuilder, dirShadowEffect);
+		LOG_INFO("Test 4");
 		ShaderPass* pointShadowPass = build_shader_pass(pointShadowMap.renderPass, _pointShadowPipelineBuilder, pointShadowEffect);
+		LOG_INFO("Test 5");
 		ShaderPass* spotShadowPass = build_shader_pass(spotShadowMap.renderPass, _spotShadowPipelineBuilder, spotShadowEffect);
+		LOG_INFO("Test 6");
 		ShaderPass* transparencyPass = build_shader_pass(_engine->_transparencyRenderPass, _transparencyBuilder, transparencyEffect);
+		LOG_INFO("Test 7");
+		ShaderPass* GBufferPass = build_shader_pass(_engine->_GBuffer.renderPass, _deferredPipelineBuilder, GBufferEffect);
+		LOG_INFO("Test 8");
 		//ShaderPass* coloredLitPass = build_shader_pass(_engine->_mainOpaqueRenderPass, _offscrPipelineBuilder, coloredLitEffect);
 
 		EffectTemplate effectTemplate;
+		effectTemplate.passShaders[MeshpassType::Deferred] = GBufferPass;
 		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = dirShadowPass;
 		effectTemplate.passShaders[MeshpassType::Transparency] = nullptr;
 		effectTemplate.passShaders[MeshpassType::Forward] = texturedLitPass;
@@ -255,6 +288,7 @@ namespace vkutil
 		effectTemplate.transparency = assets::MaterialMode::OPAQUE;
 		_templateCache["PBR_opaque"] = effectTemplate;
 
+		effectTemplate.passShaders[MeshpassType::Deferred] = nullptr;
 		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = nullptr;
 		effectTemplate.passShaders[MeshpassType::Transparency] = transparencyPass;
 		effectTemplate.passShaders[MeshpassType::Forward] = nullptr;
@@ -262,6 +296,7 @@ namespace vkutil
 		effectTemplate.passShaders[MeshpassType::SpotShadow] = nullptr;
 		_templateCache["PBR_Transparency"] = effectTemplate;
 
+		effectTemplate.passShaders[MeshpassType::Deferred] = nullptr;
 		effectTemplate.passShaders[MeshpassType::Forward] = postrpocessingPass;
 		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = nullptr;
 		effectTemplate.passShaders[MeshpassType::PointShadow] = nullptr;
@@ -369,6 +404,14 @@ namespace vkutil
 			}
 
 			pass = templ.second.passShaders[MeshpassType::Transparency];
+			if (pass != nullptr)
+			{
+				vkDestroyPipeline(device, pass->pipeline, nullptr);
+				vkDestroyPipelineLayout(device, pass->layout, nullptr);
+				pass->effect->destroy_shader_modules();
+			}
+
+			pass = templ.second.passShaders[MeshpassType::Deferred];
 			if (pass != nullptr)
 			{
 				vkDestroyPipeline(device, pass->pipeline, nullptr);

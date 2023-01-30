@@ -169,6 +169,7 @@ struct MeshObject
 	uint32_t customSortKey;
 	glm::mat4 transformMatrix;
 
+	uint32_t bDrawDeferredPass{ 0 };
 	uint32_t bDrawForwardPass{ 1 };
 	uint32_t bDrawShadowPass{ 1 };
 	uint32_t bDrawPointShadowPass{ 1 };
@@ -241,6 +242,18 @@ struct ThreadInfo
 	std::vector<VkCommandBuffer> commandBuffers;
 };
 
+struct GBuffer
+{
+	Attachment albedo;
+	Attachment normal;
+	Attachment surface;		// Roughness and metallic
+	Attachment depth;
+	VkFramebuffer framebuffer;
+	VkRenderPass renderPass;
+
+	void cleanup(VulkanEngine* engine);
+};
+
 constexpr unsigned int FRAME_OVERLAP = 2;
 
 class VulkanEngine 
@@ -283,6 +296,8 @@ class VulkanEngine
 		Attachment _transparencyColorAttach;
 		Attachment _transparencyDepthAttach;
 		VkSampler _mainOpaqueSampler;
+
+		GBuffer _GBuffer;
 
 		// Depth map data for culling
 		Texture _depthPyramid;
@@ -428,6 +443,7 @@ class VulkanEngine
 		void prepare_per_frame_data(VkCommandBuffer cmd);
 		void fill_renderable_objects();
 		void culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd, CullParams cullParams);
+		void draw_deferred_pass(VkCommandBuffer cmd);
 		void draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void draw_tranparency_pass(VkCommandBuffer cmd);
 		void draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
