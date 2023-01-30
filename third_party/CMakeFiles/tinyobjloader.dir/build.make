@@ -52,10 +52,10 @@ RM = "C:\Program Files\CMake\bin\cmake.exe" -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = E:\VulkanEngine
+CMAKE_SOURCE_DIR = E:\VulkanEngineMain
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = E:\VulkanEngine
+CMAKE_BINARY_DIR = E:\VulkanEngineMain
 
 # Include any dependencies generated for this target.
 include third_party/CMakeFiles/tinyobjloader.dir/depend.make
@@ -72,16 +72,16 @@ third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj: t
 third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj: third_party/CMakeFiles/tinyobjloader.dir/includes_CXX.rsp
 third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj: third_party/tinyobjloader/tiny_obj_loader.cc
 third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj: third_party/CMakeFiles/tinyobjloader.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj"
-	cd /d E:\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj -MF CMakeFiles\tinyobjloader.dir\tinyobjloader\tiny_obj_loader.cc.obj.d -o CMakeFiles\tinyobjloader.dir\tinyobjloader\tiny_obj_loader.cc.obj -c E:\VulkanEngine\third_party\tinyobjloader\tiny_obj_loader.cc
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\VulkanEngineMain\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj"
+	cd /d E:\VulkanEngineMain\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj -MF CMakeFiles\tinyobjloader.dir\tinyobjloader\tiny_obj_loader.cc.obj.d -o CMakeFiles\tinyobjloader.dir\tinyobjloader\tiny_obj_loader.cc.obj -c E:\VulkanEngineMain\third_party\tinyobjloader\tiny_obj_loader.cc
 
 third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.i"
-	cd /d E:\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\VulkanEngine\third_party\tinyobjloader\tiny_obj_loader.cc > CMakeFiles\tinyobjloader.dir\tinyobjloader\tiny_obj_loader.cc.i
+	cd /d E:\VulkanEngineMain\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\VulkanEngineMain\third_party\tinyobjloader\tiny_obj_loader.cc > CMakeFiles\tinyobjloader.dir\tinyobjloader\tiny_obj_loader.cc.i
 
 third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.s"
-	cd /d E:\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\VulkanEngine\third_party\tinyobjloader\tiny_obj_loader.cc -o CMakeFiles\tinyobjloader.dir\tinyobjloader\tiny_obj_loader.cc.s
+	cd /d E:\VulkanEngineMain\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\VulkanEngineMain\third_party\tinyobjloader\tiny_obj_loader.cc -o CMakeFiles\tinyobjloader.dir\tinyobjloader\tiny_obj_loader.cc.s
 
 # Object files for target tinyobjloader
 tinyobjloader_OBJECTS = \
@@ -93,19 +93,19 @@ tinyobjloader_EXTERNAL_OBJECTS =
 third_party/libtinyobjloader.a: third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj
 third_party/libtinyobjloader.a: third_party/CMakeFiles/tinyobjloader.dir/build.make
 third_party/libtinyobjloader.a: third_party/CMakeFiles/tinyobjloader.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=E:\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library libtinyobjloader.a"
-	cd /d E:\VulkanEngine\third_party && $(CMAKE_COMMAND) -P CMakeFiles\tinyobjloader.dir\cmake_clean_target.cmake
-	cd /d E:\VulkanEngine\third_party && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\tinyobjloader.dir\link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=E:\VulkanEngineMain\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX static library libtinyobjloader.a"
+	cd /d E:\VulkanEngineMain\third_party && $(CMAKE_COMMAND) -P CMakeFiles\tinyobjloader.dir\cmake_clean_target.cmake
+	cd /d E:\VulkanEngineMain\third_party && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\tinyobjloader.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 third_party/CMakeFiles/tinyobjloader.dir/build: third_party/libtinyobjloader.a
 .PHONY : third_party/CMakeFiles/tinyobjloader.dir/build
 
 third_party/CMakeFiles/tinyobjloader.dir/clean:
-	cd /d E:\VulkanEngine\third_party && $(CMAKE_COMMAND) -P CMakeFiles\tinyobjloader.dir\cmake_clean.cmake
+	cd /d E:\VulkanEngineMain\third_party && $(CMAKE_COMMAND) -P CMakeFiles\tinyobjloader.dir\cmake_clean.cmake
 .PHONY : third_party/CMakeFiles/tinyobjloader.dir/clean
 
 third_party/CMakeFiles/tinyobjloader.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" E:\VulkanEngine E:\VulkanEngine\third_party E:\VulkanEngine E:\VulkanEngine\third_party E:\VulkanEngine\third_party\CMakeFiles\tinyobjloader.dir\DependInfo.cmake --color=$(COLOR)
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" E:\VulkanEngineMain E:\VulkanEngineMain\third_party E:\VulkanEngineMain E:\VulkanEngineMain\third_party E:\VulkanEngineMain\third_party\CMakeFiles\tinyobjloader.dir\DependInfo.cmake --color=$(COLOR)
 .PHONY : third_party/CMakeFiles/tinyobjloader.dir/depend
 
