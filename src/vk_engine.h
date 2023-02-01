@@ -1,7 +1,4 @@
-﻿// vulkan_guide.h : Include file for standard system include files,
-// or project specific include files.
-
-#pragma once
+﻿#pragma once
 
 #include "user_interface.h"
 #include "vk_types.h"
@@ -51,7 +48,15 @@ struct GPUCameraData
 	glm::mat4 view;
 	glm::mat4 proj;
 	glm::mat4 viewproj;
+	glm::mat4 invView;
+	glm::mat4 invProj;
 	glm::vec4 position;
+	glm::vec4 cameraUp;
+	glm::vec4 cameraFront;
+	glm::vec4 cameraRight;
+	float fovVertical;
+	float fovHorizontal;
+	float data1, data2;
 };
 
 struct GPUSceneData
@@ -170,7 +175,7 @@ struct MeshObject
 	glm::mat4 transformMatrix;
 
 	uint32_t bDrawDeferredPass{ 0 };
-	uint32_t bDrawForwardPass{ 1 };
+	uint32_t bDrawForwardPass{ 0 };
 	uint32_t bDrawShadowPass{ 1 };
 	uint32_t bDrawPointShadowPass{ 1 };
 	uint32_t bDrawSpotShadowPass{ 1 };
@@ -248,6 +253,7 @@ struct GBuffer
 	Attachment normal;
 	Attachment surface;		// Roughness and metallic
 	Attachment depth;
+	Attachment position;
 	VkFramebuffer framebuffer;
 	VkRenderPass renderPass;
 
@@ -276,10 +282,12 @@ class VulkanEngine
 
 		VkRenderPass _renderPass;
 		VkRenderPass _mainOpaqueRenderPass;
+		VkRenderPass _deferredRenderPass;
 		VkRenderPass _transparencyRenderPass;
 		//VkRenderPass _transparencyRenderPass;
 		std::vector<VkFramebuffer> _framebuffers;
 		std::vector<VkFramebuffer> _mainOpaqueFramebuffers;
+		VkFramebuffer _deferredFramebuffer;
 		VkFramebuffer _transparencyFramebuffer;
 		//VkFramebuffer _transparencyFramebuffer;
 		VkFramebuffer _dirLightShadowFramebuffer;
@@ -293,6 +301,7 @@ class VulkanEngine
 
 		Attachment _mainOpaqueDepthAttach;
 		Attachment _mainOpaqueColorAttach;
+		Attachment _deferredColorAttach;
 		Attachment _transparencyColorAttach;
 		Attachment _transparencyDepthAttach;
 		VkSampler _mainOpaqueSampler;
@@ -394,7 +403,6 @@ class VulkanEngine
 	private:
 		void init_vulkan();
 		void init_engine_systems();
-		void init_imgui();
 		void init_swapchain();
 		void init_commands();
 		void init_renderpasses();

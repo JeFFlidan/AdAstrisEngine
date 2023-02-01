@@ -22,10 +22,13 @@ namespace vkutil
 		_vertexInputInfo.vertexAttributeDescriptionCount = _vertexDescription.attributes.size();
 		_vertexInputInfo.pVertexAttributeDescriptions = _vertexDescription.attributes.data();
 
-		VkDynamicState* dynamicStates = _dynamicStates;
-		dynamicStates[0] = VK_DYNAMIC_STATE_VIEWPORT;
-		dynamicStates[1] = VK_DYNAMIC_STATE_SCISSOR;
-		_dynamicState = vkinit::dynamic_state_create_info(dynamicStates, 2);
+		//VkDynamicState* dynamicStates = _dynamicStates;
+		std::vector<VkDynamicState> dynamicStates;
+		dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+		dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+		if (_rasterizer.depthBiasEnable == VK_TRUE)
+			dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
+		_dynamicState = vkinit::dynamic_state_create_info(dynamicStates.data(), dynamicStates.size());
 	
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -129,24 +132,29 @@ namespace vkutil
 			vkinit::color_blend_attachment_state()
 	    };
 	    LOG_INFO("Blending info count {}", pipelineBuilder._colorBlendManyAttachments.size());
-		_deferredPipelineBuilder = pipelineBuilder;
+		_GBufferPipelineBuilder = pipelineBuilder;
 
 		pipelineBuilder._colorBlendManyAttachments.clear();
 	    
 	    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+	    pipelineBuilder._rasterizer.depthBiasEnable = VK_TRUE;
 	    _dirShadowPipelineBuilder = pipelineBuilder;
 	    _pointShadowPipelineBuilder = pipelineBuilder;
-	    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE);
+	    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT);
+	    pipelineBuilder._rasterizer.depthBiasEnable = VK_TRUE;
 	    _spotShadowPipelineBuilder = pipelineBuilder;
-
+	    
+		pipelineBuilder._rasterizer.depthBiasEnable = VK_FALSE;
 	    pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE);
 	    _transparencyBuilder = pipelineBuilder;
-		
-		pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS_OR_EQUAL);
 
 		pipelineBuilder._vertexDescription = Plane::get_vertex_description();
+		
+		pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(false, false, VK_COMPARE_OP_LESS_OR_EQUAL);
+		
 		pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL);
 	    _postprocessingPipelineBuilder = pipelineBuilder;
+	    _deferredPipelineBuilder = pipelineBuilder;
 	}
 
 	ShaderEffect* MaterialSystem::build_shader_effect(const std::vector<std::string>& shaderPaths)
@@ -225,9 +233,9 @@ namespace vkutil
 	{
 		setup_pipeline_builders();
 		
-		ShaderEffect* texturedLitEffect = build_shader_effect({
-			"/shaders/instancing.vert.spv",
-			"/shaders/textured_lit.frag.spv" });
+		//ShaderEffect* texturedLitEffect = build_shader_effect({
+		//	"/shaders/instancing.vert.spv",
+		//	"/shaders/textured_lit.frag.spv" });
 		ShaderEffect* postprocessingEffect = build_shader_effect({
 		    "/shaders/postprocessing.vert.spv",
 			"/shaders/postprocessing.frag.spv"});
@@ -251,6 +259,10 @@ namespace vkutil
 			"/shaders/GBuffer.vert.spv",
 			"/shaders/GBuffer.frag.spv"
 		});
+		ShaderEffect* deferredEffect = build_shader_effect({
+			"/shaders/deferred_lighting.vert.spv",
+			"/shaders/deferred_lighting.frag.spv"
+		});
 			
 		//ShaderEffect* coloredLitEffect = build_shader_effect({
 		//	"/shaders/mesh.vert.spv",
@@ -260,28 +272,23 @@ namespace vkutil
 		ShadowMap& pointShadowMap = _engine->_renderScene._pointShadowMaps[0];
 		ShadowMap& spotShadowMap = _engine->_renderScene._spotShadowMaps[0];
 
-		LOG_INFO("Test 1");
-		ShaderPass* texturedLitPass = build_shader_pass(_engine->_mainOpaqueRenderPass, _offscrPipelineBuilder, texturedLitEffect);
-		LOG_INFO("Test 2");
+		//ShaderPass* texturedLitPass = build_shader_pass(_engine->_mainOpaqueRenderPass, _offscrPipelineBuilder, texturedLitEffect);
 		ShaderPass* postrpocessingPass = build_shader_pass(_engine->_renderPass, _postprocessingPipelineBuilder, postprocessingEffect);
-		LOG_INFO("Test 3");
 		ShaderPass* dirShadowPass = build_shader_pass(shadowMap.renderPass, _dirShadowPipelineBuilder, dirShadowEffect);
-		LOG_INFO("Test 4");
 		ShaderPass* pointShadowPass = build_shader_pass(pointShadowMap.renderPass, _pointShadowPipelineBuilder, pointShadowEffect);
-		LOG_INFO("Test 5");
 		ShaderPass* spotShadowPass = build_shader_pass(spotShadowMap.renderPass, _spotShadowPipelineBuilder, spotShadowEffect);
-		LOG_INFO("Test 6");
 		ShaderPass* transparencyPass = build_shader_pass(_engine->_transparencyRenderPass, _transparencyBuilder, transparencyEffect);
-		LOG_INFO("Test 7");
-		ShaderPass* GBufferPass = build_shader_pass(_engine->_GBuffer.renderPass, _deferredPipelineBuilder, GBufferEffect);
-		LOG_INFO("Test 8");
+		ShaderPass* GBufferPass = build_shader_pass(_engine->_GBuffer.renderPass, _GBufferPipelineBuilder, GBufferEffect);
+		ShaderPass* deferredPass = build_shader_pass(_engine->_deferredRenderPass, _deferredPipelineBuilder, deferredEffect);
 		//ShaderPass* coloredLitPass = build_shader_pass(_engine->_mainOpaqueRenderPass, _offscrPipelineBuilder, coloredLitEffect);
 
+		deferredPass->relatedShaderPasses.push_back(GBufferPass);
+
 		EffectTemplate effectTemplate;
-		effectTemplate.passShaders[MeshpassType::Deferred] = GBufferPass;
+		effectTemplate.passShaders[MeshpassType::Deferred] = deferredPass;
 		effectTemplate.passShaders[MeshpassType::DirectionalShadow] = dirShadowPass;
 		effectTemplate.passShaders[MeshpassType::Transparency] = nullptr;
-		effectTemplate.passShaders[MeshpassType::Forward] = texturedLitPass;
+		effectTemplate.passShaders[MeshpassType::Forward] = nullptr;
 		effectTemplate.passShaders[MeshpassType::PointShadow] = pointShadowPass;
 		effectTemplate.passShaders[MeshpassType::SpotShadow] = spotShadowPass;
 		effectTemplate.defaultParameters = nullptr;
@@ -417,6 +424,11 @@ namespace vkutil
 				vkDestroyPipeline(device, pass->pipeline, nullptr);
 				vkDestroyPipelineLayout(device, pass->layout, nullptr);
 				pass->effect->destroy_shader_modules();
+
+				vkutil::ShaderPass* relPass = pass->relatedShaderPasses[0];
+				vkDestroyPipeline(device, relPass->pipeline, nullptr);
+				vkDestroyPipelineLayout(device, relPass->layout, nullptr);
+				relPass->effect->destroy_shader_modules();
 			}
 		}
 	}

@@ -30,7 +30,7 @@ namespace vkutil
 			VkPipelineColorBlendAttachmentState _colorBlendAttachment;
 			std::vector<VkPipelineColorBlendAttachmentState> _colorBlendManyAttachments;
 			VkPipelineLayout _pipelineLayout;
-			VkDynamicState _dynamicStates[2];
+			VkDynamicState _dynamicStates[3];
 			VkPipelineDynamicStateCreateInfo _dynamicState;
 
 			VertexInputDescription _vertexDescription;
@@ -113,6 +113,7 @@ namespace vkutil
 		VkPipelineLayout layout{ VK_NULL_HANDLE };
 		VkRenderPass renderPass{ VK_NULL_HANDLE };
 		PipelineBuilder* pipelineBuilder{ nullptr };
+		std::vector<ShaderPass*> relatedShaderPasses;	// Temporary solution to test Deferred rendering. Need to remake in the future
 	};
 
 	struct EffectTemplate
@@ -169,6 +170,7 @@ namespace vkutil
 
 			PipelineBuilder _postprocessingPipelineBuilder;
 			PipelineBuilder _offscrPipelineBuilder;
+			PipelineBuilder _GBufferPipelineBuilder;
 			PipelineBuilder _deferredPipelineBuilder;
 			PipelineBuilder _dirShadowPipelineBuilder;
 			PipelineBuilder _pointShadowPipelineBuilder;

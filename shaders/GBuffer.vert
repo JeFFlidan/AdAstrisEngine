@@ -10,7 +10,9 @@ layout(location = 3) in vec2 aTexCoords;
 
 layout(location = 0) out vec2 outTexCoords;
 layout(location = 1) out uint id;
-layout(location = 2) out mat3 TBN;
+layout(location = 2) out vec3 worldPos;
+layout(location = 3) out vec3 outNormal;
+layout(location = 4) out vec3 outTangent;
 
 layout(set = 0, binding = 0) buffer readonly ObjectBuffer
 {
@@ -36,10 +38,9 @@ void main()
 	outTexCoords = aTexCoords;
 
 	mat3 normalMatrix = transpose(inverse(mat3(model)));
-	vec3 N = normalize(normalMatrix * aNormal);
-	vec3 T = normalize(normalMatrix * aTangent);
-	T = normalize(T - dot(T, N) * N);
-	vec3 B = cross(N, T);
-	TBN = mat3(T, B, N);
+	outNormal = normalMatrix * normalize(aNormal);
+	outTangent = normalMatrix * normalize(aTangent);
+
+	worldPos = vec3(model * vec4(aPos, 1.0));
 }
 

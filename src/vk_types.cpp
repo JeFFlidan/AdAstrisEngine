@@ -141,7 +141,7 @@ void ShadowMap::create_light_space_matrices(VulkanEngine* engine, LightType ligh
 			float nearPlane = 0.1f;
 			float farPlane = 1024.0f;
 
-			glm::mat4 shadowProj = glm::perspective(glm::radians(120.0f), aspect, nearPlane, farPlane);
+			glm::mat4 shadowProj = glm::perspective(glm::radians(110.0f), aspect, nearPlane, farPlane);
 			shadowProj[1][1] *= -1;
 			shadowMap.lightProjMat = shadowProj;
 			glm::vec3 pos = glm::vec3(spotLight.positionAndDistance);

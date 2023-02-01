@@ -16,11 +16,8 @@ layout(location = 4) out mat3 TBN;
 
 layout(set = 0, binding = 3) uniform CameraBuffer
 {
-	mat4 view;
-	mat4 proj;
-	mat4 viewproj;
-	vec4 cameraPosition;
-} cameraBuffer;
+	CameraData cameraBuffer;
+};
 
 layout(set = 1, binding = 0) buffer readonly ObjectBuffer
 {
@@ -36,7 +33,7 @@ void main()
 {
 	id = instanceBuffer.IDs[gl_InstanceIndex];
 	mat4 model = objectBuffer.data[id].model;
-	mat4 transformMatrix = cameraBuffer.viewproj * model;
+	mat4 transformMatrix = cameraBuffer.viewProj * model;
 	gl_Position = transformMatrix * vec4(aPos, 1.f);
 	texCoords = aTexCoords;
 

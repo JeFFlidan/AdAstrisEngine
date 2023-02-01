@@ -52,14 +52,6 @@ void VulkanEngine::draw_deferred_pass(VkCommandBuffer cmd)
 {
 	auto& meshPass = _renderScene._deferredPass;
 
-	switch(meshPass.type)
-	{
-		case vkutil::MeshpassType::Deferred:
-			LOG_INFO("Deferred");
-		case vkutil::MeshpassType::Forward:
-			LOG_INFO("Forward");
-	}
-
 	CullParams forwardPassCullParams;
 	forwardPassCullParams.frustumCull = true;
 	forwardPassCullParams.occlusionCull = true;
@@ -115,8 +107,6 @@ void VulkanEngine::draw_deferred_pass(VkCommandBuffer cmd)
 		texturesDescriptorSet3
 	};
 
-	vkutil::ShaderPass* prevMaterial = nullptr;
-	
 	VkDeviceSize offset = 0;
 	vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
 	vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
@@ -146,13 +136,19 @@ void VulkanEngine::draw_deferred_pass(VkCommandBuffer cmd)
 	scissor.extent = _windowExtent;
 	vkCmdSetViewport(cmd, 0, 1, &viewport);
 	vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+	vkutil::ShaderPass* prevMaterial = nullptr;
 	
 	for (int i = 0; i != meshPass.multibatches.size(); ++i)
 	{
 		auto& multibatch = meshPass.multibatches[i];
 		auto& batch = meshPass.batches[multibatch.first];
 
-		auto shaderPass = batch.material.shaderPass;
+		if (batch.material.shaderPass->relatedShaderPasses.empty())
+		{
+			LOG_FATAL("There is no GBuffer shader pass");
+		}
+		auto shaderPass = batch.material.shaderPass->relatedShaderPasses[0];
 
 		if (shaderPass != prevMaterial)
 		{
@@ -167,14 +163,125 @@ void VulkanEngine::draw_deferred_pass(VkCommandBuffer cmd)
 		VkDeviceSize offset = multibatch.first * sizeof(GPUIndirectObject);
 		uint32_t stride = sizeof(GPUIndirectObject);
 
-		//auto& meshPass = _renderScene._forwardPass;
-
 		vkCmdDrawIndexedIndirect(cmd, meshPass.drawIndirectBuffer._buffer, offset, multibatch.count, stride);
 	}
 
-	//_userInterface.render_ui(this);
-
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
+
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
+
+	VkMemoryBarrier memoryBarrier{};
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+	memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1,&memoryBarrier, 0, nullptr, 0, nullptr);
+
+	VkImageMemoryBarrier depthImgBarrier{};
+	depthImgBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	depthImgBarrier.image = _GBuffer.depth.imageData.image;
+	depthImgBarrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthImgBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	depthImgBarrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	depthImgBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	depthImgBarrier.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 };
+
+	vkCmdPipelineBarrier(
+		cmd,
+		VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &depthImgBarrier
+	);
+	
+	VkDescriptorImageInfo attachSamplerInfo{};
+	attachSamplerInfo.sampler = _mainOpaqueSampler;
+	VkDescriptorImageInfo shadowSamplerInfo{};
+	shadowSamplerInfo.sampler = _shadowMapSampler;
+
+	VkDescriptorImageInfo gAlbedoInfo{};
+	gAlbedoInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	gAlbedoInfo.imageView = _GBuffer.albedo.imageView;
+	VkDescriptorImageInfo gNormalInfo{};
+	gNormalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	gNormalInfo.imageView = _GBuffer.normal.imageView;
+	VkDescriptorImageInfo gSurfaceInfo{};
+	gSurfaceInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	gSurfaceInfo.imageView = _GBuffer.surface.imageView;
+	VkDescriptorImageInfo gDepthInfo{};
+	gDepthInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	gDepthInfo.imageView = _GBuffer.depth.imageView;
+	VkDescriptorBufferInfo sceneInfo = get_current_frame()._sceneDataBuffer.get_info();
+	VkDescriptorBufferInfo dirLightsInfo = _renderScene._dirLightsBuffer.get_info(true);
+	VkDescriptorBufferInfo pointLightsInfo = _renderScene._pointLightsBuffer.get_info(true);
+	VkDescriptorBufferInfo spotLigthsInfo = _renderScene._spotLightsBuffer.get_info(true);
+
+	VkDescriptorSet globalDescriptorSet2;
+	VkDescriptorSet testSet;
+	VkDescriptorSet dirShadowMapsDescriptorSet;
+	VkDescriptorSet pointShadowMapsDescriptorSet;
+	VkDescriptorSet spotShadowMapsDescriptorSet;
+	
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_buffer(0, &sceneInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_buffer(1, &cameraInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_buffer(2, &dirLightsInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_buffer(3, &pointLightsInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_buffer(4, &spotLigthsInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(5, &gAlbedoInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(6, &gNormalInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(7, &gSurfaceInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(8, &gDepthInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(9, &attachSamplerInfo, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(10, &shadowSamplerInfo, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.build(globalDescriptorSet);
+
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_image(0, _renderScene._dirShadowMapsInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._dirShadowMaps.size())
+		.build_non_uniform(dirShadowMapsDescriptorSet, _renderScene._dirShadowMapsInfos.size());
+
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_image(0, _renderScene._pointShadowMapsInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._pointShadowMapsInfos.size())
+		.build_non_uniform(pointShadowMapsDescriptorSet, _renderScene._pointShadowMapsInfos.size());
+
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_image(0, _renderScene._spotShadowMapsInfos.data(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT, 100, _renderScene._spotShadowMapsInfos.size())
+		.build_non_uniform(spotShadowMapsDescriptorSet, _renderScene._spotShadowMapsInfos.size());
+
+	std::vector<VkDescriptorSet> descriptorSets = {
+		globalDescriptorSet,
+		//testSet
+		dirShadowMapsDescriptorSet,
+		pointShadowMapsDescriptorSet,
+		spotShadowMapsDescriptorSet
+	};
+
+	rpInfo = vkinit::renderpass_begin_info(_deferredRenderPass, _windowExtent, _deferredFramebuffer);
+	VkClearValue clearValue;
+	clearValue.color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+	rpInfo.clearValueCount = 1;
+	rpInfo.pClearValues = &clearValue;
+
+	auto material = _materialSystem.get_material("wall");
+
+	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	if (material != nullptr)
+	{
+		auto shaderPass = material->original->passShaders[vkutil::MeshpassType::Deferred];
+		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+		for (int i = 0; i != descriptorSets.size(); ++i)
+			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->layout, i, 1, &descriptorSets[i], 0, nullptr);
+	}
+	else
+	{
+		LOG_FATAL("Invalid material for deferred lighting");
+	}
+
+	offset = 0;
+	vkCmdBindVertexBuffers(cmd, 0, 1, &_outputQuad._vertexBuffer._buffer, &offset);
+	vkCmdDraw(cmd, _outputQuad._vertices.size(), 1, 0, 0);
+
+	vkCmdEndRenderPass(cmd);
 }
 
 void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImageIndex)
@@ -328,15 +435,13 @@ void VulkanEngine::draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImag
 		vkCmdDrawIndexedIndirect(cmd, meshPass.drawIndirectBuffer._buffer, offset, multibatch.count, stride);
 	}
 
-	//_userInterface.render_ui(this);
-
 	vkCmdEndRenderPass(get_current_frame()._mainCommandBuffer);
 
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
 }
 
 void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
-{	
+{
 	vkCmdFillBuffer(cmd, _transparencyData.geometryInfo._buffer, 0, sizeof(uint32_t), 0);
 
 	VkImageSubresourceRange subresRange{};
@@ -353,21 +458,6 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 	memBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	memBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1, &memBarrier, 0, nullptr, 0, nullptr);
-
-	VkImageMemoryBarrier imageMemoryBarrier{};
-	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageMemoryBarrier.image = _mainOpaqueColorAttach.imageData.image;
-	imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-	imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-	vkCmdPipelineBarrier(
-		get_current_frame()._mainCommandBuffer,
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-		0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
 
 	auto& meshPass = _renderScene._transparentForwardPass;
 
@@ -399,7 +489,7 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 
 	VkDescriptorImageInfo mainOpaqueColorImgInfo;
 	mainOpaqueColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	mainOpaqueColorImgInfo.imageView = _mainOpaqueColorAttach.imageView;
+	mainOpaqueColorImgInfo.imageView = _deferredColorAttach.imageView;
 	mainOpaqueColorImgInfo.sampler = _mainOpaqueSampler;
 
 	VkDescriptorSet oitGeomDescriptorSet;
@@ -517,8 +607,6 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 		vkCmdDrawIndexedIndirect(cmd, meshPass.drawIndirectBuffer._buffer, offset, multibatch.count, stride);
 	}
 
-	//vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
-
 	vkCmdEndRenderPass(cmd);
 
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
@@ -526,41 +614,6 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 
 void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex)
 {
-	VkImageMemoryBarrier colorImgBarrier1{};
-	colorImgBarrier1.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	colorImgBarrier1.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	colorImgBarrier1.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	colorImgBarrier1.image = _transparencyColorAttach.imageData.image;
-	colorImgBarrier1.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-	colorImgBarrier1.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	colorImgBarrier1.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-	VkImageMemoryBarrier depthImgBarrier1 = colorImgBarrier1;
-	depthImgBarrier1.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	depthImgBarrier1.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	depthImgBarrier1.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 };
-	depthImgBarrier1.image = _mainOpaqueDepthAttach.imageData.image;
-
-	VkImageMemoryBarrier depthImgBarrier2 = depthImgBarrier1;
-	depthImgBarrier2.image = _transparencyDepthAttach.imageData.image;
-
-	std::vector<VkImageMemoryBarrier> colorImgBarriers = { colorImgBarrier1 };
-	std::vector<VkImageMemoryBarrier> depthImgBarriers = { depthImgBarrier1, depthImgBarrier2 };
-	
-	vkCmdPipelineBarrier(
-		cmd,
-		VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-		0, 0, nullptr, 0, nullptr, depthImgBarriers.size(), depthImgBarriers.data()
-	);
-	
-	vkCmdPipelineBarrier(
-		get_current_frame()._mainCommandBuffer,
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-		0, 0, nullptr, 0, nullptr, colorImgBarriers.size(), colorImgBarriers.data()
-	);
-
 	VkClearValue clearValue;
 	clearValue.color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
 	
@@ -573,15 +626,15 @@ void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageI
 	
 	auto material = _materialSystem.get_material("Postprocessing");
 	
-	VkDescriptorImageInfo mainOpaqueColorImgInfo;
-	mainOpaqueColorImgInfo.sampler = _mainOpaqueSampler;
-	mainOpaqueColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	mainOpaqueColorImgInfo.imageView = _mainOpaqueColorAttach.imageView;
+	VkDescriptorImageInfo deferredImgInfo;
+	deferredImgInfo.sampler = _mainOpaqueSampler;
+	deferredImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	deferredImgInfo.imageView = _deferredColorAttach.imageView;
 
-	VkDescriptorImageInfo mainOpaqueDepthImgInfo;
-	mainOpaqueDepthImgInfo.sampler = _mainOpaqueSampler;
-	mainOpaqueDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	mainOpaqueDepthImgInfo.imageView = _mainOpaqueDepthAttach.imageView;
+	VkDescriptorImageInfo GBufferDepthImgInfo;
+	GBufferDepthImgInfo.sampler = _mainOpaqueSampler;
+	GBufferDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	GBufferDepthImgInfo.imageView = _GBuffer.depth.imageView;
 
 	VkDescriptorImageInfo transpColorImgInfo;
 	transpColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -596,9 +649,9 @@ void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageI
 	VkDescriptorSet offscrColorImageSet;
 	
 	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
-		.bind_image(0, &mainOpaqueColorImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(0, &deferredImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.bind_image(1, &transpColorImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.bind_image(2, &mainOpaqueDepthImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(2, &GBufferDepthImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.bind_image(3, &transpDepthImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.build(offscrColorImageSet);
 		
@@ -924,6 +977,8 @@ void VulkanEngine::draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptor
 	vkCmdSetViewport(cmd, 0, 1, &viewport);
 	vkCmdSetScissor(cmd, 0, 1, &scissor);
 
+	vkCmdSetDepthBias(cmd, 5.0f, 0.0f, 6.5f);
+
 	vkutil::ShaderPass* prevMaterial = nullptr;
 	
 	for (int i = 0; i != meshPass.multibatches.size(); ++i)
@@ -1159,7 +1214,7 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 	
 	std::vector<RenderScene::MeshPass*> passes = {
 		&_renderScene._deferredPass,
-		&_renderScene._forwardPass,
+		//&_renderScene._forwardPass,
 		&_renderScene._dirShadowPass,
 		&_renderScene._pointShadowPass,
 		&_renderScene._spotShadowPass,
@@ -1281,7 +1336,14 @@ void VulkanEngine::prepare_per_frame_data(VkCommandBuffer cmd)
 	camData.view = view;
 	camData.proj = projection;
 	camData.viewproj = projection * view;
+	camData.invView = glm::inverse(camData.view);
+	camData.invProj = glm::inverse(camData.proj);
 	camData.position = glm::vec4(camera.get_position(), 0.0f);
+	camData.cameraFront = glm::vec4(camera.get_front(), 1.0f);
+	camData.cameraRight = glm::vec4(camera.get_right(), 1.0f);
+	camData.cameraUp = glm::vec4(camera.get_up(), 1.0f);
+	camData.fovVertical = camData.invProj[1][1];
+	camData.fovHorizontal = camData.invProj[0][0];
 
 	get_current_frame()._cameraBuffer.copy_from(this, &camData, sizeof(GPUCameraData));
 	
@@ -1294,17 +1356,7 @@ void VulkanEngine::prepare_per_frame_data(VkCommandBuffer cmd)
 }
 
 void VulkanEngine::depth_reduce(VkCommandBuffer cmd)
-{
-	// Method to create depth pyramid based on the depth map mipmaps
-	VkImageMemoryBarrier mainDepthBarrier = vkinit::image_barrier(_mainOpaqueDepthAttach.imageData.image,
-		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-		VK_ACCESS_SHADER_READ_BIT,
-		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		VK_IMAGE_ASPECT_DEPTH_BIT);
-
-	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, 0, 0, 0, 1, &mainDepthBarrier);
-	
+{	
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _depthReducePipeline);
 	
 	for (int32_t i = 0; i != _depthPyramidLevels; ++i)
@@ -1320,7 +1372,7 @@ void VulkanEngine::depth_reduce(VkCommandBuffer cmd)
 		if (i == 0)
 		{
 			sourceTarget.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			sourceTarget.imageView = _mainOpaqueDepthAttach.imageView;
+			sourceTarget.imageView = _GBuffer.depth.imageView;
 		}
 		else
 		{
@@ -1355,7 +1407,7 @@ void VulkanEngine::depth_reduce(VkCommandBuffer cmd)
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, 0, 0, 0, 1, &reduceBarrier);
 	}
 
-	mainDepthBarrier = vkinit::image_barrier(_mainOpaqueDepthAttach.imageData.image,
+	VkImageMemoryBarrier mainDepthBarrier = vkinit::image_barrier(_GBuffer.depth.imageData.image,
 		VK_ACCESS_SHADER_READ_BIT,
 		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
