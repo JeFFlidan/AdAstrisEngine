@@ -8,10 +8,8 @@ layout(local_size_x = 256) in;
 
 layout(set = 0, binding = 5) uniform CameraBuffer
 {
-	mat4 view;
-	mat4 proj;
-	mat4 viewProj;
-} cameraBuffer;
+	CameraData cameraBuffer;
+};
 
 struct DrawCullData
 {

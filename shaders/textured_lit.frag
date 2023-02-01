@@ -160,7 +160,7 @@ void main()
 
 	finalColor = pow(finalColor, vec3(1.0/2.2));
 
-	outFragColor = vec4(finalColor, 1.0);
+	outFragColor = vec4(fragPos, 1.0);
 	//float temp = calculateDirLightShadow(dirLights.casters[0], 0);
 	//outFragColor = vec4(temp);
 }

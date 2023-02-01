@@ -48,7 +48,15 @@ struct CameraData
 	mat4 view;
 	mat4 proj;
 	mat4 viewProj;
-	vec3 cameraPosition;
+	mat4 invView;
+	mat4 invProj;
+	vec4 cameraPosition;
+	vec4 cameraUp;
+	vec4 cameraFront;
+	vec4 cameraRight;
+	float fovVertical;
+	float fovHorizontal;
+	float data1, data2;
 };
 
 struct Node

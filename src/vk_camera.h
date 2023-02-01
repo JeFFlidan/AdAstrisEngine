@@ -34,20 +34,21 @@ class Camera
 		{
 			if (bReverse)
 			{
-				glm::mat4 projection = glm::perspective(glm::radians(70.f), width / height, 5000.0f, 0.001f);
+				glm::mat4 projection = glm::perspective(glm::radians(70.f), width / height, 1000.0f, 0.1f);
 				projection[1][1] *= -1;
 				return projection;
 			}
 			else
 			{
-				glm::mat4 projection = glm::perspective(glm::radians(70.f), width / height, 0.001f, 5000.0f);
+				glm::mat4 projection = glm::perspective(glm::radians(70.f), width / height, 0.1f, 1000.0f);
 				projection[1][1] *= -1;
 				return projection;
 			}
 		}
 		
 		glm::vec3 get_front() const { return Front; }
-		glm::vec3 get_up() const { return WorldUp; }
+		glm::vec3 get_up() const { return Up; }
+		glm::vec3 get_right() const { return Right; }
 		glm::vec3 get_position() const { return Position; }
 		float get_zoom() const { return Zoom; }
 

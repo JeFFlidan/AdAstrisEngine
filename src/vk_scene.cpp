@@ -27,7 +27,7 @@ void RenderScene::init()
 
 void RenderScene::cleanup(VulkanEngine* engine)
 {
-	std::vector<MeshPass*> passes = { &_forwardPass, &_dirShadowPass, &_pointShadowPass, &_spotShadowPass, &_transparentForwardPass, &_deferredPass };
+	std::vector<MeshPass*> passes = { &_dirShadowPass, &_pointShadowPass, &_spotShadowPass, &_transparentForwardPass, &_deferredPass };
 	for (auto pass : passes)
 	{
 		pass->compactedInstanceBuffer.destroy_buffer(engine);
@@ -98,7 +98,7 @@ Handle<RenderableObject> RenderScene::register_object(MeshObject* object)
 
 	if (object->bDrawShadowPass)
 	{
-		if (object->material->original->passShaders[vkutil::MeshpassType::Forward])
+		if (object->material->original->passShaders[vkutil::MeshpassType::DirectionalShadow])
 		{
 			LOG_INFO("+1 in directional shadow pass");
 			_dirShadowPass.unbatchedObjects.push_back(handle);
@@ -399,7 +399,7 @@ void RenderScene::merge_meshes(class VulkanEngine* engine)
 void RenderScene::build_batches()
 {
 	// I have to read how async works
-	auto forward = std::async(std::launch::async, [&]{ refresh_pass(&_forwardPass); });
+	//auto forward = std::async(std::launch::async, [&]{ refresh_pass(&_forwardPass); });
 	auto deferred = std::async(std::launch::async, [&]{ refresh_pass(&_deferredPass);});
 	auto shadow = std::async(std::launch::async, [&]{ refresh_pass(&_dirShadowPass); });
 	auto pointShadow = std::async(std::launch::async, [&]{ refresh_pass(&_pointShadowPass); });
@@ -411,7 +411,7 @@ void RenderScene::build_batches()
 	pointShadow.get();
 	shadow.get();
 	deferred.get();
-	forward.get();
+	//forward.get();
 }
 
 void RenderScene::refresh_pass(RenderScene::MeshPass* meshPass)

@@ -350,7 +350,7 @@ int main(int argc, char* argv[])
 				directory,
 				"wall",
 				"PBR_opaque",
-				{ "/Metal_surface_basecolor.tx", "/Metal_surface_normal.tx", "/Metal_surface_ARM.tx" },
+				{ "/Metal_plate_basecolor.tx", "/Metal_plate_normal.tx", "/Metal_plate_ARM.tx" },
 				assets::MaterialMode::OPAQUE
 			);
 
