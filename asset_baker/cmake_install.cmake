@@ -1,4 +1,4 @@
-# Install script for directory: E:/VulkanEngineMain/asset_baker
+# Install script for directory: E:/MyEngine/MyEngine/VulkanEngine/asset_baker
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

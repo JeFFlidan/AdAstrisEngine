@@ -1,4 +1,4 @@
-﻿#include <vk_initializers.h>
+﻿#include "vk_initializers.h"
 #include <vulkan/vulkan_core.h>
 
 namespace vkinit
@@ -102,6 +102,13 @@ namespace vkinit
 		return info;
 	}
 
+	VkPipelineColorBlendStateCreateInfo color_blend_state_create_info()
+	{
+		VkPipelineColorBlendStateCreateInfo info{};
+		info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		return info;
+	}
+	
 	VkPipelineColorBlendAttachmentState color_blend_attachment_state()
 	{
 		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
