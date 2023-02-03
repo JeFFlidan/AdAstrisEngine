@@ -1,6 +1,6 @@
 #pragma once
 
-#include "material_system.h"
+#include "vk_pipeline.h"
 #include "vk_mesh.h"
 #include "vk_types.h"
 #include "logger.h"
@@ -16,36 +16,6 @@
 class VulkanEngine;
 namespace vkutil
 {
-	class PipelineBuilder
-	{
-		public:
-			std::vector<VkPipelineShaderStageCreateInfo> _shaderStages;
-			VkPipelineVertexInputStateCreateInfo _vertexInputInfo;
-			VkPipelineInputAssemblyStateCreateInfo _inputAssembly;
-			VkViewport _viewport;
-			VkRect2D _scissor;
-			VkPipelineDepthStencilStateCreateInfo _depthStencil;
-			VkPipelineRasterizationStateCreateInfo _rasterizer;
-			VkPipelineMultisampleStateCreateInfo _multisampling;
-			VkPipelineColorBlendAttachmentState _colorBlendAttachment;
-			std::vector<VkPipelineColorBlendAttachmentState> _colorBlendManyAttachments;
-			VkPipelineLayout _pipelineLayout;
-			VkDynamicState _dynamicStates[3];
-			VkPipelineDynamicStateCreateInfo _dynamicState;
-
-			VertexInputDescription _vertexDescription;
-
-			VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
-	};
-
-	class ComputePipelineBuilder
-	{
-		public:
-			VkPipelineLayout _layout;
-			VkPipelineShaderStageCreateInfo _shaderStage;
-			VkPipeline build_pipeline(VkDevice device);
-	};
-	
 	enum class MeshpassType : uint32_t
 	{
 		None = 0,
@@ -112,7 +82,7 @@ namespace vkutil
 		VkPipeline pipeline{ VK_NULL_HANDLE };
 		VkPipelineLayout layout{ VK_NULL_HANDLE };
 		VkRenderPass renderPass{ VK_NULL_HANDLE };
-		PipelineBuilder* pipelineBuilder{ nullptr };
+		GraphicsPipelineBuilder* pipelineBuilder{ nullptr };
 		std::vector<ShaderPass*> relatedShaderPasses;	// Temporary solution to test Deferred rendering. Need to remake in the future
 	};
 
@@ -151,9 +121,8 @@ namespace vkutil
 			void cleanup();
 
 			void build_default_templates();
-			void refresh_default_templates();
 
-			ShaderPass* build_shader_pass(VkRenderPass& renderPass, PipelineBuilder& builder, ShaderEffect* effect);
+			ShaderPass* build_shader_pass(VkRenderPass& renderPass, GraphicsPipelineBuilder& builder, ShaderEffect* effect);
 			ShaderEffect* build_shader_effect(const std::vector<std::string>& shaderPaths);
 			
 			Material* build_material(const std::string& materialName, const MaterialData& info);
@@ -168,14 +137,14 @@ namespace vkutil
 				}
 			};
 
-			PipelineBuilder _postprocessingPipelineBuilder;
-			PipelineBuilder _offscrPipelineBuilder;
-			PipelineBuilder _GBufferPipelineBuilder;
-			PipelineBuilder _deferredPipelineBuilder;
-			PipelineBuilder _dirShadowPipelineBuilder;
-			PipelineBuilder _pointShadowPipelineBuilder;
-			PipelineBuilder _spotShadowPipelineBuilder;
-			PipelineBuilder _transparencyBuilder;
+			GraphicsPipelineBuilder _postprocessingPipelineBuilder;
+			GraphicsPipelineBuilder _offscrPipelineBuilder;
+			GraphicsPipelineBuilder _GBufferPipelineBuilder;
+			GraphicsPipelineBuilder _deferredPipelineBuilder;
+			GraphicsPipelineBuilder _dirShadowPipelineBuilder;
+			GraphicsPipelineBuilder _pointShadowPipelineBuilder;
+			GraphicsPipelineBuilder _spotShadowPipelineBuilder;
+			GraphicsPipelineBuilder _transparencyBuilder;
 
 			std::unordered_map<std::string, EffectTemplate> _templateCache;
 			std::unordered_map<std::string, Material*> _materials;
@@ -184,7 +153,5 @@ namespace vkutil
 			VulkanEngine* _engine;
 	
 			void setup_pipeline_builders();
-
-			void refresh_shader_pass(ShaderPass* shaderPass);
 	};
 }

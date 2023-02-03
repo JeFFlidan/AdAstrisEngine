@@ -18,6 +18,7 @@ namespace vkinit
 	VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info(VkPrimitiveTopology topology);
 	VkPipelineRasterizationStateCreateInfo rasterization_state_create_info(VkPolygonMode polygonMode, VkCullModeFlags cullMode = VK_CULL_MODE_NONE, VkFrontFace frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE);
 	VkPipelineMultisampleStateCreateInfo multisampling_state_create_info();
+	VkPipelineColorBlendStateCreateInfo color_blend_state_create_info();
 	VkPipelineColorBlendAttachmentState color_blend_attachment_state();
 	VkPipelineLayoutCreateInfo pipeline_layout_create_info();
 	VkPipelineDepthStencilStateCreateInfo depth_stencil_create_info(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp);

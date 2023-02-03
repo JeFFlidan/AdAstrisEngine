@@ -21,3 +21,5 @@ src/CMakeFiles
 /shaders/*.*.*~
 /*/#*.*#
 /*/.#*.*
+CMakeCache.txt
+Makefile

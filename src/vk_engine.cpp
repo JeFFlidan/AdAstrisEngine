@@ -33,8 +33,8 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include <vk_types.h>
-#include <vk_initializers.h>
+#include "vk_types.h"
+#include "vk_initializers.h"
 
 #include <VkBootstrap.h>
 #include "vk_types.h"
@@ -139,8 +139,8 @@ void VulkanEngine::init()
 	init_framebuffers();
 	init_shadow_maps();
 	init_buffers();
-	init_pipelines();
 	parse_prefabs();
+	init_pipelines();
 	init_output_quad();
 	_userInterface.init_ui(this);
 	//init_imgui();
@@ -916,7 +916,9 @@ void VulkanEngine::init_buffers()
 		vmaDestroyBuffer(_allocator, _sceneParameterBuffer._buffer, _sceneParameterBuffer._allocation);
 	});
 
-	_transparencyData.setup_pipeline_builder();
+	LOG_INFO("Before setup builder");
+	_transparencyData.setup_pipeline_builder(this);
+	LOG_INFO("Before creating shader pass");
 	_transparencyData.create_shader_pass(this);
 }
 
@@ -949,16 +951,13 @@ void VulkanEngine::setup_compute_pipeline(vkutil::Shader* shader, VkPipeline& pi
 	tempEffect.add_stage(shader, VK_SHADER_STAGE_COMPUTE_BIT);
 	pipelineLayout = tempEffect.get_pipeline_layout(_device);
 
-	VkPipelineShaderStageCreateInfo shaderStage = vkinit::pipeline_shader_stage_create_info(
-		VK_SHADER_STAGE_COMPUTE_BIT,
-		shader->get_shader_module()
-	);
+	vkutil::ShaderEffect::ShaderStage stage;
+	stage.shader = shader;
+	stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 
-	vkutil::ComputePipelineBuilder builder;
-	builder._layout = pipelineLayout;
-	builder._shaderStage = shaderStage;
-
-	pipeline = builder.build_pipeline(_device);
+	vkutil::ComputePipelineBuilder builder(_device);
+	
+	pipeline = builder.build(stage, pipelineLayout);
 }
 
 void VulkanEngine::init_output_quad()
@@ -1537,19 +1536,18 @@ VertexInputDescription Plane::get_vertex_description()
 	return description;
 }
 
-void TransparencyFirstPassData::setup_pipeline_builder()
+void TransparencyFirstPassData::setup_pipeline_builder(VulkanEngine* engine)
 {
-	pipelineBuilder._vertexInputInfo = vkinit::vertex_input_state_create_info();
-	pipelineBuilder._inputAssembly = vkinit::input_assembly_create_info(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-
-	pipelineBuilder._depthStencil = vkinit::depth_stencil_create_info(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
-	pipelineBuilder._rasterizer = vkinit::rasterization_state_create_info(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT);
-	pipelineBuilder._multisampling = vkinit::multisampling_state_create_info();
-	pipelineBuilder._colorBlendAttachment = vkinit::color_blend_attachment_state();
-
-	pipelineBuilder._vertexDescription = Mesh::get_vertex_description();
-
-	pipelineBuilder._colorBlendAttachment.colorWriteMask = 0xf;
+	pipelineBuilder = vkutil::GraphicsPipelineBuilder(engine->_device);
+	auto description = Mesh::get_vertex_description();
+	pipelineBuilder.setup_vertex_input_state(description);
+	pipelineBuilder.setup_assembly_state(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+	pipelineBuilder.setup_depth_state(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
+	pipelineBuilder.setup_rasterization_state(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT);
+	pipelineBuilder.setup_multisample_state();
+	pipelineBuilder.setup_dynamic_viewport_state();
+	pipelineBuilder.setup_color_blend_state(0xf);
+	pipelineBuilder.setup_dynamic_state(true, false);
 }
 
 void TransparencyFirstPassData::create_shader_pass(VulkanEngine* engine)
@@ -1558,7 +1556,7 @@ void TransparencyFirstPassData::create_shader_pass(VulkanEngine* engine)
 		"/shaders/oit_geometry.vert.spv",
 		"/shaders/oit_geometry.frag.spv"
 	});
-
+	LOG_INFO("Before building shader pass")
 	geometryPass = engine->_materialSystem.build_shader_pass(renderPass, pipelineBuilder, effect);
 }
 

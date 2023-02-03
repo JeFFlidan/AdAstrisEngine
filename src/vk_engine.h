@@ -4,12 +4,13 @@
 #include "vk_types.h"
 #include "vk_mesh.h"
 #include "material_system.h"
+#include "vk_pipeline.h"
 #include "vk_scene.h"
 #include "engine_actors.h"
-#include <user_interface.h>
+#include "user_interface.h"
 #include <stdint.h>
-#include <vk_descriptors.h>
-#include <vk_camera.h>
+#include "vk_descriptors.h"
+#include "vk_camera.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -125,9 +126,9 @@ struct TransparencyFirstPassData
 	AllocatedBufferT<GeometryInfo> geometryInfo;
 
 	// Not final approach. I have to think how to add it to the transparency pass.
-	vkutil::PipelineBuilder pipelineBuilder;
+	vkutil::GraphicsPipelineBuilder pipelineBuilder;
 	vkutil::ShaderPass* geometryPass;
-	void setup_pipeline_builder();
+	void setup_pipeline_builder(VulkanEngine* engine);
 	void create_shader_pass(VulkanEngine* engine);
 	void cleanup(VulkanEngine* engine);
 };

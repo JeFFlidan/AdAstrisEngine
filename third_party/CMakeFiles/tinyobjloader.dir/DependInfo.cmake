@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "E:/VulkanEngineMain/third_party/tinyobjloader/tiny_obj_loader.cc" "third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj" "gcc" "third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj.d"
+  "E:/MyEngine/MyEngine/VulkanEngine/third_party/tinyobjloader/tiny_obj_loader.cc" "third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj" "gcc" "third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj.d"
   )
 
 # Targets to which this target links.
