@@ -385,17 +385,23 @@ namespace ui
 	SettingsWindow::SettingsWindow(Settings& settings)
 	{
 		_isTaaEnabled = settings.isTaaEnabled;
+		_taaAlpha = settings.taaAlpha;
 		_settings = &settings;
 	}
 
 	void SettingsWindow::draw_window()
 	{
+		ImGui::Begin("Settings");	
 		ImGui::Checkbox("TAA", &_isTaaEnabled);
+		if (_isTaaEnabled)
+			ImGui::SliderFloat("TAA alpha", &_taaAlpha, 1.0f, 80.0f);
+		ImGui::End();	
 	}
 
 	void SettingsWindow::set_settings_data()
 	{
 		_settings->isTaaEnabled = _isTaaEnabled;
+		_settings->taaAlpha = _taaAlpha;
 	}
 
 }

@@ -44,7 +44,7 @@ void main()
 {
     if (settings.isTaaEnabled == 1)
     {    
-        vec2 motionVector = texture(sampler2D(opaqueVelocityAttach, nearestSamp), texCoord).xy;
+         vec2 motionVector = texture(sampler2D(opaqueVelocityAttach, linearSamp), texCoord).xy;
 
          vec2 oldUv = texCoord + motionVector;
          vec4 curColor = texture(sampler2D(currentColorAttach, nearestSamp), texCoord);
@@ -65,7 +65,7 @@ void main()
              oldColor = clamp(oldColor, colorMin, colorMax);
             
              // Have to think how to calculate alpha better
-             float alpha = 1.0 / 15.0;
+             float alpha = 1.0 / settings.taaAlpha;
 
              fragColor = mix(oldColor, curColor, alpha);
          }
