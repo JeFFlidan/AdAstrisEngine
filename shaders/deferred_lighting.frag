@@ -140,7 +140,7 @@ vec3 getWorldPosition(float depth)
 	// Need to optimize
 	vec4 clipSpacePos = vec4(texCoord * 2.0 - 1.0, depth, 1.0);
 
-	vec4 worldSpacePos = cameraBuffer.invView * cameraBuffer.invProj * clipSpacePos;
+	vec4 worldSpacePos = cameraBuffer.invViewProj * clipSpacePos;
 
 	worldSpacePos.xyz /= worldSpacePos.w;
 

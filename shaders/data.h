@@ -46,17 +46,11 @@ struct ObjectData
 struct CameraData
 {
 	mat4 view;
+	mat4 oldView;
 	mat4 proj;
 	mat4 viewProj;
-	mat4 invView;
-	mat4 invProj;
+	mat4 invViewProj;
 	vec4 cameraPosition;
-	vec4 cameraUp;
-	vec4 cameraFront;
-	vec4 cameraRight;
-	float fovVertical;
-	float fovHorizontal;
-	float data1, data2;
 };
 
 struct Node
@@ -66,3 +60,17 @@ struct Node
 	uint next;
 };
 
+struct TAAData
+{
+	vec4 haltonSequence[36];
+	float haltonScale;
+	uint numSamples;
+};
+
+struct Settings
+{
+
+	ivec2 viewportRes;
+	uint totalFrames;
+	uint isTaaEnabled;
+};

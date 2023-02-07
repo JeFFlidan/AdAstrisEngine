@@ -4,11 +4,12 @@
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_vulkan.h>
 
-#include <engine_actors.h>
+#include "engine_actors.h"
 #include "vk_types.h"
 #include <vulkan/vulkan_core.h>
 
 class VulkanEngine;
+struct Settings;
 
 namespace ui
 {
@@ -75,5 +76,18 @@ namespace ui
 			bool _isVisible;
 			bool _castShadows;
 			actors::SpotLight* _spotLight;
+	};
+
+	class SettingsWindow
+	{
+		public:
+			SettingsWindow(Settings& settings);
+
+			void draw_window();
+			void set_settings_data();
+
+		private:
+			bool _isTaaEnabled;
+			Settings* _settings;
 	};
 }

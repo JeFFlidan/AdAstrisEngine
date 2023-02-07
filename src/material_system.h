@@ -145,6 +145,7 @@ namespace vkutil
 			GraphicsPipelineBuilder _pointShadowPipelineBuilder;
 			GraphicsPipelineBuilder _spotShadowPipelineBuilder;
 			GraphicsPipelineBuilder _transparencyBuilder;
+			GraphicsPipelineBuilder _compositePipelineBuilder;
 
 			std::unordered_map<std::string, EffectTemplate> _templateCache;
 			std::unordered_map<std::string, Material*> _materials;

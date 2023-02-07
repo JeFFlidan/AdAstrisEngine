@@ -173,10 +173,10 @@ void VulkanEngine::cleanup()
 		vkDestroyFramebuffer(_device, _transparencyFramebuffer, nullptr);
 		vkDestroyFramebuffer(_device, _transparencyData.framebuffer, nullptr);
 		vkDestroyFramebuffer(_device, _deferredFramebuffer, nullptr);
-		vkDestroyFramebuffer(_device, _GBuffer.framebuffer, nullptr);
 
 		_transparencyColorAttach.destroy_attachment(this);
 		_transparencyDepthAttach.destroy_attachment(this);
+		_transparencyVelocityAttach.destroy_attachment(this);
 		_depthPyramid.destroy_texture(this);
 		_transparencyData.headIndex.destroy_texture(this);
 		_deferredColorAttach.destroy_attachment(this);
@@ -185,7 +185,8 @@ void VulkanEngine::cleanup()
 			vkDestroyImageView(_device, _depthPyramideMips[i], nullptr);
 
 		vkDestroySampler(_device, _depthSampler, nullptr);
-		vkDestroySampler(_device, _mainOpaqueSampler, nullptr);
+		vkDestroySampler(_device, _linearSampler, nullptr);
+		vkDestroySampler(_device, _nearestSampler, nullptr);
 	
 		vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 
@@ -199,6 +200,8 @@ void VulkanEngine::cleanup()
 		_renderScene.cleanup(this);
 		_transparencyData.cleanup(this);
 		_GBuffer.cleanup(this);
+		_temporalFilter.cleanup(this);
+		_composite.cleanup(this);
 		vmaDestroyAllocator(_allocator);
 
 		for (int i = 0; i != FRAME_OVERLAP; ++i)
@@ -263,28 +266,9 @@ void VulkanEngine::init_vulkan()
 		.set_required_features(enabledFeatures)
 		.select()
 		.value();
-
-	/*LOG_INFO("Finished picking up physical device");
-	LOG_INFO("Before getting features");
-	VkPhysicalDeviceFeatures supportedPhysicalDeviceFeatures;
-	vkGetPhysicalDeviceFeatures(_chosenGPU, &supportedPhysicalDeviceFeatures);
-	LOG_INFO("After getting features");
-
-	VkPhysicalDeviceFeatures enabledFeatures;
-	if (supportedPhysicalDeviceFeatures.fragmentStoresAndAtomics != VK_TRUE)
-	{
-		LOG_ERROR("This device doesn't support fragment stores and atomics");
-	}
-	else
-	{
-		enabledFeatures.fragmentStoresAndAtomics = VK_TRUE;
-	}*/
-
-	vkb::DeviceBuilder deviceBuilder{physicalDevice};
-	LOG_INFO("Before adding pNext");
-	//deviceBuilder.add_pNext(&enabledFeatures);
-	LOG_INFO("After adding pNext");
 	
+	vkb::DeviceBuilder deviceBuilder{physicalDevice};
+
 	VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features = {};
 	shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
 	shader_draw_parameters_features.pNext = nullptr;
@@ -297,7 +281,7 @@ void VulkanEngine::init_vulkan()
 	multiViewFeatures.multiview = VK_TRUE;
 	
 	vkb::Device vkbDevice = deviceBuilder.add_pNext(&multiViewFeatures).build().value();
-	LOG_INFO("Finished picking up logical device");
+	LOG_INFO("Finished picking up logical device")
 
 	_device = vkbDevice.device;
 	_chosenGPU = physicalDevice.physical_device;
@@ -327,8 +311,8 @@ void VulkanEngine::init_engine_systems()
 	_numThreads = std::thread::hardware_concurrency();
 	_threadInfo.resize(_numThreads);
 
-	LOG_INFO("Path is {}", _projectPath);
-	LOG_INFO("Possible number of threads is {}", _numThreads);
+	LOG_INFO("Path is {}", _projectPath)
+	LOG_INFO("Possible number of threads is {}", _numThreads)
 
 	_descriptorAllocator.init(_device);
 	_descriptorLayoutCache.init(_device);
@@ -340,16 +324,22 @@ void VulkanEngine::init_engine_systems()
 
 	_materialSystem.init(this);
 	_renderScene.init();
+	_temporalFilter.init(this);
+	_composite.init(this);
 }
 
 void VulkanEngine::init_swapchain()
 {
-	LOG_INFO("Init swapchain");
+	LOG_INFO("Init swapchain")
+	VkSurfaceFormatKHR format;
+	format.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+	format.format = VK_FORMAT_B8G8R8A8_SRGB;
 	vkb::SwapchainBuilder swapchainBuilder{_chosenGPU, _device, _surface};
 	vkb::Swapchain vkbSwapchain = swapchainBuilder
 		.use_default_format_selection()
 		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
 		.set_desired_extent(_windowExtent.width, _windowExtent.height)
+		.set_desired_format(format)
 		.build()
 		.value();
 
@@ -363,23 +353,28 @@ void VulkanEngine::init_swapchain()
 		_windowExtent.width,
 		_windowExtent.height,
 		1
-	 };
+	};
 
 	create_attachment(
 		_transparencyColorAttach,
 		imageExtent,
 		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT
-	);
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	create_attachment(
 		_transparencyDepthAttach,
 		imageExtent,
 		VK_FORMAT_D32_SFLOAT,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_IMAGE_ASPECT_DEPTH_BIT
-	);
+		VK_IMAGE_ASPECT_DEPTH_BIT);
+
+	create_attachment(
+		_transparencyVelocityAttach,
+		imageExtent,
+		VK_FORMAT_R16G16_SFLOAT,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	// G-buffer attachments
 	create_attachment(
@@ -387,40 +382,70 @@ void VulkanEngine::init_swapchain()
 		imageExtent,
 		VK_FORMAT_A2R10G10B10_UNORM_PACK32,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT
-	);
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	create_attachment(
 		_GBuffer.normal,
 		imageExtent,
 		VK_FORMAT_R16G16B16A16_SFLOAT,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT
-	);
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	create_attachment(
 		_GBuffer.surface,
 		imageExtent,
 		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT
-	);
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	create_attachment(
 		_GBuffer.depth,
 		imageExtent,
 		VK_FORMAT_D32_SFLOAT,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_IMAGE_ASPECT_DEPTH_BIT
-	);
+		VK_IMAGE_ASPECT_DEPTH_BIT);
+	
+	create_attachment(
+		_GBuffer.velocity,
+		imageExtent,
+		VK_FORMAT_R16G16_SFLOAT,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
 
 	create_attachment(
 		_deferredColorAttach,
 		imageExtent,
 		VK_FORMAT_R8G8B8A8_UNORM,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_IMAGE_ASPECT_COLOR_BIT
-	);
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	create_attachment(
+		_temporalFilter.taaCurrentColorAttach,
+		imageExtent,
+		VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	create_attachment(
+		_temporalFilter.taaOldColorAttach,
+		imageExtent,
+		VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	create_attachment(
+		_composite.colorAttach,
+		imageExtent,
+		VK_FORMAT_R8G8B8A8_UNORM,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	create_attachment(
+		_composite.velocityAttach,
+		imageExtent,
+		VK_FORMAT_R16G16_SFLOAT,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_ASPECT_COLOR_BIT);
 	
 	VkSamplerCreateInfo imgSamplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);
 	imgSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
@@ -429,7 +454,12 @@ void VulkanEngine::init_swapchain()
 	imgSamplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 	imgSamplerInfo.anisotropyEnable = VK_TRUE;
 	imgSamplerInfo.maxAnisotropy = 1.0f;
-	vkCreateSampler(_device, &imgSamplerInfo, nullptr, &_mainOpaqueSampler);
+	vkCreateSampler(_device, &imgSamplerInfo, nullptr, &_linearSampler);
+
+	VkSamplerCreateInfo imgSamplerInfo2 = imgSamplerInfo;
+	imgSamplerInfo2.magFilter = VK_FILTER_NEAREST;
+	imgSamplerInfo2.minFilter = VK_FILTER_NEAREST;
+	vkCreateSampler(_device, &imgSamplerInfo2, nullptr, &_nearestSampler);
 
 	/*_mainDeletionQueue.push_function([=](){
 		vkDestroySampler(_device, _mainOpaqueSampler, nullptr);
@@ -492,7 +522,15 @@ void VulkanEngine::init_swapchain()
 			VK_IMAGE_LAYOUT_GENERAL,
 			VK_IMAGE_ASPECT_COLOR_BIT);
 
-		std::vector<VkImageMemoryBarrier> barriers = { barrier1, barrier2 };
+		VkImageMemoryBarrier barrier3 = vkinit::image_barrier(
+			_temporalFilter.taaOldColorAttach.imageData.image,
+			0,
+			VK_ACCESS_SHADER_READ_BIT,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			VK_IMAGE_ASPECT_COLOR_BIT);
+
+		std::vector<VkImageMemoryBarrier> barriers = { barrier1, barrier2, barrier3 };
 
 		vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, barriers.size(), barriers.data());
 	});
@@ -565,6 +603,7 @@ void VulkanEngine::init_renderpasses()
 {
 	vkutil::RenderPassBuilder::begin()
 		.add_color_attachment(_transparencyColorAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		.add_color_attachment(_transparencyVelocityAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		.add_depth_attachment(_transparencyDepthAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
 		.build(_device, _transparencyRenderPass);
@@ -578,6 +617,7 @@ void VulkanEngine::init_renderpasses()
 		.add_color_attachment(_GBuffer.albedo.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		.add_color_attachment(_GBuffer.normal.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		.add_color_attachment(_GBuffer.surface.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		.add_color_attachment(_GBuffer.velocity.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		.add_depth_attachment(_GBuffer.depth.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 		.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
 		.build(_device, _GBuffer.renderPass);
@@ -586,6 +626,17 @@ void VulkanEngine::init_renderpasses()
 		.add_color_attachment(_deferredColorAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
 		.build(_device, _deferredRenderPass);
+
+	vkutil::RenderPassBuilder::begin()
+		.add_color_attachment(_temporalFilter.taaCurrentColorAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
+		.build(_device, _temporalFilter.taaRenderPass);
+
+	vkutil::RenderPassBuilder::begin()
+		.add_color_attachment(_composite.colorAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		.add_color_attachment(_composite.velocityAttach.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+		.add_subpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
+		.build(_device, _composite.renderPass);
 
 	VkSubpassDescription subpassDescription = {};
 	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -610,6 +661,8 @@ void VulkanEngine::init_renderpasses()
 	VK_CHECK(vkCreateRenderPass(_device, &renderPassInfo, nullptr, &_transparencyData.renderPass));
 		
 	_mainDeletionQueue.push_function([=](){
+		vkDestroyRenderPass(_device, _composite.renderPass, nullptr);
+		vkDestroyRenderPass(_device, _temporalFilter.taaRenderPass, nullptr);
 		vkDestroyRenderPass(_device, _deferredRenderPass, nullptr);
 		vkDestroyRenderPass(_device, _transparencyData.renderPass, nullptr);
 		vkDestroyRenderPass(_device, _renderPass, nullptr);
@@ -656,14 +709,18 @@ void VulkanEngine::init_framebuffers()
 	VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_transparencyData.framebuffer));
 
 	//VkImageView imageViews[2] = { _transparencyColorAttach.imageView, _transparencyDepthAttach.imageView };
-	std::vector<VkImageView> imageViews = { _transparencyColorAttach.imageView, _transparencyDepthAttach.imageView };
+	std::vector<VkImageView> imageViews = {
+		_transparencyColorAttach.imageView,
+		_transparencyVelocityAttach.imageView,
+		_transparencyDepthAttach.imageView };
+	
 	fbInfo.attachmentCount = imageViews.size();
 	fbInfo.pAttachments = imageViews.data();
 	fbInfo.renderPass = _transparencyRenderPass;
 	VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_transparencyFramebuffer));
 	imageViews.clear();
 
-	imageViews = { _GBuffer.albedo.imageView, _GBuffer.normal.imageView, _GBuffer.surface.imageView, _GBuffer.depth.imageView };
+	imageViews = { _GBuffer.albedo.imageView, _GBuffer.normal.imageView, _GBuffer.surface.imageView, _GBuffer.velocity.imageView, _GBuffer.depth.imageView };
 	fbInfo.attachmentCount = imageViews.size();
 	fbInfo.pAttachments = imageViews.data();
 	fbInfo.renderPass = _GBuffer.renderPass;
@@ -674,6 +731,17 @@ void VulkanEngine::init_framebuffers()
 	fbInfo.pAttachments = &_deferredColorAttach.imageView;
 	fbInfo.renderPass = _deferredRenderPass;
 	VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_deferredFramebuffer));
+	
+	fbInfo.attachmentCount = 1;
+	fbInfo.pAttachments = &_temporalFilter.taaCurrentColorAttach.imageView;
+	fbInfo.renderPass = _temporalFilter.taaRenderPass;
+	VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_temporalFilter.taaFramebuffer));
+
+	imageViews = { _composite.colorAttach.imageView, _composite.velocityAttach.imageView };
+	fbInfo.attachmentCount = imageViews.size();
+	fbInfo.pAttachments = imageViews.data();
+	fbInfo.renderPass = _composite.renderPass;
+	VK_CHECK(vkCreateFramebuffer(_device, &fbInfo, nullptr, &_composite.framebuffer));
 }
 
 void VulkanEngine::init_shadow_maps()
@@ -857,18 +925,24 @@ void VulkanEngine::init_sync_structures()
 
 void VulkanEngine::init_buffers()
 {
-	LOG_INFO("Init descriptors");
-	const size_t sceneParamBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(GPUSceneData));
-	_sceneParameterBuffer = create_buffer(sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+	LOG_INFO("Init global buffers");
+	//const size_t sceneParamBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(GPUSceneData));
+	//_sceneParameterBuffer = create_buffer(sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 	for (int i = 0; i != FRAME_OVERLAP; ++i)
 	{
 		_frames[i]._cameraBuffer = create_buffer(sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 		_frames[i]._sceneDataBuffer.create_buffer(this, sizeof(GPUSceneData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+		_frames[i]._settingsBuffer.create_buffer(
+			this,
+			sizeof(Settings),
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VMA_MEMORY_USAGE_CPU_TO_GPU);
 		
 		VkDescriptorImageInfo offscrColorImgInfo;
-		offscrColorImgInfo.sampler = _mainOpaqueSampler;
+		offscrColorImgInfo.sampler = _linearSampler;
 		offscrColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		offscrColorImgInfo.imageView = _mainOpaqueColorAttach.imageView;
 	}
@@ -878,6 +952,7 @@ void VulkanEngine::init_buffers()
 		_mainDeletionQueue.push_function([=](){
 			vmaDestroyBuffer(_allocator, _frames[i]._sceneDataBuffer._buffer, _frames[i]._sceneDataBuffer._allocation);
 			vmaDestroyBuffer(_allocator, _frames[i]._cameraBuffer._buffer, _frames[i]._cameraBuffer._allocation);
+			vmaDestroyBuffer(_allocator, _frames[i]._settingsBuffer._buffer, _frames[i]._settingsBuffer._allocation);
 		});
 	}
 
@@ -885,11 +960,7 @@ void VulkanEngine::init_buffers()
 	geometryInfo.count = 0;
 	geometryInfo.maxNodeCount = NODE_COUNT * _windowExtent.width * _windowExtent.height;
 
-	AllocatedBufferT<GeometryInfo> stagingBuffer(
-		this,
-		sizeof(GeometryInfo),
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VMA_MEMORY_USAGE_CPU_ONLY);
+	AllocatedBufferT<GeometryInfo> stagingBuffer(this, sizeof(GeometryInfo), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 	stagingBuffer.copy_from(this, &geometryInfo, sizeof(GeometryInfo));
 
 	_transparencyData.geometryInfo.create_buffer(
@@ -910,15 +981,35 @@ void VulkanEngine::init_buffers()
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 	
+	// AllocatedBuffer tempBuffer(
+	// 	this,
+	// 	sizeof(TemporalFilter::Jittering),
+	// 	VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	// 	VMA_MEMORY_USAGE_CPU_ONLY);
+	//
+	// tempBuffer.copy_from(this, &_temporalFilter.jittering, sizeof(TemporalFilter::Jittering));
+	//
+	_temporalFilter.jitteringBuffer.create_buffer(
+		this,
+		sizeof(TemporalFilter::Jittering),
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+	_temporalFilter.jitteringBuffer.copy_from(this, &_temporalFilter.jittering, sizeof(TemporalFilter::Jittering));
+
+	// immediate_submit([&](VkCommandBuffer cmd){
+	// 	AllocatedBuffer::copy_buffer_cmd(this, cmd, &tempBuffer, &_temporalFilter.jitteringBuffer);
+	// });
+
+	//tempBuffer.destroy_buffer(this);
+	
 	_mainDeletionQueue.push_function([=](){
 		vmaDestroyBuffer(_allocator, _transparencyData.geometryInfo._buffer, _transparencyData.geometryInfo._allocation);
 		vmaDestroyBuffer(_allocator, _transparencyData.nodes._buffer, _transparencyData.nodes._allocation);
-		vmaDestroyBuffer(_allocator, _sceneParameterBuffer._buffer, _sceneParameterBuffer._allocation);
+		vmaDestroyBuffer(_allocator, _temporalFilter.jitteringBuffer._buffer, _temporalFilter.jitteringBuffer._allocation);
 	});
-
-	LOG_INFO("Before setup builder");
+	
 	_transparencyData.setup_pipeline_builder(this);
-	LOG_INFO("Before creating shader pass");
 	_transparencyData.create_shader_pass(this);
 }
 
@@ -995,7 +1086,7 @@ void VulkanEngine::init_output_quad()
 void VulkanEngine::draw()
 {
 	ImGui::Render();
-	LOG_INFO("Start new frame");
+	LOG_INFO("Start new frame")
 
 	VkCommandBuffer cmd = get_current_frame()._mainCommandBuffer;
 
@@ -1012,8 +1103,6 @@ void VulkanEngine::draw()
 		refresh_swapchain();
 		return;
 	}
-	
-	//VK_CHECK(vkResetCommandBuffer(get_current_frame()._mainCommandBuffer, 0));
 
 	VkCommandBufferBeginInfo cmdBeginInfo{};
 	cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1031,7 +1120,6 @@ void VulkanEngine::draw()
 	// Copy indirect buffer data from host buffer to device buffer
 	prepare_gpu_indirect_buffer(cmd, _renderScene._pointShadowPass);
 	prepare_gpu_indirect_buffer(cmd, _renderScene._dirShadowPass);
-	//prepare_gpu_indirect_buffer(cmd, _renderScene._forwardPass);
 	prepare_gpu_indirect_buffer(cmd, _renderScene._deferredPass);
 	prepare_gpu_indirect_buffer(cmd, _renderScene._spotShadowPass);
 	prepare_gpu_indirect_buffer(cmd, _renderScene._transparentForwardPass);
@@ -1046,12 +1134,9 @@ void VulkanEngine::draw()
 	}
 
 	draw_deferred_pass(cmd);
-	//draw_forward_pass(cmd, swapchainImageIndex);
-	LOG_INFO("Before transparency");
 	draw_tranparency_pass(cmd);
-
-	//ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), get_current_frame()._mainCommandBuffer);
-
+	draw_compositing_pass(cmd);
+	draw_taa_pass(cmd);
 	draw_final_quad(cmd, swapchainImageIndex);
 
 	depth_reduce(cmd);
@@ -1060,7 +1145,7 @@ void VulkanEngine::draw()
 
 	submit(cmd, swapchainImageIndex);
 	
-	LOG_INFO("Frame number is {}", _frameNumber);
+	LOG_INFO("Frame number is {}", _frameNumber)
 	_frameNumber++;
 }
 
@@ -1187,9 +1272,8 @@ void VulkanEngine::run()
 
 void VulkanEngine::parse_prefabs()
 {
-	LOG_INFO("Before buildin default templates");
+	LOG_INFO("Parsing prefabs")
 	_materialSystem.build_default_templates();
-	LOG_INFO("After building default templates");
 	std::string assetsPath = _projectPath + "/assets/";
 	fs::path direcory{ assetsPath };
 	
@@ -1267,12 +1351,11 @@ void VulkanEngine::parse_prefabs()
 			}
 			else
 			{
-				LOG_WARNING("No textures in {} material", materialInfo.materialName);
+				LOG_WARNING("No textures in {} material", materialInfo.materialName)
 			}
 
 			if (materialInfo.mode == assets::MaterialMode::TRANSPARENT)
 			{
-				LOG_INFO("Transparent");
 				tempMeshObject.bDrawForwardPass = 0;
 				tempMeshObject.bDrawSpotShadowPass = 0;
 				tempMeshObject.bDrawPointShadowPass = 0;
@@ -1296,8 +1379,6 @@ void VulkanEngine::parse_prefabs()
 	});
 
 	fill_renderable_objects();
-
-	LOG_INFO("Finish parsing prefabs");
 }
 
 FrameData& VulkanEngine::get_current_frame()
@@ -1412,6 +1493,20 @@ AllocatedBuffer VulkanEngine::create_buffer(size_t allocSize, VkBufferUsageFlags
 	return newBuffer;
 }
 
+void VulkanEngine::reallocate_buffer(AllocatedBuffer& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+{
+	AllocatedBuffer newBuffer(this, size, usage, memoryUsage);
+
+	if (buffer._buffer != VK_NULL_HANDLE)
+	{
+		get_current_frame()._frameDeletionQueue.push_function([=](){
+			vmaDestroyBuffer(_allocator, buffer._buffer, buffer._allocation);
+		});
+	}
+
+	buffer = newBuffer;
+}
+
 void VulkanEngine::refresh_multi_threads_command_buffers(uint32_t objectsPerThread)
 {
 	for (auto& thread : _threadInfo)
@@ -1436,7 +1531,8 @@ void VulkanEngine::refresh_multi_threads_command_buffers(uint32_t objectsPerThre
 
 void VulkanEngine::refresh_swapchain()
 {
-	LOG_INFO("Window before size is {}x{}", _windowExtent.width, _windowExtent.height);
+	LOG_INFO("Refreshing swap chain")
+	LOG_INFO("Window before size is {}x{}", _windowExtent.width, _windowExtent.height)
 
 	vkDeviceWaitIdle(_device);
 
@@ -1457,28 +1553,29 @@ void VulkanEngine::refresh_swapchain()
 	vkDestroyFramebuffer(_device, _transparencyFramebuffer, nullptr);
 	vkDestroyFramebuffer(_device, _transparencyData.framebuffer, nullptr);
 	vkDestroyFramebuffer(_device, _deferredFramebuffer, nullptr);
-	vkDestroyFramebuffer(_device, _GBuffer.framebuffer, nullptr);
+	//vkDestroyFramebuffer(_device, _compositeFramebuffer, nullptr);
 	
 	_transparencyColorAttach.destroy_attachment(this);
 	_transparencyDepthAttach.destroy_attachment(this);
 	_transparencyData.headIndex.destroy_texture(this);
 	_deferredColorAttach.destroy_attachment(this);
+	_transparencyVelocityAttach.destroy_attachment(this);
 	_depthPyramid.destroy_texture(this);
 
 	_GBuffer.cleanup(this);
+	_temporalFilter.cleanup(this);
+	_composite.cleanup(this);
 
 	for (int i = 0; i != _depthPyramidLevels; ++i)
 		vkDestroyImageView(_device, _depthPyramideMips[i], nullptr);
 
 	vkDestroySampler(_device, _depthSampler, nullptr);
-	vkDestroySampler(_device, _mainOpaqueSampler, nullptr);
+	vkDestroySampler(_device, _linearSampler, nullptr);
+	vkDestroySampler(_device, _nearestSampler, nullptr);
 	vkDestroySwapchainKHR(_device, _swapchain, nullptr);
-
-	LOG_INFO("Before initing swapchain");
+	
 	init_swapchain();
-	LOG_INFO("Before initing framebuffers");
 	init_framebuffers();
-	LOG_INFO("Before refreshing material system");
 	//_materialSystem.refresh_default_templates();
 }
 
@@ -1574,5 +1671,62 @@ void GBuffer::cleanup(VulkanEngine* engine)
 	normal.destroy_attachment(engine);
 	surface.destroy_attachment(engine);
 	depth.destroy_attachment(engine);
+	velocity.destroy_attachment(engine);
+	vkDestroyFramebuffer(engine->_device, framebuffer, nullptr);
 }
 
+void TemporalFilter::init(VulkanEngine* engine)
+{
+	prepare_jittering_data();
+	jittering.haltonScale = 0.6f;
+	jittering.numSamples = 36;
+
+	vkutil::MaterialData materialData;
+	materialData.baseTemplate = "TAA";
+	engine->_materialSystem.build_material("TAA", materialData);
+}
+
+void TemporalFilter::cleanup(VulkanEngine* engine)
+{
+	taaCurrentColorAttach.destroy_attachment(engine);
+	taaOldColorAttach.destroy_attachment(engine);
+	vkDestroyFramebuffer(engine->_device, taaFramebuffer, nullptr);
+}
+
+void TemporalFilter::prepare_jittering_data()
+{
+	for (int i = 0; i != 36; ++i)
+	{
+		jittering.haltonSequence[i] = glm::vec4(create_halton_sequence(i + 1, 2), create_halton_sequence(i + 1, 3), 0.0f, 0.0f);
+	}
+}
+
+float TemporalFilter::create_halton_sequence(int32_t index, int32_t base)
+{
+	float f = 1;
+	float r = 0;
+	int32_t current = index;
+	do
+	{
+		f = f / base;
+		r = r + f * (current % base);
+		current = glm::floor(current / base);
+	}
+	while (current > 0);
+
+	return r;
+}
+
+void Composite::init(VulkanEngine* engine)
+{
+	vkutil::MaterialData materialData;
+	materialData.baseTemplate = "Composite";
+	engine->_materialSystem.build_material("Composite", materialData);
+}
+
+void Composite::cleanup(VulkanEngine* engine)
+{
+	colorAttach.destroy_attachment(engine);
+	velocityAttach.destroy_attachment(engine);
+	vkDestroyFramebuffer(engine->_device, framebuffer, nullptr);
+}

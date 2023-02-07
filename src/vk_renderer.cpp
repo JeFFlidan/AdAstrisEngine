@@ -17,6 +17,7 @@
 #include <vulkan/vulkan_core.h>
 #include <future>
 #include <algorithm>
+#include <set>
 
 using GeometryInfo = TransparencyFirstPassData::GeometryInfo;
 using Node = TransparencyFirstPassData::Node;
@@ -73,6 +74,8 @@ void VulkanEngine::draw_deferred_pass(VkCommandBuffer cmd)
 	VkDescriptorBufferInfo objectDataInfo = _renderScene._objectDataBuffer.get_info(true);
 	VkDescriptorBufferInfo instanceInfo = meshPass.compactedInstanceBuffer.get_info(true);
 	VkDescriptorBufferInfo cameraInfo = get_current_frame()._cameraBuffer.get_info();
+	VkDescriptorBufferInfo settingsInfo = get_current_frame()._settingsBuffer.get_info();
+	VkDescriptorBufferInfo taaInfo = _temporalFilter.jitteringBuffer.get_info();
 
 	VkDescriptorSet globalDescriptorSet;
 	VkDescriptorSet texturesDescriptorSet1;
@@ -83,7 +86,9 @@ void VulkanEngine::draw_deferred_pass(VkCommandBuffer cmd)
 		.bind_buffer(0, &objectDataInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT))
 		.bind_buffer(1, &instanceInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
 		.bind_buffer(2, &cameraInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.bind_image(3, &samplerInfo, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_buffer(3, &settingsInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_buffer(4, &taaInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_image(5, &samplerInfo, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.build(globalDescriptorSet);
 
 	size_t descriptorsAmount = _renderScene._baseColorInfos.size() + _renderScene._normalInfos.size() + _renderScene._armInfos.size();
@@ -111,14 +116,15 @@ void VulkanEngine::draw_deferred_pass(VkCommandBuffer cmd)
 	vkCmdBindVertexBuffers(cmd, 0, 1, &_renderScene._globalVertexBuffer._buffer, &offset);
 	vkCmdBindIndexBuffer(cmd, _renderScene._globalIndexBuffer._buffer, offset, VK_INDEX_TYPE_UINT32);
 	
-	std::array<VkClearValue, 4> clearValues;
+	std::array<VkClearValue, 5> clearValues;
 	clearValues[0].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
 	clearValues[1].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
 	clearValues[2].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
-	clearValues[3].depthStencil.depth = 1.0f;
+	clearValues[3].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+	clearValues[4].depthStencil.depth = 1.0f;
 
 	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_GBuffer.renderPass, _windowExtent, _GBuffer.framebuffer);
-	rpInfo.clearValueCount = 4;
+	rpInfo.clearValueCount = 5;
 	
 	rpInfo.pClearValues = clearValues.data();
 
@@ -194,7 +200,7 @@ void VulkanEngine::draw_deferred_pass(VkCommandBuffer cmd)
 	);
 	
 	VkDescriptorImageInfo attachSamplerInfo{};
-	attachSamplerInfo.sampler = _mainOpaqueSampler;
+	attachSamplerInfo.sampler = _linearSampler;
 	VkDescriptorImageInfo shadowSamplerInfo{};
 	shadowSamplerInfo.sampler = _shadowMapSampler;
 
@@ -490,7 +496,7 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 	VkDescriptorImageInfo mainOpaqueColorImgInfo;
 	mainOpaqueColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	mainOpaqueColorImgInfo.imageView = _deferredColorAttach.imageView;
-	mainOpaqueColorImgInfo.sampler = _mainOpaqueSampler;
+	mainOpaqueColorImgInfo.sampler = _linearSampler;
 
 	VkDescriptorSet oitGeomDescriptorSet;
 
@@ -503,15 +509,8 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 		.bind_image(5, &headIndexImgInfo, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.build(oitGeomDescriptorSet);
 
-	VkClearValue clearValue;
-	clearValue.color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
-
-	VkClearValue depthClear;
-	depthClear.depthStencil.depth = 1.0f;
-	
 	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_transparencyData.renderPass, _windowExtent, _transparencyData.framebuffer);
 	rpInfo.clearValueCount = 0;
-	VkClearValue clearValues[2] = { clearValue, depthClear };
 	rpInfo.pClearValues = nullptr;
 
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -566,20 +565,30 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1,&memoryBarrier, 0, nullptr, 0, nullptr);
 
-	VkDescriptorSet transpDescriptorSet;
+	VkDescriptorBufferInfo settingsInfo = get_current_frame()._settingsBuffer.get_info();
+	VkDescriptorBufferInfo taaInfo = _temporalFilter.jitteringBuffer.get_info();
+	
+	VkDescriptorSet globalSet;
 
 	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
-		.bind_buffer(0, &cameraInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.bind_buffer(1, &objectDataInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.bind_buffer(2, &instanceInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
-		.bind_buffer(3, &nodesInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.bind_image(4, &headIndexImgInfo, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.bind_image(5, &mainOpaqueColorImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.build(transpDescriptorSet);
+		.bind_buffer(0, &objectDataInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_buffer(1, &instanceInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_buffer(2, &nodesInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_buffer(3, &cameraInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_buffer(4, &settingsInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_buffer(5, &taaInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+		.bind_image(6, &headIndexImgInfo, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(7, &mainOpaqueColorImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.build(globalSet);
+
+	std::array<VkClearValue, 3> clearValues;
+	clearValues[0].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+	clearValues[1].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+	clearValues[2].depthStencil.depth = 1.0f;
 	
 	rpInfo = vkinit::renderpass_begin_info(_transparencyRenderPass, _windowExtent, _transparencyFramebuffer);
-	rpInfo.clearValueCount = 2;
-	rpInfo.pClearValues = clearValues;
+	rpInfo.clearValueCount = 3;
+	rpInfo.pClearValues = clearValues.data();
 	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	vkutil::ShaderPass* prevMaterial = nullptr;
@@ -597,7 +606,7 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 		if (shaderPass != prevMaterial)
 		{
 			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
-			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->layout, i, 1, &transpDescriptorSet, 0, nullptr);
+			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->layout, 0, 1, &globalSet, 0, nullptr);
 			prevMaterial = shaderPass;
 		}
 
@@ -612,8 +621,221 @@ void VulkanEngine::draw_tranparency_pass(VkCommandBuffer cmd)
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
 }
 
+void VulkanEngine::draw_compositing_pass(VkCommandBuffer cmd)
+{
+	std::array<VkClearValue, 2> clearValues;
+	clearValues[0].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+	clearValues[1].color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+
+	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_composite.renderPass, _windowExtent, _composite.framebuffer);
+	rpInfo.clearValueCount = 2;
+	rpInfo.pClearValues = clearValues.data();
+	
+	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	auto material = _materialSystem.get_material("Composite");
+	
+	VkDescriptorImageInfo deferredImgInfo;
+	deferredImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	deferredImgInfo.imageView = _deferredColorAttach.imageView;
+
+	VkDescriptorImageInfo GBufferVelocityInfo;
+	GBufferVelocityInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	GBufferVelocityInfo.imageView = _GBuffer.velocity.imageView;
+
+	VkDescriptorImageInfo GBufferDepthImgInfo;
+	GBufferDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	GBufferDepthImgInfo.imageView = _GBuffer.depth.imageView;
+
+	VkDescriptorImageInfo transpColorImgInfo;
+	transpColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	transpColorImgInfo.imageView = _transparencyColorAttach.imageView;
+
+	VkDescriptorImageInfo transpVelocityInfo;
+	transpVelocityInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	transpVelocityInfo.imageView = _transparencyVelocityAttach.imageView;
+
+	VkDescriptorImageInfo transpDepthImgInfo;
+	transpDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	transpDepthImgInfo.imageView = _transparencyDepthAttach.imageView;
+
+	VkDescriptorImageInfo nearestSampInfo;
+	nearestSampInfo.sampler = _nearestSampler;
+
+	VkDescriptorSet globalSet;
+	
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_image(0, &deferredImgInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(1, &transpColorImgInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(2, &GBufferVelocityInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(3, &transpVelocityInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(4, &GBufferDepthImgInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(5, &transpDepthImgInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(6, &nearestSampInfo, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.build(globalSet);
+		
+	if (material != nullptr)
+	{
+		auto meshPass = material->original->passShaders[vkutil::MeshpassType::Forward];
+		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPass->pipeline);
+		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, meshPass->layout, 0, 1, &globalSet, 0, nullptr);
+	}
+	else
+	{
+		LOG_FATAL("Invalid material for output quad, draw_output_quad func")
+	}
+
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(cmd, 0, 1, &_outputQuad._vertexBuffer._buffer, &offset);
+	vkCmdDraw(cmd, _outputQuad._vertices.size(), 1, 0, 0);
+
+	vkCmdEndRenderPass(cmd);
+}
+
+void VulkanEngine::draw_taa_pass(VkCommandBuffer cmd)
+{
+	vkCmdPipelineBarrier(
+		cmd,
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		0, 0, nullptr, 0, nullptr, 0, nullptr);
+	
+	VkClearValue clearValue;
+	clearValue.color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
+
+	VkRenderPassBeginInfo rpInfo = vkinit::renderpass_begin_info(_temporalFilter.taaRenderPass, _windowExtent, _temporalFilter.taaFramebuffer);
+	rpInfo.clearValueCount = 1;
+	rpInfo.pClearValues = &clearValue;
+
+	vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	auto material = _materialSystem.get_material("TAA");
+
+	VkDescriptorImageInfo currentColorInfo;
+	currentColorInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	currentColorInfo.imageView = _composite.colorAttach.imageView;
+	VkDescriptorImageInfo oldTaaInfo;
+	oldTaaInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	oldTaaInfo.imageView = _temporalFilter.taaOldColorAttach.imageView;
+	VkDescriptorImageInfo velocityInfo;
+	velocityInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	velocityInfo.imageView = _composite.velocityAttach.imageView;
+	VkDescriptorImageInfo linearSampInfo;
+	linearSampInfo.sampler = _linearSampler;
+	VkDescriptorImageInfo nearestSampInfo;
+	nearestSampInfo.sampler = _nearestSampler;
+	VkDescriptorBufferInfo settingsInfo = get_current_frame()._settingsBuffer.get_info();
+
+	VkDescriptorSet globalSet;
+	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
+		.bind_buffer(0, &settingsInfo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(1, &currentColorInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(2, &oldTaaInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(3, &velocityInfo, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(4, &linearSampInfo, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(5, &nearestSampInfo, VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.build(globalSet);
+
+	if (material != nullptr)
+	{
+		auto shaderPass = material->original->passShaders[vkutil::MeshpassType::Forward];
+		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->pipeline);
+		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, shaderPass->layout, 0, 1, &globalSet, 0, nullptr);
+	}
+	else
+	{
+		LOG_FATAL("Invalid material for TAA")
+	}
+
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(cmd, 0, 1, &_outputQuad._vertexBuffer._buffer, &offset);
+	vkCmdDraw(cmd, _outputQuad._vertices.size(), 1, 0, 0);
+
+	vkCmdEndRenderPass(cmd);
+
+	VkImageMemoryBarrier imgBarrier1 = vkinit::image_barrier(
+		_temporalFilter.taaOldColorAttach.imageData.image,
+		VK_ACCESS_SHADER_READ_BIT,
+		VK_ACCESS_MEMORY_WRITE_BIT,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	VkImageMemoryBarrier imgBarrier2 = vkinit::image_barrier(
+		_temporalFilter.taaCurrentColorAttach.imageData.image,
+		VK_ACCESS_SHADER_READ_BIT,
+		VK_ACCESS_MEMORY_READ_BIT,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	VkImageMemoryBarrier imgBarriers[2] = { imgBarrier1, imgBarrier2 };
+	
+	vkCmdPipelineBarrier(cmd,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		0, 0, nullptr, 0, nullptr,
+		2, imgBarriers);
+	
+	VkExtent3D curImgExt = _temporalFilter.taaCurrentColorAttach.extent;
+	VkExtent3D oldImgExt = _temporalFilter.taaOldColorAttach.extent;
+	
+	VkImageBlit imageBlit{};
+	imageBlit.srcOffsets[1].x = static_cast<int32_t>(curImgExt.width);
+	imageBlit.srcOffsets[1].y = static_cast<int32_t>(curImgExt.height);
+	imageBlit.srcOffsets[1].z = 1;
+	imageBlit.dstOffsets[1].x = static_cast<int32_t>(oldImgExt.width);
+	imageBlit.dstOffsets[1].y = static_cast<int32_t>(oldImgExt.height);
+	imageBlit.dstOffsets[1].z = 1;
+	imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageBlit.srcSubresource.layerCount = 1;
+	imageBlit.srcSubresource.mipLevel = 0;
+	imageBlit.srcSubresource.baseArrayLayer = 0;
+	imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageBlit.dstSubresource.layerCount = 1;
+	imageBlit.dstSubresource.mipLevel = 0;
+	imageBlit.dstSubresource.baseArrayLayer = 0;
+	
+	VkImage curImage = _temporalFilter.taaCurrentColorAttach.imageData.image;
+	VkImage oldImage = _temporalFilter.taaOldColorAttach.imageData.image;
+	vkCmdBlitImage(
+		cmd,
+		curImage,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		oldImage,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1,
+		&imageBlit,
+		VK_FILTER_LINEAR);
+}
+
 void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex)
 {
+	VkImageMemoryBarrier imgBarrier1 = vkinit::image_barrier(
+		_temporalFilter.taaOldColorAttach.imageData.image,
+		VK_ACCESS_MEMORY_WRITE_BIT,
+		VK_ACCESS_SHADER_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	VkImageMemoryBarrier imgBarrier2 = vkinit::image_barrier(
+		_temporalFilter.taaCurrentColorAttach.imageData.image,
+		VK_ACCESS_MEMORY_READ_BIT,
+		VK_ACCESS_SHADER_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_IMAGE_ASPECT_COLOR_BIT);
+
+	VkImageMemoryBarrier imgBarriers[2] = { imgBarrier1, imgBarrier2 };
+	
+	vkCmdPipelineBarrier(
+		cmd,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		0, 0, nullptr, 0, nullptr,
+		2, imgBarriers);
+	
 	VkClearValue clearValue;
 	clearValue.color = { { 0.15f, 0.15f, 0.15f, 1.0f } };
 	
@@ -626,33 +848,30 @@ void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageI
 	
 	auto material = _materialSystem.get_material("Postprocessing");
 	
-	VkDescriptorImageInfo deferredImgInfo;
-	deferredImgInfo.sampler = _mainOpaqueSampler;
-	deferredImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	deferredImgInfo.imageView = _deferredColorAttach.imageView;
-
-	VkDescriptorImageInfo GBufferDepthImgInfo;
-	GBufferDepthImgInfo.sampler = _mainOpaqueSampler;
-	GBufferDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	GBufferDepthImgInfo.imageView = _GBuffer.depth.imageView;
-
-	VkDescriptorImageInfo transpColorImgInfo;
-	transpColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	transpColorImgInfo.imageView = _transparencyColorAttach.imageView;
-	transpColorImgInfo.sampler = _mainOpaqueSampler;
-
-	VkDescriptorImageInfo transpDepthImgInfo;
-	transpDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	transpDepthImgInfo.imageView = _transparencyDepthAttach.imageView;
-	transpDepthImgInfo.sampler = _mainOpaqueSampler;
-
+	VkDescriptorImageInfo taaCurrentImage;
+	taaCurrentImage.sampler = _linearSampler;
+	taaCurrentImage.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	taaCurrentImage.imageView = _temporalFilter.taaCurrentColorAttach.imageView;
+	//
+	// VkDescriptorImageInfo GBufferDepthImgInfo;
+	// GBufferDepthImgInfo.sampler = _linearSampler;
+	// GBufferDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	// GBufferDepthImgInfo.imageView = _GBuffer.depth.imageView;
+	//
+	// VkDescriptorImageInfo transpColorImgInfo;
+	// transpColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	// transpColorImgInfo.imageView = _transparencyColorAttach.imageView;
+	// transpColorImgInfo.sampler = _linearSampler;
+	//
+	// VkDescriptorImageInfo transpDepthImgInfo;
+	// transpDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	// transpDepthImgInfo.imageView = _transparencyDepthAttach.imageView;
+	// transpDepthImgInfo.sampler = _linearSampler;
+	//
 	VkDescriptorSet offscrColorImageSet;
 	
 	vkutil::DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)
-		.bind_image(0, &deferredImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.bind_image(1, &transpColorImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.bind_image(2, &GBufferDepthImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-		.bind_image(3, &transpDepthImgInfo, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.bind_image(0, &taaCurrentImage, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.build(offscrColorImageSet);
 		
 	if (material != nullptr)
@@ -663,7 +882,7 @@ void VulkanEngine::draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageI
 	}
 	else
 	{
-		LOG_FATAL("Invalid material for output quad, draw_output_quad func");
+		LOG_FATAL("Invalid material for output quad, draw_output_quad func")
 	}
 
 	VkDeviceSize offset = 0;
@@ -1201,15 +1420,15 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 
 	if (std::find(dirLights.begin(), dirLights.end(), true) != dirLights.end() && std::find(dirMaps.begin(), dirMaps.end(), true) == dirMaps.end())
 	{
-		reallocate_light_buffer(LightType::DirectionalLight);
+		reallocate_light_buffer(DirectionalLight);
 	}
 	if (std::find(spotLights.begin(), spotLights.end(), true) != spotLights.end() && std::find(spotMaps.begin(), spotMaps.end(), true) == spotMaps.end())
 	{
-		reallocate_light_buffer(LightType::SpotLight);
+		reallocate_light_buffer(SpotLight);
 	}
 	if (std::find(pointLights.begin(), pointLights.end(), true) != pointLights.end() && std::find(pointMaps.begin(), pointMaps.end(), true) == pointMaps.end())
 	{		
-		reallocate_light_buffer(LightType::PointLight);
+		reallocate_light_buffer(PointLight);
 	}
 	
 	std::vector<RenderScene::MeshPass*> passes = {
@@ -1333,17 +1552,13 @@ void VulkanEngine::prepare_per_frame_data(VkCommandBuffer cmd)
 	glm::mat4 projection = camera.get_projection_matrix((float)_windowExtent.width, (float)_windowExtent.height);
  
 	GPUCameraData camData;
+	camData.oldView = _temporalFilter.oldView;
 	camData.view = view;
 	camData.proj = projection;
 	camData.viewproj = projection * view;
-	camData.invView = glm::inverse(camData.view);
-	camData.invProj = glm::inverse(camData.proj);
-	camData.position = glm::vec4(camera.get_position(), 0.0f);
-	camData.cameraFront = glm::vec4(camera.get_front(), 1.0f);
-	camData.cameraRight = glm::vec4(camera.get_right(), 1.0f);
-	camData.cameraUp = glm::vec4(camera.get_up(), 1.0f);
-	camData.fovVertical = camData.invProj[1][1];
-	camData.fovHorizontal = camData.invProj[0][0];
+	camData.invViewProj = glm::inverse(camData.view) * glm::inverse(camData.proj);
+	camData.cameraPosition = glm::vec4(camera.get_position(), 1.0);
+	_temporalFilter.oldView = camData.view;
 
 	get_current_frame()._cameraBuffer.copy_from(this, &camData, sizeof(GPUCameraData));
 	
@@ -1352,7 +1567,13 @@ void VulkanEngine::prepare_per_frame_data(VkCommandBuffer cmd)
 	sceneData.pointLightsAmount = _renderScene._pointLights.size();
 	sceneData.spotLightsAmount = _renderScene._spotLights.size();
 
-	get_current_frame()._sceneDataBuffer.copy_from(this, &sceneData, sizeof(GPUSceneData));	
+	get_current_frame()._sceneDataBuffer.copy_from(this, &sceneData, sizeof(GPUSceneData));
+	
+	_settings.viewportRes.x = _windowExtent.width;
+	_settings.viewportRes.y = _windowExtent.height;
+	_settings.totalFrames = _frameNumber;
+
+	get_current_frame()._settingsBuffer.copy_from(this, &_settings, sizeof(Settings));
 }
 
 void VulkanEngine::depth_reduce(VkCommandBuffer cmd)

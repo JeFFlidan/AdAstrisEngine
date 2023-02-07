@@ -3,6 +3,9 @@
 #include "material_system.h"
 #include "vk_engine.h"
 #include "user_interface.h"
+
+#include <set>
+
 #include "engine_actors.h"
 #include "vk_renderpass.h"
 
@@ -171,15 +174,19 @@ namespace ui
 		PointLightWindow pointLightWindow(pointLight);
 		SpotLightWindow spotLightWindow(spotLight);
 		DirLightWindow dirLightWindow(dirLight);
+		SettingsWindow settingsWindow(engine->_settings);
 		
 		pointLightWindow.draw_window(engine);
 		spotLightWindow.draw_window(engine);
 		dirLightWindow.draw_window(engine);
+		settingsWindow.draw_window();
+		
 		ImGui::EndFrame();
 
 		pointLightWindow.set_point_light_data();
 		spotLightWindow.set_spot_light_data();
 		dirLightWindow.set_dir_light_data();
+		settingsWindow.set_settings_data();
 	}
 
 	void UserInterface::render_ui(VulkanEngine* engine)
@@ -374,5 +381,22 @@ namespace ui
 		_spotLight->isVisible = _isVisible;
 		_spotLight->castShadows = _castShadows;
 	}
+
+	SettingsWindow::SettingsWindow(Settings& settings)
+	{
+		_isTaaEnabled = settings.isTaaEnabled;
+		_settings = &settings;
+	}
+
+	void SettingsWindow::draw_window()
+	{
+		ImGui::Checkbox("TAA", &_isTaaEnabled);
+	}
+
+	void SettingsWindow::set_settings_data()
+	{
+		_settings->isTaaEnabled = _isTaaEnabled;
+	}
+
 }
 

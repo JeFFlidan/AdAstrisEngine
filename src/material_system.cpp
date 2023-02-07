@@ -42,19 +42,22 @@ namespace vkutil
 
 		pipelineBuilder.setup_rasterization_state(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT);
 		pipelineBuilder.setup_dynamic_state(true, false);
-		pipelineBuilder.setup_color_blend_state_default(3);
+		pipelineBuilder.setup_color_blend_state_default(4);
 
 		_GBufferPipelineBuilder = pipelineBuilder;
 
 		pipelineBuilder.setup_rasterization_state(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE);
-		pipelineBuilder.setup_color_blend_state_default();
+		pipelineBuilder.setup_color_blend_state_default(2);
 		_transparencyBuilder = pipelineBuilder;
 
 		pipelineBuilder.setup_depth_state(false, false, VK_COMPARE_OP_LESS_OR_EQUAL);
+		pipelineBuilder.setup_color_blend_state_default();
 		description = Plane::get_vertex_description();
 		pipelineBuilder.setup_vertex_input_state(description);
 		_postprocessingPipelineBuilder = pipelineBuilder;
 		_deferredPipelineBuilder = pipelineBuilder;
+		pipelineBuilder.setup_color_blend_state_default(2);
+		_compositePipelineBuilder = pipelineBuilder;
 	}
 
 	ShaderEffect* MaterialSystem::build_shader_effect(const std::vector<std::string>& shaderPaths)
@@ -151,6 +154,14 @@ namespace vkutil
 			"/shaders/deferred_lighting.vert.spv",
 			"/shaders/deferred_lighting.frag.spv"
 		});
+		ShaderEffect* taaEffect = build_shader_effect({
+			"/shaders/postprocessing.vert.spv",
+			"/shaders/taa.frag.spv"
+		});
+		ShaderEffect* compositeEffect = build_shader_effect({
+			"/shaders/postprocessing.vert.spv",
+			"/shaders/composite.frag.spv"
+		});
 			
 		//ShaderEffect* coloredLitEffect = build_shader_effect({
 		//	"/shaders/mesh.vert.spv",
@@ -160,6 +171,9 @@ namespace vkutil
 		ShadowMap& pointShadowMap = _engine->_renderScene._pointShadowMaps[0];
 		ShadowMap& spotShadowMap = _engine->_renderScene._spotShadowMaps[0];
 
+		VkRenderPass taaRenderPass = _engine->_temporalFilter.taaRenderPass;
+		VkRenderPass compRenderPass = _engine->_composite.renderPass;
+
 		//ShaderPass* texturedLitPass = build_shader_pass(_engine->_mainOpaqueRenderPass, _offscrPipelineBuilder, texturedLitEffect);
 		ShaderPass* postrpocessingPass = build_shader_pass(_engine->_renderPass, _postprocessingPipelineBuilder, postprocessingEffect);
 		ShaderPass* dirShadowPass = build_shader_pass(shadowMap.renderPass, _dirShadowPipelineBuilder, dirShadowEffect);
@@ -168,6 +182,8 @@ namespace vkutil
 		ShaderPass* transparencyPass = build_shader_pass(_engine->_transparencyRenderPass, _transparencyBuilder, transparencyEffect);
 		ShaderPass* GBufferPass = build_shader_pass(_engine->_GBuffer.renderPass, _GBufferPipelineBuilder, GBufferEffect);
 		ShaderPass* deferredPass = build_shader_pass(_engine->_deferredRenderPass, _deferredPipelineBuilder, deferredEffect);
+		ShaderPass* taaPass = build_shader_pass(taaRenderPass, _postprocessingPipelineBuilder, taaEffect);
+		ShaderPass* compositePass = build_shader_pass(compRenderPass, _compositePipelineBuilder, compositeEffect);
 		//ShaderPass* coloredLitPass = build_shader_pass(_engine->_mainOpaqueRenderPass, _offscrPipelineBuilder, coloredLitEffect);
 
 		deferredPass->relatedShaderPasses.push_back(GBufferPass);
@@ -198,6 +214,12 @@ namespace vkutil
 		effectTemplate.passShaders[MeshpassType::SpotShadow] = nullptr;
 		effectTemplate.passShaders[MeshpassType::Transparency] = nullptr;
 		_templateCache["Postprocessing"] = effectTemplate;
+
+		effectTemplate.passShaders[MeshpassType::Forward] = taaPass;
+		_templateCache["TAA"] = effectTemplate;
+
+		effectTemplate.passShaders[MeshpassType::Forward] = compositePass;
+		_templateCache["Composite"] = effectTemplate;
 	}
 
 	Material* MaterialSystem::build_material(const std::string& materialName, const MaterialData& info)

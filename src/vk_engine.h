@@ -23,7 +23,7 @@
 #include <vulkan/vulkan_core.h>
 
 //#define VK_RELEASE 1
-#define NODE_COUNT 20
+#define NODE_COUNT 6
 
 struct DeletionQueue
 {
@@ -47,17 +47,11 @@ struct DeletionQueue
 struct GPUCameraData
 {
 	glm::mat4 view;
+	glm::mat4 oldView;
 	glm::mat4 proj;
 	glm::mat4 viewproj;
-	glm::mat4 invView;
-	glm::mat4 invProj;
-	glm::vec4 position;
-	glm::vec4 cameraUp;
-	glm::vec4 cameraFront;
-	glm::vec4 cameraRight;
-	float fovVertical;
-	float fovHorizontal;
-	float data1, data2;
+	glm::mat4 invViewProj;
+	glm::vec4 cameraPosition;
 };
 
 struct GPUSceneData
@@ -80,6 +74,13 @@ struct GPUObjectData
 	uint32_t data;
 };
 
+struct Settings
+{
+	glm::ivec2 viewportRes;
+	uint32_t totalFrames;
+	uint32_t isTaaEnabled{ 1 };
+};
+
 struct UploadContext
 {
 	VkFence _uploadFence;
@@ -87,6 +88,7 @@ struct UploadContext
 	VkCommandBuffer _commandBuffer;
 };
 
+// I need to think about this structure. Probably I need to remake it
 struct FrameData
 {
 	VkSemaphore _presentSemaphore, _renderSemaphore;
@@ -97,6 +99,7 @@ struct FrameData
 
 	AllocatedBuffer _cameraBuffer;
 	AllocatedBuffer _sceneDataBuffer;
+	AllocatedBuffer _settingsBuffer;
 
 	DescriptorAllocator _dynamicDescriptorAllocator;
 
@@ -104,34 +107,6 @@ struct FrameData
 };
 
 // Data for the first pass in oit algorithm
-struct TransparencyFirstPassData
-{
-	struct Node
-	{
-		glm::vec4 color;
-		float depth;
-		uint32_t next;
-	};
-
-	struct GeometryInfo
-	{
-		uint32_t count;
-		uint32_t maxNodeCount;
-	};
-
-	VkFramebuffer framebuffer;
-	VkRenderPass renderPass;
-	Texture headIndex;
-	AllocatedBufferT<Node> nodes;
-	AllocatedBufferT<GeometryInfo> geometryInfo;
-
-	// Not final approach. I have to think how to add it to the transparency pass.
-	vkutil::GraphicsPipelineBuilder pipelineBuilder;
-	vkutil::ShaderPass* geometryPass;
-	void setup_pipeline_builder(VulkanEngine* engine);
-	void create_shader_pass(VulkanEngine* engine);
-	void cleanup(VulkanEngine* engine);
-};
 
 struct Vertex
 {
@@ -248,21 +223,90 @@ struct ThreadInfo
 	std::vector<VkCommandBuffer> commandBuffers;
 };
 
+struct TransparencyFirstPassData
+{
+	struct Node
+	{
+		glm::vec4 color;
+		float depth;
+		uint32_t next;
+	};
+
+	struct GeometryInfo
+	{
+		uint32_t count;
+		uint32_t maxNodeCount;
+	};
+
+	VkFramebuffer framebuffer;
+	VkRenderPass renderPass;
+	Texture headIndex;
+	AllocatedBufferT<Node> nodes;
+	AllocatedBufferT<GeometryInfo> geometryInfo;
+
+	// Not final approach. I have to think how to add it to the transparency pass.
+	vkutil::GraphicsPipelineBuilder pipelineBuilder;
+	vkutil::ShaderPass* geometryPass;
+	void setup_pipeline_builder(VulkanEngine* engine);
+	void create_shader_pass(VulkanEngine* engine);
+	void cleanup(VulkanEngine* engine);
+};
+
 struct GBuffer
 {
 	Attachment albedo;
 	Attachment normal;
 	Attachment surface;		// Roughness and metallic
 	Attachment depth;
-	Attachment position;
+	Attachment velocity;
 	VkFramebuffer framebuffer;
 	VkRenderPass renderPass;
 
 	void cleanup(VulkanEngine* engine);
 };
 
+struct TemporalFilter
+{
+	struct Jittering
+	{
+		glm::vec4 haltonSequence[36];	// Use vec4 because of std140 alignment
+		float haltonScale;
+		uint32_t numSamples;
+		glm::vec2 data;
+	};
+
+	Jittering jittering;
+	glm::mat4 oldView;
+	Attachment taaCurrentColorAttach;
+	Attachment taaOldColorAttach;
+	VkFramebuffer taaFramebuffer;
+	VkRenderPass taaRenderPass;
+
+	AllocatedBufferT<Jittering> jitteringBuffer;
+
+	void init(VulkanEngine* engine);
+	void cleanup(VulkanEngine* engine);
+		
+	private:
+		void prepare_jittering_data();
+		float create_halton_sequence(int32_t index, int32_t base);
+};
+
+struct Composite
+{
+	Attachment colorAttach;
+	Attachment velocityAttach;
+	VkFramebuffer framebuffer;
+	VkRenderPass renderPass;
+
+	void init(VulkanEngine* engine);
+	void cleanup(VulkanEngine* engine);
+};
+
 constexpr unsigned int FRAME_OVERLAP = 2;
 
+// I have to think how to split this class to subclasses because it's too big now. Possible new classes may be created
+// for device, swapchain and rendering passes (render graph).
 class VulkanEngine 
 {
 	public:
@@ -305,9 +349,14 @@ class VulkanEngine
 		Attachment _deferredColorAttach;
 		Attachment _transparencyColorAttach;
 		Attachment _transparencyDepthAttach;
-		VkSampler _mainOpaqueSampler;
+		Attachment _transparencyVelocityAttach;
+		// Samplers for attachments
+		VkSampler _linearSampler;
+		VkSampler _nearestSampler;
 
 		GBuffer _GBuffer;
+		Composite _composite;
+		TemporalFilter _temporalFilter;
 
 		// Depth map data for culling
 		Texture _depthPyramid;
@@ -349,6 +398,7 @@ class VulkanEngine
 		VkSampler _shadowMapSampler;
 
 		Plane _outputQuad;
+		Settings _settings = {};
 
 		GPUSceneData _sceneParameters;
 		AllocatedBuffer _sceneParameterBuffer;
@@ -426,21 +476,7 @@ class VulkanEngine
 			VkImageUsageFlags usageFlags,
 			VkImageAspectFlags aspectFlags);
 
-		void reallocate_buffer(AllocatedBuffer& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
-		{
-			AllocatedBuffer newBuffer(this, size, usage, memoryUsage);
-
-			if (buffer._buffer != VK_NULL_HANDLE)
-			{
-				get_current_frame()._frameDeletionQueue.push_function([=](){
-					LOG_INFO("Before deleting buffer");
-					vmaDestroyBuffer(_allocator, buffer._buffer, buffer._allocation);
-					LOG_INFO("After deleting buffer");
-				});
-			}
-
-			buffer = newBuffer;
-		}
+		void reallocate_buffer(AllocatedBuffer& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
 		void parse_prefabs();
 
@@ -455,6 +491,8 @@ class VulkanEngine
 		void draw_deferred_pass(VkCommandBuffer cmd);
 		void draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void draw_tranparency_pass(VkCommandBuffer cmd);
+		void draw_compositing_pass(VkCommandBuffer cmd);
+		void draw_taa_pass(VkCommandBuffer cmd);
 		void draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void submit(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void bake_shadow_maps(VkCommandBuffer cmd);

@@ -384,8 +384,8 @@ void RenderScene::merge_meshes(class VulkanEngine* engine)
 	    AllocatedBuffer::copy_buffer_cmd(engine, cmd, &indexStagingBuffer, &_globalIndexBuffer);
 	});
 
-	LOG_INFO("Vertex buffer size {}", _globalVertexBuffer._bufferSize);
-	LOG_INFO("Index buffer size {}", _globalIndexBuffer._bufferSize);
+	LOG_INFO("Vertex buffer size {}", _globalVertexBuffer._bufferSize)
+	LOG_INFO("Index buffer size {}", _globalIndexBuffer._bufferSize)
 
 	engine->_mainDeletionQueue.push_function([=](){
 		vmaDestroyBuffer(engine->_allocator, _globalVertexBuffer._buffer, _globalVertexBuffer._allocation);

@@ -46,11 +46,10 @@ VkPipeline GraphicsPipelineBuilder::build(VkRenderPass renderPass, VkPipelineLay
 	_pipelineInfo.pDynamicState = &_dynamicState;
 	_pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	LOG_INFO("Before building pipeline")
 	VkPipeline pipeline;
 	if (vkCreateGraphicsPipelines(_device, VK_NULL_HANDLE, 1, &_pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
 	{
-		LOG_FATAL("Failed to create graphics pipeline");
+		LOG_FATAL("Failed to create graphics pipeline")
 	}
 	_shaderStages.clear();
 
@@ -62,9 +61,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::setup_shader_stages(std::vecto
 	_shaderStages.clear();
 	for (auto& stage : stages)
 	{
-		LOG_INFO("Stage");
-		_shaderStages.push_back(
-			vkinit::pipeline_shader_stage_create_info(stage.stage, stage.shader->get_shader_module()));
+		_shaderStages.push_back(vkinit::pipeline_shader_stage_create_info(stage.stage, stage.shader->get_shader_module()));
 	}
 
 	return *this;
