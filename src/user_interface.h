@@ -88,6 +88,7 @@ namespace ui
 
 		private:
 			bool _isTaaEnabled;
+			float _taaAlpha;
 			Settings* _settings;
 	};
 }

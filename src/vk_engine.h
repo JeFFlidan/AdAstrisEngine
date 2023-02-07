@@ -79,6 +79,8 @@ struct Settings
 	glm::ivec2 viewportRes;
 	uint32_t totalFrames;
 	uint32_t isTaaEnabled{ 1 };
+	float taaAlpha{ 8.0f };
+	uint32_t data1, data2, data3;
 };
 
 struct UploadContext

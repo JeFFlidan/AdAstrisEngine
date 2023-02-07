@@ -73,4 +73,6 @@ struct Settings
 	ivec2 viewportRes;
 	uint totalFrames;
 	uint isTaaEnabled;
+	float taaAlpha;
+	uint data1, data2, data3;
 };
