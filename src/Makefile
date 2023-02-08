@@ -177,29 +177,125 @@ material_system.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/material_system.cpp.s
 .PHONY : material_system.cpp.s
 
-user_interface.obj: user_interface.cpp.obj
-.PHONY : user_interface.obj
+ui/actors_properties_ui.obj: ui/actors_properties_ui.cpp.obj
+.PHONY : ui/actors_properties_ui.obj
 
 # target to build an object file
-user_interface.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/user_interface.cpp.obj
-.PHONY : user_interface.cpp.obj
+ui/actors_properties_ui.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/actors_properties_ui.cpp.obj
+.PHONY : ui/actors_properties_ui.cpp.obj
 
-user_interface.i: user_interface.cpp.i
-.PHONY : user_interface.i
+ui/actors_properties_ui.i: ui/actors_properties_ui.cpp.i
+.PHONY : ui/actors_properties_ui.i
 
 # target to preprocess a source file
-user_interface.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/user_interface.cpp.i
-.PHONY : user_interface.cpp.i
+ui/actors_properties_ui.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/actors_properties_ui.cpp.i
+.PHONY : ui/actors_properties_ui.cpp.i
 
-user_interface.s: user_interface.cpp.s
-.PHONY : user_interface.s
+ui/actors_properties_ui.s: ui/actors_properties_ui.cpp.s
+.PHONY : ui/actors_properties_ui.s
 
 # target to generate assembly for a file
-user_interface.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/user_interface.cpp.s
-.PHONY : user_interface.cpp.s
+ui/actors_properties_ui.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/actors_properties_ui.cpp.s
+.PHONY : ui/actors_properties_ui.cpp.s
+
+ui/docking_window.obj: ui/docking_window.cpp.obj
+.PHONY : ui/docking_window.obj
+
+# target to build an object file
+ui/docking_window.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/docking_window.cpp.obj
+.PHONY : ui/docking_window.cpp.obj
+
+ui/docking_window.i: ui/docking_window.cpp.i
+.PHONY : ui/docking_window.i
+
+# target to preprocess a source file
+ui/docking_window.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/docking_window.cpp.i
+.PHONY : ui/docking_window.cpp.i
+
+ui/docking_window.s: ui/docking_window.cpp.s
+.PHONY : ui/docking_window.s
+
+# target to generate assembly for a file
+ui/docking_window.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/docking_window.cpp.s
+.PHONY : ui/docking_window.cpp.s
+
+ui/proj_settings_window.obj: ui/proj_settings_window.cpp.obj
+.PHONY : ui/proj_settings_window.obj
+
+# target to build an object file
+ui/proj_settings_window.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/proj_settings_window.cpp.obj
+.PHONY : ui/proj_settings_window.cpp.obj
+
+ui/proj_settings_window.i: ui/proj_settings_window.cpp.i
+.PHONY : ui/proj_settings_window.i
+
+# target to preprocess a source file
+ui/proj_settings_window.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/proj_settings_window.cpp.i
+.PHONY : ui/proj_settings_window.cpp.i
+
+ui/proj_settings_window.s: ui/proj_settings_window.cpp.s
+.PHONY : ui/proj_settings_window.s
+
+# target to generate assembly for a file
+ui/proj_settings_window.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/proj_settings_window.cpp.s
+.PHONY : ui/proj_settings_window.cpp.s
+
+ui/properties_window.obj: ui/properties_window.cpp.obj
+.PHONY : ui/properties_window.obj
+
+# target to build an object file
+ui/properties_window.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/properties_window.cpp.obj
+.PHONY : ui/properties_window.cpp.obj
+
+ui/properties_window.i: ui/properties_window.cpp.i
+.PHONY : ui/properties_window.i
+
+# target to preprocess a source file
+ui/properties_window.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/properties_window.cpp.i
+.PHONY : ui/properties_window.cpp.i
+
+ui/properties_window.s: ui/properties_window.cpp.s
+.PHONY : ui/properties_window.s
+
+# target to generate assembly for a file
+ui/properties_window.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/properties_window.cpp.s
+.PHONY : ui/properties_window.cpp.s
+
+ui/user_interface.obj: ui/user_interface.cpp.obj
+.PHONY : ui/user_interface.obj
+
+# target to build an object file
+ui/user_interface.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/user_interface.cpp.obj
+.PHONY : ui/user_interface.cpp.obj
+
+ui/user_interface.i: ui/user_interface.cpp.i
+.PHONY : ui/user_interface.i
+
+# target to preprocess a source file
+ui/user_interface.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/user_interface.cpp.i
+.PHONY : ui/user_interface.cpp.i
+
+ui/user_interface.s: ui/user_interface.cpp.s
+.PHONY : ui/user_interface.s
+
+# target to generate assembly for a file
+ui/user_interface.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/ui/user_interface.cpp.s
+.PHONY : ui/user_interface.cpp.s
 
 vk_camera.obj: vk_camera.cpp.obj
 .PHONY : vk_camera.obj
@@ -344,6 +440,30 @@ vk_pipeline.s: vk_pipeline.cpp.s
 vk_pipeline.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_pipeline.cpp.s
 .PHONY : vk_pipeline.cpp.s
+
+vk_render_graph.obj: vk_render_graph.cpp.obj
+.PHONY : vk_render_graph.obj
+
+# target to build an object file
+vk_render_graph.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_render_graph.cpp.obj
+.PHONY : vk_render_graph.cpp.obj
+
+vk_render_graph.i: vk_render_graph.cpp.i
+.PHONY : vk_render_graph.i
+
+# target to preprocess a source file
+vk_render_graph.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_render_graph.cpp.i
+.PHONY : vk_render_graph.cpp.i
+
+vk_render_graph.s: vk_render_graph.cpp.s
+.PHONY : vk_render_graph.s
+
+# target to generate assembly for a file
+vk_render_graph.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_render_graph.cpp.s
+.PHONY : vk_render_graph.cpp.s
 
 vk_renderer.obj: vk_renderer.cpp.obj
 .PHONY : vk_renderer.obj
@@ -505,9 +625,21 @@ help:
 	@echo ... material_system.obj
 	@echo ... material_system.i
 	@echo ... material_system.s
-	@echo ... user_interface.obj
-	@echo ... user_interface.i
-	@echo ... user_interface.s
+	@echo ... ui/actors_properties_ui.obj
+	@echo ... ui/actors_properties_ui.i
+	@echo ... ui/actors_properties_ui.s
+	@echo ... ui/docking_window.obj
+	@echo ... ui/docking_window.i
+	@echo ... ui/docking_window.s
+	@echo ... ui/proj_settings_window.obj
+	@echo ... ui/proj_settings_window.i
+	@echo ... ui/proj_settings_window.s
+	@echo ... ui/properties_window.obj
+	@echo ... ui/properties_window.i
+	@echo ... ui/properties_window.s
+	@echo ... ui/user_interface.obj
+	@echo ... ui/user_interface.i
+	@echo ... ui/user_interface.s
 	@echo ... vk_camera.obj
 	@echo ... vk_camera.i
 	@echo ... vk_camera.s
@@ -526,6 +658,9 @@ help:
 	@echo ... vk_pipeline.obj
 	@echo ... vk_pipeline.i
 	@echo ... vk_pipeline.s
+	@echo ... vk_render_graph.obj
+	@echo ... vk_render_graph.i
+	@echo ... vk_render_graph.s
 	@echo ... vk_renderer.obj
 	@echo ... vk_renderer.i
 	@echo ... vk_renderer.s

@@ -949,7 +949,7 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 
 	RenderScene* scene = &_renderScene;
 	
-	size_t dirLightsBufSize = sizeof(actors::DirectionLight) * scene->_dirLights.size();
+	size_t dirLightsBufSize = sizeof(actors::DirectionalLight) * scene->_dirLights.size();
 	size_t pointLightsBufSize = sizeof(actors::PointLight) * scene->_pointLights.size();
 	size_t spotLightsBufSize = sizeof(actors::SpotLight) * scene->_spotLights.size();
 	
@@ -967,7 +967,7 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 			auto& shadowMap = _renderScene._dirShadowMaps[i];
 
 			ShadowMap::create_light_space_matrices(this, ActorType::DirectionalLight, i, shadowMap);
-			size_t allocSize = sizeof(actors::DirectionLight);
+			size_t allocSize = sizeof(actors::DirectionalLight);
 			AllocatedBuffer& buffer = _renderScene._dirShadowMaps[i].lightBuffer;
 			reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 			buffer.copy_from(this, &dirLight, allocSize);
@@ -1232,15 +1232,15 @@ void VulkanEngine::reallocate_light_buffer(ActorType lightType)
 	{
 		case (ActorType::DirectionalLight):
 		{
-			size_t dirLightsBufSize = sizeof(actors::DirectionLight) * scene->_dirLights.size();
+			size_t dirLightsBufSize = sizeof(actors::DirectionalLight) * scene->_dirLights.size();
 			std::vector<bool>& dirLights = _renderScene._bNeedsRealoadingDirLights;
 			std::vector<bool>& dirMaps = _renderScene._bNeedsBakeDirShadows;
 			
 			reallocate_buffer(scene->_dirLightsBuffer, dirLightsBufSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-			AllocatedBufferT<actors::DirectionLight> tempBuffer(this, dirLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+			AllocatedBufferT<actors::DirectionalLight> tempBuffer(this, dirLightsBufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 			tempBuffer.copy_from(this, scene->_dirLights.data(), dirLightsBufSize);
 			immediate_submit([&](VkCommandBuffer cmd){
-				AllocatedBufferT<actors::DirectionLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_dirLightsBuffer);
+				AllocatedBufferT<actors::DirectionalLight>::copy_typed_buffer_cmd(this, cmd, &tempBuffer, &scene->_dirLightsBuffer);
 			});
 			tempBuffer.destroy_buffer(this);
 
@@ -1406,7 +1406,7 @@ void VulkanEngine::prepare_data_for_drawing(VkCommandBuffer cmd)
 		scene->_dirtyObjects.clear();
 	}
 
-	size_t dirLightsBufSize = sizeof(actors::DirectionLight) * scene->_dirLights.size();
+	size_t dirLightsBufSize = sizeof(actors::DirectionalLight) * scene->_dirLights.size();
 	size_t pointLightsBufSize = sizeof(actors::PointLight) * scene->_pointLights.size();
 	size_t spotLightsBufSize = sizeof(actors::SpotLight) * scene->_spotLights.size();
 

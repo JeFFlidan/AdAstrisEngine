@@ -27,7 +27,7 @@ namespace actors
 		float farPlane;
 	};
 
-	struct DirectionLight
+	struct DirectionalLight
 	{
 		glm::vec4 direction;
 		glm::vec4 colorAndIntensity;	// w = intensity

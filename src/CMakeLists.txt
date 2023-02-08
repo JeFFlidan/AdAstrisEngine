@@ -1,36 +1,15 @@
 add_library(logger INTERFACE)
 
 # Add source to this project's executable.
-add_executable(vulkan_guide
-    main.cpp
-    vk_engine.cpp
-    vk_engine.h
-    vk_types.h
-    vk_types.cpp
-    vk_initializers.cpp
-    vk_initializers.h
-    vk_mesh.h
-    vk_mesh.cpp
-    vk_textures.h
-    vk_textures.cpp
-    vk_descriptors.h
-    vk_descriptors.cpp
-    vk_camera.h
-    vk_camera.cpp
-    material_system.h
-    material_system.cpp
-    vk_shaders.h
-    vk_shaders.cpp
-    vk_renderpass.h
-    vk_renderpass.cpp
-    vk_scene.h
-    vk_scene.cpp
-    vk_renderer.cpp
-    user_interface.h
-    user_interface.cpp
-    vk_pipeline.cpp
-    vk_pipeline.h)
 
+file(GLOB ENGINE_FILES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.h")
+ 
+
+add_executable(vulkan_guide ${ENGINE_FILES})
 
 set_property(TARGET vulkan_guide PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:vulkan_guide>")
 
