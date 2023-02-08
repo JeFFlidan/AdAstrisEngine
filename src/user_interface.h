@@ -1,5 +1,6 @@
 #pragma once
 
+#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_vulkan.h>
@@ -13,21 +14,10 @@ struct Settings;
 
 namespace ui
 {
-	class UserInterface
-	{
-		public:
-			void init_ui(VulkanEngine* engine);
-			void setup_dark_theme();
-
-			void draw_ui(VulkanEngine* engine);
-			void render_ui(VulkanEngine* engine);
-
-			void cleanup();
-	};
-
 	class PointLightWindow
 	{
 		public:
+			PointLightWindow() = default;
 			PointLightWindow(actors::PointLight& pointLight);
 
 			void draw_window(VulkanEngine* engine);
@@ -40,12 +30,13 @@ namespace ui
 			float _sourceRadius;
 			bool _isVisible;
 			bool _castShadows;
-			actors::PointLight* _pointLight;
+			actors::PointLight* _pointLight{ nullptr };
 	};
 
 	class DirLightWindow
 	{
 		public:
+			DirLightWindow() = default;
 			DirLightWindow(actors::DirectionLight& dirLight);
 
 			void draw_window(VulkanEngine* engine);
@@ -55,12 +46,13 @@ namespace ui
 			float _intensity;
 			bool _isVisible;
 			bool _castShadows;
-			actors::DirectionLight* _dirLight;
+			actors::DirectionLight* _dirLight{ nullptr };
 	};
 
 	class SpotLightWindow
 	{
 		public:
+			SpotLightWindow() = default;
 			SpotLightWindow(actors::SpotLight& spotLight);
 
 			void draw_window(VulkanEngine* engine);
@@ -75,12 +67,13 @@ namespace ui
 			float _innerConeRadius;
 			bool _isVisible;
 			bool _castShadows;
-			actors::SpotLight* _spotLight;
+			actors::SpotLight* _spotLight{ nullptr };
 	};
 
 	class SettingsWindow
 	{
 		public:
+			SettingsWindow() = default;
 			SettingsWindow(Settings& settings);
 
 			void draw_window();
@@ -91,4 +84,32 @@ namespace ui
 			float _taaAlpha;
 			Settings* _settings;
 	};
+
+	class DockingWindow
+	{
+		public:
+			void draw_window(ImVec2 windowSize);
+	};
+	
+	class UserInterface
+	{
+		public:
+			UserInterface() = default;
+		
+			void init_ui(VulkanEngine* engine);
+			void setup_dark_theme();
+
+			void draw_ui(VulkanEngine* engine);
+			void render_ui();
+
+			void cleanup();
+
+		private:
+			DockingWindow _dockingWindow;
+			SpotLightWindow _spotLightWindow;
+			PointLightWindow _pointLightWindow;
+			DirLightWindow _dirLightWidnow;
+			SettingsWindow _settingsWindow;
+	};
+
 }

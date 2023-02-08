@@ -42,8 +42,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <imgui.h>
-#include <imgui_impl_sdl.h>
-#include <imgui_impl_vulkan.h>
 
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
@@ -790,7 +788,7 @@ void VulkanEngine::init_shadow_maps()
 
 		actors::DirectionLight& dirLight = _renderScene._dirLights[i];
 
-		ShadowMap::create_light_space_matrices(this, LightType::DirectionalLight, i, tempMap);
+		ShadowMap::create_light_space_matrices(this, ActorType::DirectionalLight, i, tempMap);
 
 		vkutil::RenderPassBuilder::begin()
 			.add_depth_attachment(tempMap.attachment.format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)
@@ -821,7 +819,7 @@ void VulkanEngine::init_shadow_maps()
 		ShadowMap tempMap;
 		actors::PointLight& pointLight = _renderScene._pointLights[i];
 
-		ShadowMap::create_light_space_matrices(this, LightType::PointLight, i, tempMap);
+		ShadowMap::create_light_space_matrices(this, ActorType::PointLight, i, tempMap);
 		
 		Attachment& attachment = tempMap.attachment;
 		attachment.format = VK_FORMAT_D32_SFLOAT;
@@ -870,7 +868,7 @@ void VulkanEngine::init_shadow_maps()
 		ShadowMap tempMap;
 		actors::SpotLight& spotLight = _renderScene._spotLights[i];
 
-		ShadowMap::create_light_space_matrices(this, LightType::SpotLight, i, tempMap);
+		ShadowMap::create_light_space_matrices(this, ActorType::SpotLight, i, tempMap);
 		
 		create_attachment(
 			tempMap.attachment,
@@ -1085,6 +1083,7 @@ void VulkanEngine::init_output_quad()
 
 void VulkanEngine::draw()
 {
+	_userInterface.render_ui();
 	ImGui::Render();
 	LOG_INFO("Start new frame")
 

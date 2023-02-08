@@ -87,11 +87,11 @@ void ShadowMap::destroy_shadow_map(VulkanEngine* engine, ShadowMap shadowMap)
 	vmaDestroyImage(engine->_allocator, shadowMap.attachment.imageData.image, shadowMap.attachment.imageData.allocation);
 }
 
-void ShadowMap::create_light_space_matrices(VulkanEngine* engine, LightType lightType, uint32_t lightId, ShadowMap& shadowMap)
+void ShadowMap::create_light_space_matrices(VulkanEngine* engine, ActorType lightType, uint32_t lightId, ShadowMap& shadowMap)
 {
 	switch (lightType)
 	{
-		case LightType::DirectionalLight:
+		case ActorType::DirectionalLight:
 		{
 			auto& dirLight = engine->_renderScene._dirLights[lightId];
 			float nearPlane = 0.01f, farPlane = 600.0f;
@@ -106,7 +106,7 @@ void ShadowMap::create_light_space_matrices(VulkanEngine* engine, LightType ligh
 		
 			break;
 		}
-		case LightType::PointLight:
+		case ActorType::PointLight:
 		{
 			auto& pointLight = engine->_renderScene._pointLights[lightId];
 
@@ -132,7 +132,7 @@ void ShadowMap::create_light_space_matrices(VulkanEngine* engine, LightType ligh
 			
 			break;
 		}
-		case LightType::SpotLight:
+		case ActorType::SpotLight:
 		{
 			auto& spotLight = engine->_renderScene._spotLights[lightId];
 
