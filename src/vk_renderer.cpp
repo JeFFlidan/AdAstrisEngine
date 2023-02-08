@@ -966,14 +966,14 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 			auto& dirLight = _renderScene._dirLights[i];
 			auto& shadowMap = _renderScene._dirShadowMaps[i];
 
-			ShadowMap::create_light_space_matrices(this, LightType::DirectionalLight, i, shadowMap);
+			ShadowMap::create_light_space_matrices(this, ActorType::DirectionalLight, i, shadowMap);
 			size_t allocSize = sizeof(actors::DirectionLight);
 			AllocatedBuffer& buffer = _renderScene._dirShadowMaps[i].lightBuffer;
 			reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 			buffer.copy_from(this, &dirLight, allocSize);
 		}
 
-		reallocate_light_buffer(LightType::DirectionalLight);
+		reallocate_light_buffer(ActorType::DirectionalLight);
 
 		draw_shadow_pass(cmd, vkutil::MeshpassType::DirectionalShadow);
 
@@ -999,7 +999,7 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 			ShadowMap& shadowMap = _renderScene._pointShadowMaps[i];
 			auto& pointLight = _renderScene._pointLights[i];
 
-			ShadowMap::create_light_space_matrices(this, LightType::PointLight, i, shadowMap);
+			ShadowMap::create_light_space_matrices(this, ActorType::PointLight, i, shadowMap);
 			size_t allocSize = sizeof(actors::PointLight);
 			AllocatedBuffer& buffer = shadowMap.lightBuffer;
 			reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -1013,7 +1013,7 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 			_renderScene._pointShadowMapsInfos.push_back(info);
 		}
 
-		reallocate_light_buffer(LightType::PointLight);
+		reallocate_light_buffer(ActorType::PointLight);
 
 		draw_shadow_pass(cmd, vkutil::MeshpassType::PointShadow);
 
@@ -1029,7 +1029,7 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 			ShadowMap& shadowMap = _renderScene._spotShadowMaps[i];
 			auto& spotLight = _renderScene._spotLights[i];
 
-			ShadowMap::create_light_space_matrices(this, LightType::SpotLight, i, shadowMap);
+			ShadowMap::create_light_space_matrices(this, ActorType::SpotLight, i, shadowMap);
 			size_t allocSize = sizeof(actors::SpotLight);
 			AllocatedBuffer& buffer = shadowMap.lightBuffer;
 			reallocate_buffer(buffer, allocSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -1043,7 +1043,7 @@ void VulkanEngine::bake_shadow_maps(VkCommandBuffer cmd)
 			_renderScene._spotShadowMapsInfos.push_back(info);
 		}
 
-		reallocate_light_buffer(LightType::SpotLight);
+		reallocate_light_buffer(ActorType::SpotLight);
 
 		draw_shadow_pass(cmd, vkutil::MeshpassType::SpotShadow);
 
@@ -1224,13 +1224,13 @@ void VulkanEngine::draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptor
 	vkCmdEndRenderPass(cmd);
 }
 
-void VulkanEngine::reallocate_light_buffer(LightType lightType)
+void VulkanEngine::reallocate_light_buffer(ActorType lightType)
 {
 	RenderScene* scene = &_renderScene;
 
 	switch (lightType)
 	{
-		case (LightType::DirectionalLight):
+		case (ActorType::DirectionalLight):
 		{
 			size_t dirLightsBufSize = sizeof(actors::DirectionLight) * scene->_dirLights.size();
 			std::vector<bool>& dirLights = _renderScene._bNeedsRealoadingDirLights;
@@ -1246,7 +1246,7 @@ void VulkanEngine::reallocate_light_buffer(LightType lightType)
 
 			dirLights = { false };
 		}
-		case (LightType::SpotLight):
+		case (ActorType::SpotLight):
 		{
 			size_t spotLightsBufSize = sizeof(actors::SpotLight) * scene->_spotLights.size();
 			std::vector<bool>& spotLights = _renderScene._bNeedsReloadingSpotLights;
@@ -1262,7 +1262,7 @@ void VulkanEngine::reallocate_light_buffer(LightType lightType)
 
 			spotLights = { false };
 		}
-		case (LightType::PointLight):
+		case (ActorType::PointLight):
 		{
 			size_t pointLightsBufSize = sizeof(actors::PointLight) * scene->_pointLights.size();
 			std::vector<bool>& pointLights = _renderScene._bNeedsReloadingPointLights;

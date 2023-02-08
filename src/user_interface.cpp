@@ -47,6 +47,13 @@ namespace ui
 		}
 
 		ImGui::CreateContext();
+
+		ImGuiIO& io = ImGui::GetIO();
+		io.DisplaySize.x = static_cast<float>(engine->_windowExtent.width);
+		io.DisplaySize.y = static_cast<float>(engine->_windowExtent.height);
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		
 		ImGui_ImplSDL2_InitForVulkan(engine->_window);
 
 		ImGui_ImplVulkan_InitInfo init_info{};
@@ -163,7 +170,7 @@ namespace ui
 	void UserInterface::draw_ui(VulkanEngine* engine)
 	{
 		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplSDL2_NewFrame(engine->_window);
+		ImGui_ImplSDL2_NewFrame();
 
 		ImGui::NewFrame();
 
@@ -176,6 +183,11 @@ namespace ui
 		DirLightWindow dirLightWindow(dirLight);
 		SettingsWindow settingsWindow(engine->_settings);
 		
+		float x = static_cast<float>(engine->_windowExtent.width);
+		float y = static_cast<float>(engine->_windowExtent.height);
+		ImVec2 size = ImVec2(x, y);
+
+		_dockingWindow.draw_window(size);
 		pointLightWindow.draw_window(engine);
 		spotLightWindow.draw_window(engine);
 		dirLightWindow.draw_window(engine);
@@ -189,10 +201,10 @@ namespace ui
 		settingsWindow.set_settings_data();
 	}
 
-	void UserInterface::render_ui(VulkanEngine* engine)
+	void UserInterface::render_ui()
 	{
-		//ImGui::Render();
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), engine->get_current_frame()._mainCommandBuffer);
+		ImGui::Render();
+		//ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), engine->get_current_frame()._mainCommandBuffer);
 	}
 
 	PointLightWindow::PointLightWindow(actors::PointLight& pointLight)
@@ -218,6 +230,11 @@ namespace ui
 	void PointLightWindow::draw_window(VulkanEngine* engine)
 	{
 		RenderScene& scene = engine->_renderScene;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::PopStyleVar(3);
 	
 		ImGui::Begin("Point light");
 
@@ -275,7 +292,12 @@ namespace ui
 	void DirLightWindow::draw_window(VulkanEngine* engine)
 	{
 		RenderScene& scene = engine->_renderScene;
-	
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::PopStyleVar(3);
+		
 		ImGui::Begin("Directional light");
 
 		if (ImGui::CollapsingHeader("Light"))
@@ -332,7 +354,12 @@ namespace ui
 	void SpotLightWindow::draw_window(VulkanEngine* engine)
 	{
 		RenderScene& scene = engine->_renderScene;
-	
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::PopStyleVar(3);
+		
 		ImGui::Begin("Spot light");
 
 		if (ImGui::CollapsingHeader("Transform"))
@@ -402,6 +429,35 @@ namespace ui
 	{
 		_settings->isTaaEnabled = _isTaaEnabled;
 		_settings->taaAlpha = _taaAlpha;
+	}
+
+	void DockingWindow::draw_window(ImVec2 windowSize)
+	{
+		ImGui::SetNextWindowSize(windowSize);
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+		windowFlags |= ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoCollapse;
+		
+		ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_None;
+		dockspaceFlags ^= ImGuiDockNodeFlags_PassthruCentralNode;
+		
+		bool open = true;
+		
+		ImGui::Begin("Dockspace", &open, windowFlags);
+		ImGui::PopStyleVar(3);
+		
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+		{
+			ImGuiID dockspaceID = ImGui::GetID("MyDockSpace");
+			ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), dockspaceFlags);
+		}
+		
+		ImGui::End();
 	}
 
 }

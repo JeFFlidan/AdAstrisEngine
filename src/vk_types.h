@@ -87,8 +87,7 @@ struct Attachment : public Texture
 	void destroy_attachment(VulkanEngine* engine);
 };
 
-
-enum LightType
+enum ActorType
 {
 	DirectionalLight,
 	SpotLight,
@@ -110,6 +109,6 @@ struct ShadowMap
 	Creates projection and view matrices which are stored in ShadowMap.
 	Stores projection * view matrix in the light actor.
 	*/
-	static void create_light_space_matrices(VulkanEngine* engine, LightType lightType, uint32_t lightId, ShadowMap& shadowMap);
+	static void create_light_space_matrices(VulkanEngine* engine, ActorType lightType, uint32_t lightId, ShadowMap& shadowMap);
 };
 
