@@ -1,13 +1,12 @@
 ﻿#pragma once
 
-#include "user_interface.h"
 #include "vk_types.h"
 #include "vk_mesh.h"
 #include "material_system.h"
 #include "vk_pipeline.h"
 #include "vk_scene.h"
 #include "engine_actors.h"
-#include "user_interface.h"
+#include "ui/user_interface.h"
 #include <stdint.h>
 #include "vk_descriptors.h"
 #include "vk_camera.h"
@@ -344,7 +343,7 @@ class VulkanEngine
 
 		vkutil::MaterialSystem _materialSystem;
 		RenderScene _renderScene;
-		ui::UserInterface _userInterface;
+		engine::UserInterface _userInterface;
 
 		Attachment _mainOpaqueDepthAttach;
 		Attachment _mainOpaqueColorAttach;

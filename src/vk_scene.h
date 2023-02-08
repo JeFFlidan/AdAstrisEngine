@@ -157,10 +157,10 @@ class RenderScene
 		std::vector<VkDescriptorImageInfo> _normalInfos;
 		std::vector<VkDescriptorImageInfo> _armInfos;
 
-		std::vector<actors::DirectionLight> _dirLights;
+		std::vector<actors::DirectionalLight> _dirLights;
 		std::vector<actors::PointLight> _pointLights;
 		std::vector<actors::SpotLight> _spotLights;
-		AllocatedBufferT<actors::DirectionLight> _dirLightsBuffer;
+		AllocatedBufferT<actors::DirectionalLight> _dirLightsBuffer;
 		AllocatedBufferT<actors::PointLight> _pointLightsBuffer;
 		AllocatedBufferT<actors::SpotLight> _spotLightsBuffer;
 		std::vector<bool> _bNeedsRealoadingDirLights{ true };

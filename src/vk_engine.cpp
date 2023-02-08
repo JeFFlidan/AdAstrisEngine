@@ -750,7 +750,7 @@ void VulkanEngine::init_shadow_maps()
 		1
 	};
 
-	actors::DirectionLight dirLight;
+	actors::DirectionalLight dirLight;
 	float nearPlane = 0.01f, farPlane = 600.0f;
 	dirLight.direction = glm::vec4(-25.0f, -75.0f, -25.0f, 0.0f);
 	dirLight.direction = glm::normalize(dirLight.direction);
@@ -786,7 +786,7 @@ void VulkanEngine::init_shadow_maps()
 			VK_IMAGE_ASPECT_DEPTH_BIT
 		);
 
-		actors::DirectionLight& dirLight = _renderScene._dirLights[i];
+		actors::DirectionalLight& dirLight = _renderScene._dirLights[i];
 
 		ShadowMap::create_light_space_matrices(this, ActorType::DirectionalLight, i, tempMap);
 

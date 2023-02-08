@@ -89,6 +89,7 @@ struct Attachment : public Texture
 
 enum ActorType
 {
+	None,
 	DirectionalLight,
 	SpotLight,
 	PointLight
