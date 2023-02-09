@@ -1,8 +1,8 @@
 #pragma once
 
 #include "interfaces.h"
-#include "engine_actors.h"
-#include "vk_scene.h"
+#include "engine/engine_actors.h"
+#include "vulkan_renderer/vk_scene.h"
 
 namespace engine::ui
 {

@@ -1,12 +1,12 @@
 #pragma once
 
 #include "vk_initializers.h"
-#include "vk_shaders.h"
+#include "material_system/shader.h"
 #include "vk_mesh.h"
 #include <vulkan/vulkan.h>
 #include <vector>
 
-namespace vkutil
+namespace engine
 {
 	class GraphicsPipelineBuilder
 	{

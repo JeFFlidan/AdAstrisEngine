@@ -6,9 +6,9 @@
 #include "proj_settings_window.h"
 #include "properties_window.h"
 #include "docking_window.h"
-#include "vk_types.h"
+#include "vulkan_renderer/vk_types.h"
 
-class VulkanEngine;
+class VkRenderer;
 
 namespace engine
 {
@@ -17,12 +17,12 @@ namespace engine
 		public:
 			UserInterface() = default;
 		
-			void init_ui(VulkanEngine* engine);
+			void init_ui(VkRenderer* engine);
 
-			void draw_ui(VulkanEngine* engine);
+			void draw_ui(VkRenderer* engine);
 			void render_ui();
 
-			void cleanup();
+			void save_ini_file(VkRenderer* engine);
 
 		private:
 			ui::DockingWindow _dockingWindow;

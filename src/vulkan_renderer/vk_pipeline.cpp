@@ -1,10 +1,10 @@
 #include "vk_pipeline.h"
 
-#include "logger.h"
+#include "profiler/logger.h"
 
 #include <cassert>
 
-using namespace vkutil;
+using namespace engine;
 
 GraphicsPipelineBuilder::GraphicsPipelineBuilder(VkDevice device) : _device(device)
 {

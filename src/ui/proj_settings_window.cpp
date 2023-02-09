@@ -1,5 +1,5 @@
 #include "proj_settings_window.h"
-#include "vk_engine.h"
+#include "vulkan_renderer/vk_renderer.h"
 
 using namespace engine::ui;
 

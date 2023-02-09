@@ -1,7 +1,7 @@
 #include <iostream>
 #include <chrono>
 
-#include "logger.h"
+#include "profiler/logger.h"
 #include "vk_textures.h"
 #include "vk_initializers.h"
 #include <asset_loader.h>
@@ -10,9 +10,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-namespace vkutil
+namespace engine
 {
-	AllocatedImage upload_image(VulkanEngine& engine, AllocatedBuffer& stagingBuffer, assets::TextureInfo& textureInfo, VkFormat imageFormat)
+	AllocatedImage upload_image(VkRenderer& engine, AllocatedBuffer& stagingBuffer, assets::TextureInfo& textureInfo, VkFormat imageFormat)
 	{
 		VkExtent3D imageExtent;
 		imageExtent.width = textureInfo.pixelSize[0];
@@ -81,7 +81,7 @@ namespace vkutil
 		return newImage;
 	}
 
-	bool load_image_from_file(VulkanEngine& engine, const char* file, AllocatedImage& outImage)
+	bool load_image_from_file(VkRenderer& engine, const char* file, AllocatedImage& outImage)
 	{
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels = stbi_load(file, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -179,7 +179,7 @@ namespace vkutil
 		return true;
 	}
 
-	bool load_image_from_asset(VulkanEngine& engine, const char* filename, AllocatedImage& outImage)
+	bool load_image_from_asset(VkRenderer& engine, const char* filename, AllocatedImage& outImage)
 	{
 		assets::AssetFile file;
 		bool loaded = assets::load_binaryFile(filename, file);

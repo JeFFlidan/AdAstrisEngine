@@ -2,7 +2,7 @@
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
-namespace actors
+namespace engine::actors
 {	
 	struct PointLight
 	{

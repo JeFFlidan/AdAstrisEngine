@@ -10,11 +10,11 @@
 #include <vulkan/vulkan_core.h>
 
 #include "fmt/color.h"
-#include "vk_initializers.h"
-#include "vk_shaders.h"
-#include "logger.h"
+#include "vulkan_renderer/vk_initializers.h"
+#include "shader.h"
+#include "profiler/logger.h"
 
-namespace vkutil
+namespace engine
 {
 	bool Shader::load_shader_module(const char* filePath)
 	{
@@ -236,5 +236,5 @@ namespace vkutil
 				stage.shader->delete_shader_module();
 		}
 	}
-} // namespace vkutil
+} // namespace engine
 

@@ -1,20 +1,9 @@
-#include "glm/trigonometric.hpp"
-#include "imgui.h"
-#include "material_system.h"
-#include "vk_engine.h"
+#include "vulkan_renderer/vk_renderer.h"
 #include "user_interface.h"
-
-#include "engine_actors.h"
-#include "vk_renderpass.h"
-
-#include <glm/gtx/transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-#include <vulkan/vulkan_core.h>
 
 namespace engine
 {
-	void UserInterface::init_ui(VulkanEngine* engine)
+	void UserInterface::init_ui(VkRenderer* engine)
 	{
 		VkDescriptorPoolSize pool_sizes[] = {
 			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
@@ -51,6 +40,9 @@ namespace engine
 		io.DisplaySize.y = static_cast<float>(engine->_windowExtent.height);
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		io.IniFilename = nullptr;
+
+		ImGui::LoadIniSettingsFromDisk((engine->_projectPath + "/configs/imgui.ini").c_str());
 		
 		ImGui_ImplSDL2_InitForVulkan(engine->_window);
 
@@ -165,7 +157,7 @@ namespace engine
 		style.TabRounding                       = 4;
 	}
 
-	void UserInterface::draw_ui(VulkanEngine* engine)
+	void UserInterface::draw_ui(VkRenderer* engine)
 	{
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
@@ -186,5 +178,10 @@ namespace engine
 	void UserInterface::render_ui()
 	{
 		ImGui::Render();
+	}
+
+	void UserInterface::save_ini_file(VkRenderer* engine)
+	{
+		ImGui::SaveIniSettingsToDisk((engine->_projectPath + "/configs/imgui.ini").c_str());
 	}
 }

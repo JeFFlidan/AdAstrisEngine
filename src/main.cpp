@@ -1,11 +1,11 @@
-#include <vk_engine.h>
+#include <vulkan_renderer/vk_renderer.h>
 #include <chrono>
 #include <iostream>
-#include <logger.h>
+#include <profiler/logger.h>
 
 int main(int argc, char* argv[])
 {
-	VulkanEngine engine;
+	engine::VkRenderer engine;
 
 	auto start = std::chrono::system_clock::now();
 	engine.init();

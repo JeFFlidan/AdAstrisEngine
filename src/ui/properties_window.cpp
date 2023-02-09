@@ -1,5 +1,5 @@
 #include "properties_window.h"
-#include "vk_engine.h"
+#include "vulkan_renderer/vk_renderer.h"
 
 using namespace engine::ui;
 
@@ -14,7 +14,7 @@ void PropertiesWindow::draw_window(void* data)
 
 void PropertiesWindow::draw_ui(void* data)
 {
-	VulkanEngine* engine = static_cast<VulkanEngine*>(data);
+	VkRenderer* engine = static_cast<VkRenderer*>(data);
 
 	if (_actorData == nullptr && _actorType == None)
 	{

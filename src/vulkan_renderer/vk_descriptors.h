@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <vk_types.h>
+#include "vk_types.h"
 #include <vector>
 #include <array>
 #include <unordered_map>
@@ -75,7 +75,7 @@ class DescriptorLayoutCache
 		VkDevice device;
 };
 
-namespace vkutil
+namespace engine
 {
 	class DescriptorBuilder
 	{

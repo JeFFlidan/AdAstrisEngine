@@ -2,14 +2,14 @@
 
 #include "vk_types.h"
 #include "vk_mesh.h"
-#include "material_system.h"
+#include "material_system/material_system.h"
 #include "vk_pipeline.h"
 #include "vk_scene.h"
-#include "engine_actors.h"
+#include "engine/engine_actors.h"
 #include "ui/user_interface.h"
 #include <stdint.h>
 #include "vk_descriptors.h"
-#include "vk_camera.h"
+#include "engine/camera.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -24,293 +24,295 @@
 //#define VK_RELEASE 1
 #define NODE_COUNT 6
 
-struct DeletionQueue
+namespace engine
 {
-	std::deque<std::function<void()>> deletors;
-
-	void push_function(std::function<void()>&& function)
+	struct DeletionQueue
 	{
-		deletors.push_back(function);
-	}
+		std::deque<std::function<void()>> deletors;
 
-	void flush()
-	{
-		for (auto it = deletors.rbegin(); it != deletors.rend(); ++it)
+		void push_function(std::function<void()>&& function)
 		{
-			(*it)();
+			deletors.push_back(function);
 		}
-		deletors.clear();
-	}
-};
 
-struct GPUCameraData
-{
-	glm::mat4 view;
-	glm::mat4 oldView;
-	glm::mat4 proj;
-	glm::mat4 viewproj;
-	glm::mat4 invViewProj;
-	glm::vec4 cameraPosition;
-};
-
-struct GPUSceneData
-{
-	uint32_t dirLightsAmount;
-	uint32_t pointLightsAmount;
-	uint32_t spotLightsAmount;
-};
-
-struct GPUObjectData
-{
-	//glm::vec4 color;
-	glm::mat4 model;
-	glm::vec4 originRad;	// bound
-	glm::vec4 extents;	// bound
-	
-	uint32_t baseColorTexId;
-	uint32_t normalTexId;
-	uint32_t armTexId;
-	uint32_t data;
-};
-
-struct Settings
-{
-	glm::ivec2 viewportRes;
-	uint32_t totalFrames;
-	uint32_t isTaaEnabled{ 1 };
-	float taaAlpha{ 8.0f };
-	uint32_t data1, data2, data3;
-};
-
-struct UploadContext
-{
-	VkFence _uploadFence;
-	VkCommandPool _commandPool;
-	VkCommandBuffer _commandBuffer;
-};
-
-// I need to think about this structure. Probably I need to remake it
-struct FrameData
-{
-	VkSemaphore _presentSemaphore, _renderSemaphore;
-	VkFence _renderFence;
-
-	VkCommandPool _commandPool;
-	VkCommandBuffer _mainCommandBuffer;
-
-	AllocatedBuffer _cameraBuffer;
-	AllocatedBuffer _sceneDataBuffer;
-	AllocatedBuffer _settingsBuffer;
-
-	DescriptorAllocator _dynamicDescriptorAllocator;
-
-	DeletionQueue _frameDeletionQueue;
-};
-
-// Data for the first pass in oit algorithm
-
-struct Vertex
-{
-	glm::vec3 position;
-	glm::vec2 texCoord;
-};
-
-struct Plane
-{
-	std::vector<Vertex> _vertices = {
-		{ { -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f } },
-		{ { -1.0f, -1.0f,0.0f }, { 0.0f, 0.0f } },
-		{ { 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f } },
-		{ { 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f } },
-		{ {  1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f } },
-		{ { -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f } }
+		void flush()
+		{
+			for (auto it = deletors.rbegin(); it != deletors.rend(); ++it)
+			{
+				(*it)();
+			}
+			deletors.clear();
+		}
 	};
 
-	AllocatedBuffer _vertexBuffer;
-
-	static VertexInputDescription get_vertex_description();
-};
-
-struct IndirectBatch
-{
-	Mesh* mesh;
-	vkutil::Material* material;
-	uint32_t first;
-	uint32_t count;
-};
-
-struct MeshObject
-{
-	Mesh* mesh{ nullptr };
-
-	vkutil::Material* material{ nullptr };
-	VkImageView baseColor{ VK_NULL_HANDLE };
-	VkImageView normal{ VK_NULL_HANDLE };
-	VkImageView arm{ VK_NULL_HANDLE };
-	
-	uint32_t customSortKey;
-	glm::mat4 transformMatrix;
-
-	uint32_t bDrawDeferredPass{ 0 };
-	uint32_t bDrawForwardPass{ 0 };
-	uint32_t bDrawShadowPass{ 1 };
-	uint32_t bDrawPointShadowPass{ 1 };
-	uint32_t bDrawSpotShadowPass{ 1 };
-	uint32_t bDrawTransparencyPass{ 0 };
-};
-
-// structs for culling
-struct CullData
-{
-	glm::mat4 view;
-	float P00, P11, znear, zfar; // symmetric projection parameters
-	float frustum[4];  // data for left/right/top/bottom frustum planes
-	float lodBase, lodStep;  // lod distance i = base * pow(step, i)
-	float pyramidWidth, pyramidHeight;  // depth pyramid size in texels
-
-	uint32_t drawCount;
-
-	int cullingEnabled;
-	int lodEnabled;
-	int occlusionEnabled;
-	int distCull;
-	int AABBcheck;
-	float aabbmin_x;
-	float aabbmin_y;
-	float aabbmin_z;
-	float aabbmax_x;
-	float aabbmax_y;
-	float aabbmax_z;	
-};
-
-struct CullParams
-{
-	bool occlusionCull;
-	bool frustumCull;
-	float drawDist;
-	bool aabb;
-	glm::vec3 aabbmin;
-	glm::vec3 aabbmax;
-	glm::mat4 projMatrix;
-	glm::mat4 viewMatrix;
-};
-
-struct ObjectData
-{
-	glm::mat4 model;
-	glm::vec4 sphereBounds;
-	glm::vec4 extents;
-};
-
-struct DrawCommand
-{
-	uint32_t indexCount;
-	uint32_t instanceCount;
-	uint32_t firstIndex;
-	int vertexOffset;
-	uint32_t firstInstance;
-	uint32_t objectID;
-	uint32_t batchID;
-};
-
-struct alignas(16) DepthReduceData
-{
-	glm::vec2 imageSize;
-};
-
-struct ThreadInfo
-{
-	VkCommandPool commandPool{ VK_NULL_HANDLE };
-	std::vector<VkCommandBuffer> commandBuffers;
-};
-
-struct TransparencyFirstPassData
-{
-	struct Node
+	struct GPUCameraData
 	{
-		glm::vec4 color;
-		float depth;
-		uint32_t next;
+		glm::mat4 view;
+		glm::mat4 oldView;
+		glm::mat4 proj;
+		glm::mat4 viewproj;
+		glm::mat4 invViewProj;
+		glm::vec4 cameraPosition;
 	};
 
-	struct GeometryInfo
+	struct GPUSceneData
 	{
+		uint32_t dirLightsAmount;
+		uint32_t pointLightsAmount;
+		uint32_t spotLightsAmount;
+	};
+
+	struct GPUObjectData
+	{
+		//glm::vec4 color;
+		glm::mat4 model;
+		glm::vec4 originRad;	// bound
+		glm::vec4 extents;	// bound
+	
+		uint32_t baseColorTexId;
+		uint32_t normalTexId;
+		uint32_t armTexId;
+		uint32_t data;
+	};
+
+	struct Settings
+	{
+		glm::ivec2 viewportRes;
+		uint32_t totalFrames;
+		uint32_t isTaaEnabled{ 1 };
+		float taaAlpha{ 8.0f };
+		uint32_t data1, data2, data3;
+	};
+
+	struct UploadContext
+	{
+		VkFence _uploadFence;
+		VkCommandPool _commandPool;
+		VkCommandBuffer _commandBuffer;
+	};
+
+	// I need to think about this structure. Probably I need to remake it
+	struct FrameData
+	{
+		VkSemaphore _presentSemaphore, _renderSemaphore;
+		VkFence _renderFence;
+
+		VkCommandPool _commandPool;
+		VkCommandBuffer _mainCommandBuffer;
+
+		AllocatedBuffer _cameraBuffer;
+		AllocatedBuffer _sceneDataBuffer;
+		AllocatedBuffer _settingsBuffer;
+
+		DescriptorAllocator _dynamicDescriptorAllocator;
+
+		DeletionQueue _frameDeletionQueue;
+	};
+
+	// Data for the first pass in oit algorithm
+
+	struct Vertex
+	{
+		glm::vec3 position;
+		glm::vec2 texCoord;
+	};
+
+	struct Plane
+	{
+		std::vector<Vertex> _vertices = {
+			{ { -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f } },
+			{ { -1.0f, -1.0f,0.0f }, { 0.0f, 0.0f } },
+			{ { 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f } },
+			{ { 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f } },
+			{ {  1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f } },
+			{ { -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f } }
+		};
+
+		AllocatedBuffer _vertexBuffer;
+
+		static VertexInputDescription get_vertex_description();
+	};
+
+	struct IndirectBatch
+	{
+		Mesh* mesh;
+		engine::Material* material;
+		uint32_t first;
 		uint32_t count;
-		uint32_t maxNodeCount;
 	};
 
-	VkFramebuffer framebuffer;
-	VkRenderPass renderPass;
-	Texture headIndex;
-	AllocatedBufferT<Node> nodes;
-	AllocatedBufferT<GeometryInfo> geometryInfo;
-
-	// Not final approach. I have to think how to add it to the transparency pass.
-	vkutil::GraphicsPipelineBuilder pipelineBuilder;
-	vkutil::ShaderPass* geometryPass;
-	void setup_pipeline_builder(VulkanEngine* engine);
-	void create_shader_pass(VulkanEngine* engine);
-	void cleanup(VulkanEngine* engine);
-};
-
-struct GBuffer
-{
-	Attachment albedo;
-	Attachment normal;
-	Attachment surface;		// Roughness and metallic
-	Attachment depth;
-	Attachment velocity;
-	VkFramebuffer framebuffer;
-	VkRenderPass renderPass;
-
-	void cleanup(VulkanEngine* engine);
-};
-
-struct TemporalFilter
-{
-	struct Jittering
+	struct MeshObject
 	{
-		glm::vec4 haltonSequence[36];	// Use vec4 because of std140 alignment
-		float haltonScale;
-		uint32_t numSamples;
-		glm::vec2 data;
+		Mesh* mesh{ nullptr };
+
+		engine::Material* material{ nullptr };
+		VkImageView baseColor{ VK_NULL_HANDLE };
+		VkImageView normal{ VK_NULL_HANDLE };
+		VkImageView arm{ VK_NULL_HANDLE };
+	
+		uint32_t customSortKey;
+		glm::mat4 transformMatrix;
+
+		uint32_t bDrawDeferredPass{ 0 };
+		uint32_t bDrawForwardPass{ 0 };
+		uint32_t bDrawShadowPass{ 1 };
+		uint32_t bDrawPointShadowPass{ 1 };
+		uint32_t bDrawSpotShadowPass{ 1 };
+		uint32_t bDrawTransparencyPass{ 0 };
 	};
 
-	Jittering jittering;
-	glm::mat4 oldView;
-	Attachment taaCurrentColorAttach;
-	Attachment taaOldColorAttach;
-	VkFramebuffer taaFramebuffer;
-	VkRenderPass taaRenderPass;
+	// structs for culling
+	struct CullData
+	{
+		glm::mat4 view;
+		float P00, P11, znear, zfar; // symmetric projection parameters
+		float frustum[4];  // data for left/right/top/bottom frustum planes
+		float lodBase, lodStep;  // lod distance i = base * pow(step, i)
+		float pyramidWidth, pyramidHeight;  // depth pyramid size in texels
 
-	AllocatedBufferT<Jittering> jitteringBuffer;
+		uint32_t drawCount;
 
-	void init(VulkanEngine* engine);
-	void cleanup(VulkanEngine* engine);
+		int cullingEnabled;
+		int lodEnabled;
+		int occlusionEnabled;
+		int distCull;
+		int AABBcheck;
+		float aabbmin_x;
+		float aabbmin_y;
+		float aabbmin_z;
+		float aabbmax_x;
+		float aabbmax_y;
+		float aabbmax_z;	
+	};
+
+	struct CullParams
+	{
+		bool occlusionCull;
+		bool frustumCull;
+		float drawDist;
+		bool aabb;
+		glm::vec3 aabbmin;
+		glm::vec3 aabbmax;
+		glm::mat4 projMatrix;
+		glm::mat4 viewMatrix;
+	};
+
+	struct ObjectData
+	{
+		glm::mat4 model;
+		glm::vec4 sphereBounds;
+		glm::vec4 extents;
+	};
+
+	struct DrawCommand
+	{
+		uint32_t indexCount;
+		uint32_t instanceCount;
+		uint32_t firstIndex;
+		int vertexOffset;
+		uint32_t firstInstance;
+		uint32_t objectID;
+		uint32_t batchID;
+	};
+
+	struct alignas(16) DepthReduceData
+	{
+	glm::vec2 imageSize;
+	};
+
+	struct ThreadInfo
+	{
+		VkCommandPool commandPool{ VK_NULL_HANDLE };
+		std::vector<VkCommandBuffer> commandBuffers;
+	};
+
+	struct TransparencyFirstPassData
+	{
+		struct Node
+		{
+			glm::vec4 color;
+			float depth;
+			uint32_t next;
+		};
+
+		struct GeometryInfo
+		{
+			uint32_t count;
+			uint32_t maxNodeCount;
+		};
+
+		VkFramebuffer framebuffer;
+		VkRenderPass renderPass;
+		Texture headIndex;
+		AllocatedBufferT<Node> nodes;
+		AllocatedBufferT<GeometryInfo> geometryInfo;
+
+		// Not final approach. I have to think how to add it to the transparency pass.
+		engine::GraphicsPipelineBuilder pipelineBuilder;
+		engine::ShaderPass* geometryPass;
+		void setup_pipeline_builder(VkRenderer* engine);
+		void create_shader_pass(VkRenderer* engine);
+		void cleanup(VkRenderer* engine);
+	};
+
+	struct GBuffer
+	{
+		Attachment albedo;
+		Attachment normal;
+		Attachment surface;		// Roughness and metallic
+		Attachment depth;
+		Attachment velocity;
+		VkFramebuffer framebuffer;
+		VkRenderPass renderPass;
+
+		void cleanup(VkRenderer* engine);
+	};
+
+	struct TemporalFilter
+	{
+		struct Jittering
+		{
+			glm::vec4 haltonSequence[36];	// Use vec4 because of std140 alignment
+			float haltonScale;
+			uint32_t numSamples;
+			glm::vec2 data;
+		};
+
+		Jittering jittering;
+		glm::mat4 oldView;
+		Attachment taaCurrentColorAttach;
+		Attachment taaOldColorAttach;
+		VkFramebuffer taaFramebuffer;
+		VkRenderPass taaRenderPass;
+
+		AllocatedBufferT<Jittering> jitteringBuffer;
+
+		void init(VkRenderer* engine);
+		void cleanup(VkRenderer* engine);
 		
-	private:
+		private:
 		void prepare_jittering_data();
 		float create_halton_sequence(int32_t index, int32_t base);
-};
+	};
 
-struct Composite
-{
-	Attachment colorAttach;
-	Attachment velocityAttach;
-	VkFramebuffer framebuffer;
-	VkRenderPass renderPass;
+	struct Composite
+	{
+		Attachment colorAttach;
+		Attachment velocityAttach;
+		VkFramebuffer framebuffer;
+		VkRenderPass renderPass;
 
-	void init(VulkanEngine* engine);
-	void cleanup(VulkanEngine* engine);
-};
+		void init(VkRenderer* engine);
+		void cleanup(VkRenderer* engine);
+	};
 
-constexpr unsigned int FRAME_OVERLAP = 2;
+	constexpr unsigned int FRAME_OVERLAP = 2;
 
-// I have to think how to split this class to subclasses because it's too big now. Possible new classes may be created
-// for device, swapchain and rendering passes (render graph).
-class VulkanEngine 
-{
-	public:
+	// I have to think how to split this class to subclasses because it's too big now. Possible new classes may be created
+	// for device, swapchain and rendering passes (render graph).
+	class VkRenderer 
+	{
+		public:
 		VkInstance _instance;
 		VkDebugUtilsMessengerEXT _debug_messenger;
 		VkPhysicalDevice _chosenGPU;
@@ -341,9 +343,9 @@ class VulkanEngine
 		DescriptorAllocator _descriptorAllocator;
 		DescriptorLayoutCache _descriptorLayoutCache;
 
-		vkutil::MaterialSystem _materialSystem;
+		MaterialSystem _materialSystem;
 		RenderScene _renderScene;
-		engine::UserInterface _userInterface;
+		UserInterface _userInterface;
 
 		Attachment _mainOpaqueDepthAttach;
 		Attachment _mainOpaqueColorAttach;
@@ -407,8 +409,8 @@ class VulkanEngine
 		AllocatedBuffer _globalVertexBuffer;
 		AllocatedBuffer _globalIndexBuffer;
 		// Sizes don't contain byte size, only amount of vertices and indices
-	    size_t _globalVertexBufferSize = 0;
-	    size_t _globalIndexBufferSize = 0;
+		size_t _globalVertexBufferSize = 0;
+		size_t _globalIndexBufferSize = 0;
 
 		bool _isInitialized{ false };
 		int _frameNumber{0};
@@ -452,7 +454,7 @@ class VulkanEngine
 			VkImageAspectFlags aspectFlags,
 			uint32_t layerCount = 1);
 
-	private:
+		private:
 		void init_vulkan();
 		void init_engine_systems();
 		void init_swapchain();
@@ -465,7 +467,7 @@ class VulkanEngine
 		void init_output_quad();
 		void init_buffers();
 		void init_pipelines();
-		void setup_compute_pipeline(vkutil::Shader* shader, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout);
+		void setup_compute_pipeline(engine::Shader* shader, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout);
 		size_t pad_uniform_buffer_size(size_t originalSize);
 
 		void refresh_swapchain();
@@ -497,8 +499,9 @@ class VulkanEngine
 		void draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void submit(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
 		void bake_shadow_maps(VkCommandBuffer cmd);
-		void draw_shadow_pass(VkCommandBuffer cmd, vkutil::MeshpassType passType);
+		void draw_shadow_pass(VkCommandBuffer cmd, MeshpassType passType);
 		void draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet, RenderScene::MeshPass& meshPass, uint32_t id);
 		void reallocate_light_buffer(ActorType lightType);
 		void depth_reduce(VkCommandBuffer cmd);
-};
+	};
+}
