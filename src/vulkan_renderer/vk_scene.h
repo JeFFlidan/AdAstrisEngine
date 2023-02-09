@@ -2,8 +2,8 @@
 
 #include "vk_types.h"
 #include "vk_mesh.h"
-#include "material_system.h"
-#include "engine_actors.h"
+#include "material_system/material_system.h"
+#include "engine/engine_actors.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -14,71 +14,73 @@
 #include <unordered_map>
 #include <vulkan/vulkan_core.h>
 
-// I need Handle because I would like to access elements using an index in a vector or other collection
-template<typename T>
-struct Handle
+
+namespace engine
 {
-	uint32_t handle;
-};
+	struct MeshObject;
+	struct GPUObjectData;
+	
+	// I need Handle because I would like to access elements using an index in a vector or other collection
+	template<typename T>
+	struct Handle
+	{
+		uint32_t handle;
+	};
 
-struct MeshObject;
-struct Mesh;
-struct GPUObjectData;
+	struct GPUIndirectObject
+	{
+		VkDrawIndexedIndirectCommand command;
+		uint32_t objectID;
+		uint32_t batchID;
+	};
 
-struct GPUIndirectObject
-{
-	VkDrawIndexedIndirectCommand command;
-	uint32_t objectID;
-	uint32_t batchID;
-};
+	struct DrawMesh
+	{
+		uint32_t firstVertex;
+		uint32_t firstIndex;
+		uint32_t indexCount;
+		uint32_t vertexCount;
+		bool isMerged;
 
-struct DrawMesh
-{
-	uint32_t firstVertex;
-	uint32_t firstIndex;
-	uint32_t indexCount;
-	uint32_t vertexCount;
-	bool isMerged;
+		Mesh* original;
+	};
 
-	Mesh* original;
-};
+	struct RenderableObject
+	{
+		Handle<DrawMesh> meshID;
+		Handle<Material> material;
 
-struct RenderableObject
-{
-	Handle<DrawMesh> meshID;
-	Handle<vkutil::Material> material;
+		uint32_t baseColorTexId;
+		uint32_t normalTexId;
+		uint32_t armTexId;
 
-	uint32_t baseColorTexId;
-	uint32_t normalTexId;
-	uint32_t armTexId;
+		uint32_t updateIndex;
+		uint32_t customSortKey{0};
 
-	uint32_t updateIndex;
-	uint32_t customSortKey{0};
+		PerPassData<int32_t> passIndeces;
 
-	vkutil::PerPassData<int32_t> passIndeces;
+		glm::mat4 transformMatrix;
+	};
 
-	glm::mat4 transformMatrix;
-};
+	struct GPUInstance
+	{
+		uint32_t objectID;
+		uint32_t batchID;
+	};
 
-struct GPUInstance
-{
-	uint32_t objectID;
-	uint32_t batchID;
-};
+	struct DirShadowData
+	{
+		glm::mat4 lightSpaceMatrix;
+		uint32_t id;
+	};
 
-struct DirShadowData
-{
-	glm::mat4 lightSpaceMatrix;
-	uint32_t id;
-};
-
-class RenderScene
-{
-	public:
+	class RenderScene
+	{
+		public:
 		struct PassMaterial
 		{
 			//VkDescriptorSet materialSet;
-			vkutil::ShaderPass* shaderPass;
+			ShaderPass* shaderPass;
 	
 			bool operator==(const PassMaterial& other) const
 			{
@@ -122,35 +124,34 @@ class RenderScene
 	
 		struct MeshPass
 		{
-			public:
-				std::vector<RenderScene::MultiBatch> multibatches;
-				std::vector<RenderScene::IndirectBatch> batches;
-				std::vector<RenderScene::RenderBatch> flatBatches;
-				std::vector<Handle<RenderableObject>> unbatchedObjects;
+			std::vector<MultiBatch> multibatches;
+			std::vector<IndirectBatch> batches;
+			std::vector<RenderBatch> flatBatches;
+			std::vector<Handle<RenderableObject>> unbatchedObjects;
 		
-				std::vector<PassObject> objects;	// All objects in certain MeshPass to render
+			std::vector<PassObject> objects;	// All objects in certain MeshPass to render
 		
-				std::vector<Handle<PassObject>> reusableObjects;
-				std::vector<Handle<PassObject>> objectToDelete;
+			std::vector<Handle<PassObject>> reusableObjects;
+			std::vector<Handle<PassObject>> objectToDelete;
 		
-				AllocatedBufferT<uint32_t> compactedInstanceBuffer;
-				AllocatedBufferT<GPUInstance> passObjectsBuffer;
-				AllocatedBufferT<GPUIndirectObject> drawIndirectBuffer;		// GPU indirect buffer after culling
-				AllocatedBufferT<GPUIndirectObject> clearIndirectBuffer;	// CPU indirect buffer
+			AllocatedBufferT<uint32_t> compactedInstanceBuffer;
+			AllocatedBufferT<GPUInstance> passObjectsBuffer;
+			AllocatedBufferT<GPUIndirectObject> drawIndirectBuffer;		// GPU indirect buffer after culling
+			AllocatedBufferT<GPUIndirectObject> clearIndirectBuffer;	// CPU indirect buffer
 
-				PassObject* get(Handle<PassObject> handle);
+			PassObject* get(Handle<PassObject> handle);
 		
-				vkutil::MeshpassType type;
+			MeshpassType type;
 		
-				bool needsIndirectRefresh = true;
-				bool needsInstanceRefresh = true;
+			bool needsIndirectRefresh = true;
+			bool needsInstanceRefresh = true;
 		};
 
 		bool bNeedsReloadingRenderables = true;
 		
 		std::vector<RenderableObject> _renderables;		// All objects in the scene to render
 		std::vector<DrawMesh> _meshes;
-		std::vector<vkutil::Material*> _materials;
+		std::vector<engine::Material*> _materials;
 		std::vector<Handle<RenderableObject>> _dirtyObjects;	// Objects which should be reupload to the GPU
 
 		std::vector<VkDescriptorImageInfo> _baseColorInfos;
@@ -194,10 +195,10 @@ class RenderScene
 		size_t _globalIndexBufferSize = 0;
 	
 		std::unordered_map<Mesh*, Handle<DrawMesh>> _meshConvert;
-		std::unordered_map<vkutil::Material*, Handle<vkutil::Material>> _materialConvert;
+		std::unordered_map<Material*, Handle<Material>> _materialConvert;
 
 		void init();
-		void cleanup(VulkanEngine* engine);
+		void cleanup(VkRenderer* engine);
 
 		Handle<RenderableObject> register_object(MeshObject* object);
 		void register_object_batch(MeshObject* first, uint32_t count);
@@ -215,7 +216,7 @@ class RenderScene
 	
 		void build_batches();
 	
-		void merge_meshes(class VulkanEngine* engine);
+		void merge_meshes(class VkRenderer* engine);
 	
 		void refresh_pass(MeshPass* meshPass);
 	
@@ -223,17 +224,17 @@ class RenderScene
 	
 		RenderableObject* get_renderable_object(Handle<RenderableObject> objectID);
 		DrawMesh* get_mesh(Handle<DrawMesh> meshID);
-		vkutil::Material* get_material(Handle<vkutil::Material> materialID);
-		MeshPass* get_mesh_pass(vkutil::MeshpassType type);
+		Material* get_material(Handle<Material> materialID);
+		MeshPass* get_mesh_pass(MeshpassType type);
 		
 		Handle<DrawMesh> get_mesh_handle(Mesh* mesh);
-		Handle<vkutil::Material> get_material_handle(vkutil::Material* material);
+		Handle<Material> get_material_handle(Material* material);
 
 		private:
-			VkDevice _device;
-			void delete_batches(MeshPass* meshPass);
-		    void fill_pass_objects(MeshPass* meshPass, std::vector<Handle<PassObject>>& passObjectsHandles);
-			void fill_flat_batches(MeshPass* meshPass, std::vector<Handle<PassObject>>& passObjectsHandles);
-			void fill_multi_batches(MeshPass* meshPass);
-};
-
+		VkDevice _device;
+		void delete_batches(MeshPass* meshPass);
+		void fill_pass_objects(MeshPass* meshPass, std::vector<Handle<PassObject>>& passObjectsHandles);
+		void fill_flat_batches(MeshPass* meshPass, std::vector<Handle<PassObject>>& passObjectsHandles);
+		void fill_multi_batches(MeshPass* meshPass);
+	};
+}

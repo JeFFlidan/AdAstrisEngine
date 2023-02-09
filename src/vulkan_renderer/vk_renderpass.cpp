@@ -1,8 +1,8 @@
 #include "vk_renderpass.h"
-#include "logger.h"
+#include "profiler/logger.h"
 #include <vulkan/vulkan_core.h>
 
-namespace vkutil
+namespace engine
 {
 	RenderPassBuilder RenderPassBuilder::begin()
 	{

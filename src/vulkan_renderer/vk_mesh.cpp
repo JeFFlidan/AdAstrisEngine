@@ -3,7 +3,9 @@
 
 #include <tiny_obj_loader.h>
 
-#include <vk_mesh.h>
+#include "vk_mesh.h"
+
+using namespace engine;
 
 VertexInputDescription Mesh::get_vertex_description()
 {

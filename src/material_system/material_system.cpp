@@ -1,20 +1,17 @@
 #include "material_system.h"
-#include "vk_pipeline.h"
-#include "logger.h"
 #include "material_asset.h"
-#include "vk_engine.h"
-#include "vk_initializers.h"
-#include "vk_mesh.h"
-#include "vk_types.h"
+#include "vulkan_renderer/vk_renderer.h"
+#include "vulkan_renderer/vk_initializers.h"
+#include "vulkan_renderer/vk_types.h"
 
 #include <iostream>
 #include <unordered_map>
 #include <functional>
 #include <vulkan/vulkan_core.h>
 
-namespace vkutil
+namespace engine
 {
-	void MaterialSystem::init(VulkanEngine* engine)
+	void MaterialSystem::init(VkRenderer* engine)
 	{
 		this->_engine = engine;
 	}
@@ -261,7 +258,7 @@ namespace vkutil
 		{
 			VkDevice device = _engine->_device;
 			
-			auto pass = templ.second.passShaders[vkutil::MeshpassType::Forward];
+			auto pass = templ.second.passShaders[engine::MeshpassType::Forward];
 			if (pass != nullptr)
 			{
 				vkDestroyPipeline(device, pass->pipeline, nullptr);	
@@ -308,7 +305,7 @@ namespace vkutil
 				vkDestroyPipelineLayout(device, pass->layout, nullptr);
 				pass->effect->destroy_shader_modules();
 
-				vkutil::ShaderPass* relPass = pass->relatedShaderPasses[0];
+				engine::ShaderPass* relPass = pass->relatedShaderPasses[0];
 				vkDestroyPipeline(device, relPass->pipeline, nullptr);
 				vkDestroyPipelineLayout(device, relPass->layout, nullptr);
 				relPass->effect->destroy_shader_modules();

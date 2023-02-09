@@ -1,21 +1,23 @@
 #include "vk_types.h"
-#include "engine_actors.h"
-#include "vk_engine.h"
-#include "logger.h"
+#include "engine/engine_actors.h"
+#include "vk_renderer.h"
+#include "profiler/logger.h"
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
 
-AllocatedBuffer::AllocatedBuffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+using namespace engine;
+
+AllocatedBuffer::AllocatedBuffer(VkRenderer* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
 	allocate_buffer(engine, allocSize, usage, memoryUsage);
 }
 
-void AllocatedBuffer::create_buffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+void AllocatedBuffer::create_buffer(VkRenderer* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
 	allocate_buffer(engine, allocSize, usage, memoryUsage);
 }
 
-void AllocatedBuffer::copy_from(VulkanEngine* engine, void* srcBuffer, size_t sizeInBytes)
+void AllocatedBuffer::copy_from(VkRenderer* engine, void* srcBuffer, size_t sizeInBytes)
 {
 	void* data;
 	vmaMapMemory(engine->_allocator, _allocation, &data);
@@ -33,7 +35,7 @@ VkDescriptorBufferInfo AllocatedBuffer::get_info(bool isStorage, VkDeviceSize of
 	return info;
 }
 
-void AllocatedBuffer::copy_buffer_cmd(VulkanEngine* engine, VkCommandBuffer cmd , AllocatedBuffer* srcBuffer, AllocatedBuffer* dstBuffer, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
+void AllocatedBuffer::copy_buffer_cmd(VkRenderer* engine, VkCommandBuffer cmd , AllocatedBuffer* srcBuffer, AllocatedBuffer* dstBuffer, VkDeviceSize dstOffset, VkDeviceSize srcOffset)
 {
 	dstBuffer->_bufferSize = srcBuffer->_bufferSize;
 	VkBufferCopy copy;
@@ -43,12 +45,12 @@ void AllocatedBuffer::copy_buffer_cmd(VulkanEngine* engine, VkCommandBuffer cmd 
 	vkCmdCopyBuffer(cmd, srcBuffer->_buffer, dstBuffer->_buffer, 1, &copy);
 }
 
-void AllocatedBuffer::destroy_buffer(VulkanEngine* engine)
+void AllocatedBuffer::destroy_buffer(VkRenderer* engine)
 {
     vmaDestroyBuffer(engine->_allocator, _buffer, _allocation);
 }
 
-void AllocatedBuffer::allocate_buffer(VulkanEngine* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+void AllocatedBuffer::allocate_buffer(VkRenderer* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
 	_bufferSize = allocSize;
 
@@ -68,18 +70,18 @@ void AllocatedBuffer::allocate_buffer(VulkanEngine* engine, size_t allocSize, Vk
 		LOG_ERROR("Failed to allocate buffer");
 }
 
-void Texture::destroy_texture(VulkanEngine* engine)
+void Texture::destroy_texture(VkRenderer* engine)
 {
 	vkDestroyImageView(engine->_device, imageView, nullptr);
 	vmaDestroyImage(engine->_allocator, imageData.image, imageData.allocation);
 }
 
-void Attachment::destroy_attachment(VulkanEngine* engine)
+void Attachment::destroy_attachment(VkRenderer* engine)
 {
 	destroy_texture(engine);
 }
 
-void ShadowMap::destroy_shadow_map(VulkanEngine* engine, ShadowMap shadowMap)
+void ShadowMap::destroy_shadow_map(VkRenderer* engine, ShadowMap shadowMap)
 {
 	vkDestroyFramebuffer(engine->_device, shadowMap.framebuffer, nullptr);
 	vkDestroyRenderPass(engine->_device, shadowMap.renderPass, nullptr);
@@ -87,7 +89,7 @@ void ShadowMap::destroy_shadow_map(VulkanEngine* engine, ShadowMap shadowMap)
 	vmaDestroyImage(engine->_allocator, shadowMap.attachment.imageData.image, shadowMap.attachment.imageData.allocation);
 }
 
-void ShadowMap::create_light_space_matrices(VulkanEngine* engine, ActorType lightType, uint32_t lightId, ShadowMap& shadowMap)
+void ShadowMap::create_light_space_matrices(VkRenderer* engine, ActorType lightType, uint32_t lightId, ShadowMap& shadowMap)
 {
 	switch (lightType)
 	{

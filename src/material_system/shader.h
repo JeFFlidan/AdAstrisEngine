@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-namespace vkutil
+namespace engine
 {
 	class Shader
 	{

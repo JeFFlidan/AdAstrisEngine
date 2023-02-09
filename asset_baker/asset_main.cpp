@@ -18,7 +18,7 @@
 #include <mesh_asset.h>
 #include <tiny_obj_loader.h>
 
-#include <logger.h>
+#include <profiler/logger.h>
 
 namespace fs = std::filesystem;
 

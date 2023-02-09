@@ -1,10 +1,10 @@
 #pragma once
 
-#include "vk_pipeline.h"
-#include "vk_mesh.h"
-#include "vk_types.h"
-#include "logger.h"
-#include "vk_shaders.h"
+#include "vulkan_renderer/vk_pipeline.h"
+#include "vulkan_renderer/vk_mesh.h"
+#include "vulkan_renderer/vk_types.h"
+#include "profiler/logger.h"
+#include "shader.h"
 #include <material_asset.h>
 
 #include <vector>
@@ -13,8 +13,8 @@
 #include <array>
 #include <vulkan/vulkan_core.h>
 
-class VulkanEngine;
-namespace vkutil
+class VkRenderer;
+namespace engine
 {
 	enum class MeshpassType : uint32_t
 	{
@@ -117,7 +117,7 @@ namespace vkutil
 	class MaterialSystem
 	{
 		public:
-			void init(VulkanEngine* engine);
+			void init(VkRenderer* engine);
 			void cleanup();
 
 			void build_default_templates();
@@ -151,7 +151,7 @@ namespace vkutil
 			std::unordered_map<std::string, Material*> _materials;
 			std::unordered_map<std::string, Shader*> _shaderCache;
 			std::unordered_map<MaterialData, Material*, MaterialInfoHash> _materialCache;
-			VulkanEngine* _engine;
+			VkRenderer* _engine;
 	
 			void setup_pipeline_builders();
 	};

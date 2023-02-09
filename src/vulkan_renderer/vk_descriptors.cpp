@@ -1,5 +1,5 @@
 #include "vk_descriptors.h"
-#include "logger.h"
+#include "profiler/logger.h"
 
 #include <stdint.h>
 #include <algorithm>
@@ -238,7 +238,7 @@ size_t DescriptorLayoutCache::DescriptorLayoutInfo::hash() const
 	return result;
 }
 
-namespace vkutil
+namespace engine
 {
 	DescriptorBuilder DescriptorBuilder::begin(DescriptorLayoutCache* layoutCache, DescriptorAllocator* allocator)
 	{
