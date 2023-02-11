@@ -1,0 +1,185 @@
+﻿#pragma once
+#include <cstdint>
+
+namespace engine::rhi
+{
+	enum ResourceUsage
+	{
+		UNDEFINED_USAGE,
+		SAMPLED,
+		STORAGE,
+		COLOR_ATTACHMENT,
+		DEPTH_STENCIL_ATTACHMENT,
+		TRANSIENT_ATTACHMENT,
+		INPUT_ATTACHMENT,
+		UNIFORM_TEXEL_BUFFER,
+		STORAGE_TEXEL_BUFFER,
+		UNIFORM_BUFFER,
+		STORAGE_BUFFER,
+		INDEX_BUFFER,
+		VERTEX_BUFFER,
+		INDIRECT_BUFFER
+	};
+
+	enum MemoryUsage
+	{
+		CPU,
+		GPU,
+		CPU_TO_GPU
+	};
+	
+	enum TextureFormat
+	{
+		UNDEFINED_FORMAT = 0,
+		R4G4_UNORM,
+		R4G4B4A4_UNORM,
+		B4G4R4A4_UNORM,
+		R5G5B5A1_UNORM,
+		B5G5R5A1_UNORM,
+		A1R5G5B5_UNORM,
+	
+		R8_UNORM,
+		R8_SNORM,
+		R8_UINT,
+		R8_SINT,
+		R8_SRGB,
+	
+		R8G8_UNORM,
+		R8G8_SNORM,
+		R8G8_UINT,
+		R8G8_SINT,
+		R8G8_SRGB,
+
+		R8G8B8A8_UNORM,
+		R8G8B8A8_SNORM,
+		R8G8B8A8_UINT,
+		R8G8B8A8_SINT,
+		R8G8B8A8_SRGB,
+
+		B8G8R8A8_SRGB,
+		B8G8R8A8_UNORM,
+		B8G8R8A8_SNORM,
+
+		R10G10B10A2_UNORM,
+		R10G10B10A2_SNORM,
+
+		R16_UNORM,
+		R16_SNORM,
+		R16_UINT,
+		R16_SINT,
+		R16_SFLOAT
+	};
+
+	enum AddressMode
+	{
+		REPEAT,
+		MIRRORED_REPEAT,
+		CLAMP_TO_EDGE,
+		CLAMP_TO_BORDER,
+		MIRROR_CLAMP_TO_EDGE
+	};
+
+	// Base on D3D12
+	enum Filter
+	{
+		MIN_MAG_MIP_NEAREST,
+		MIN_MAG_NEAREST_MIP_LINEAR,
+		MIN_NEAREST_MAG_LINEAR_MIP_NEAREST,
+		MIN_NEAREST_MAG_MIP_LINEAR,
+		MIN_LINEAR_MAG_MIP_NEAREST,
+		MIN_LINEAR_MAG_NEAREST_MIP_LINEAR,
+		MIN_MAG_LINEAR_MIP_NEAREST,
+		MIN_MAG_MIP_LINEAR,
+		ANISOTROPIC,
+		COMPARISON_MIN_MAG_MIP_NEAREST,
+		COMPARISON_MIN_MAG_NEAREST_MIP_LINEAR,
+		COMPARISON_MIN_NEAREST_MAG_LINEAR_MIP_NEAREST,
+		COMPARISON_MIN_NEAREST_MAG_MIP_LINEAR,
+		COMPARISON_MIN_LINEAR_MAG_MIP_NEAREST,
+		COMPARISON_MIN_LINEAR_MAG_NEAREST_MIP_LINEAR,
+		COMPARISON_MIN_MAG_LINEAR_MIP_NEAREST,
+		COMPARISON_MIN_MAG_MIP_LINEAR,
+		COMPARISON_ANISOTROPIC,
+		MINIMUM_MIN_MAG_MIP_NEAREST,
+		MINIMUM_MIN_MAG_NEAREST_MIP_LINEAR,
+		MINIMUM_MIN_NEAREST_MAG_LINEAR_MIP_NEAREST,
+		MINIMUM_MIN_NEAREST_MAG_MIP_LINEAR,
+		MINIMUM_MIN_LINEAR_MAG_MIP_NEAREST,
+		MINIMUM_MIN_LINEAR_MAG_NEAREST_MIP_LINEAR,
+		MINIMUM_MIN_MAG_LINEAR_MIP_NEAREST,
+		MINIMUM_MIN_MAG_MIP_LINEAR,
+		MINIMUM_ANISOTROPIC,
+		MAXIMUM_MIN_MAG_MIP_NEAREST,
+		MAXIMUM_MIN_MAG_NEAREST_MIP_LINEAR,
+		MAXIMUM_MIN_NEAREST_MAG_LINEAR_MIP_NEAREST,
+		MAXIMUM_MIN_NEAREST_MAG_MIP_LINEAR,
+		MAXIMUM_MIN_LINEAR_MAG_MIP_NEAREST,
+		MAXIMUM_MIN_LINEAR_MAG_NEAREST_MIP_LINEAR,
+		MAXIMUM_MIN_MAG_LINEAR_MIP_NEAREST,
+		MAXIMUM_MIN_MAG_MIP_LINEAR,
+		MAXIMUM_ANISOTROPIC
+	};
+
+	enum BorderColor
+	{
+		FLOAT_TRANSPARENT_BLACK,
+		INT_TRANSPARENT_BLACK,
+		FLOAT_OPAQUE_BLACK,
+		INT_OPAQUE_BLACK,
+		FLOAT_OPAQUE_WHITE,
+		INT_OPAQUE_WHITE
+	};
+
+	struct TextureInfo
+	{
+		uint32_t width{ 0 };
+		uint32_t height{ 0 };
+		uint8_t mipLevels{ 0 };
+		uint8_t arrayLayers{ 1 };
+		uint8_t samplesCount{ 1 };
+		TextureFormat format{ UNDEFINED_FORMAT };
+		ResourceUsage usage{ UNDEFINED_USAGE };
+	};
+	
+	struct SamplerInfo
+	{
+		Filter filter{ MIN_MAG_MIP_LINEAR };
+		AddressMode addressMode{ REPEAT };
+		BorderColor borderColor{ FLOAT_OPAQUE_WHITE };
+		float minLod{ 0.0f };
+		float maxLog{ 1.0f };
+	};
+
+	struct BufferInfo
+	{
+		ResourceUsage bufferUsage{ UNDEFINED_USAGE };
+	};
+	
+	struct Resource
+	{
+		enum class ResourceType
+		{
+			BUFFER,
+			TEXTURE,
+			UNDEFINED_TYPE
+		} type = ResourceType::UNDEFINED_TYPE;
+
+		void* data{ nullptr };		// Pointer to Vulkan or D3D12 buffer 
+		uint64_t size{ 0 };
+
+		bool is_buffer() { return type == ResourceType::BUFFER; }
+		bool is_texture() { return type == ResourceType::TEXTURE; }
+		bool is_undefined() { return type == ResourceType::UNDEFINED_TYPE; }
+		bool is_valid() { return data && size; }
+	};
+
+	struct Buffer : public Resource
+	{
+		BufferInfo bufferInfo;
+	};
+
+	struct Texture : public Resource
+	{
+		TextureInfo textureInfo;
+	};
+}
