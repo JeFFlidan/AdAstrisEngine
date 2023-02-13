@@ -4,7 +4,7 @@
 
 #include <cassert>
 
-using namespace engine;
+using namespace ad_astris;
 
 GraphicsPipelineBuilder::GraphicsPipelineBuilder(VkDevice device) : _device(device)
 {

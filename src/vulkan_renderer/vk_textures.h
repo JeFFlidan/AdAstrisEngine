@@ -4,7 +4,7 @@
 #include "vk_renderer.h"
 #include <texture_asset.h>
 
-namespace engine
+namespace ad_astris
 {
 	AllocatedImage upload_image(VkRenderer& engine, AllocatedBuffer& stagingBuffer, assets::TextureInfo& textureInfo, VkFormat image_format);
 	bool load_image_from_file(VkRenderer& engine, const char* file, AllocatedImage& outImage);

@@ -20,11 +20,12 @@
 #include <map>
 #include <string>
 #include <vulkan/vulkan_core.h>
+#include "application_core/sdl_window.h"
 
 //#define VK_RELEASE 1
 #define NODE_COUNT 6
 
-namespace engine
+namespace ad_astris
 {
 	struct DeletionQueue
 	{
@@ -136,7 +137,7 @@ namespace engine
 	struct IndirectBatch
 	{
 		Mesh* mesh;
-		engine::Material* material;
+		ad_astris::Material* material;
 		uint32_t first;
 		uint32_t count;
 	};
@@ -145,7 +146,7 @@ namespace engine
 	{
 		Mesh* mesh{ nullptr };
 
-		engine::Material* material{ nullptr };
+		ad_astris::Material* material{ nullptr };
 		VkImageView baseColor{ VK_NULL_HANDLE };
 		VkImageView normal{ VK_NULL_HANDLE };
 		VkImageView arm{ VK_NULL_HANDLE };
@@ -248,8 +249,8 @@ namespace engine
 		AllocatedBufferT<GeometryInfo> geometryInfo;
 
 		// Not final approach. I have to think how to add it to the transparency pass.
-		engine::GraphicsPipelineBuilder pipelineBuilder;
-		engine::ShaderPass* geometryPass;
+		ad_astris::GraphicsPipelineBuilder pipelineBuilder;
+		ad_astris::ShaderPass* geometryPass;
 		void setup_pipeline_builder(VkRenderer* engine);
 		void create_shader_pass(VkRenderer* engine);
 		void cleanup(VkRenderer* engine);
@@ -313,195 +314,196 @@ namespace engine
 	class VkRenderer 
 	{
 		public:
-		VkInstance _instance;
-		VkDebugUtilsMessengerEXT _debug_messenger;
-		VkPhysicalDevice _chosenGPU;
-		VkPhysicalDeviceProperties _gpuProperties;
-		VkDevice _device;
-		VkSurfaceKHR _surface;
+			VkInstance _instance;
+			VkDebugUtilsMessengerEXT _debug_messenger;
+			VkPhysicalDevice _chosenGPU;
+			VkPhysicalDeviceProperties _gpuProperties;
+			VkDevice _device;
+			VkSurfaceKHR _surface;
 
-		VkSwapchainKHR _swapchain;
-		VkFormat _swapchainImageFormat;
-		std::vector<VkImage> _swapchainImages;
-		std::vector<VkImageView> _swapchainImageViews;	// I need the image view to interact with the image
+			VkSwapchainKHR _swapchain;
+			VkFormat _swapchainImageFormat;
+			std::vector<VkImage> _swapchainImages;
+			std::vector<VkImageView> _swapchainImageViews;	// I need the image view to interact with the image
 
-		VkQueue _graphicsQueue;
-		uint32_t _graphicsQueueFamily;
+			VkQueue _graphicsQueue;
+			uint32_t _graphicsQueueFamily;
 
-		VkRenderPass _renderPass;
-		VkRenderPass _mainOpaqueRenderPass;
-		VkRenderPass _deferredRenderPass;
-		VkRenderPass _transparencyRenderPass;
-		//VkRenderPass _transparencyRenderPass;
-		std::vector<VkFramebuffer> _framebuffers;
-		std::vector<VkFramebuffer> _mainOpaqueFramebuffers;
-		VkFramebuffer _deferredFramebuffer;
-		VkFramebuffer _transparencyFramebuffer;
-		//VkFramebuffer _transparencyFramebuffer;
-		VkFramebuffer _dirLightShadowFramebuffer;
+			VkRenderPass _renderPass;
+			VkRenderPass _mainOpaqueRenderPass;
+			VkRenderPass _deferredRenderPass;
+			VkRenderPass _transparencyRenderPass;
+			//VkRenderPass _transparencyRenderPass;
+			std::vector<VkFramebuffer> _framebuffers;
+			std::vector<VkFramebuffer> _mainOpaqueFramebuffers;
+			VkFramebuffer _deferredFramebuffer;
+			VkFramebuffer _transparencyFramebuffer;
+			//VkFramebuffer _transparencyFramebuffer;
+			VkFramebuffer _dirLightShadowFramebuffer;
 
-		DescriptorAllocator _descriptorAllocator;
-		DescriptorLayoutCache _descriptorLayoutCache;
+			DescriptorAllocator _descriptorAllocator;
+			DescriptorLayoutCache _descriptorLayoutCache;
 
-		MaterialSystem _materialSystem;
-		RenderScene _renderScene;
-		UserInterface _userInterface;
+			MaterialSystem _materialSystem;
+			RenderScene _renderScene;
+			UserInterface _userInterface;
 
-		Attachment _mainOpaqueDepthAttach;
-		Attachment _mainOpaqueColorAttach;
-		Attachment _deferredColorAttach;
-		Attachment _transparencyColorAttach;
-		Attachment _transparencyDepthAttach;
-		Attachment _transparencyVelocityAttach;
-		// Samplers for attachments
-		VkSampler _linearSampler;
-		VkSampler _nearestSampler;
+			Attachment _mainOpaqueDepthAttach;
+			Attachment _mainOpaqueColorAttach;
+			Attachment _deferredColorAttach;
+			Attachment _transparencyColorAttach;
+			Attachment _transparencyDepthAttach;
+			Attachment _transparencyVelocityAttach;
+			VkSampler _linearSampler;
+			VkSampler _nearestSampler;
 
-		GBuffer _GBuffer;
-		Composite _composite;
-		TemporalFilter _temporalFilter;
+			GBuffer _GBuffer;
+			Composite _composite;
+			TemporalFilter _temporalFilter;
 
-		// Depth map data for culling
-		Texture _depthPyramid;
-		VkSampler _depthSampler;
-		VkImageView _depthPyramideMips[16] = {};
-		VkExtent2D _depthPyramidExtent { 1024 * 4, 1024 * 4 };
-		int _depthPyramidWidth;
-		int _depthPyramidHeight;
-		int _depthPyramidLevels;
+			// Depth map data for culling
+			Texture _depthPyramid;
+			VkSampler _depthSampler;
+			VkImageView _depthPyramideMips[16] = {};
+			VkExtent2D _depthPyramidExtent { 1024 * 4, 1024 * 4 };
+			int _depthPyramidWidth;
+			int _depthPyramidHeight;
+			int _depthPyramidLevels;
 
-		//Texture _headIndex;
-		TransparencyFirstPassData _transparencyData;
+			//Texture _headIndex;
+			TransparencyFirstPassData _transparencyData;
 
-		std::vector<VkBufferMemoryBarrier> _beforeCullingBufferBarriers;
-		std::vector<VkBufferMemoryBarrier> _afterCullingBufferBarriers;		// I should execute those barriers before drawing
-		std::vector<VkImageMemoryBarrier> _afterShadowsBarriers;
+			std::vector<VkBufferMemoryBarrier> _beforeCullingBufferBarriers;
+			std::vector<VkBufferMemoryBarrier> _afterCullingBufferBarriers;		// I should execute those barriers before drawing
+			std::vector<VkImageMemoryBarrier> _afterShadowsBarriers;
 
-		VkPipeline _depthReducePipeline;
-		VkPipelineLayout _depthReduceLayout;
-		VkPipeline _cullingPipeline;
-		VkPipelineLayout _cullintPipelineLayout;
+			VkPipeline _depthReducePipeline;
+			VkPipelineLayout _depthReduceLayout;
+			VkPipeline _cullingPipeline;
+			VkPipelineLayout _cullintPipelineLayout;
 
-		VkDescriptorSetLayout _depthReduceDescriptorSetLayout;
+			VkDescriptorSetLayout _depthReduceDescriptorSetLayout;
 
-		VmaAllocator _allocator;
+			VmaAllocator _allocator;
 
-		DeletionQueue _mainDeletionQueue;
+			DeletionQueue _mainDeletionQueue;
 
-		std::vector<MeshObject> _meshObjects;
+			std::vector<MeshObject> _meshObjects;
 
-		std::unordered_map<std::string, Mesh> _meshes;
-		std::vector<Texture> _loadedTextures;
-		std::vector<Texture> _baseColorTextures;
-		std::vector<Texture> _normalTextures;
-		std::vector<Texture> _armTextures;
+			std::unordered_map<std::string, Mesh> _meshes;
+			std::vector<Texture> _loadedTextures;
+			std::vector<Texture> _baseColorTextures;
+			std::vector<Texture> _normalTextures;
+			std::vector<Texture> _armTextures;
 
-		VkSampler _textureSampler;
+			VkSampler _textureSampler;
 
-		VkSampler _shadowMapSampler;
+			VkSampler _shadowMapSampler;
 
-		Plane _outputQuad;
-		Settings _settings = {};
+			Plane _outputQuad;
 
-		GPUSceneData _sceneParameters;
-		AllocatedBuffer _sceneParameterBuffer;
+			GPUSceneData _sceneParameters;
+			Settings _settings;
+			AllocatedBuffer _sceneParameterBuffer;
 
-		AllocatedBuffer _globalVertexBuffer;
-		AllocatedBuffer _globalIndexBuffer;
-		// Sizes don't contain byte size, only amount of vertices and indices
-		size_t _globalVertexBufferSize = 0;
-		size_t _globalIndexBufferSize = 0;
+			AllocatedBuffer _globalVertexBuffer;
+			AllocatedBuffer _globalIndexBuffer;
+			// Sizes don't contain byte size, only amount of vertices and indices
+		    size_t _globalVertexBufferSize = 0;
+		    size_t _globalIndexBufferSize = 0;
 
-		bool _isInitialized{ false };
-		int _frameNumber{0};
-		int _selectedShader{0};
+			bool _isInitialized{ false };
+			int _frameNumber{0};
+			int _selectedShader{0};
 
-		VkExtent2D _windowExtent{ 1700 , 900 };
+			VkExtent2D _windowExtent{ 1700 , 900 };
 
-		struct SDL_Window* _window{ nullptr };
-		Camera camera{glm::vec3(0.0f, 0.0f, 3.0f)};
+			struct SDL_Window* _window{ nullptr };
+			Camera camera{glm::vec3(0.0f, 0.0f, 3.0f)};
 
-		FrameData _frames[FRAME_OVERLAP];
-		FrameData& get_current_frame();
+			sdl::SDLWindow _sdlWindow{};
 
-		UploadContext _uploadContext;
-		void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
-		uint32_t _numThreads;
-		std::vector<ThreadInfo> _threadInfo;
+			FrameData _frames[FRAME_OVERLAP];
+			FrameData& get_current_frame();
 
-		std::string _projectPath;
+			UploadContext _uploadContext;
+			void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function);
+			uint32_t _numThreads;
+			std::vector<ThreadInfo> _threadInfo;
 
-		//initializes everything in the engine
-		void init();
+			std::string _projectPath;
 
-		//shuts down the engine
-		void cleanup();
+			//initializes everything in the engine
+			void init();
 
-		//draw loop
-		void draw();
+			//shuts down the engine
+			void cleanup();
 
-		//run main loop
-		void run();
-		
-		AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+			//draw loop
+			void draw();
 
-		// I have to make static create_attachment method for Attachment class
-		void create_attachment(
-			Attachment& attachment, 
-			VkExtent3D imageExtent, 
-			VkFormat format,
-			VkImageUsageFlags usageFlags, 
-			VkImageAspectFlags aspectFlags,
-			uint32_t layerCount = 1);
+			//run main loop
+			void run();
+			
+			AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+
+			// I have to make static create_attachment method for Attachment class
+			void create_attachment(
+				Attachment& attachment, 
+				VkExtent3D imageExtent, 
+				VkFormat format,
+				VkImageUsageFlags usageFlags, 
+				VkImageAspectFlags aspectFlags,
+				uint32_t layerCount = 1);
 
 		private:
-		void init_vulkan();
-		void init_engine_systems();
-		void init_swapchain();
-		void init_commands();
-		void init_renderpasses();
-		void init_framebuffers();
-		void init_shadow_maps();
-		void init_first_pass_data_for_oit();
-		void init_sync_structures();
-		void init_output_quad();
-		void init_buffers();
-		void init_pipelines();
-		void setup_compute_pipeline(engine::Shader* shader, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout);
-		size_t pad_uniform_buffer_size(size_t originalSize);
+			void init_vulkan();
+			void init_engine_systems();
+			void init_swapchain();
+			void init_commands();
+			void init_renderpasses();
+			void init_framebuffers();
+			void init_shadow_maps();
+			void init_first_pass_data_for_oit();
+			void init_sync_structures();
+			void init_output_quad();
+			void init_buffers();
+			void init_pipelines();
+			void setup_compute_pipeline(Shader* shader, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout);
+			size_t pad_uniform_buffer_size(size_t originalSize);
 
-		void refresh_swapchain();
+			void refresh_swapchain();
 
-		void create_cube_map(
-			Texture& texture,
-			VkExtent3D imageExtent,
-			VkFormat format,
-			VkImageUsageFlags usageFlags,
-			VkImageAspectFlags aspectFlags);
+			void create_cube_map(
+				Texture& texture,
+				VkExtent3D imageExtent,
+				VkFormat format,
+				VkImageUsageFlags usageFlags,
+				VkImageAspectFlags aspectFlags);
 
-		void reallocate_buffer(AllocatedBuffer& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+			void reallocate_buffer(AllocatedBuffer& buffer, size_t size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
-		void parse_prefabs();
+			void parse_prefabs();
 
-		void refresh_multi_threads_command_buffers(uint32_t objectsPerThread);
-		
-		// methods for renderer
-		void prepare_gpu_indirect_buffer(VkCommandBuffer cmd, RenderScene::MeshPass& meshPass);
-		void prepare_data_for_drawing(VkCommandBuffer cmd);
-		void prepare_per_frame_data(VkCommandBuffer cmd);
-		void fill_renderable_objects();
-		void culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd, CullParams cullParams);
-		void draw_deferred_pass(VkCommandBuffer cmd);
-		void draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
-		void draw_tranparency_pass(VkCommandBuffer cmd);
-		void draw_compositing_pass(VkCommandBuffer cmd);
-		void draw_taa_pass(VkCommandBuffer cmd);
-		void draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
-		void submit(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
-		void bake_shadow_maps(VkCommandBuffer cmd);
-		void draw_shadow_pass(VkCommandBuffer cmd, MeshpassType passType);
-		void draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet, RenderScene::MeshPass& meshPass, uint32_t id);
-		void reallocate_light_buffer(ActorType lightType);
-		void depth_reduce(VkCommandBuffer cmd);
+			void refresh_multi_threads_command_buffers(uint32_t objectsPerThread);
+			
+			// methods for renderer
+			void prepare_gpu_indirect_buffer(VkCommandBuffer cmd, RenderScene::MeshPass& meshPass);
+			void prepare_data_for_drawing(VkCommandBuffer cmd);
+			void prepare_per_frame_data(VkCommandBuffer cmd);
+			void fill_renderable_objects();
+			void culling(RenderScene::MeshPass& meshPass, VkCommandBuffer cmd, CullParams cullParams);
+			void draw_deferred_pass(VkCommandBuffer cmd);
+			void draw_forward_pass(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
+			void draw_tranparency_pass(VkCommandBuffer cmd);
+			void draw_compositing_pass(VkCommandBuffer cmd);
+			void draw_taa_pass(VkCommandBuffer cmd);
+			void draw_final_quad(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
+			void submit(VkCommandBuffer cmd, uint32_t swapchainImageIndex);
+			void bake_shadow_maps(VkCommandBuffer cmd);
+			void draw_shadow_pass(VkCommandBuffer cmd, MeshpassType passType);
+			void draw_objects_in_shadow_pass(VkCommandBuffer cmd, VkDescriptorSet globalDescriptorSet, RenderScene::MeshPass& meshPass, uint32_t id);
+			void reallocate_light_buffer(ActorType lightType);
+			void depth_reduce(VkCommandBuffer cmd);
 	};
 }

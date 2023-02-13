@@ -336,7 +336,7 @@ namespace vkinit
 		return memoryBarrier;
 	}
 
-	VkBufferMemoryBarrier buffer_barrier(engine::AllocatedBuffer* buffer, VkAccessFlags srcMask, VkAccessFlags dstMask, uint32_t queueFamily, VkDeviceSize offset)
+	VkBufferMemoryBarrier buffer_barrier(ad_astris::AllocatedBuffer* buffer, VkAccessFlags srcMask, VkAccessFlags dstMask, uint32_t queueFamily, VkDeviceSize offset)
 	{
 		VkBufferMemoryBarrier barrier{};
 		barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;

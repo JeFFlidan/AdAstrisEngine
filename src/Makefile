@@ -129,6 +129,30 @@ AdAstrisEngine/fast:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/build
 .PHONY : AdAstrisEngine/fast
 
+application_core/sdl_window.obj: application_core/sdl_window.cpp.obj
+.PHONY : application_core/sdl_window.obj
+
+# target to build an object file
+application_core/sdl_window.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/application_core/sdl_window.cpp.obj
+.PHONY : application_core/sdl_window.cpp.obj
+
+application_core/sdl_window.i: application_core/sdl_window.cpp.i
+.PHONY : application_core/sdl_window.i
+
+# target to preprocess a source file
+application_core/sdl_window.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/application_core/sdl_window.cpp.i
+.PHONY : application_core/sdl_window.cpp.i
+
+application_core/sdl_window.s: application_core/sdl_window.cpp.s
+.PHONY : application_core/sdl_window.s
+
+# target to generate assembly for a file
+application_core/sdl_window.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/application_core/sdl_window.cpp.s
+.PHONY : application_core/sdl_window.cpp.s
+
 engine/camera.obj: engine/camera.cpp.obj
 .PHONY : engine/camera.obj
 
@@ -667,6 +691,9 @@ help:
 	@echo ... rebuild_cache
 	@echo ... AdAstrisEngine
 	@echo ... logger
+	@echo ... application_core/sdl_window.obj
+	@echo ... application_core/sdl_window.i
+	@echo ... application_core/sdl_window.s
 	@echo ... engine/camera.obj
 	@echo ... engine/camera.i
 	@echo ... engine/camera.s

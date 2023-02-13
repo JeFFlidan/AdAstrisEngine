@@ -5,7 +5,7 @@
 
 #include "vk_mesh.h"
 
-using namespace engine;
+using namespace ad_astris;
 
 VertexInputDescription Mesh::get_vertex_description()
 {

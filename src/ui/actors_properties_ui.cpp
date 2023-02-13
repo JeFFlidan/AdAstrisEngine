@@ -2,7 +2,7 @@
 #include "glm/vec3.hpp"
 #include "glm/trigonometric.hpp"
 
-using namespace engine::ui;
+using namespace ad_astris::ui;
 
 PointLightUi::PointLightUi(actors::PointLight* pointLight, RenderScene* renderScene)
 	: _pointLight(pointLight), _renderScene(renderScene)

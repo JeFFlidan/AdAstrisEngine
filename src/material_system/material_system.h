@@ -14,7 +14,7 @@
 #include <vulkan/vulkan_core.h>
 
 class VkRenderer;
-namespace engine
+namespace ad_astris
 {
 	enum class MeshpassType : uint32_t
 	{

@@ -75,7 +75,7 @@ class DescriptorLayoutCache
 		VkDevice device;
 };
 
-namespace engine
+namespace ad_astris
 {
 	class DescriptorBuilder
 	{

@@ -1,6 +1,9 @@
 #pragma once
 
-#include <imgui_impl_sdl.h>
+#ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+	#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+#endif
+#include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
 
 #include "proj_settings_window.h"
@@ -10,7 +13,7 @@
 
 class VkRenderer;
 
-namespace engine
+namespace ad_astris
 {
 	class UserInterface
 	{

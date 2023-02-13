@@ -1,7 +1,7 @@
 #include "proj_settings_window.h"
 #include "vulkan_renderer/vk_renderer.h"
 
-using namespace engine::ui;
+using namespace ad_astris::ui;
 
 void ProjSettingsWindow::draw_window(void* data)
 {

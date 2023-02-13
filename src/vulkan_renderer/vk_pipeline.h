@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
-namespace engine
+namespace ad_astris
 {
 	class GraphicsPipelineBuilder
 	{

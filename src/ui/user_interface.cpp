@@ -1,7 +1,7 @@
 #include "vulkan_renderer/vk_renderer.h"
 #include "user_interface.h"
 
-namespace engine
+namespace ad_astris
 {
 	void UserInterface::init_ui(VkRenderer* engine)
 	{
@@ -44,7 +44,7 @@ namespace engine
 
 		ImGui::LoadIniSettingsFromDisk((engine->_projectPath + "/configs/imgui.ini").c_str());
 		
-		ImGui_ImplSDL2_InitForVulkan(engine->_window);
+		ImGui_ImplSDL2_InitForVulkan(engine->_sdlWindow.get_window());
 
 		ImGui_ImplVulkan_InitInfo init_info{};
 		init_info.Instance = engine->_instance;

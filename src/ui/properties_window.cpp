@@ -1,7 +1,7 @@
 #include "properties_window.h"
 #include "vulkan_renderer/vk_renderer.h"
 
-using namespace engine::ui;
+using namespace ad_astris::ui;
 
 void PropertiesWindow::draw_window(void* data)
 {

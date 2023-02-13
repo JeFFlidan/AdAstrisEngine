@@ -13,7 +13,7 @@
 
 #include <vector>
 
-namespace engine
+namespace ad_astris
 {
 	class VkRenderer;
 	class AllocatedBuffer
