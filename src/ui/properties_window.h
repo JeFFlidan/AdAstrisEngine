@@ -2,7 +2,7 @@
 
 #include "actors_properties_ui.h"
 
-namespace engine::ui
+namespace ad_astris::ui
 {
 	class PropertiesWindow : public IWindow
 	{

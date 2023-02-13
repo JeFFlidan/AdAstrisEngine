@@ -41,7 +41,7 @@ namespace vkinit
 	VkSubmitInfo submit_info(VkCommandBuffer* cmd);
 
 	VkImageMemoryBarrier image_barrier(VkImage image, VkAccessFlags srcMask, VkAccessFlags dstMask, VkImageLayout srcLayout, VkImageLayout dstLayout, VkImageAspectFlags aspectFlag);
-	VkBufferMemoryBarrier buffer_barrier(engine::AllocatedBuffer* buffer, VkAccessFlags srcMask, VkAccessFlags dstMask, uint32_t queueFamily, VkDeviceSize offset = 0);
+	VkBufferMemoryBarrier buffer_barrier(ad_astris::AllocatedBuffer* buffer, VkAccessFlags srcMask, VkAccessFlags dstMask, uint32_t queueFamily, VkDeviceSize offset = 0);
 
 	VkFramebufferCreateInfo framebuffer_create_info(VkImageView* imageViews, uint32_t count, VkRenderPass renderPass, VkExtent3D extent, VkFramebufferCreateFlags flags = 0);
 }

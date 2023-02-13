@@ -15,7 +15,7 @@
 #include <vulkan/vulkan_core.h>
 
 
-namespace engine
+namespace ad_astris
 {
 	struct MeshObject;
 	struct GPUObjectData;
@@ -151,7 +151,7 @@ namespace engine
 		
 		std::vector<RenderableObject> _renderables;		// All objects in the scene to render
 		std::vector<DrawMesh> _meshes;
-		std::vector<engine::Material*> _materials;
+		std::vector<ad_astris::Material*> _materials;
 		std::vector<Handle<RenderableObject>> _dirtyObjects;	// Objects which should be reupload to the GPU
 
 		std::vector<VkDescriptorImageInfo> _baseColorInfos;

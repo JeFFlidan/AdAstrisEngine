@@ -6,7 +6,7 @@
 #include <glm/vec2.hpp>
 #include <mesh_asset.h>
 
-namespace engine
+namespace ad_astris
 {
 	struct VertexInputDescription
 	{

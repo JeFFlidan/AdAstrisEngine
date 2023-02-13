@@ -4,7 +4,7 @@
 
 struct Settings;
 
-namespace engine::ui
+namespace ad_astris::ui
 {
 	class DockingWindow : public IWindow
 	{

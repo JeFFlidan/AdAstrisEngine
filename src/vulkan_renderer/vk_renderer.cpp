@@ -1,4 +1,5 @@
 ﻿#include "vk_renderer.h"
+#include "material_asset.h"
 #include "SDL_events.h"
 #include "SDL_mouse.h"
 #include "SDL_stdinc.h"
@@ -12,7 +13,6 @@
 #include "glm/fwd.hpp"
 #include "glm/geometric.hpp"
 #include "glm/trigonometric.hpp"
-#include "material_asset.h"
 #include "mesh_asset.h"
 #include "prefab_asset.h"
 #include "vk_descriptors.h"
@@ -68,8 +68,8 @@
 
 //#define NODE_COUNT 20
 
-using GeometryInfo = engine::TransparencyFirstPassData::GeometryInfo;
-using Node = engine::TransparencyFirstPassData::Node;
+using GeometryInfo = ad_astris::TransparencyFirstPassData::GeometryInfo;
+using Node = ad_astris::TransparencyFirstPassData::Node;
 
 namespace fs = std::filesystem;
 
@@ -100,29 +100,15 @@ std::vector<std::string> get_supported_vulkan_physical_device_extension(VkPhysic
 	return result;
 }
 
-// Rider says that I can't use using namespace engine. Why?
-namespace engine
+// Rider says that I can't use using namespace ad_astris. Why?
+namespace ad_astris
 {
 	void VkRenderer::init()
 	{
-		// We initialize SDL and create a window with it. 
-		SDL_Init(SDL_INIT_VIDEO);
-		//SDL_ShowCursor(SDL_DISABLE);
-
-		SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN);
-
-		_window = SDL_CreateWindow(
-			"Vulkan Engine",
-			SDL_WINDOWPOS_UNDEFINED,
-			SDL_WINDOWPOS_UNDEFINED,
-			_windowExtent.width,
-			_windowExtent.height,
-			window_flags
-		);
-
-		SDL_SetWindowResizable(_window, SDL_TRUE);
-
-		SDL_Delay(100);
+		_sdlWindow.init({ 1700, 900 });
+		auto size = _sdlWindow.get_window_size();
+		_windowExtent.width = size.width;
+		_windowExtent.height = size.height;
 
 		init_vulkan();
 		init_engine_systems();
@@ -138,7 +124,6 @@ namespace engine
 		init_pipelines();
 		init_output_quad();
 		_userInterface.init_ui(this);
-		//init_imgui();
 
 		//everything went fine
 		_isInitialized = true;
@@ -215,13 +200,14 @@ namespace engine
 			vkb::destroy_debug_utils_messenger(_instance, _debug_messenger, nullptr);
 			vkDestroyInstance(_instance, nullptr);
 
-			SDL_DestroyWindow(_window);
+			SDL_DestroyWindow(_sdlWindow.get_window());
 		}
 	}
 
 	void VkRenderer::init_vulkan()
 	{
-		LOG_INFO("Start");
+		LOG_INFO("Start")
+
 		//PATH.erase(PATH.find("/bin"), 4);
 	
 		vkb::InstanceBuilder builder;
@@ -237,9 +223,10 @@ namespace engine
 		_debug_messenger = vkb_inst.debug_messenger;
 		LOG_INFO("Finished crearing instance");
 
-		SDL_Vulkan_CreateSurface(_window, _instance, &_surface);
+		SDL_Vulkan_CreateSurface(_sdlWindow.get_window(), _instance, &_surface);
 
 		vkb::PhysicalDeviceSelector selector{ vkb_inst };
+		vkb::PhysicalDeviceSelector selec{ vkb_inst };
 		VkPhysicalDeviceVulkan12Features features{};
 		features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 		features.runtimeDescriptorArray = VK_TRUE;
@@ -255,13 +242,36 @@ namespace engine
 		VkPhysicalDeviceFeatures enabledFeatures{};
 		enabledFeatures.fragmentStoresAndAtomics = VK_TRUE;
 		enabledFeatures.samplerAnisotropy = VK_TRUE;
-	
-		vkb::PhysicalDevice physicalDevice = selector
+
+		vkb::PhysicalDevice physDevice = selec
+			.set_minimum_version(1, 2)
+			.set_surface(_surface)
+			.select()
+			.value();
+
+		uint32_t count;
+		vkEnumerateDeviceExtensionProperties(physDevice, nullptr, &count, nullptr);
+		std::vector<VkExtensionProperties> extensions(count);
+		vkEnumerateDeviceExtensionProperties(physDevice, nullptr, &count, extensions.data());
+
+		std::vector<std::string> result;
+		for (auto& extension : extensions)
+			result.push_back(extension.extensionName);
+
+		selector
 			.set_minimum_version(1, 2)
 			.set_surface(_surface)
 			.add_required_extension("VK_EXT_descriptor_indexing")
 			.add_required_extension("VK_EXT_sampler_filter_minmax")
 			.add_required_extension("VK_KHR_multiview")
+			.add_desired_extension("VK_EXT_mesh_shader");
+
+		if (std::find(result.begin(), result.end(), "VK_EXT_mesh_shader") != result.end())
+			selector.add_required_extension("VK_EXT_mesh_shader");
+		else
+			LOG_INFO("Mesh shader isn't supported by your GPU")
+		
+		vkb::PhysicalDevice physicalDevice = selector
 			.set_required_features_12(features)
 			.set_required_features(enabledFeatures)
 			.select()
@@ -281,6 +291,7 @@ namespace engine
 		multiViewFeatures.multiview = VK_TRUE;
 	
 		vkb::Device vkbDevice = deviceBuilder.add_pNext(&multiViewFeatures).build().value();
+		
 		LOG_INFO("Finished picking up logical device")
 
 		_device = vkbDevice.device;
@@ -1090,118 +1101,12 @@ namespace engine
 
 	void VkRenderer::run()
 	{
-		SDL_Event e;
 		bool bQuit = false;
-
-		Uint64 previous_ticks{};
-		float elapsed_seconds{};
-
-		float lastX = static_cast<float>(_windowExtent.width / 2.0f);
-		float lastY = static_cast<float>(_windowExtent.height / 2.0f);
-		bool firstMouse = true;
-		SDL_bool enableRelMode = SDL_FALSE;
-
-		SDL_SetRelativeMouseMode(enableRelMode);
 
 		//main loop
 		while (!bQuit)
 		{
-			const Uint64 currentTicks{SDL_GetPerformanceCounter()};
-			const Uint64 delta{ currentTicks - previous_ticks };
-			previous_ticks = currentTicks;
-			elapsed_seconds = delta / static_cast<float>(SDL_GetPerformanceFrequency());
-
-			bool cameraMovement1 = false;
-			int mouseX, mouseY;
-
-			//Handle events on queue
-			while (SDL_PollEvent(&e) != 0)
-			{
-				SDL_PumpEvents();
-				ImGui_ImplSDL2_ProcessEvent(&e);
-
-				//close the window when user alt-f4s or clicks the X button
-				if (e.type == SDL_QUIT)
-				{
-					bQuit = true;
-				}
-				if (e.type == SDL_KEYDOWN)
-				{
-					SDL_PumpEvents();
-					if (e.key.keysym.sym == SDLK_SPACE)
-					{
-						++_selectedShader;
-						if (_selectedShader > 1)
-						{
-							_selectedShader = 0;
-						}
-					}
-
-					SDL_PumpEvents();
-					if (e.key.keysym.sym == SDLK_ESCAPE)
-					{
-						bQuit = true;
-					}
-				}
-
-				if (e.type == SDL_MOUSEMOTION)
-				{
-					cameraMovement1 = true;
-					SDL_PumpEvents();
-					mouseX = e.motion.xrel;
-					mouseY = e.motion.yrel;
-				}
-			}
-
-			SDL_PumpEvents();
-			const Uint8 *state = SDL_GetKeyboardState(nullptr);
-			int x, y;
-			Uint32 mouseState = SDL_GetMouseState(&x, &y);
-			if (SDL_BUTTON(3) & mouseState)
-			{
-				if (!enableRelMode)
-				{
-					enableRelMode = SDL_TRUE;
-					SDL_SetRelativeMouseMode(enableRelMode);
-				}
-			
-				if (state[SDL_SCANCODE_W])
-					camera.process_keyboard(FORWARD, elapsed_seconds);
-				if (state[SDL_SCANCODE_S])
-					camera.process_keyboard(BACKWARD, elapsed_seconds);
-				if (state[SDL_SCANCODE_A])
-					camera.process_keyboard(LEFT, elapsed_seconds);
-				if (state[SDL_SCANCODE_D])
-					camera.process_keyboard(RIGHT, elapsed_seconds);
-
-				if (cameraMovement1)
-				{
-					float xPos, yPos;
-
-					xPos = static_cast<float>(mouseX);
-					yPos = static_cast<float>(mouseY);
-					if (firstMouse)
-					{
-						xPos = 0.0f;
-						yPos = 0.0f;
-						firstMouse = false;
-					}
-
-					float xoffset = xPos - lastX;
-					float yoffset = yPos - lastY;
-
-					camera.process_mouse_movement(xPos, yPos);
-				}
-			}
-			else
-			{
-				if (enableRelMode)
-				{
-					enableRelMode = SDL_FALSE;
-					SDL_SetRelativeMouseMode(enableRelMode);
-					SDL_WarpMouseInWindow(_window, _windowExtent.width / 2, _windowExtent.height / 2);
-				}
-			}
+			_sdlWindow.handle_action_per_frame(&camera, &bQuit);
 
 			//ImGui::ShowDemoWindow();
 			_userInterface.draw_ui(this);
@@ -1214,6 +1119,8 @@ namespace engine
 		_userInterface.render_ui();
 		ImGui::Render();
 		LOG_INFO("Start new frame")
+
+		LOG_INFO("Width {} Height {}", _windowExtent.width, _windowExtent.height)
 
 		VkCommandBuffer cmd = get_current_frame()._mainCommandBuffer;
 
@@ -1543,7 +1450,7 @@ namespace engine
 		vkDeviceWaitIdle(_device);
 
 		int width = 0, height = 0;
-		SDL_GetWindowSize(_window, &width, &height);
+		SDL_GetWindowSize(_sdlWindow.get_window(), &width, &height);
 		_windowExtent.width = (uint32_t)width;
 		_windowExtent.height = (uint32_t)height;
 

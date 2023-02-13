@@ -238,7 +238,7 @@ size_t DescriptorLayoutCache::DescriptorLayoutInfo::hash() const
 	return result;
 }
 
-namespace engine
+namespace ad_astris
 {
 	DescriptorBuilder DescriptorBuilder::begin(DescriptorLayoutCache* layoutCache, DescriptorAllocator* allocator)
 	{

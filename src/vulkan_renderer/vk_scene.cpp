@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
 
-using namespace engine;
+using namespace ad_astris;
 
 //public methods
 

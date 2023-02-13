@@ -9,7 +9,7 @@
 #include <functional>
 #include <vulkan/vulkan_core.h>
 
-namespace engine
+namespace ad_astris
 {
 	void MaterialSystem::init(VkRenderer* engine)
 	{
@@ -258,7 +258,7 @@ namespace engine
 		{
 			VkDevice device = _engine->_device;
 			
-			auto pass = templ.second.passShaders[engine::MeshpassType::Forward];
+			auto pass = templ.second.passShaders[ad_astris::MeshpassType::Forward];
 			if (pass != nullptr)
 			{
 				vkDestroyPipeline(device, pass->pipeline, nullptr);	
@@ -305,7 +305,7 @@ namespace engine
 				vkDestroyPipelineLayout(device, pass->layout, nullptr);
 				pass->effect->destroy_shader_modules();
 
-				engine::ShaderPass* relPass = pass->relatedShaderPasses[0];
+				ad_astris::ShaderPass* relPass = pass->relatedShaderPasses[0];
 				vkDestroyPipeline(device, relPass->pipeline, nullptr);
 				vkDestroyPipelineLayout(device, relPass->layout, nullptr);
 				relPass->effect->destroy_shader_modules();

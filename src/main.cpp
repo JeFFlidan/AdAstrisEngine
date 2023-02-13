@@ -5,7 +5,7 @@
 
 int main(int argc, char* argv[])
 {
-	engine::VkRenderer engine;
+	ad_astris::VkRenderer engine;
 
 	auto start = std::chrono::system_clock::now();
 	engine.init();

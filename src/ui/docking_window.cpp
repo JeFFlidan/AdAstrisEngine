@@ -1,7 +1,7 @@
 #include "docking_window.h"
 #include "vulkan_renderer/vk_renderer.h"
 
-using namespace engine::ui;
+using namespace ad_astris::ui;
 
 void DockingWindow::draw_window(void* data)
 {

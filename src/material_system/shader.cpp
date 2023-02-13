@@ -14,7 +14,7 @@
 #include "shader.h"
 #include "profiler/logger.h"
 
-namespace engine
+namespace ad_astris
 {
 	bool Shader::load_shader_module(const char* filePath)
 	{
@@ -236,5 +236,5 @@ namespace engine
 				stage.shader->delete_shader_module();
 		}
 	}
-} // namespace engine
+} // namespace ad_astris
 

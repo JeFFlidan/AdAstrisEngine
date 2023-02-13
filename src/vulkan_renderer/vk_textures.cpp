@@ -10,7 +10,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-namespace engine
+namespace ad_astris
 {
 	AllocatedImage upload_image(VkRenderer& engine, AllocatedBuffer& stagingBuffer, assets::TextureInfo& textureInfo, VkFormat imageFormat)
 	{

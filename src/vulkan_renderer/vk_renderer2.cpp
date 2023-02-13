@@ -19,8 +19,8 @@
 #include <algorithm>
 #include <set>
 
-using GeometryInfo = engine::TransparencyFirstPassData::GeometryInfo;
-using Node = engine::TransparencyFirstPassData::Node;
+using GeometryInfo = ad_astris::TransparencyFirstPassData::GeometryInfo;
+using Node = ad_astris::TransparencyFirstPassData::Node;
 
 inline uint32_t get_group_count(uint32_t threadCount, uint32_t localSize)
 {
@@ -42,7 +42,7 @@ inline glm::mat4 perspectiveProjection(float fovY, float aspectWbyH, float zNear
 		0.0f, 0.0f, zNear, 0.0f);
 }
 
-namespace engine
+namespace ad_astris
 {
 	void VkRenderer::fill_renderable_objects()
 	{

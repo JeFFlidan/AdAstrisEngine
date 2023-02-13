@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
 
-using namespace engine;
+using namespace ad_astris;
 
 AllocatedBuffer::AllocatedBuffer(VkRenderer* engine, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
