@@ -1,4 +1,4 @@
-﻿#include "device.h"
+﻿#include "vulkan_device.h"
 #include "profiler/logger.h"
 #include "vulkan_common.h"
 #include <SDL_video.h>
@@ -7,7 +7,7 @@
 
 using namespace ad_astris;
 
-void vulkan::Device::init(vkb::Instance& instance, void* window)
+void vulkan::VulkanDevice::init(vkb::Instance& instance, void* window)
 {
 	LOG_INFO("Start initing Device class (Vulkan)")
 
@@ -37,24 +37,27 @@ void vulkan::Device::init(vkb::Instance& instance, void* window)
 	LOG_INFO("Finish initing Device class (Vulkan)")
 }
 
-// I use SDL window for Windows but it will be replaced
-/** Creates Vulkan surface.
- @param instance should be valid Vulkan instance
- @param data should be pointer to the window: SDL for Linux or WinApi for Windows.
- */
-void vulkan::Device::create_surface(VkInstance instance, void* data)
+void vulkan::VulkanDevice::cleanup()
+{
+	delete _graphicsQueue;
+	delete _presentQueue;
+	delete _computeQueue;
+	delete _transferQueue;
+}
+
+void vulkan::VulkanDevice::create_surface(VkInstance instance, void* window)
 {
 	LOG_INFO("Start creating surface")
 #ifdef _WIN32
-	SDL_Window* window = static_cast<SDL_Window*>(data);
-	SDL_bool valid = SDL_Vulkan_CreateSurface(window, instance, &_surface);
+	SDL_Window* sdlWindow = static_cast<SDL_Window*>(window);
+	SDL_bool valid = SDL_Vulkan_CreateSurface(sdlWindow, instance, &_surface);
 	if (!valid)
 		LOG_FATAL("Failed to create Vulkan Surface for SDL window")
 #endif
 	LOG_INFO("Finish creating surface")
 }
 
-vkb::PhysicalDevice vulkan::Device::pick_physical_device(vkb::Instance& instance)
+vkb::PhysicalDevice vulkan::VulkanDevice::pick_physical_device(vkb::Instance& instance)
 {
 	LOG_INFO("Start picking physical device")
 	
@@ -112,7 +115,7 @@ vkb::PhysicalDevice vulkan::Device::pick_physical_device(vkb::Instance& instance
 	return physSelector.select().value();
 }
 
-vkb::Device vulkan::Device::pick_device(vkb::PhysicalDevice& physicalDevice)
+vkb::Device vulkan::VulkanDevice::pick_device(vkb::PhysicalDevice& physicalDevice)
 {
 	LOG_INFO("Start picking logical device")
 	vkb::DeviceBuilder deviceBuilder{ physicalDevice };
@@ -134,12 +137,12 @@ vkb::Device vulkan::Device::pick_device(vkb::PhysicalDevice& physicalDevice)
 	return deviceBuilder.build().value();
 }
 
-bool vulkan::Device::check_needed_extensions(std::vector<std::string>& supportedExt, const std::string& extName)
+bool vulkan::VulkanDevice::check_needed_extensions(std::vector<std::string>& supportedExt, const std::string& extName)
 {
 	return std::find(supportedExt.begin(), supportedExt.end(), extName) != supportedExt.end();
 }
 
-void vulkan::Device::get_supported_extensions_and_features(
+void vulkan::VulkanDevice::get_supported_extensions_and_features(
 	vkb::Instance& instance,
 	std::vector<std::string>& extensions,
 	VkPhysicalDeviceFeatures& features)
@@ -165,7 +168,7 @@ void vulkan::Device::get_supported_extensions_and_features(
 	LOG_INFO("Finish getting supported extensions and features")
 }
 
-void vulkan::Device::set_feature(VkBool32 supported, VkBool32& feature, std::string featureName)
+void vulkan::VulkanDevice::set_feature(VkBool32 supported, VkBool32& feature, std::string featureName)
 {
 	if (supported)
 		feature = VK_TRUE;
@@ -173,7 +176,7 @@ void vulkan::Device::set_feature(VkBool32 supported, VkBool32& feature, std::str
 		LOG_FATAL("Your GPU doesn't support required Vulkan feature {}", featureName.c_str())
 }
 
-void vulkan::Device::set_optional_extension(std::string& ext)
+void vulkan::VulkanDevice::set_optional_extension(std::string& ext)
 {
 	if (ext == "VK_EXT_mesh_shader")
 		_isOptionalExtensionsEnabled.meshShader = 1;
