@@ -1,13 +1,15 @@
 ﻿#pragma once
 #include <cstdint>
 
+#include "fmt/core.h"
+
 namespace ad_astris::rhi
 {
 	enum ResourceUsage
 	{
 		UNDEFINED_USAGE,
-		SAMPLED,
-		STORAGE,
+		SAMPLED_TEXTURE,
+		STORAGE_TEXTURE,
 		COLOR_ATTACHMENT,
 		DEPTH_STENCIL_ATTACHMENT,
 		TRANSIENT_ATTACHMENT,
@@ -23,6 +25,7 @@ namespace ad_astris::rhi
 
 	enum MemoryUsage
 	{
+		UNDEFINED_MEMORY_USAGE,
 		CPU,
 		GPU,
 		CPU_TO_GPU
@@ -183,7 +186,14 @@ namespace ad_astris::rhi
 
 	struct BufferInfo
 	{
+		BufferInfo() = default;
+		BufferInfo(ResourceUsage bufferUsage, MemoryUsage memoryUsage, bool transSrc, bool transDst)
+			: bufferUsage(bufferUsage), memoryUsage(memoryUsage), transferSrc(transSrc), transferDst(transDst) {}
+		
 		ResourceUsage bufferUsage{ UNDEFINED_USAGE };
+		MemoryUsage memoryUsage{ UNDEFINED_MEMORY_USAGE };
+		bool transferSrc{ false };
+		bool transferDst{ false };
 	};
 	
 	struct Resource
@@ -196,7 +206,7 @@ namespace ad_astris::rhi
 		} type = ResourceType::UNDEFINED_TYPE;
 
 		void* data{ nullptr };		// Pointer to Vulkan or D3D12 buffer 
-		uint64_t size{ 0 };
+		uint64_t size{ 0 };		// Size in bytes
 
 		bool is_buffer() { return type == ResourceType::BUFFER; }
 		bool is_texture() { return type == ResourceType::TEXTURE; }
@@ -206,6 +216,8 @@ namespace ad_astris::rhi
 
 	struct Buffer : public Resource
 	{
+		Buffer() = default;
+		Buffer(BufferInfo info) : bufferInfo(info) {}
 		BufferInfo bufferInfo;
 	};
 

@@ -23,7 +23,5 @@ src/CMakeFiles
 /*/.#*.*
 CMakeCache.txt
 Makefile
-src/vulkan_rhi
-src/rhi
 src/vulkan_renderer/vk_render_graph.h
 src/vulkan_renderer/vk_render_graph.cpp

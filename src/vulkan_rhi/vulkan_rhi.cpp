@@ -1,12 +1,17 @@
 ﻿#include "vulkan_rhi.h"
+#include "vulkan_common.h"
+#include "vulkan_buffer.h"
 
 #include "profiler/logger.h"
+#include <VkBootstrap.h>
 
 using namespace ad_astris;
 
-void vulkan::VulkanRHI::init()
+void vulkan::VulkanRHI::init(void* window)
 {
-	
+	vkb::Instance vkbInstance = create_instance();
+	_vulkanDevice.init(vkbInstance, window);
+	create_allocator();
 }
 
 void vulkan::VulkanRHI::cleanup()
@@ -14,12 +19,71 @@ void vulkan::VulkanRHI::cleanup()
 	
 }
 
-void vulkan::VulkanRHI::create_buffer(rhi::BufferInfo* info, void* data, uint64_t size)
+void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, uint64_t size, void* data)
 {
+	if (!buffer)
+	{
+		LOG_ERROR("Can't create buffer if buffer parameter is invalid")
+		return;
+	}
 	
+	auto& info = buffer->bufferInfo;
+	VkBufferUsageFlags bufferUsage = get_buffer_usage(info.bufferUsage);
+	if (!bufferUsage)
+	{
+		LOG_ERROR("Invalid buffer usage")
+		return;
+	}
+	
+	VmaMemoryUsage memoryUsage = get_memory_usage(info.memoryUsage);
+	if (memoryUsage == VMA_MEMORY_USAGE_UNKNOWN)
+	{
+		LOG_ERROR("Invalid memory usage (buffer)")
+		return;
+	}
+	if (info.transferDst)
+		bufferUsage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	if (info.transferSrc)
+		bufferUsage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+	VulkanBuffer* vulkanBuffer = new VulkanBuffer(&_allocator, size, bufferUsage, memoryUsage);
+	buffer->data = vulkanBuffer;
+	buffer->size = size;
+	buffer->type = rhi::Resource::ResourceType::BUFFER;
+	if (data == nullptr)
+		return;
+	if (data != nullptr && memoryUsage == VMA_MEMORY_USAGE_GPU_ONLY)
+	{
+		LOG_ERROR("Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
+		return;
+	}
+	vulkanBuffer->copy_from(&_allocator, data, size);
 }
 
-void vulkan::VulkanRHI::create_texture(rhi::TextureInfo* info, void* data, uint64_t size)
+void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data)
+{
+	if (!data || !buffer || !buffer->data || size == 0)
+	{
+		LOG_ERROR("Can't use update_buffer_data if buffer, data or size is invalid")
+		return;
+	}
+	
+	if (buffer->bufferInfo.memoryUsage == rhi::GPU)
+	{
+		LOG_ERROR("Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
+		return;
+	}
+	if (!buffer->bufferInfo.transferDst)
+	{
+		LOG_ERROR("Can't copy because buffer usage doesn't have the transfer dst flag")
+		return;
+	}
+
+	VulkanBuffer* vulkanBuffer = static_cast<VulkanBuffer*>(buffer->data);
+	vulkanBuffer->copy_from(&_allocator, data, size);
+}
+
+void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, void* data, uint64_t size)
 {
 	
 }
@@ -29,12 +93,32 @@ void vulkan::VulkanRHI::create_sampler(rhi::SamplerInfo* info)
 	
 }
 
-void vulkan::VulkanRHI::update_buffer_data(rhi::BufferInfo* info, void* data, uint64_t size)
+// private methods
+vkb::Instance vulkan::VulkanRHI::create_instance()
 {
-	
+	LOG_INFO("Start creating Vulkan instance")
+	vkb::InstanceBuilder builder;
+	builder.set_app_name("AdAstris Engine");
+	builder.require_api_version(1, 2, 0);
+#ifndef VK_RELEASE
+	builder.use_default_debug_messenger();
+	builder.request_validation_layers(true);
+#else
+	builder.request_validation_layers(false);
+#endif
+	LOG_INFO("Finish creating Vulkan instance")
+	return builder.build().value();
 }
 
-// private methods
+void vulkan::VulkanRHI::create_allocator()
+{
+	VmaAllocatorCreateInfo allocatorInfo{};
+	allocatorInfo.physicalDevice = _vulkanDevice.get_physical_device();
+	allocatorInfo.device = _vulkanDevice.get_device();
+	allocatorInfo.instance = _instance;
+	vmaCreateAllocator(&allocatorInfo, &_allocator);
+}
+
 VkFormat vulkan::VulkanRHI::get_texture_format(rhi::TextureFormat format)
 {
 	switch (format)
@@ -174,6 +258,9 @@ VmaMemoryUsage vulkan::VulkanRHI::get_memory_usage(rhi::MemoryUsage memoryUsage)
 {
 	switch (memoryUsage)
 	{
+		case rhi::UNDEFINED_MEMORY_USAGE:
+			LOG_ERROR("Undefined memory usage")
+			return VMA_MEMORY_USAGE_UNKNOWN;
 		case rhi::CPU:
 			return VMA_MEMORY_USAGE_CPU_ONLY;
 		case rhi::GPU:
@@ -309,15 +396,15 @@ VkBufferUsageFlags vulkan::VulkanRHI::get_buffer_usage(rhi::ResourceUsage usage)
 {
 	switch (usage)
 	{
-		case rhi::SAMPLED:
-		case rhi::STORAGE:
+		case rhi::SAMPLED_TEXTURE:
+		case rhi::STORAGE_TEXTURE:
 		case rhi::COLOR_ATTACHMENT:
 		case rhi::DEPTH_STENCIL_ATTACHMENT:
 		case rhi::TRANSIENT_ATTACHMENT:
 		case rhi::INPUT_ATTACHMENT:
 		case rhi::UNDEFINED_USAGE:
 			LOG_ERROR("Invalid usage. Can't use buffer. VK_BUFFER_USAGE_INDEX_BUFFER will be returned")
-			return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+			return 0;
 		case rhi::UNIFORM_TEXEL_BUFFER:
 			return VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
 		case rhi::STORAGE_TEXEL_BUFFER:
@@ -348,10 +435,10 @@ VkImageUsageFlags vulkan::VulkanRHI::get_image_usage(rhi::ResourceUsage usage)
 		case rhi::INDIRECT_BUFFER:
 		case rhi::UNDEFINED_USAGE:
 			LOG_ERROR("Invalid usage. Can't use image. VK_IMAGE_USAGE_STORAGE_BIT will be returned")
-			return VK_IMAGE_USAGE_STORAGE_BIT;
-		case rhi::SAMPLED:
+			return 0;
+		case rhi::SAMPLED_TEXTURE:
 			return VK_IMAGE_USAGE_SAMPLED_BIT;
-		case rhi::STORAGE:
+		case rhi::STORAGE_TEXTURE:
 			return VK_IMAGE_USAGE_STORAGE_BIT;
 		case rhi::COLOR_ATTACHMENT:
 			return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;

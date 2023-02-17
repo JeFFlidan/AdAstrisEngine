@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "vk_types.h"
+#include "rhi/engine_rhi.h"
 #include "vk_mesh.h"
 #include "material_system/material_system.h"
 #include "vk_pipeline.h"

@@ -633,29 +633,53 @@ vulkan_renderer/vk_types.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_types.cpp.s
 .PHONY : vulkan_renderer/vk_types.cpp.s
 
-vulkan_rhi/device.obj: vulkan_rhi/device.cpp.obj
-.PHONY : vulkan_rhi/device.obj
+vulkan_rhi/vulkan_buffer.obj: vulkan_rhi/vulkan_buffer.cpp.obj
+.PHONY : vulkan_rhi/vulkan_buffer.obj
 
 # target to build an object file
-vulkan_rhi/device.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/device.cpp.obj
-.PHONY : vulkan_rhi/device.cpp.obj
+vulkan_rhi/vulkan_buffer.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_buffer.cpp.obj
+.PHONY : vulkan_rhi/vulkan_buffer.cpp.obj
 
-vulkan_rhi/device.i: vulkan_rhi/device.cpp.i
-.PHONY : vulkan_rhi/device.i
+vulkan_rhi/vulkan_buffer.i: vulkan_rhi/vulkan_buffer.cpp.i
+.PHONY : vulkan_rhi/vulkan_buffer.i
 
 # target to preprocess a source file
-vulkan_rhi/device.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/device.cpp.i
-.PHONY : vulkan_rhi/device.cpp.i
+vulkan_rhi/vulkan_buffer.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_buffer.cpp.i
+.PHONY : vulkan_rhi/vulkan_buffer.cpp.i
 
-vulkan_rhi/device.s: vulkan_rhi/device.cpp.s
-.PHONY : vulkan_rhi/device.s
+vulkan_rhi/vulkan_buffer.s: vulkan_rhi/vulkan_buffer.cpp.s
+.PHONY : vulkan_rhi/vulkan_buffer.s
 
 # target to generate assembly for a file
-vulkan_rhi/device.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/device.cpp.s
-.PHONY : vulkan_rhi/device.cpp.s
+vulkan_rhi/vulkan_buffer.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_buffer.cpp.s
+.PHONY : vulkan_rhi/vulkan_buffer.cpp.s
+
+vulkan_rhi/vulkan_device.obj: vulkan_rhi/vulkan_device.cpp.obj
+.PHONY : vulkan_rhi/vulkan_device.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_device.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_device.cpp.obj
+.PHONY : vulkan_rhi/vulkan_device.cpp.obj
+
+vulkan_rhi/vulkan_device.i: vulkan_rhi/vulkan_device.cpp.i
+.PHONY : vulkan_rhi/vulkan_device.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_device.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_device.cpp.i
+.PHONY : vulkan_rhi/vulkan_device.cpp.i
+
+vulkan_rhi/vulkan_device.s: vulkan_rhi/vulkan_device.cpp.s
+.PHONY : vulkan_rhi/vulkan_device.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_device.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_device.cpp.s
+.PHONY : vulkan_rhi/vulkan_device.cpp.s
 
 vulkan_rhi/vulkan_rhi.obj: vulkan_rhi/vulkan_rhi.cpp.obj
 .PHONY : vulkan_rhi/vulkan_rhi.obj
@@ -754,9 +778,12 @@ help:
 	@echo ... vulkan_renderer/vk_types.obj
 	@echo ... vulkan_renderer/vk_types.i
 	@echo ... vulkan_renderer/vk_types.s
-	@echo ... vulkan_rhi/device.obj
-	@echo ... vulkan_rhi/device.i
-	@echo ... vulkan_rhi/device.s
+	@echo ... vulkan_rhi/vulkan_buffer.obj
+	@echo ... vulkan_rhi/vulkan_buffer.i
+	@echo ... vulkan_rhi/vulkan_buffer.s
+	@echo ... vulkan_rhi/vulkan_device.obj
+	@echo ... vulkan_rhi/vulkan_device.i
+	@echo ... vulkan_rhi/vulkan_device.s
 	@echo ... vulkan_rhi/vulkan_rhi.obj
 	@echo ... vulkan_rhi/vulkan_rhi.i
 	@echo ... vulkan_rhi/vulkan_rhi.s

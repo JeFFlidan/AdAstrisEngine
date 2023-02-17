@@ -2,9 +2,9 @@
 
 #include "profiler/logger.h"
 #include <vulkan/vulkan.h>
+#include <VkBootstrap.h>
 #include <vector>
 #include <string>
-#include <VkBootstrap.h>
 
 namespace ad_astris::vulkan
 {
@@ -20,10 +20,11 @@ namespace ad_astris::vulkan
 		uint32_t queueFamily;
 	};
 
-	class Device
+	class VulkanDevice
 	{
 		public:
 			void init(vkb::Instance& instance, void* window);
+			void cleanup();
 
 			// Maybe I shouldn't make those variables private
 			VkSurfaceKHR get_surface() { return _surface; }
@@ -52,7 +53,12 @@ namespace ad_astris::vulkan
 			QueueData* _presentQueue{ nullptr };
 			QueueData* _computeQueue{ nullptr };
 			QueueData* _transferQueue{ nullptr };
-		
+
+			// I use SDL window for Windows but it will be replaced
+			/** Creates Vulkan surface.
+			 @param instance should be valid Vulkan instance
+			 @param window should be pointer to the window: SDL for Linux or WinApi for Windows.
+			 */
 			void create_surface(VkInstance instance, void* window);
 			vkb::PhysicalDevice pick_physical_device(vkb::Instance& instance);
 			vkb::Device pick_device(vkb::PhysicalDevice& physicalDevice);
