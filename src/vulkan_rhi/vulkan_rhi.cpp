@@ -2,7 +2,7 @@
 
 #include "profiler/logger.h"
 
-using namespace engine;
+using namespace ad_astris;
 
 void vulkan::VulkanRHI::init()
 {

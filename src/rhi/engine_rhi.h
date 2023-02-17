@@ -2,7 +2,7 @@
 
 #include "resources.h"
 
-namespace engine::rhi
+namespace ad_astris::rhi
 {
 	class IEngineRHI
 	{

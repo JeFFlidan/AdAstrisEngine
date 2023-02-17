@@ -1,4 +1,5 @@
 ﻿#include "vk_renderer.h"
+#include "vulkan_rhi/device.h"
 #include "material_asset.h"
 #include "SDL_events.h"
 #include "SDL_mouse.h"
@@ -221,84 +222,94 @@ namespace ad_astris
 		vkb::Instance vkb_inst = inst_ret.value();
 		_instance = vkb_inst.instance;
 		_debug_messenger = vkb_inst.debug_messenger;
-		LOG_INFO("Finished crearing instance");
+		LOG_INFO("Finished crearing instance")
 
-		SDL_Vulkan_CreateSurface(_sdlWindow.get_window(), _instance, &_surface);
+		vulkan::Device vulkanDevice;
+		vulkanDevice.init(vkb_inst, _sdlWindow.get_window());
 
-		vkb::PhysicalDeviceSelector selector{ vkb_inst };
-		vkb::PhysicalDeviceSelector selec{ vkb_inst };
-		VkPhysicalDeviceVulkan12Features features{};
-		features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-		features.runtimeDescriptorArray = VK_TRUE;
-		features.descriptorIndexing = VK_TRUE;
-		features.descriptorBindingPartiallyBound = VK_TRUE;
-		features.descriptorBindingVariableDescriptorCount = VK_TRUE;
-		features.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
-		features.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
-		features.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
-		features.samplerFilterMinmax = VK_TRUE;
-		features.pNext = nullptr;
+		_surface = vulkanDevice.get_surface();
+		_device = vulkanDevice.get_device();
+		_chosenGPU = vulkanDevice.get_physical_device();
 
-		VkPhysicalDeviceFeatures enabledFeatures{};
-		enabledFeatures.fragmentStoresAndAtomics = VK_TRUE;
-		enabledFeatures.samplerAnisotropy = VK_TRUE;
+		auto queueData = vulkanDevice.get_graphics_queue();
+		_graphicsQueue = queueData->queue;
+		_graphicsQueueFamily = queueData->queueFamily;
 
-		vkb::PhysicalDevice physDevice = selec
-			.set_minimum_version(1, 2)
-			.set_surface(_surface)
-			.select()
-			.value();
-
-		uint32_t count;
-		vkEnumerateDeviceExtensionProperties(physDevice, nullptr, &count, nullptr);
-		std::vector<VkExtensionProperties> extensions(count);
-		vkEnumerateDeviceExtensionProperties(physDevice, nullptr, &count, extensions.data());
-
-		std::vector<std::string> result;
-		for (auto& extension : extensions)
-			result.push_back(extension.extensionName);
-
-		selector
-			.set_minimum_version(1, 2)
-			.set_surface(_surface)
-			.add_required_extension("VK_EXT_descriptor_indexing")
-			.add_required_extension("VK_EXT_sampler_filter_minmax")
-			.add_required_extension("VK_KHR_multiview")
-			.add_desired_extension("VK_EXT_mesh_shader");
-
-		if (std::find(result.begin(), result.end(), "VK_EXT_mesh_shader") != result.end())
-			selector.add_required_extension("VK_EXT_mesh_shader");
-		else
-			LOG_INFO("Mesh shader isn't supported by your GPU")
-		
-		vkb::PhysicalDevice physicalDevice = selector
-			.set_required_features_12(features)
-			.set_required_features(enabledFeatures)
-			.select()
-			.value();
-	
-		vkb::DeviceBuilder deviceBuilder{physicalDevice};
-
-		VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features = {};
-		shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
-		shader_draw_parameters_features.pNext = nullptr;
-		shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
-
-		deviceBuilder.add_pNext(&shader_draw_parameters_features);
-
-		VkPhysicalDeviceMultiviewFeatures multiViewFeatures{};
-		multiViewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
-		multiViewFeatures.multiview = VK_TRUE;
-	
-		vkb::Device vkbDevice = deviceBuilder.add_pNext(&multiViewFeatures).build().value();
-		
-		LOG_INFO("Finished picking up logical device")
-
-		_device = vkbDevice.device;
-		_chosenGPU = physicalDevice.physical_device;
-
-		_graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
-		_graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+		// SDL_Vulkan_CreateSurface(_sdlWindow.get_window(), _instance, &_surface);
+		//
+		// vkb::PhysicalDeviceSelector selector{ vkb_inst };
+		// vkb::PhysicalDeviceSelector selec{ vkb_inst };
+		// VkPhysicalDeviceVulkan12Features features{};
+		// features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		// features.runtimeDescriptorArray = VK_TRUE;
+		// features.descriptorIndexing = VK_TRUE;
+		// features.descriptorBindingPartiallyBound = VK_TRUE;
+		// features.descriptorBindingVariableDescriptorCount = VK_TRUE;
+		// features.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
+		// features.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
+		// features.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+		// features.samplerFilterMinmax = VK_TRUE;
+		// features.pNext = nullptr;
+		//
+		// VkPhysicalDeviceFeatures enabledFeatures{};
+		// enabledFeatures.fragmentStoresAndAtomics = VK_TRUE;
+		// enabledFeatures.samplerAnisotropy = VK_TRUE;
+		//
+		// vkb::PhysicalDevice physDevice = selec
+		// 	.set_minimum_version(1, 2)
+		// 	.set_surface(_surface)
+		// 	.select()
+		// 	.value();
+		//
+		// uint32_t count;
+		// vkEnumerateDeviceExtensionProperties(physDevice, nullptr, &count, nullptr);
+		// std::vector<VkExtensionProperties> extensions(count);
+		// vkEnumerateDeviceExtensionProperties(physDevice, nullptr, &count, extensions.data());
+		//
+		// std::vector<std::string> result;
+		// for (auto& extension : extensions)
+		// 	result.push_back(extension.extensionName);
+		//
+		// selector
+		// 	.set_minimum_version(1, 2)
+		// 	.set_surface(_surface)
+		// 	.add_required_extension("VK_EXT_descriptor_indexing")
+		// 	.add_required_extension("VK_EXT_sampler_filter_minmax")
+		// 	.add_required_extension("VK_KHR_multiview");
+		//
+		// if (std::find(result.begin(), result.end(), "VK_EXT_mesh_shader") != result.end())
+		// 	selector.add_required_extension("VK_EXT_mesh_shader");
+		// else
+		// 	LOG_INFO("Mesh shader isn't supported by your GPU")
+		//
+		// vkb::PhysicalDevice physicalDevice = selector
+		// 	.set_required_features_12(features)
+		// 	.set_required_features(enabledFeatures)
+		// 	.select()
+		// 	.value();
+		//
+		// vkb::DeviceBuilder deviceBuilder{physicalDevice};
+		//
+		// VkPhysicalDeviceShaderDrawParametersFeatures shader_draw_parameters_features = {};
+		// shader_draw_parameters_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES;
+		// shader_draw_parameters_features.pNext = nullptr;
+		// shader_draw_parameters_features.shaderDrawParameters = VK_TRUE;
+		//
+		// deviceBuilder.add_pNext(&shader_draw_parameters_features);
+		//
+		// VkPhysicalDeviceMultiviewFeatures multiViewFeatures{};
+		// multiViewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
+		// multiViewFeatures.multiview = VK_TRUE;
+		//
+		// vkb::Device vkbDevice = deviceBuilder.add_pNext(&multiViewFeatures).build().value();
+		//
+		// LOG_INFO("Finished picking up logical device")
+		//
+		// _device = vkbDevice.device;
+		// _chosenGPU = physicalDevice.physical_device;
+		//
+		// _graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
+		// _graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
 		VmaAllocatorCreateInfo allocatorInfo{};
 		allocatorInfo.physicalDevice = _chosenGPU;
@@ -307,8 +318,8 @@ namespace ad_astris
 		vmaCreateAllocator(&allocatorInfo, &_allocator);
 		LOG_INFO("Finished creating allocator");
 
-		_gpuProperties = vkbDevice.physical_device.properties;
-		LOG_INFO("The GPU has a minimum buffer alignment of {}", _gpuProperties.limits.minUniformBufferOffsetAlignment)
+		//_gpuProperties = vkbDevice.physical_device.properties;
+		//LOG_INFO("The GPU has a minimum buffer alignment of {}", _gpuProperties.limits.minUniformBufferOffsetAlignment)
 	}
 
 	/** Used to init material, render scene and other systems.
