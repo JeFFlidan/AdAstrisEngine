@@ -9,10 +9,6 @@
 #include <SDL_stdinc.h>
 #include <SDL_video.h>
 
-// #ifdef _WIN32
-// 	#include <SDL_syswm.h>
-// #endif
-
 namespace ad_astris::sdl 
 {
 	class SDLWindow
@@ -26,9 +22,7 @@ namespace ad_astris::sdl
 		
 			void init(const WindowSize& windowSize);
 			void handle_action_per_frame(Camera* camera, bool* bQuit);
-// #ifdef _WIN32
-// 			SDL_SysWMinfo* get_win32_info() { return &_win32Info; }
-// #endif
+
 			SDL_Window* get_window() { return _window; }
 			WindowSize get_window_size() { return _windowSize; }
 		
@@ -38,9 +32,6 @@ namespace ad_astris::sdl
 			SDL_bool _enabledRelMode{ SDL_FALSE };
 			Uint64 _previousTicks{};
 			float _elapsedSeconds{};
-// #ifdef _WIN32
-// 			SDL_SysWMinfo _win32Info;
-// #endif
 		
 			WindowSize _windowSize;
 			bool _firstMouse{ true };

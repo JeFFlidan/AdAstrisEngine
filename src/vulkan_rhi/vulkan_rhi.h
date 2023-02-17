@@ -2,11 +2,12 @@
 
 #include "rhi/engine_rhi.h"
 #include "rhi/resources.h"
+//#include "device.h"
 #include <vulkan/vulkan.h>
 
 #include "vk_mem_alloc.h"
 
-namespace engine::vulkan
+namespace ad_astris::vulkan
 {
 	class VulkanRHI : public rhi::IEngineRHI
 	{
@@ -25,6 +26,7 @@ namespace engine::vulkan
 		private:
 			VkInstance _instance;
 			VmaAllocator _allocator;
+			//Device _device;
 		
 			VkFormat get_texture_format(rhi::TextureFormat format);
 			VmaMemoryUsage get_memory_usage(rhi::MemoryUsage memoryUsage);
