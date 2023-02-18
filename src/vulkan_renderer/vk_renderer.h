@@ -315,6 +315,7 @@ namespace ad_astris
 	class VkRenderer 
 	{
 		public:
+			rhi::IEngineRHI* _eRhi;
 			VkInstance _instance;
 			VkDebugUtilsMessengerEXT _debug_messenger;
 			VkPhysicalDevice _chosenGPU;

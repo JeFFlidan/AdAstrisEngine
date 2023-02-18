@@ -10,6 +10,8 @@ using namespace ad_astris;
 void vulkan::VulkanRHI::init(void* window)
 {
 	vkb::Instance vkbInstance = create_instance();
+	_instance = vkbInstance.instance;
+	_debugMessenger = vkbInstance.debug_messenger;
 	_vulkanDevice.init(vkbInstance, window);
 	create_allocator();
 }
@@ -112,11 +114,13 @@ vkb::Instance vulkan::VulkanRHI::create_instance()
 
 void vulkan::VulkanRHI::create_allocator()
 {
+	LOG_INFO("Start creating allocator")
 	VmaAllocatorCreateInfo allocatorInfo{};
 	allocatorInfo.physicalDevice = _vulkanDevice.get_physical_device();
 	allocatorInfo.device = _vulkanDevice.get_device();
 	allocatorInfo.instance = _instance;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
+	LOG_INFO("End creating allocator")
 }
 
 VkFormat vulkan::VulkanRHI::get_texture_format(rhi::TextureFormat format)

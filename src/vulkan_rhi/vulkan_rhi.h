@@ -27,7 +27,7 @@ namespace ad_astris::vulkan
 			 @param data is a data for buffer. May be nullptr
 			 */
 			virtual void create_buffer(rhi::Buffer* buffer, uint64_t size, void* data = nullptr) final override;
-			/** Create a VulkanBuffer and assign the VulkanBuffer to Buffer.data (void*)  
+			/** Update buffer data using CPU data (not host buffer)
 			 @param buffer should be valid pointer to the rhi::Buffer obj.
 			 @param size is a buffer size. Should be > 0
 			 @param data is a data for buffer. Should be a pointer to valid data
@@ -40,9 +40,11 @@ namespace ad_astris::vulkan
 			VkInstance get_instance() { return _instance; }
 			VulkanDevice get_device() { return _vulkanDevice; }
 			VmaAllocator get_allocator() { return _allocator; }
+			VkDebugUtilsMessengerEXT get_messenger() { return _debugMessenger; }
 		
 		private:
-			VkInstance _instance;
+			VkInstance _instance{ VK_NULL_HANDLE };
+			VkDebugUtilsMessengerEXT _debugMessenger{ VK_NULL_HANDLE };
 			VmaAllocator _allocator;
 			VulkanDevice _vulkanDevice;
 
