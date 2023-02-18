@@ -214,6 +214,7 @@ namespace ad_astris
 		rhi.init(_sdlWindow.get_window());
 		auto vulkanDevice = rhi.get_device();
 		_device = vulkanDevice.get_device();
+		_debug_messenger = rhi.get_messenger();
 		_surface = vulkanDevice.get_surface();
 		_chosenGPU = vulkanDevice.get_physical_device();
 		_instance = rhi.get_instance();
