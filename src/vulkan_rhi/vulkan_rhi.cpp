@@ -1,9 +1,13 @@
 ﻿#include "vulkan_rhi.h"
 #include "vulkan_common.h"
 #include "vulkan_buffer.h"
+#include "vulkan_texture.h"
+#include "vulkan_renderer/vk_initializers.h"
 
 #include "profiler/logger.h"
 #include <VkBootstrap.h>
+
+#include "vulkan_texture.h"
 
 using namespace ad_astris;
 
@@ -85,9 +89,37 @@ void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, v
 	vulkanBuffer->copy_from(&_allocator, data, size);
 }
 
-void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, void* data, uint64_t size)
+void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 {
+	if (!texture)
+	{
+		LOG_ERROR("Can't create texture if texture parameter is invalid")
+		return;
+	}
 	
+	auto& info = texture->textureInfo;
+
+	if (info.format == rhi::UNDEFINED_FORMAT)
+	{
+		LOG_ERROR("Can't create texture because of undefined format")
+		return;
+	}
+	if (info.textureUsage == rhi::UNDEFINED_USAGE)
+	{
+		LOG_ERROR("Can't create texture because of undefined usage")
+		return;
+	}
+	
+	VkExtent3D extent{ info.width, info.height, 1 };
+	VkFormat format = get_texture_format(info.format);
+	VkSampleCountFlagBits samples = get_sample_count(info.samplesCount);
+	VkImageType imgType = get_image_type(info.textureDimension);
+	VkImageUsageFlags imgUsage = get_image_usage(info.textureUsage);
+	VmaMemoryUsage memoryUsage = get_memory_usage(info.memoryUsage);
+
+	VulkanTexture* vkText = new VulkanTexture(&_allocator, memoryUsage, extent, info.mipLevels, info.layersCount, format, imgUsage, samples, imgType);
+	texture->data = vkText;
+	texture->type = rhi::Resource::ResourceType::TEXTURE;
 }
 
 void vulkan::VulkanRHI::create_sampler(rhi::SamplerInfo* info)
@@ -258,6 +290,27 @@ VkFormat vulkan::VulkanRHI::get_texture_format(rhi::TextureFormat format)
 	return VK_FORMAT_UNDEFINED;
 }
 
+VkSampleCountFlagBits vulkan::VulkanRHI::get_sample_count(rhi::SampleCount sampleCount)
+{
+	switch (sampleCount)
+	{
+		case rhi::SAMPLE_COUNT_1_BIT:
+			return VK_SAMPLE_COUNT_1_BIT;
+		case rhi::SAMPLE_COUNT_2_BIT:
+			return VK_SAMPLE_COUNT_2_BIT;
+		case rhi::SAMPLE_COUNT_4_BIT:
+			return VK_SAMPLE_COUNT_4_BIT;
+		case rhi::SAMPLE_COUNT_8_BIT:
+			return VK_SAMPLE_COUNT_8_BIT;
+		case rhi::SAMPLE_COUNT_16_BIT:
+			return VK_SAMPLE_COUNT_16_BIT;
+		case rhi::SAMPLE_COUNT_32_BIT:
+			return VK_SAMPLE_COUNT_32_BIT;
+		case rhi::SAMPLE_COUNT_64_BIT:
+			return VK_SAMPLE_COUNT_64_BIT;
+	}
+}
+
 VmaMemoryUsage vulkan::VulkanRHI::get_memory_usage(rhi::MemoryUsage memoryUsage)
 {
 	switch (memoryUsage)
@@ -273,6 +326,20 @@ VmaMemoryUsage vulkan::VulkanRHI::get_memory_usage(rhi::MemoryUsage memoryUsage)
 			return VMA_MEMORY_USAGE_CPU_TO_GPU;
 	}
 }
+
+VkImageType vulkan::VulkanRHI::get_image_type(rhi::TextureDimension dimension)
+{
+	switch (dimension)
+	{
+		case rhi::TEXTURE1D:
+			return VK_IMAGE_TYPE_1D;
+		case rhi::TEXTURE2D:
+			return VK_IMAGE_TYPE_2D;
+		case rhi::TEXTURE3D:
+			return VK_IMAGE_TYPE_3D;
+	}
+}
+
 
 void vulkan::VulkanRHI::get_filter(rhi::Filter filter, VkSamplerCreateInfo& samplerInfo)
 {

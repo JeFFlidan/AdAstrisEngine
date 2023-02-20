@@ -33,7 +33,7 @@ namespace ad_astris::vulkan
 			 @param data is a data for buffer. Should be a pointer to valid data
 			 */
 			virtual void update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data) final override;
-			virtual void create_texture(rhi::Texture* texture, void* data = nullptr, uint64_t size = 0) final override;
+			virtual void create_texture(rhi::Texture* texture) final override;
 			virtual void create_sampler(rhi::SamplerInfo* info) final override;
 
 			// Only for tests. Will be removed in the final implementation
@@ -51,6 +51,8 @@ namespace ad_astris::vulkan
 			vkb::Instance create_instance();
 			void create_allocator();
 			VkFormat get_texture_format(rhi::TextureFormat format);
+			VkSampleCountFlagBits get_sample_count(rhi::SampleCount sampleCount);
+			VkImageType get_image_type(rhi::TextureDimension dimension);
 			VmaMemoryUsage get_memory_usage(rhi::MemoryUsage memoryUsage);
 			void get_filter(rhi::Filter filter, VkSamplerCreateInfo& samplerInfo);
 			VkBorderColor get_border_color(rhi::BorderColor borderColor);
