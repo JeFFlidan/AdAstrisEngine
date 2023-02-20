@@ -705,6 +705,30 @@ vulkan_rhi/vulkan_rhi.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_rhi.cpp.s
 .PHONY : vulkan_rhi/vulkan_rhi.cpp.s
 
+vulkan_rhi/vulkan_texture.obj: vulkan_rhi/vulkan_texture.cpp.obj
+.PHONY : vulkan_rhi/vulkan_texture.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_texture.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_texture.cpp.obj
+.PHONY : vulkan_rhi/vulkan_texture.cpp.obj
+
+vulkan_rhi/vulkan_texture.i: vulkan_rhi/vulkan_texture.cpp.i
+.PHONY : vulkan_rhi/vulkan_texture.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_texture.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_texture.cpp.i
+.PHONY : vulkan_rhi/vulkan_texture.cpp.i
+
+vulkan_rhi/vulkan_texture.s: vulkan_rhi/vulkan_texture.cpp.s
+.PHONY : vulkan_rhi/vulkan_texture.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_texture.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_texture.cpp.s
+.PHONY : vulkan_rhi/vulkan_texture.cpp.s
+
 # Help Target
 help:
 	@echo The following are some of the valid targets for this Makefile:
@@ -787,6 +811,9 @@ help:
 	@echo ... vulkan_rhi/vulkan_rhi.obj
 	@echo ... vulkan_rhi/vulkan_rhi.i
 	@echo ... vulkan_rhi/vulkan_rhi.s
+	@echo ... vulkan_rhi/vulkan_texture.obj
+	@echo ... vulkan_rhi/vulkan_texture.i
+	@echo ... vulkan_rhi/vulkan_texture.s
 .PHONY : help
 
 

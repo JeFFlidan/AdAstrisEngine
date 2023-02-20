@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <cstdint>
 
+#include "fmt/compile.h"
 #include "fmt/core.h"
 
 namespace ad_astris::rhi
@@ -154,6 +155,24 @@ namespace ad_astris::rhi
 		MAXIMUM_ANISOTROPIC
 	};
 
+	enum SampleCount
+	{
+		SAMPLE_COUNT_1_BIT,
+		SAMPLE_COUNT_2_BIT,
+		SAMPLE_COUNT_4_BIT,
+		SAMPLE_COUNT_8_BIT,
+		SAMPLE_COUNT_16_BIT,
+		SAMPLE_COUNT_32_BIT,
+		SAMPLE_COUNT_64_BIT
+	};
+
+	enum TextureDimension
+	{
+		TEXTURE1D,
+		TEXTURE2D,
+		TEXTURE3D
+	};
+
 	enum BorderColor
 	{
 		FLOAT_TRANSPARENT_BLACK,
@@ -166,13 +185,19 @@ namespace ad_astris::rhi
 
 	struct TextureInfo
 	{
+		TextureInfo() = default;
+		TextureInfo(uint32_t width, uint32_t height, uint8_t mipLevels, uint8_t layersCount, TextureFormat format, ResourceUsage usage)
+			: width(width), height(height), mipLevels(mipLevels), layersCount(layersCount), format(format), textureUsage(usage) {}
+		
 		uint32_t width{ 0 };
 		uint32_t height{ 0 };
 		uint8_t mipLevels{ 0 };
-		uint8_t arrayLayers{ 1 };
-		uint8_t samplesCount{ 1 };
+		uint8_t layersCount{ 1 };
 		TextureFormat format{ UNDEFINED_FORMAT };
-		ResourceUsage usage{ UNDEFINED_USAGE };
+		ResourceUsage textureUsage{ UNDEFINED_USAGE };
+		MemoryUsage memoryUsage{ GPU };
+		SampleCount samplesCount{ SAMPLE_COUNT_1_BIT };
+		TextureDimension textureDimension{ TEXTURE2D };
 	};
 	
 	struct SamplerInfo
@@ -223,6 +248,8 @@ namespace ad_astris::rhi
 
 	struct Texture : public Resource
 	{
+		Texture() = default;
+		Texture(TextureInfo info) : textureInfo(info) {}
 		TextureInfo textureInfo;
 	};
 }

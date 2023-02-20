@@ -223,6 +223,14 @@ namespace ad_astris
 		_graphicsQueue = queueData->queue;
 		_graphicsQueueFamily = queueData->queueFamily;
 
+		rhi::TextureInfo info(1700, 900, 0, 1, rhi::R8G8B8A8_UNORM, rhi::COLOR_ATTACHMENT);
+		rhi::Texture texture(info);
+		rhi.create_texture(&texture);
+		if (!texture.data)
+			LOG_ERROR("ERROR")
+		if (texture.data)
+			LOG_INFO("Info")
+
 		// tests
 		// rhi::BufferInfo info(rhi::STORAGE_BUFFER, rhi::CPU, false, true);
 		// rhi::Buffer buffer(info);
@@ -1259,7 +1267,7 @@ namespace ad_astris
 		Attachment& attachment,
 		VkExtent3D imageExtent,
 		VkFormat format, 
-		VkImageUsageFlags usageFlags, 
+		VkImageUsageFlags usageFlags,
 		VkImageAspectFlags aspectFlags,
 		uint32_t layerCount)
 	{
