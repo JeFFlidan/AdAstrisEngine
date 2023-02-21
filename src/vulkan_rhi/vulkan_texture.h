@@ -10,40 +10,13 @@ namespace ad_astris::vulkan
 			VkImage _image = VK_NULL_HANDLE;
 			VmaAllocation _allocation;
 			VkExtent3D _extent;
-			uint8_t _mipLevels;
+			uint32_t _mipLevels;
 
-			VulkanTexture(
-				VmaAllocator* allocator,
-				VmaMemoryUsage memoryUsage,
-				VkExtent3D extent,
-				uint8_t mipLevels,
-				uint8_t layersCount,
-				VkFormat format,
-				VkImageUsageFlags imageUsage,
-				VkSampleCountFlagBits samplesCount,
-				VkImageType imageType);
+			VulkanTexture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);
 			
-			void create_texture(
-				VmaAllocator* allocator,
-				VmaMemoryUsage memoryUsage,
-				VkExtent3D extent,
-				uint8_t mipLevels,
-				uint8_t layersCount,
-				VkFormat format,
-				VkImageUsageFlags imageUsage,
-				VkSampleCountFlagBits samplesCount,
-				VkImageType imageType);
+			void create_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);
 		
 		private:
-			void allocate_texture(
-				VmaAllocator* allocator,
-				VmaMemoryUsage memoryUsage,
-				VkExtent3D extent,
-				uint8_t mipLevels,
-				uint8_t layersCount,
-				VkFormat format,
-				VkImageUsageFlags imageUsage,
-				VkSampleCountFlagBits samplesCount,
-				VkImageType imageType);
+			void allocate_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);
 	};
 }
