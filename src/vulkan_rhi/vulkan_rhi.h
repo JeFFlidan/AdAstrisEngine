@@ -34,7 +34,8 @@ namespace ad_astris::vulkan
 			 */
 			virtual void update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data) final override;
 			virtual void create_texture(rhi::Texture* texture) final override;
-			virtual void create_sampler(rhi::SamplerInfo* info) final override;
+			virtual void create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture) final override;
+			virtual void create_sampler(rhi::Sampler* sampler) final override;
 
 			// Only for tests. Will be removed in the final implementation
 			VkInstance get_instance() { return _instance; }

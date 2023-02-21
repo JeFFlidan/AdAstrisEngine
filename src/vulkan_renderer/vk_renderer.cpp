@@ -210,26 +210,40 @@ namespace ad_astris
 	{
 		LOG_INFO("Start")
 
-		vulkan::VulkanRHI rhi;
-		rhi.init(_sdlWindow.get_window());
-		auto vulkanDevice = rhi.get_device();
+		// RHI tests
+		_eRhi = new vulkan::VulkanRHI();
+		_eRhi->init(_sdlWindow.get_window());
+		vulkan::VulkanRHI* rhi = reinterpret_cast<vulkan::VulkanRHI*>(_eRhi);
+		auto vulkanDevice = rhi->get_device();
 		_device = vulkanDevice.get_device();
-		_debug_messenger = rhi.get_messenger();
+		_debug_messenger = rhi->get_messenger();
 		_surface = vulkanDevice.get_surface();
 		_chosenGPU = vulkanDevice.get_physical_device();
-		_instance = rhi.get_instance();
-		_allocator = rhi.get_allocator();
+		_instance = rhi->get_instance();
+		_allocator = rhi->get_allocator();
 		auto queueData = vulkanDevice.get_graphics_queue();
 		_graphicsQueue = queueData->queue;
 		_graphicsQueueFamily = queueData->queueFamily;
 
-		rhi::TextureInfo info(1700, 900, 0, 1, rhi::R8G8B8A8_UNORM, rhi::COLOR_ATTACHMENT);
+		rhi::TextureInfo info(1700, 900, rhi::R8G8B8A8_UNORM, rhi::COLOR_ATTACHMENT, false, false);
 		rhi::Texture texture(info);
-		rhi.create_texture(&texture);
+		_eRhi->create_texture(&texture);
 		if (!texture.data)
 			LOG_ERROR("ERROR")
 		if (texture.data)
-			LOG_INFO("Info")
+			LOG_INFO("Info {}", texture.size)
+
+		rhi::TextureViewInfo viewInfo{};
+		rhi::TextureView view(viewInfo);
+		_eRhi->create_texture_view(&view, &texture);
+
+		rhi::SamplerInfo samplerInfo;
+		samplerInfo.filter = rhi::MAXIMUM_ANISOTROPIC;
+		samplerInfo.addressMode = rhi::CLAMP_TO_EDGE;
+		rhi::Sampler sampler(samplerInfo);
+		_eRhi->create_sampler(&sampler);
+		VkSampler* vkSampler = static_cast<VkSampler*>(sampler.handle);
+		_linearSampler = *vkSampler;
 
 		// tests
 		// rhi::BufferInfo info(rhi::STORAGE_BUFFER, rhi::CPU, false, true);
@@ -390,13 +404,13 @@ namespace ad_astris
 			VK_IMAGE_ASPECT_COLOR_BIT);
 	
 		VkSamplerCreateInfo imgSamplerInfo = vkinit::sampler_create_info(VK_FILTER_LINEAR);
-		imgSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		imgSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		imgSamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		imgSamplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-		imgSamplerInfo.anisotropyEnable = VK_TRUE;
-		imgSamplerInfo.maxAnisotropy = 1.0f;
-		vkCreateSampler(_device, &imgSamplerInfo, nullptr, &_linearSampler);
+		// imgSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		// imgSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		// imgSamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		// imgSamplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		// imgSamplerInfo.anisotropyEnable = VK_TRUE;
+		// imgSamplerInfo.maxAnisotropy = 1.0f;
+		// vkCreateSampler(_device, &imgSamplerInfo, nullptr, &_linearSampler);
 
 		VkSamplerCreateInfo imgSamplerInfo2 = imgSamplerInfo;
 		imgSamplerInfo2.magFilter = VK_FILTER_NEAREST;

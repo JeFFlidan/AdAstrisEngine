@@ -110,21 +110,92 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 		return;
 	}
 	
-	VkExtent3D extent{ info.width, info.height, 1 };
-	VkFormat format = get_texture_format(info.format);
-	VkSampleCountFlagBits samples = get_sample_count(info.samplesCount);
-	VkImageType imgType = get_image_type(info.textureDimension);
-	VkImageUsageFlags imgUsage = get_image_usage(info.textureUsage);
 	VmaMemoryUsage memoryUsage = get_memory_usage(info.memoryUsage);
+	
+	VkImageCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	createInfo.format = get_texture_format(info.format);
+	createInfo.arrayLayers = info.layersCount;
+	createInfo.mipLevels = info.mipLevels;
+	createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	createInfo.extent = VkExtent3D{ info.width, info.height, 1 };
+	createInfo.samples = get_sample_count(info.samplesCount);
 
-	VulkanTexture* vkText = new VulkanTexture(&_allocator, memoryUsage, extent, info.mipLevels, info.layersCount, format, imgUsage, samples, imgType);
+	VkImageUsageFlags imgUsage = get_image_usage(info.textureUsage);
+	if (info.transferSrc)
+		imgUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	if (info.transferDst)
+		imgUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	createInfo.usage = imgUsage;
+	createInfo.imageType = get_image_type(info.textureDimension);
+	
+	VulkanTexture* vkText = new VulkanTexture(createInfo, &_allocator, memoryUsage);
+	if (vkText->_image == VK_NULL_HANDLE)
+	{
+		LOG_ERROR("Failed to allocate VkImage")
+		return;
+	}
 	texture->data = vkText;
 	texture->type = rhi::Resource::ResourceType::TEXTURE;
 }
 
-void vulkan::VulkanRHI::create_sampler(rhi::SamplerInfo* info)
+void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture)
 {
+	if (!textureView || !texture)
+	{
+		LOG_ERROR("Can't create texture view if one of the parameters is invalid")
+	}
 	
+	rhi::TextureInfo texInfo = texture->textureInfo;
+	rhi::TextureViewInfo viewInfo = textureView->viewInfo;
+	VulkanTexture* vkTexture = static_cast<VulkanTexture*>(texture->data);
+	
+	VkFormat format = get_texture_format(texInfo.format);
+	VkImageUsageFlags imgUsage = get_image_usage(texInfo.textureUsage);
+
+	VkImageAspectFlags aspectFlags;
+	if (imgUsage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+		aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	else
+		aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+	
+	VkImageViewCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	createInfo.image = vkTexture->_image;
+	createInfo.format = format;
+	createInfo.subresourceRange.baseMipLevel = viewInfo.baseMipLevel;
+	createInfo.subresourceRange.levelCount = 1;
+	createInfo.subresourceRange.baseArrayLayer = viewInfo.baseLayer;
+	createInfo.subresourceRange.layerCount = 1;
+	createInfo.subresourceRange.aspectMask = aspectFlags;
+
+	VkImageView* view = new VkImageView();
+	VK_CHECK(vkCreateImageView(_vulkanDevice.get_device(), &createInfo, nullptr, view));
+	textureView->handle = view;
+}
+
+void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler)
+{
+	if (!sampler)
+	{
+		LOG_ERROR("Can't create sampler if sampler parameter is invalid")
+		return;
+	}
+	rhi::SamplerInfo info = sampler->info;
+	VkSamplerCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	get_filter(info.filter, createInfo);
+	createInfo.addressModeU = get_address_mode(info.addressMode);
+	createInfo.addressModeV = createInfo.addressModeU;
+	createInfo.addressModeW = createInfo.addressModeU;
+	createInfo.minLod = info.minLod;
+	createInfo.maxLod = info.maxLod;
+	if (createInfo.anisotropyEnable == VK_TRUE)
+		createInfo.maxAnisotropy = info.maxAnisotropy;
+	VkSampler* vkSampler = new VkSampler();
+	VK_CHECK(vkCreateSampler(_vulkanDevice.get_device(), &createInfo, nullptr, vkSampler));
+	sampler->handle = vkSampler;
 }
 
 // private methods

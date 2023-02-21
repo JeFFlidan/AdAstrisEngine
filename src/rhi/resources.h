@@ -1,9 +1,6 @@
 ﻿#pragma once
 #include <cstdint>
 
-#include "fmt/compile.h"
-#include "fmt/core.h"
-
 namespace ad_astris::rhi
 {
 	enum ResourceUsage
@@ -186,28 +183,22 @@ namespace ad_astris::rhi
 	struct TextureInfo
 	{
 		TextureInfo() = default;
-		TextureInfo(uint32_t width, uint32_t height, uint8_t mipLevels, uint8_t layersCount, TextureFormat format, ResourceUsage usage)
-			: width(width), height(height), mipLevels(mipLevels), layersCount(layersCount), format(format), textureUsage(usage) {}
+		TextureInfo(uint32_t width, uint32_t height, TextureFormat format, ResourceUsage usage, bool transSrc, bool transDst)
+			: width(width), height(height), format(format), textureUsage(usage), transferSrc(transSrc), transferDst(transDst) {}
 		
 		uint32_t width{ 0 };
 		uint32_t height{ 0 };
-		uint8_t mipLevels{ 0 };
-		uint8_t layersCount{ 1 };
+		uint32_t mipLevels{ 1 };
+		uint32_t layersCount{ 1 };
 		TextureFormat format{ UNDEFINED_FORMAT };
 		ResourceUsage textureUsage{ UNDEFINED_USAGE };
 		MemoryUsage memoryUsage{ GPU };
 		SampleCount samplesCount{ SAMPLE_COUNT_1_BIT };
 		TextureDimension textureDimension{ TEXTURE2D };
+		bool transferSrc{ false };
+		bool transferDst{ false };
 	};
 	
-	struct SamplerInfo
-	{
-		Filter filter{ MIN_MAG_MIP_LINEAR };
-		AddressMode addressMode{ REPEAT };
-		BorderColor borderColor{ FLOAT_OPAQUE_WHITE };
-		float minLod{ 0.0f };
-		float maxLog{ 1.0f };
-	};
 
 	struct BufferInfo
 	{
@@ -251,5 +242,39 @@ namespace ad_astris::rhi
 		Texture() = default;
 		Texture(TextureInfo info) : textureInfo(info) {}
 		TextureInfo textureInfo;
+	};
+
+	struct ObjectHandle
+	{
+		void* handle{ nullptr };
+		bool is_valid() { return handle; }
+	};
+	
+	struct SamplerInfo
+	{
+		Filter filter{ MIN_MAG_MIP_LINEAR };
+		AddressMode addressMode{ REPEAT };
+		BorderColor borderColor{ FLOAT_OPAQUE_WHITE };
+		float minLod{ 0.0f };
+		float maxLod{ 1.0f };
+		float maxAnisotropy{ 1.0f };
+	};
+
+	struct Sampler : public ObjectHandle
+	{
+		Sampler(SamplerInfo info) : info(info) {}
+		SamplerInfo info;
+	};
+
+	struct TextureViewInfo
+	{
+		uint8_t baseMipLevel{ 0 };
+		uint8_t baseLayer{ 0 };
+	};
+
+	struct TextureView : public ObjectHandle
+	{
+		TextureView(TextureViewInfo info) : viewInfo(info) {}
+		TextureViewInfo viewInfo;
 	};
 }
