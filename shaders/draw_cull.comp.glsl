@@ -2,7 +2,7 @@
 
 #extension GL_GOOGLE_include_directive : require
 
-#include "data.h"
+#include <shaders/common_includes/data_structs/data.h>
 
 layout(local_size_x = 256) in;
 

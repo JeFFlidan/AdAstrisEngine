@@ -21,7 +21,13 @@ src/CMakeFiles
 /shaders/*.*.*~
 /*/#*.*#
 /*/.#*.*
+<<<<<<< HEAD
+src/file_system/Makefile
+src/file_system/main.cpp
+src/file_system/app.exe
+=======
 CMakeCache.txt
 Makefile
 src/vulkan_renderer/vk_render_graph.h
 src/vulkan_renderer/vk_render_graph.cpp
+>>>>>>> master

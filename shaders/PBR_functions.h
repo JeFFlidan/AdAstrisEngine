@@ -1,4 +1,58 @@
-const float PI = 3.14159265359;
+vec3 calculateDirectionLight(vec3 F0, vec3 N, vec3 V, DirectionLight dirLight, vec3 albedo, float roughness, float metallic)
+{
+	vec3 L = normalize(vec3(-dirLight.direction));
+	vec3 H = normalize(V + L);
+	vec3 radiance = vec3(dirLight.colorAndIntensity) * dirLight.colorAndIntensity.w;
+
+	vec4 brdf = calculateBRDF(N, H, V, L, F0, vec2(roughness, metallic));
+
+	float kD = brdf.w;
+	vec3 specular = brdf.xyz;
+	
+	float NdotL = max(dot(N, L), 0.0);
+
+	return (kD * albedo / PI + specular) * radiance * NdotL;
+}
+
+vec3 calculatePointLight(vec3 F0, vec3 N, vec3 V, PointLight pointLight, vec3 albedo, float roughness, float metallic)
+{
+	vec3 unormalizedLightVector = vec3(pointLight.positionAndAttRadius.xyz) - fragPos;
+	vec3 L = normalize(unormalizedLightVector);
+	vec3 H = normalize(L + V);
+
+	float attenuation = calculatePointLightAttenuation(pointLight, unormalizedLightVector);
+	vec3 lightColor = pointLight.colorAndIntensity.xyz * (pointLight.colorAndIntensity.w / (4.0 * PI));
+	vec3 radiance = lightColor * attenuation;
+
+	vec4 brdf = calculateBRDF(N, H, V, L, F0, vec2(roughness, metallic));
+
+	float kD = brdf.w;
+	vec3 specular = brdf.xyz;
+	
+	float NdotL = max(dot(N, L), 0.0);
+
+	return (kD * albedo / PI + specular) * radiance * NdotL;
+}
+
+vec3 calculateSpotLight(vec3 F0, vec3 N, vec3 V, SpotLight spotLight, vec3 albedo, float roughness, float metallic)
+{
+	vec3 unormalizedLightVector = vec3(spotLight.positionAndDistance.xyz) - fragPos;
+	vec3 L = normalize(unormalizedLightVector);
+	vec3 H = normalize(L + V);
+
+	float attenuation = calculateSpotLightAttenuation(spotLight, unormalizedLightVector, L);
+	vec3 lightColor = spotLight.colorAndIntensity.xyz * (spotLight.colorAndIntensity.w / PI);
+	vec3 radiance = lightColor * attenuation;
+
+	vec4 brdf = calculateBRDF(N, H, V, L, F0, vec2(roughness, metallic));
+
+	float kD = brdf.w;
+	vec3 specular = brdf.xyz;
+	
+	float NdotL = max(dot(N, L), 0.0);
+
+	return (kD * albedo / PI + specular) * radiance * NdotL;
+}
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
@@ -108,67 +162,3 @@ float calculateSpotLightAttenuation(SpotLight spotLight, vec3 unormalizedLightVe
 	attenuation *= getAngleAtt(spotLight, normalizedLightVector);
 	return attenuation;
 }
-
-
-vec3 calculateDirectionLight(vec3 F0, vec3 N, vec3 V, DirectionLight dirLight, vec3 albedo, float roughness, float metallic)
-{
-	vec3 L = normalize(vec3(-dirLight.direction));
-	vec3 H = normalize(V + L);
-	vec3 radiance = vec3(dirLight.colorAndIntensity) * dirLight.colorAndIntensity.w;
-
-	vec4 brdf = calculateBRDF(N, H, V, L, F0, vec2(roughness, metallic));
-
-	float kD = brdf.w;
-	vec3 specular = brdf.xyz;
-	
-	float NdotL = max(dot(N, L), 0.0);
-
-	return (kD * albedo / PI + specular) * radiance * NdotL;
-}
-
-vec3 calculatePointLight(vec3 F0, vec3 fragPos, vec3 N, vec3 V, PointLight pointLight, vec3 albedo, vec2 roughMetal)
-{
-	float roughness = roughMetal.x;
-	float metallic = roughMetal.y;
-	
-	vec3 unormalizedLightVector = vec3(pointLight.positionAndAttRadius.xyz) - fragPos;
-	vec3 L = normalize(unormalizedLightVector);
-	vec3 H = normalize(L + V);
-
-	float attenuation = calculatePointLightAttenuation(pointLight, unormalizedLightVector);
-	vec3 lightColor = pointLight.colorAndIntensity.xyz * (pointLight.colorAndIntensity.w / (4.0 * PI));
-	vec3 radiance = lightColor * attenuation;
-
-	vec4 brdf = calculateBRDF(N, H, V, L, F0, vec2(roughness, metallic));
-
-	float kD = brdf.w;
-	vec3 specular = brdf.xyz;
-	
-	float NdotL = max(dot(N, L), 0.0);
-
-	return (kD * albedo / PI + specular) * radiance * NdotL;
-}
-
-vec3 calculateSpotLight(vec3 F0, vec3 fragPos, vec3 N, vec3 V, SpotLight spotLight, vec3 albedo, vec2 roughtMetal)
-{
-	float roughness = roughtMetal.x;
-	float metallic = roughtMetal.y;
-
-	vec3 unormalizedLightVector = vec3(spotLight.positionAndDistance.xyz) - fragPos;
-	vec3 L = normalize(unormalizedLightVector);
-	vec3 H = normalize(L + V);
-
-	float attenuation = calculateSpotLightAttenuation(spotLight, unormalizedLightVector, L);
-	vec3 lightColor = spotLight.colorAndIntensity.xyz * (spotLight.colorAndIntensity.w / PI);
-	vec3 radiance = lightColor * attenuation;
-
-	vec4 brdf = calculateBRDF(N, H, V, L, F0, vec2(roughness, metallic));
-
-	float kD = brdf.w;
-	vec3 specular = brdf.xyz;
-	
-	float NdotL = max(dot(N, L), 0.0);
-
-	return (kD * albedo / PI + specular) * radiance * NdotL;
-}
-
