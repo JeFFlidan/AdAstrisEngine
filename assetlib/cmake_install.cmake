@@ -1,4 +1,4 @@
-# Install script for directory: E:/VulkanEngine/assetlib
+# Install script for directory: E:/MyEngine/MyEngine/VulkanEngine/assetlib
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

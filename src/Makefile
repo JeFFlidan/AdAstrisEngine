@@ -56,10 +56,10 @@ RM = "C:\Program Files\CMake\bin\cmake.exe" -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = E:\VulkanEngine
+CMAKE_SOURCE_DIR = E:\MyEngine\MyEngine\VulkanEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = E:\VulkanEngine
+CMAKE_BINARY_DIR = E:\MyEngine\MyEngine\VulkanEngine
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -86,14 +86,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /d E:\VulkanEngine && $(CMAKE_COMMAND) -E cmake_progress_start E:\VulkanEngine\CMakeFiles E:\VulkanEngine\src\\CMakeFiles\progress.marks
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/all
-	$(CMAKE_COMMAND) -E cmake_progress_start E:\VulkanEngine\CMakeFiles 0
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(CMAKE_COMMAND) -E cmake_progress_start E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles E:\MyEngine\MyEngine\VulkanEngine\src\\CMakeFiles\progress.marks
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/all
+	$(CMAKE_COMMAND) -E cmake_progress_start E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/clean
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/clean
 .PHONY : clean
 
 # The main clean target
@@ -102,39 +102,87 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/preinstall
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/preinstall
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /d E:\VulkanEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
-src/CMakeFiles/vulkan_guide.dir/rule:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/CMakeFiles/vulkan_guide.dir/rule
-.PHONY : src/CMakeFiles/vulkan_guide.dir/rule
+src/CMakeFiles/AdAstrisEngine.dir/rule:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 src/CMakeFiles/AdAstrisEngine.dir/rule
+.PHONY : src/CMakeFiles/AdAstrisEngine.dir/rule
 
 # Convenience name for target.
-vulkan_guide: src/CMakeFiles/vulkan_guide.dir/rule
-.PHONY : vulkan_guide
+AdAstrisEngine: src/CMakeFiles/AdAstrisEngine.dir/rule
+.PHONY : AdAstrisEngine
 
 # fast build rule for target.
-vulkan_guide/fast:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/build
-.PHONY : vulkan_guide/fast
+AdAstrisEngine/fast:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/build
+.PHONY : AdAstrisEngine/fast
+
+application_core/sdl_window.obj: application_core/sdl_window.cpp.obj
+.PHONY : application_core/sdl_window.obj
+
+# target to build an object file
+application_core/sdl_window.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/application_core/sdl_window.cpp.obj
+.PHONY : application_core/sdl_window.cpp.obj
+
+application_core/sdl_window.i: application_core/sdl_window.cpp.i
+.PHONY : application_core/sdl_window.i
+
+# target to preprocess a source file
+application_core/sdl_window.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/application_core/sdl_window.cpp.i
+.PHONY : application_core/sdl_window.cpp.i
+
+application_core/sdl_window.s: application_core/sdl_window.cpp.s
+.PHONY : application_core/sdl_window.s
+
+# target to generate assembly for a file
+application_core/sdl_window.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/application_core/sdl_window.cpp.s
+.PHONY : application_core/sdl_window.cpp.s
+
+engine/camera.obj: engine/camera.cpp.obj
+.PHONY : engine/camera.obj
+
+# target to build an object file
+engine/camera.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine/camera.cpp.obj
+.PHONY : engine/camera.cpp.obj
+
+engine/camera.i: engine/camera.cpp.i
+.PHONY : engine/camera.i
+
+# target to preprocess a source file
+engine/camera.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine/camera.cpp.i
+.PHONY : engine/camera.cpp.i
+
+engine/camera.s: engine/camera.cpp.s
+.PHONY : engine/camera.s
+
+# target to generate assembly for a file
+engine/camera.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine/camera.cpp.s
+.PHONY : engine/camera.cpp.s
 
 main.obj: main.cpp.obj
 .PHONY : main.obj
 
 # target to build an object file
 main.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/main.cpp.obj
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/main.cpp.obj
 .PHONY : main.cpp.obj
 
 main.i: main.cpp.i
@@ -142,7 +190,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/main.cpp.i
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -150,320 +198,536 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/main.cpp.s
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/main.cpp.s
 .PHONY : main.cpp.s
 
-material_system.obj: material_system.cpp.obj
-.PHONY : material_system.obj
+material_system/material_system.obj: material_system/material_system.cpp.obj
+.PHONY : material_system/material_system.obj
 
 # target to build an object file
-material_system.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/material_system.cpp.obj
-.PHONY : material_system.cpp.obj
+material_system/material_system.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/material_system/material_system.cpp.obj
+.PHONY : material_system/material_system.cpp.obj
 
-material_system.i: material_system.cpp.i
-.PHONY : material_system.i
+material_system/material_system.i: material_system/material_system.cpp.i
+.PHONY : material_system/material_system.i
 
 # target to preprocess a source file
-material_system.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/material_system.cpp.i
-.PHONY : material_system.cpp.i
+material_system/material_system.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/material_system/material_system.cpp.i
+.PHONY : material_system/material_system.cpp.i
 
-material_system.s: material_system.cpp.s
-.PHONY : material_system.s
+material_system/material_system.s: material_system/material_system.cpp.s
+.PHONY : material_system/material_system.s
 
 # target to generate assembly for a file
-material_system.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/material_system.cpp.s
-.PHONY : material_system.cpp.s
+material_system/material_system.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/material_system/material_system.cpp.s
+.PHONY : material_system/material_system.cpp.s
 
-user_interface.obj: user_interface.cpp.obj
-.PHONY : user_interface.obj
+material_system/shader.obj: material_system/shader.cpp.obj
+.PHONY : material_system/shader.obj
 
 # target to build an object file
-user_interface.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/user_interface.cpp.obj
-.PHONY : user_interface.cpp.obj
+material_system/shader.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/material_system/shader.cpp.obj
+.PHONY : material_system/shader.cpp.obj
 
-user_interface.i: user_interface.cpp.i
-.PHONY : user_interface.i
+material_system/shader.i: material_system/shader.cpp.i
+.PHONY : material_system/shader.i
 
 # target to preprocess a source file
-user_interface.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/user_interface.cpp.i
-.PHONY : user_interface.cpp.i
+material_system/shader.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/material_system/shader.cpp.i
+.PHONY : material_system/shader.cpp.i
 
-user_interface.s: user_interface.cpp.s
-.PHONY : user_interface.s
+material_system/shader.s: material_system/shader.cpp.s
+.PHONY : material_system/shader.s
 
 # target to generate assembly for a file
-user_interface.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/user_interface.cpp.s
-.PHONY : user_interface.cpp.s
+material_system/shader.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/material_system/shader.cpp.s
+.PHONY : material_system/shader.cpp.s
 
-vk_camera.obj: vk_camera.cpp.obj
-.PHONY : vk_camera.obj
+ui/actors_properties_ui.obj: ui/actors_properties_ui.cpp.obj
+.PHONY : ui/actors_properties_ui.obj
 
 # target to build an object file
-vk_camera.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_camera.cpp.obj
-.PHONY : vk_camera.cpp.obj
+ui/actors_properties_ui.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/actors_properties_ui.cpp.obj
+.PHONY : ui/actors_properties_ui.cpp.obj
 
-vk_camera.i: vk_camera.cpp.i
-.PHONY : vk_camera.i
+ui/actors_properties_ui.i: ui/actors_properties_ui.cpp.i
+.PHONY : ui/actors_properties_ui.i
 
 # target to preprocess a source file
-vk_camera.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_camera.cpp.i
-.PHONY : vk_camera.cpp.i
+ui/actors_properties_ui.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/actors_properties_ui.cpp.i
+.PHONY : ui/actors_properties_ui.cpp.i
 
-vk_camera.s: vk_camera.cpp.s
-.PHONY : vk_camera.s
+ui/actors_properties_ui.s: ui/actors_properties_ui.cpp.s
+.PHONY : ui/actors_properties_ui.s
 
 # target to generate assembly for a file
-vk_camera.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_camera.cpp.s
-.PHONY : vk_camera.cpp.s
+ui/actors_properties_ui.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/actors_properties_ui.cpp.s
+.PHONY : ui/actors_properties_ui.cpp.s
 
-vk_descriptors.obj: vk_descriptors.cpp.obj
-.PHONY : vk_descriptors.obj
+ui/docking_window.obj: ui/docking_window.cpp.obj
+.PHONY : ui/docking_window.obj
 
 # target to build an object file
-vk_descriptors.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_descriptors.cpp.obj
-.PHONY : vk_descriptors.cpp.obj
+ui/docking_window.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/docking_window.cpp.obj
+.PHONY : ui/docking_window.cpp.obj
 
-vk_descriptors.i: vk_descriptors.cpp.i
-.PHONY : vk_descriptors.i
+ui/docking_window.i: ui/docking_window.cpp.i
+.PHONY : ui/docking_window.i
 
 # target to preprocess a source file
-vk_descriptors.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_descriptors.cpp.i
-.PHONY : vk_descriptors.cpp.i
+ui/docking_window.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/docking_window.cpp.i
+.PHONY : ui/docking_window.cpp.i
 
-vk_descriptors.s: vk_descriptors.cpp.s
-.PHONY : vk_descriptors.s
+ui/docking_window.s: ui/docking_window.cpp.s
+.PHONY : ui/docking_window.s
 
 # target to generate assembly for a file
-vk_descriptors.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_descriptors.cpp.s
-.PHONY : vk_descriptors.cpp.s
+ui/docking_window.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/docking_window.cpp.s
+.PHONY : ui/docking_window.cpp.s
 
-vk_engine.obj: vk_engine.cpp.obj
-.PHONY : vk_engine.obj
+ui/proj_settings_window.obj: ui/proj_settings_window.cpp.obj
+.PHONY : ui/proj_settings_window.obj
 
 # target to build an object file
-vk_engine.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.obj
-.PHONY : vk_engine.cpp.obj
+ui/proj_settings_window.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/proj_settings_window.cpp.obj
+.PHONY : ui/proj_settings_window.cpp.obj
 
-vk_engine.i: vk_engine.cpp.i
-.PHONY : vk_engine.i
+ui/proj_settings_window.i: ui/proj_settings_window.cpp.i
+.PHONY : ui/proj_settings_window.i
 
 # target to preprocess a source file
-vk_engine.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.i
-.PHONY : vk_engine.cpp.i
+ui/proj_settings_window.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/proj_settings_window.cpp.i
+.PHONY : ui/proj_settings_window.cpp.i
 
-vk_engine.s: vk_engine.cpp.s
-.PHONY : vk_engine.s
+ui/proj_settings_window.s: ui/proj_settings_window.cpp.s
+.PHONY : ui/proj_settings_window.s
 
 # target to generate assembly for a file
-vk_engine.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_engine.cpp.s
-.PHONY : vk_engine.cpp.s
+ui/proj_settings_window.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/proj_settings_window.cpp.s
+.PHONY : ui/proj_settings_window.cpp.s
 
-vk_initializers.obj: vk_initializers.cpp.obj
-.PHONY : vk_initializers.obj
+ui/properties_window.obj: ui/properties_window.cpp.obj
+.PHONY : ui/properties_window.obj
 
 # target to build an object file
-vk_initializers.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.obj
-.PHONY : vk_initializers.cpp.obj
+ui/properties_window.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/properties_window.cpp.obj
+.PHONY : ui/properties_window.cpp.obj
 
-vk_initializers.i: vk_initializers.cpp.i
-.PHONY : vk_initializers.i
+ui/properties_window.i: ui/properties_window.cpp.i
+.PHONY : ui/properties_window.i
 
 # target to preprocess a source file
-vk_initializers.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.i
-.PHONY : vk_initializers.cpp.i
+ui/properties_window.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/properties_window.cpp.i
+.PHONY : ui/properties_window.cpp.i
 
-vk_initializers.s: vk_initializers.cpp.s
-.PHONY : vk_initializers.s
+ui/properties_window.s: ui/properties_window.cpp.s
+.PHONY : ui/properties_window.s
 
 # target to generate assembly for a file
-vk_initializers.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_initializers.cpp.s
-.PHONY : vk_initializers.cpp.s
+ui/properties_window.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/properties_window.cpp.s
+.PHONY : ui/properties_window.cpp.s
 
-vk_mesh.obj: vk_mesh.cpp.obj
-.PHONY : vk_mesh.obj
+ui/user_interface.obj: ui/user_interface.cpp.obj
+.PHONY : ui/user_interface.obj
 
 # target to build an object file
-vk_mesh.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.obj
-.PHONY : vk_mesh.cpp.obj
+ui/user_interface.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/user_interface.cpp.obj
+.PHONY : ui/user_interface.cpp.obj
 
-vk_mesh.i: vk_mesh.cpp.i
-.PHONY : vk_mesh.i
+ui/user_interface.i: ui/user_interface.cpp.i
+.PHONY : ui/user_interface.i
 
 # target to preprocess a source file
-vk_mesh.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.i
-.PHONY : vk_mesh.cpp.i
+ui/user_interface.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/user_interface.cpp.i
+.PHONY : ui/user_interface.cpp.i
 
-vk_mesh.s: vk_mesh.cpp.s
-.PHONY : vk_mesh.s
+ui/user_interface.s: ui/user_interface.cpp.s
+.PHONY : ui/user_interface.s
 
 # target to generate assembly for a file
-vk_mesh.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_mesh.cpp.s
-.PHONY : vk_mesh.cpp.s
+ui/user_interface.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/ui/user_interface.cpp.s
+.PHONY : ui/user_interface.cpp.s
 
-vk_renderer.obj: vk_renderer.cpp.obj
-.PHONY : vk_renderer.obj
+vulkan_renderer/vk_descriptors.obj: vulkan_renderer/vk_descriptors.cpp.obj
+.PHONY : vulkan_renderer/vk_descriptors.obj
 
 # target to build an object file
-vk_renderer.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_renderer.cpp.obj
-.PHONY : vk_renderer.cpp.obj
+vulkan_renderer/vk_descriptors.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_descriptors.cpp.obj
+.PHONY : vulkan_renderer/vk_descriptors.cpp.obj
 
-vk_renderer.i: vk_renderer.cpp.i
-.PHONY : vk_renderer.i
+vulkan_renderer/vk_descriptors.i: vulkan_renderer/vk_descriptors.cpp.i
+.PHONY : vulkan_renderer/vk_descriptors.i
 
 # target to preprocess a source file
-vk_renderer.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_renderer.cpp.i
-.PHONY : vk_renderer.cpp.i
+vulkan_renderer/vk_descriptors.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_descriptors.cpp.i
+.PHONY : vulkan_renderer/vk_descriptors.cpp.i
 
-vk_renderer.s: vk_renderer.cpp.s
-.PHONY : vk_renderer.s
+vulkan_renderer/vk_descriptors.s: vulkan_renderer/vk_descriptors.cpp.s
+.PHONY : vulkan_renderer/vk_descriptors.s
 
 # target to generate assembly for a file
-vk_renderer.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_renderer.cpp.s
-.PHONY : vk_renderer.cpp.s
+vulkan_renderer/vk_descriptors.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_descriptors.cpp.s
+.PHONY : vulkan_renderer/vk_descriptors.cpp.s
 
-vk_renderpass.obj: vk_renderpass.cpp.obj
-.PHONY : vk_renderpass.obj
+vulkan_renderer/vk_initializers.obj: vulkan_renderer/vk_initializers.cpp.obj
+.PHONY : vulkan_renderer/vk_initializers.obj
 
 # target to build an object file
-vk_renderpass.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_renderpass.cpp.obj
-.PHONY : vk_renderpass.cpp.obj
+vulkan_renderer/vk_initializers.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_initializers.cpp.obj
+.PHONY : vulkan_renderer/vk_initializers.cpp.obj
 
-vk_renderpass.i: vk_renderpass.cpp.i
-.PHONY : vk_renderpass.i
+vulkan_renderer/vk_initializers.i: vulkan_renderer/vk_initializers.cpp.i
+.PHONY : vulkan_renderer/vk_initializers.i
 
 # target to preprocess a source file
-vk_renderpass.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_renderpass.cpp.i
-.PHONY : vk_renderpass.cpp.i
+vulkan_renderer/vk_initializers.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_initializers.cpp.i
+.PHONY : vulkan_renderer/vk_initializers.cpp.i
 
-vk_renderpass.s: vk_renderpass.cpp.s
-.PHONY : vk_renderpass.s
+vulkan_renderer/vk_initializers.s: vulkan_renderer/vk_initializers.cpp.s
+.PHONY : vulkan_renderer/vk_initializers.s
 
 # target to generate assembly for a file
-vk_renderpass.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_renderpass.cpp.s
-.PHONY : vk_renderpass.cpp.s
+vulkan_renderer/vk_initializers.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_initializers.cpp.s
+.PHONY : vulkan_renderer/vk_initializers.cpp.s
 
-vk_scene.obj: vk_scene.cpp.obj
-.PHONY : vk_scene.obj
+vulkan_renderer/vk_mesh.obj: vulkan_renderer/vk_mesh.cpp.obj
+.PHONY : vulkan_renderer/vk_mesh.obj
 
 # target to build an object file
-vk_scene.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_scene.cpp.obj
-.PHONY : vk_scene.cpp.obj
+vulkan_renderer/vk_mesh.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_mesh.cpp.obj
+.PHONY : vulkan_renderer/vk_mesh.cpp.obj
 
-vk_scene.i: vk_scene.cpp.i
-.PHONY : vk_scene.i
+vulkan_renderer/vk_mesh.i: vulkan_renderer/vk_mesh.cpp.i
+.PHONY : vulkan_renderer/vk_mesh.i
 
 # target to preprocess a source file
-vk_scene.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_scene.cpp.i
-.PHONY : vk_scene.cpp.i
+vulkan_renderer/vk_mesh.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_mesh.cpp.i
+.PHONY : vulkan_renderer/vk_mesh.cpp.i
 
-vk_scene.s: vk_scene.cpp.s
-.PHONY : vk_scene.s
+vulkan_renderer/vk_mesh.s: vulkan_renderer/vk_mesh.cpp.s
+.PHONY : vulkan_renderer/vk_mesh.s
 
 # target to generate assembly for a file
-vk_scene.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_scene.cpp.s
-.PHONY : vk_scene.cpp.s
+vulkan_renderer/vk_mesh.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_mesh.cpp.s
+.PHONY : vulkan_renderer/vk_mesh.cpp.s
 
-vk_shaders.obj: vk_shaders.cpp.obj
-.PHONY : vk_shaders.obj
+vulkan_renderer/vk_pipeline.obj: vulkan_renderer/vk_pipeline.cpp.obj
+.PHONY : vulkan_renderer/vk_pipeline.obj
 
 # target to build an object file
-vk_shaders.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_shaders.cpp.obj
-.PHONY : vk_shaders.cpp.obj
+vulkan_renderer/vk_pipeline.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_pipeline.cpp.obj
+.PHONY : vulkan_renderer/vk_pipeline.cpp.obj
 
-vk_shaders.i: vk_shaders.cpp.i
-.PHONY : vk_shaders.i
+vulkan_renderer/vk_pipeline.i: vulkan_renderer/vk_pipeline.cpp.i
+.PHONY : vulkan_renderer/vk_pipeline.i
 
 # target to preprocess a source file
-vk_shaders.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_shaders.cpp.i
-.PHONY : vk_shaders.cpp.i
+vulkan_renderer/vk_pipeline.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_pipeline.cpp.i
+.PHONY : vulkan_renderer/vk_pipeline.cpp.i
 
-vk_shaders.s: vk_shaders.cpp.s
-.PHONY : vk_shaders.s
+vulkan_renderer/vk_pipeline.s: vulkan_renderer/vk_pipeline.cpp.s
+.PHONY : vulkan_renderer/vk_pipeline.s
 
 # target to generate assembly for a file
-vk_shaders.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_shaders.cpp.s
-.PHONY : vk_shaders.cpp.s
+vulkan_renderer/vk_pipeline.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_pipeline.cpp.s
+.PHONY : vulkan_renderer/vk_pipeline.cpp.s
 
-vk_textures.obj: vk_textures.cpp.obj
-.PHONY : vk_textures.obj
+vulkan_renderer/vk_render_graph.obj: vulkan_renderer/vk_render_graph.cpp.obj
+.PHONY : vulkan_renderer/vk_render_graph.obj
 
 # target to build an object file
-vk_textures.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_textures.cpp.obj
-.PHONY : vk_textures.cpp.obj
+vulkan_renderer/vk_render_graph.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_render_graph.cpp.obj
+.PHONY : vulkan_renderer/vk_render_graph.cpp.obj
 
-vk_textures.i: vk_textures.cpp.i
-.PHONY : vk_textures.i
+vulkan_renderer/vk_render_graph.i: vulkan_renderer/vk_render_graph.cpp.i
+.PHONY : vulkan_renderer/vk_render_graph.i
 
 # target to preprocess a source file
-vk_textures.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_textures.cpp.i
-.PHONY : vk_textures.cpp.i
+vulkan_renderer/vk_render_graph.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_render_graph.cpp.i
+.PHONY : vulkan_renderer/vk_render_graph.cpp.i
 
-vk_textures.s: vk_textures.cpp.s
-.PHONY : vk_textures.s
+vulkan_renderer/vk_render_graph.s: vulkan_renderer/vk_render_graph.cpp.s
+.PHONY : vulkan_renderer/vk_render_graph.s
 
 # target to generate assembly for a file
-vk_textures.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_textures.cpp.s
-.PHONY : vk_textures.cpp.s
+vulkan_renderer/vk_render_graph.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_render_graph.cpp.s
+.PHONY : vulkan_renderer/vk_render_graph.cpp.s
 
-vk_types.obj: vk_types.cpp.obj
-.PHONY : vk_types.obj
+vulkan_renderer/vk_renderer.obj: vulkan_renderer/vk_renderer.cpp.obj
+.PHONY : vulkan_renderer/vk_renderer.obj
 
 # target to build an object file
-vk_types.cpp.obj:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_types.cpp.obj
-.PHONY : vk_types.cpp.obj
+vulkan_renderer/vk_renderer.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_renderer.cpp.obj
+.PHONY : vulkan_renderer/vk_renderer.cpp.obj
 
-vk_types.i: vk_types.cpp.i
-.PHONY : vk_types.i
+vulkan_renderer/vk_renderer.i: vulkan_renderer/vk_renderer.cpp.i
+.PHONY : vulkan_renderer/vk_renderer.i
 
 # target to preprocess a source file
-vk_types.cpp.i:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_types.cpp.i
-.PHONY : vk_types.cpp.i
+vulkan_renderer/vk_renderer.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_renderer.cpp.i
+.PHONY : vulkan_renderer/vk_renderer.cpp.i
 
-vk_types.s: vk_types.cpp.s
-.PHONY : vk_types.s
+vulkan_renderer/vk_renderer.s: vulkan_renderer/vk_renderer.cpp.s
+.PHONY : vulkan_renderer/vk_renderer.s
 
 # target to generate assembly for a file
-vk_types.cpp.s:
-	cd /d E:\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\vulkan_guide.dir\build.make src/CMakeFiles/vulkan_guide.dir/vk_types.cpp.s
-.PHONY : vk_types.cpp.s
+vulkan_renderer/vk_renderer.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_renderer.cpp.s
+.PHONY : vulkan_renderer/vk_renderer.cpp.s
+
+vulkan_renderer/vk_renderer2.obj: vulkan_renderer/vk_renderer2.cpp.obj
+.PHONY : vulkan_renderer/vk_renderer2.obj
+
+# target to build an object file
+vulkan_renderer/vk_renderer2.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_renderer2.cpp.obj
+.PHONY : vulkan_renderer/vk_renderer2.cpp.obj
+
+vulkan_renderer/vk_renderer2.i: vulkan_renderer/vk_renderer2.cpp.i
+.PHONY : vulkan_renderer/vk_renderer2.i
+
+# target to preprocess a source file
+vulkan_renderer/vk_renderer2.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_renderer2.cpp.i
+.PHONY : vulkan_renderer/vk_renderer2.cpp.i
+
+vulkan_renderer/vk_renderer2.s: vulkan_renderer/vk_renderer2.cpp.s
+.PHONY : vulkan_renderer/vk_renderer2.s
+
+# target to generate assembly for a file
+vulkan_renderer/vk_renderer2.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_renderer2.cpp.s
+.PHONY : vulkan_renderer/vk_renderer2.cpp.s
+
+vulkan_renderer/vk_renderpass.obj: vulkan_renderer/vk_renderpass.cpp.obj
+.PHONY : vulkan_renderer/vk_renderpass.obj
+
+# target to build an object file
+vulkan_renderer/vk_renderpass.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_renderpass.cpp.obj
+.PHONY : vulkan_renderer/vk_renderpass.cpp.obj
+
+vulkan_renderer/vk_renderpass.i: vulkan_renderer/vk_renderpass.cpp.i
+.PHONY : vulkan_renderer/vk_renderpass.i
+
+# target to preprocess a source file
+vulkan_renderer/vk_renderpass.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_renderpass.cpp.i
+.PHONY : vulkan_renderer/vk_renderpass.cpp.i
+
+vulkan_renderer/vk_renderpass.s: vulkan_renderer/vk_renderpass.cpp.s
+.PHONY : vulkan_renderer/vk_renderpass.s
+
+# target to generate assembly for a file
+vulkan_renderer/vk_renderpass.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_renderpass.cpp.s
+.PHONY : vulkan_renderer/vk_renderpass.cpp.s
+
+vulkan_renderer/vk_scene.obj: vulkan_renderer/vk_scene.cpp.obj
+.PHONY : vulkan_renderer/vk_scene.obj
+
+# target to build an object file
+vulkan_renderer/vk_scene.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_scene.cpp.obj
+.PHONY : vulkan_renderer/vk_scene.cpp.obj
+
+vulkan_renderer/vk_scene.i: vulkan_renderer/vk_scene.cpp.i
+.PHONY : vulkan_renderer/vk_scene.i
+
+# target to preprocess a source file
+vulkan_renderer/vk_scene.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_scene.cpp.i
+.PHONY : vulkan_renderer/vk_scene.cpp.i
+
+vulkan_renderer/vk_scene.s: vulkan_renderer/vk_scene.cpp.s
+.PHONY : vulkan_renderer/vk_scene.s
+
+# target to generate assembly for a file
+vulkan_renderer/vk_scene.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_scene.cpp.s
+.PHONY : vulkan_renderer/vk_scene.cpp.s
+
+vulkan_renderer/vk_textures.obj: vulkan_renderer/vk_textures.cpp.obj
+.PHONY : vulkan_renderer/vk_textures.obj
+
+# target to build an object file
+vulkan_renderer/vk_textures.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_textures.cpp.obj
+.PHONY : vulkan_renderer/vk_textures.cpp.obj
+
+vulkan_renderer/vk_textures.i: vulkan_renderer/vk_textures.cpp.i
+.PHONY : vulkan_renderer/vk_textures.i
+
+# target to preprocess a source file
+vulkan_renderer/vk_textures.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_textures.cpp.i
+.PHONY : vulkan_renderer/vk_textures.cpp.i
+
+vulkan_renderer/vk_textures.s: vulkan_renderer/vk_textures.cpp.s
+.PHONY : vulkan_renderer/vk_textures.s
+
+# target to generate assembly for a file
+vulkan_renderer/vk_textures.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_textures.cpp.s
+.PHONY : vulkan_renderer/vk_textures.cpp.s
+
+vulkan_renderer/vk_types.obj: vulkan_renderer/vk_types.cpp.obj
+.PHONY : vulkan_renderer/vk_types.obj
+
+# target to build an object file
+vulkan_renderer/vk_types.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_types.cpp.obj
+.PHONY : vulkan_renderer/vk_types.cpp.obj
+
+vulkan_renderer/vk_types.i: vulkan_renderer/vk_types.cpp.i
+.PHONY : vulkan_renderer/vk_types.i
+
+# target to preprocess a source file
+vulkan_renderer/vk_types.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_types.cpp.i
+.PHONY : vulkan_renderer/vk_types.cpp.i
+
+vulkan_renderer/vk_types.s: vulkan_renderer/vk_types.cpp.s
+.PHONY : vulkan_renderer/vk_types.s
+
+# target to generate assembly for a file
+vulkan_renderer/vk_types.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_renderer/vk_types.cpp.s
+.PHONY : vulkan_renderer/vk_types.cpp.s
+
+vulkan_rhi/vulkan_buffer.obj: vulkan_rhi/vulkan_buffer.cpp.obj
+.PHONY : vulkan_rhi/vulkan_buffer.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_buffer.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_buffer.cpp.obj
+.PHONY : vulkan_rhi/vulkan_buffer.cpp.obj
+
+vulkan_rhi/vulkan_buffer.i: vulkan_rhi/vulkan_buffer.cpp.i
+.PHONY : vulkan_rhi/vulkan_buffer.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_buffer.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_buffer.cpp.i
+.PHONY : vulkan_rhi/vulkan_buffer.cpp.i
+
+vulkan_rhi/vulkan_buffer.s: vulkan_rhi/vulkan_buffer.cpp.s
+.PHONY : vulkan_rhi/vulkan_buffer.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_buffer.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_buffer.cpp.s
+.PHONY : vulkan_rhi/vulkan_buffer.cpp.s
+
+vulkan_rhi/vulkan_device.obj: vulkan_rhi/vulkan_device.cpp.obj
+.PHONY : vulkan_rhi/vulkan_device.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_device.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_device.cpp.obj
+.PHONY : vulkan_rhi/vulkan_device.cpp.obj
+
+vulkan_rhi/vulkan_device.i: vulkan_rhi/vulkan_device.cpp.i
+.PHONY : vulkan_rhi/vulkan_device.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_device.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_device.cpp.i
+.PHONY : vulkan_rhi/vulkan_device.cpp.i
+
+vulkan_rhi/vulkan_device.s: vulkan_rhi/vulkan_device.cpp.s
+.PHONY : vulkan_rhi/vulkan_device.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_device.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_device.cpp.s
+.PHONY : vulkan_rhi/vulkan_device.cpp.s
+
+vulkan_rhi/vulkan_rhi.obj: vulkan_rhi/vulkan_rhi.cpp.obj
+.PHONY : vulkan_rhi/vulkan_rhi.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_rhi.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_rhi.cpp.obj
+.PHONY : vulkan_rhi/vulkan_rhi.cpp.obj
+
+vulkan_rhi/vulkan_rhi.i: vulkan_rhi/vulkan_rhi.cpp.i
+.PHONY : vulkan_rhi/vulkan_rhi.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_rhi.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_rhi.cpp.i
+.PHONY : vulkan_rhi/vulkan_rhi.cpp.i
+
+vulkan_rhi/vulkan_rhi.s: vulkan_rhi/vulkan_rhi.cpp.s
+.PHONY : vulkan_rhi/vulkan_rhi.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_rhi.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_rhi.cpp.s
+.PHONY : vulkan_rhi/vulkan_rhi.cpp.s
+
+vulkan_rhi/vulkan_texture.obj: vulkan_rhi/vulkan_texture.cpp.obj
+.PHONY : vulkan_rhi/vulkan_texture.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_texture.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_texture.cpp.obj
+.PHONY : vulkan_rhi/vulkan_texture.cpp.obj
+
+vulkan_rhi/vulkan_texture.i: vulkan_rhi/vulkan_texture.cpp.i
+.PHONY : vulkan_rhi/vulkan_texture.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_texture.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_texture.cpp.i
+.PHONY : vulkan_rhi/vulkan_texture.cpp.i
+
+vulkan_rhi/vulkan_texture.s: vulkan_rhi/vulkan_texture.cpp.s
+.PHONY : vulkan_rhi/vulkan_texture.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_texture.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_texture.cpp.s
+.PHONY : vulkan_rhi/vulkan_texture.cpp.s
 
 # Help Target
 help:
@@ -473,50 +737,83 @@ help:
 	@echo ... depend
 	@echo ... edit_cache
 	@echo ... rebuild_cache
+	@echo ... AdAstrisEngine
 	@echo ... logger
-	@echo ... vulkan_guide
+	@echo ... application_core/sdl_window.obj
+	@echo ... application_core/sdl_window.i
+	@echo ... application_core/sdl_window.s
+	@echo ... engine/camera.obj
+	@echo ... engine/camera.i
+	@echo ... engine/camera.s
 	@echo ... main.obj
 	@echo ... main.i
 	@echo ... main.s
-	@echo ... material_system.obj
-	@echo ... material_system.i
-	@echo ... material_system.s
-	@echo ... user_interface.obj
-	@echo ... user_interface.i
-	@echo ... user_interface.s
-	@echo ... vk_camera.obj
-	@echo ... vk_camera.i
-	@echo ... vk_camera.s
-	@echo ... vk_descriptors.obj
-	@echo ... vk_descriptors.i
-	@echo ... vk_descriptors.s
-	@echo ... vk_engine.obj
-	@echo ... vk_engine.i
-	@echo ... vk_engine.s
-	@echo ... vk_initializers.obj
-	@echo ... vk_initializers.i
-	@echo ... vk_initializers.s
-	@echo ... vk_mesh.obj
-	@echo ... vk_mesh.i
-	@echo ... vk_mesh.s
-	@echo ... vk_renderer.obj
-	@echo ... vk_renderer.i
-	@echo ... vk_renderer.s
-	@echo ... vk_renderpass.obj
-	@echo ... vk_renderpass.i
-	@echo ... vk_renderpass.s
-	@echo ... vk_scene.obj
-	@echo ... vk_scene.i
-	@echo ... vk_scene.s
-	@echo ... vk_shaders.obj
-	@echo ... vk_shaders.i
-	@echo ... vk_shaders.s
-	@echo ... vk_textures.obj
-	@echo ... vk_textures.i
-	@echo ... vk_textures.s
-	@echo ... vk_types.obj
-	@echo ... vk_types.i
-	@echo ... vk_types.s
+	@echo ... material_system/material_system.obj
+	@echo ... material_system/material_system.i
+	@echo ... material_system/material_system.s
+	@echo ... material_system/shader.obj
+	@echo ... material_system/shader.i
+	@echo ... material_system/shader.s
+	@echo ... ui/actors_properties_ui.obj
+	@echo ... ui/actors_properties_ui.i
+	@echo ... ui/actors_properties_ui.s
+	@echo ... ui/docking_window.obj
+	@echo ... ui/docking_window.i
+	@echo ... ui/docking_window.s
+	@echo ... ui/proj_settings_window.obj
+	@echo ... ui/proj_settings_window.i
+	@echo ... ui/proj_settings_window.s
+	@echo ... ui/properties_window.obj
+	@echo ... ui/properties_window.i
+	@echo ... ui/properties_window.s
+	@echo ... ui/user_interface.obj
+	@echo ... ui/user_interface.i
+	@echo ... ui/user_interface.s
+	@echo ... vulkan_renderer/vk_descriptors.obj
+	@echo ... vulkan_renderer/vk_descriptors.i
+	@echo ... vulkan_renderer/vk_descriptors.s
+	@echo ... vulkan_renderer/vk_initializers.obj
+	@echo ... vulkan_renderer/vk_initializers.i
+	@echo ... vulkan_renderer/vk_initializers.s
+	@echo ... vulkan_renderer/vk_mesh.obj
+	@echo ... vulkan_renderer/vk_mesh.i
+	@echo ... vulkan_renderer/vk_mesh.s
+	@echo ... vulkan_renderer/vk_pipeline.obj
+	@echo ... vulkan_renderer/vk_pipeline.i
+	@echo ... vulkan_renderer/vk_pipeline.s
+	@echo ... vulkan_renderer/vk_render_graph.obj
+	@echo ... vulkan_renderer/vk_render_graph.i
+	@echo ... vulkan_renderer/vk_render_graph.s
+	@echo ... vulkan_renderer/vk_renderer.obj
+	@echo ... vulkan_renderer/vk_renderer.i
+	@echo ... vulkan_renderer/vk_renderer.s
+	@echo ... vulkan_renderer/vk_renderer2.obj
+	@echo ... vulkan_renderer/vk_renderer2.i
+	@echo ... vulkan_renderer/vk_renderer2.s
+	@echo ... vulkan_renderer/vk_renderpass.obj
+	@echo ... vulkan_renderer/vk_renderpass.i
+	@echo ... vulkan_renderer/vk_renderpass.s
+	@echo ... vulkan_renderer/vk_scene.obj
+	@echo ... vulkan_renderer/vk_scene.i
+	@echo ... vulkan_renderer/vk_scene.s
+	@echo ... vulkan_renderer/vk_textures.obj
+	@echo ... vulkan_renderer/vk_textures.i
+	@echo ... vulkan_renderer/vk_textures.s
+	@echo ... vulkan_renderer/vk_types.obj
+	@echo ... vulkan_renderer/vk_types.i
+	@echo ... vulkan_renderer/vk_types.s
+	@echo ... vulkan_rhi/vulkan_buffer.obj
+	@echo ... vulkan_rhi/vulkan_buffer.i
+	@echo ... vulkan_rhi/vulkan_buffer.s
+	@echo ... vulkan_rhi/vulkan_device.obj
+	@echo ... vulkan_rhi/vulkan_device.i
+	@echo ... vulkan_rhi/vulkan_device.s
+	@echo ... vulkan_rhi/vulkan_rhi.obj
+	@echo ... vulkan_rhi/vulkan_rhi.i
+	@echo ... vulkan_rhi/vulkan_rhi.s
+	@echo ... vulkan_rhi/vulkan_texture.obj
+	@echo ... vulkan_rhi/vulkan_texture.i
+	@echo ... vulkan_rhi/vulkan_texture.s
 .PHONY : help
 
 
@@ -528,6 +825,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /d E:\VulkanEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
 .PHONY : cmake_check_build_system
 
