@@ -18,7 +18,7 @@
 #include <mesh_asset.h>
 #include <tiny_obj_loader.h>
 
-#include <logger.h>
+#include <profiler/logger.h>
 
 namespace fs = std::filesystem;
 
@@ -350,7 +350,7 @@ int main(int argc, char* argv[])
 				directory,
 				"wall",
 				"PBR_opaque",
-				{ "/Painted_metal_basecolor.tx", "/Painted_metal_normal.tx", "/Painted_metal_ARM.tx" },
+				{ "/Metal_plate_basecolor.tx", "/Metal_plate_normal.tx", "/Metal_plate_ARM.tx" },
 				assets::MaterialMode::OPAQUE
 			);
 

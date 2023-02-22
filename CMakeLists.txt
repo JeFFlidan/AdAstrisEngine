@@ -1,11 +1,11 @@
-﻿# CMakeList.txt : CMake project for vulkan_guide, include source and define
+﻿# CMakeList.txt : CMake project for AdAstrisEngine, include source and define
 # project specific logic here.
 #
 cmake_minimum_required (VERSION 3.8)
 
 set(CMAKE_CXX_COMPILER C:/msys64/mingw64/bin/g++.exe)
 
-project ("vulkan_guide")
+project ("AdAstrisEngine")
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -19,7 +19,7 @@ add_subdirectory(src)
 add_subdirectory(assetlib)
 add_subdirectory(asset_baker)
 
-find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
+find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin ${PROJECT_SOURCE_DIR}/third_party/vulkan_base/glslang)
 
 ## find all the shader files under the shaders folder
 file(GLOB_RECURSE GLSL_SOURCE_FILES
