@@ -44,10 +44,10 @@ void main()
 {
     if (settings.isTaaEnabled == 1)
     {    
-         vec2 motionVector = texture(sampler2D(opaqueVelocityAttach, linearSamp), texCoord).xy;
+         vec2 motionVector = texture(sampler2D(opaqueVelocityAttach, nearestSamp), texCoord).xy;
 
          vec2 oldUv = texCoord + motionVector;
-         vec4 curColor = texture(sampler2D(currentColorAttach, nearestSamp), texCoord);
+         vec4 curColor = texture(sampler2D(currentColorAttach, linearSamp), texCoord);
 
          if (oldUv.x < 0.0 || oldUv.x > 1.0 || oldUv.y < 0.0 || oldUv.y > 1.0)
          {

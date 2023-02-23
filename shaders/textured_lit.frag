@@ -3,9 +3,7 @@
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_GOOGLE_include_directive : require
 
-#include <shaders/common_includes/data_structs/data.h>
-#include <shaders/common_includes/PBR_functions/PBR_functions.h>
-#include <shaders/common_includes/calculate_shadows/calculate_shadows.h>
+#include "data.h"
 
 layout(location = 0) in vec2 texCoord;
 layout(location = 1) in flat uint id;
@@ -59,7 +57,7 @@ layout(set = 7, binding = 0) uniform texture2D spotShadowMaps[];
 
 const float PI = 3.14159265359;
 
-/*float DistributionGGX(vec3 N, vec3 H, float roughness);
+float DistributionGGX(vec3 N, vec3 H, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
@@ -77,7 +75,7 @@ vec3 calculateSpotLight(vec3 F0, vec3 N, vec3 V, SpotLight spotLight, vec3 albed
 
 float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id);
 float calculatePointLightShadow(PointLight pointLight, vec3 N, int id);
-float calculateSpotLightShadow(SpotLight spotLight, vec3 N, int id);*/
+float calculateSpotLightShadow(SpotLight spotLight, vec3 N, int id);
 
 void main()
 {
@@ -108,7 +106,7 @@ void main()
 	float dirShadow = 0.0;
 	float pointShadow = 0.0;
 	float spotShadow = 0.0;
-	
+
 	for (int i = 0; i != sceneData.dirLightsAmount; ++i)
 	{
 		DirectionLight dirLight = dirLights.casters[i];
@@ -117,7 +115,7 @@ void main()
 			dirLightsL0 += calculateDirectionLight(F0, normal, view, dirLight, albedo, roughness, metallic);
 			if (dirLight.castShadows != 0)
 			{
-				dirShadow = calculateDirLightShadow(dirLights.casters[i], dirShadowMaps[i], shadowSamp, fragPos);
+				dirShadow = calculateDirLightShadow(dirLights.casters[i], normal, i);
 			}
 		}
 	}
@@ -133,7 +131,7 @@ void main()
 			pointLightsL0 += calculatePointLight(F0, normal, view, pointLight, albedo, roughness, metallic);
 			if (pointLight.castShadows != 0)
 			{
-				pointShadow = calculatePointLightShadow(pointLights.casters[i], pointShadowMaps[i], shadowSamp, fragPos);
+				pointShadow = calculatePointLightShadow(pointLights.casters[i], normal, i);
 			}
 		}
 	}
@@ -148,7 +146,7 @@ void main()
 			spotLightsL0 += calculateSpotLight(F0, normal, view, spotLight, albedo, roughness, metallic);
 			if (spotLight.castShadows != 0)
 			{
-				spotShadow = calculateSpotLightShadow(spotLights.casters[i], spotShadowMaps[i], shadowSamp, fragPos);
+				spotShadow = calculateSpotLightShadow(spotLights.casters[i], normal, i);
 				//spotShadow = calculatePointLightShadow(spotLight, normal, i);
 			}
 		}
@@ -167,7 +165,7 @@ void main()
 	//outFragColor = vec4(temp);
 }
 
-/*vec3 calculateDirectionLight(vec3 F0, vec3 N, vec3 V, DirectionLight dirLight, vec3 albedo, float roughness, float metallic)
+vec3 calculateDirectionLight(vec3 F0, vec3 N, vec3 V, DirectionLight dirLight, vec3 albedo, float roughness, float metallic)
 {
 	vec3 L = normalize(vec3(-dirLight.direction));
 	vec3 H = normalize(V + L);
@@ -177,7 +175,7 @@ void main()
 
 	float kD = brdf.w;
 	vec3 specular = brdf.xyz;
-	
+
 	float NdotL = max(dot(N, L), 0.0);
 
 	return (kD * albedo / PI + specular) * radiance * NdotL;
@@ -197,7 +195,7 @@ vec3 calculatePointLight(vec3 F0, vec3 N, vec3 V, PointLight pointLight, vec3 al
 
 	float kD = brdf.w;
 	vec3 specular = brdf.xyz;
-	
+
 	float NdotL = max(dot(N, L), 0.0);
 
 	return (kD * albedo / PI + specular) * radiance * NdotL;
@@ -217,7 +215,7 @@ vec3 calculateSpotLight(vec3 F0, vec3 N, vec3 V, SpotLight spotLight, vec3 albed
 
 	float kD = brdf.w;
 	vec3 specular = brdf.xyz;
-	
+
 	float NdotL = max(dot(N, L), 0.0);
 
 	return (kD * albedo / PI + specular) * radiance * NdotL;
@@ -338,13 +336,13 @@ float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id)
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	projCoords.xy = projCoords.xy * 0.5 + 0.5;
 	float currentDepth = projCoords.z;
-	
+
 	if (currentDepth > 1.0)
-		return 0.0;
+	return 0.0;
 
 	vec3 L = normalize(vec3(-dirLight.direction));
 	//float bias = max(0.05 * (1.0 - dot(N, L)), 0.005);
-	float bias = 0.0035;	
+	float bias = 0.0035;
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(sampler2D(dirShadowMaps[id], shadowSamp), 0);
 	for (int x = -1; x <= 1; ++x)
@@ -358,18 +356,18 @@ float calculateDirLightShadow(DirectionLight dirLight, vec3 N, int id)
 	}
 
 	shadow /= 9.0;
-	
+
 	return shadow;
 }
 
 vec3 sampleOffsetDirections[20] = vec3[]
 (
-	vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1),
-	vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
-	vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
-	vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
-	vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
-);  
+vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1),
+vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);
 
 float calculatePointLightShadow(PointLight pointLight, vec3 N, int id)
 {
@@ -385,7 +383,7 @@ float calculatePointLightShadow(PointLight pointLight, vec3 N, int id)
 		float closestDepth = texture(nonuniformEXT(samplerCube(pointShadowMaps[id], shadowSamp)), coords).r;
 		closestDepth *= pointLight.farPlane;
 		if (currentDepth - bias > closestDepth)
-			shadow += 1.0;
+		shadow += 1.0;
 	}
 	shadow /= float(samples);
 
@@ -400,7 +398,7 @@ float calculateSpotLightShadow(SpotLight spotLight, vec3 N, int id)
 	projCoords.xy = projCoords.xy * 0.5 + 0.5;
 
 	float currentDepth = projCoords.z;
-	
+
 	float bias = 0.00035;
 	float shadow = 0.0;
 
@@ -409,5 +407,4 @@ float calculateSpotLightShadow(SpotLight spotLight, vec3 N, int id)
 	shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
 
 	return shadow;
-}*/
-
+}

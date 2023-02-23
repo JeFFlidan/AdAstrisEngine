@@ -5,8 +5,9 @@
 #include <cstring>
 #include <cassert>
 #include <stdint.h>
+#include "profiler/logger.h"
 
-namespace io
+namespace ad_astris::io
 {
 	class URI
 	{
@@ -21,6 +22,7 @@ namespace io
 				size_t len = strlen(uri);
 				assert(len < 4096);
 				memcpy(data, uri, len);
+				data[len] = '\x0';
 			}
 
 			URI(const URI& uri)

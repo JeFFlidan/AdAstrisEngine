@@ -180,6 +180,29 @@ namespace ad_astris::rhi
 		INT_OPAQUE_WHITE
 	};
 
+	enum ShaderType
+	{
+		UNDEFINED_SHADER_TYPE,
+		
+		VERTEX,
+		FRAGMENT,
+		TESSELLATION_CONTROL,
+		TESSELLATION_EVALUATION,
+		GEOMETRY,
+
+		COMPUTE,
+
+		MESH,
+		TASK,
+
+		RAY_GENERATION,
+		RAY_INTERSECTION,
+		RAY_ANY_HIT,
+		RAY_CLOSEST_HIT,
+		RAY_MISS,
+		RAY_CALLABLE
+	};
+
 	struct TextureInfo
 	{
 		TextureInfo() = default;
@@ -276,5 +299,17 @@ namespace ad_astris::rhi
 	{
 		TextureView(TextureViewInfo info) : viewInfo(info) {}
 		TextureViewInfo viewInfo;
+	};
+
+	struct ShaderInfo
+	{
+		ShaderType shaderType{ UNDEFINED_SHADER_TYPE };
+		uint8_t* data{ nullptr };		// Pointer to SPIRV or DXIL data (depends on chosen API)
+		uint64_t size{ 0 };
+	};
+
+	struct Shader : public ObjectHandle
+	{
+		ShaderType type;
 	};
 }

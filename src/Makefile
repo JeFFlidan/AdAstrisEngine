@@ -177,6 +177,30 @@ engine/camera.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine/camera.cpp.s
 .PHONY : engine/camera.cpp.s
 
+file_system/IO.obj: file_system/IO.cpp.obj
+.PHONY : file_system/IO.obj
+
+# target to build an object file
+file_system/IO.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/file_system/IO.cpp.obj
+.PHONY : file_system/IO.cpp.obj
+
+file_system/IO.i: file_system/IO.cpp.i
+.PHONY : file_system/IO.i
+
+# target to preprocess a source file
+file_system/IO.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/file_system/IO.cpp.i
+.PHONY : file_system/IO.cpp.i
+
+file_system/IO.s: file_system/IO.cpp.s
+.PHONY : file_system/IO.s
+
+# target to generate assembly for a file
+file_system/IO.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/file_system/IO.cpp.s
+.PHONY : file_system/IO.cpp.s
+
 main.obj: main.cpp.obj
 .PHONY : main.obj
 
@@ -248,6 +272,30 @@ material_system/shader.s: material_system/shader.cpp.s
 material_system/shader.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/material_system/shader.cpp.s
 .PHONY : material_system/shader.cpp.s
+
+render_core/shader_compiler.obj: render_core/shader_compiler.cpp.obj
+.PHONY : render_core/shader_compiler.obj
+
+# target to build an object file
+render_core/shader_compiler.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/render_core/shader_compiler.cpp.obj
+.PHONY : render_core/shader_compiler.cpp.obj
+
+render_core/shader_compiler.i: render_core/shader_compiler.cpp.i
+.PHONY : render_core/shader_compiler.i
+
+# target to preprocess a source file
+render_core/shader_compiler.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/render_core/shader_compiler.cpp.i
+.PHONY : render_core/shader_compiler.cpp.i
+
+render_core/shader_compiler.s: render_core/shader_compiler.cpp.s
+.PHONY : render_core/shader_compiler.s
+
+# target to generate assembly for a file
+render_core/shader_compiler.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/render_core/shader_compiler.cpp.s
+.PHONY : render_core/shader_compiler.cpp.s
 
 ui/actors_properties_ui.obj: ui/actors_properties_ui.cpp.obj
 .PHONY : ui/actors_properties_ui.obj
@@ -745,6 +793,9 @@ help:
 	@echo ... engine/camera.obj
 	@echo ... engine/camera.i
 	@echo ... engine/camera.s
+	@echo ... file_system/IO.obj
+	@echo ... file_system/IO.i
+	@echo ... file_system/IO.s
 	@echo ... main.obj
 	@echo ... main.i
 	@echo ... main.s
@@ -754,6 +805,9 @@ help:
 	@echo ... material_system/shader.obj
 	@echo ... material_system/shader.i
 	@echo ... material_system/shader.s
+	@echo ... render_core/shader_compiler.obj
+	@echo ... render_core/shader_compiler.i
+	@echo ... render_core/shader_compiler.s
 	@echo ... ui/actors_properties_ui.obj
 	@echo ... ui/actors_properties_ui.i
 	@echo ... ui/actors_properties_ui.s

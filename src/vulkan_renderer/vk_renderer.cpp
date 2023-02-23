@@ -2,6 +2,8 @@
 #include "vulkan_rhi/vulkan_rhi.h"
 #include "rhi/engine_rhi.h"
 #include "material_asset.h"
+#include "render_core/shader_compiler.h"
+#include "file_system/IO.h"
 #include "SDL_events.h"
 #include "SDL_mouse.h"
 #include "SDL_stdinc.h"
@@ -244,6 +246,13 @@ namespace ad_astris
 		_eRhi->create_sampler(&sampler);
 		VkSampler* vkSampler = static_cast<VkSampler*>(sampler.handle);
 		_linearSampler = *vkSampler;
+		
+		io::FileSystem* fileSystem = new io::EngineFileSystem("E:/MyEngine/MyEngine/VulkanEngine");
+		rcore::ShaderCompiler* shaderCompiler = new rcore::ShaderCompiler(fileSystem);
+		io::URI path = "E:/MyEngine/MyEngine/VulkanEngine/shaders/default_lit.frag";
+		rhi::ShaderInfo shaderInfo;
+		shaderCompiler->compile_into_spv(path, &shaderInfo);
+		LOG_INFO("Shader's code size is: {}", shaderInfo.size)
 
 		// tests
 		// rhi::BufferInfo info(rhi::STORAGE_BUFFER, rhi::CPU, false, true);
@@ -1428,7 +1437,7 @@ namespace ad_astris
 			vkDestroyImageView(_device, _depthPyramideMips[i], nullptr);
 
 		vkDestroySampler(_device, _depthSampler, nullptr);
-		vkDestroySampler(_device, _linearSampler, nullptr);
+		//vkDestroySampler(_device, _linearSampler, nullptr);
 		vkDestroySampler(_device, _nearestSampler, nullptr);
 		vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 	

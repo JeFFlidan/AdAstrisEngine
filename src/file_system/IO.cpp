@@ -1,36 +1,36 @@
 #include "IO.h"
-#include "logger.h"
+#include "profiler/logger.h"
 #include <filesystem>
 #include <string>
 
-namespace io
+namespace ad_astris
 {
-	EngineFileStream::EngineFileStream(FILE* file)
+	io::EngineFileStream::EngineFileStream(FILE* file)
 	{
 		this->file = file;
 		assert(this->file);
 	}
 
-	EngineFileStream::~EngineFileStream()
+	io::EngineFileStream::~EngineFileStream()
 	{
 		assert(file);
 		fclose(file);
 		file = nullptr;
 	}
 
-	size_t EngineFileStream::read(void* data, size_t size, size_t count)
+	size_t io::EngineFileStream::read(void* data, size_t size, size_t count)
 	{
 		assert(file && "EngineFileStream::File is invalid");
 		return fread(data, size, count, file);
 	}
 
-	size_t EngineFileStream::write(const void* data, size_t size, size_t count)
+	size_t io::EngineFileStream::write(const void* data, size_t size, size_t count)
 	{
 		assert(file && "EngineFileStream::File is invalid");
 		return fwrite(data, size, count, file);
 	}
 
-	uint64_t EngineFileStream::size() const
+	uint64_t io::EngineFileStream::size() const
 	{
 		assert(file && "EngineFileStream::File is invalid");
 		long position = ftell(file);
@@ -40,14 +40,14 @@ namespace io
 		return static_cast<uint64_t>(size);
 	}
 
-	EngineFileSystem::EngineFileSystem(const char* path)
+	io::EngineFileSystem::EngineFileSystem(const char* path)
 	{
-		rootPath = std::filesystem::u8path(path);
+		rootPath = std::filesystem::path(path);
 	}
 
-	EngineFileSystem::~EngineFileSystem() {}
+	io::EngineFileSystem::~EngineFileSystem() {}
 
-	EngineFileStream* EngineFileSystem::open(const io::URI& uri, const char* mode)
+	io::EngineFileStream* io::EngineFileSystem::open(const io::URI& uri, const char* mode)
 	{
 		std::filesystem::path path = std::filesystem::path(uri.c_str());
 		if (!path.is_absolute())
@@ -55,13 +55,13 @@ namespace io
 
 		if (!std::filesystem::exists(path))
 		{
-			LOG_ERROR("Path {} is invlaid", path.string().c_str());
+			LOG_ERROR("Path {} is invlaid", path.string().c_str())
 			return nullptr;
 		}
 
 		if (!path.has_extension())
 		{
-			LOG_ERROR("File from path {} has no extension", path.string().c_str());
+			LOG_ERROR("File from path {} has no extension", path.string().c_str())
 			return nullptr;
 		}
 			
@@ -70,26 +70,26 @@ namespace io
 		return new EngineFileStream(file);
 	}
 
-	bool EngineFileSystem::close(Stream* stream)
+	bool io::EngineFileSystem::close(io::Stream* stream)
 	{
 		assert(stream);
 		delete stream;
 		return true;
 	}
 
-	void* EngineFileSystem::map_to_system(const URI& path, size_t& size, const char* mode)
+	void* io::EngineFileSystem::map_to_system(const URI& path, size_t& size, const char* mode)
 	{
 		EngineFileStream* stream = open(path, mode);
 		if (!stream)
 		{
-			LOG_ERROR("Stream is invalid. Path {}", path.c_str());
+			LOG_ERROR("Stream is invalid. Path {}", path.c_str())
 			return nullptr;
 		}
 
-		size = static_cast<size_t>(stream->size());
+		size = stream->size();
 		if (!size)
 		{
-			LOG_ERROR("File {} is empty", path.c_str());
+			LOG_ERROR("File {} is empty", path.c_str())
 			return nullptr;
 		}
 
@@ -104,7 +104,7 @@ namespace io
 		return data;
 	}
 
-	bool EngineFileSystem::unmap_from_system(void* data)
+	bool io::EngineFileSystem::unmap_from_system(void* data)
 	{
 		assert(data);
 		uint8_t* newData = reinterpret_cast<uint8_t*>(data);

@@ -3,7 +3,7 @@
 layout(early_fragment_tests) in;
 
 #extension GL_GOOGLE_include_directive : require
-#include <shaders/common_includes/data_structs/data.h>
+#include "data.h"
 
 /*struct Node
 {

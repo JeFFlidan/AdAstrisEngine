@@ -1,7 +1,7 @@
 #version 450
 
 #extension GL_GOOGLE_include_directive : require
-#include <shaders/common_includes/data_structs/data.h>
+#include "data.h"
 
 #define MAX_FRAGMENT_COUNT 128
 

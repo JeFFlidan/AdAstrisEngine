@@ -47,3 +47,6 @@ add_custom_target(
     Shaders 
     DEPENDS ${SPIRV_BINARY_FILES}
     )
+    
+link_directories("third_party/shaderc/lib")
+include_directories("third_party/shaderc/include")

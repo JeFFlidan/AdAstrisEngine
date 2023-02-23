@@ -46,7 +46,7 @@ void main()
 	mat4 model = objectBuffer.data[id].model;
 
 	vec4 pos = cameraBuffer.viewProj * model * vec4(aPos, 1.0);
-	
+
 	if (settings.isTaaEnabled == 1)
 	{
 		float deltaWidth = 1.0 / settings.viewportRes.x;
@@ -61,7 +61,7 @@ void main()
 		{
 			index = framesCount % taaData.numSamples;
 		}
-		
+
 		vec2 jitter = vec2(taaData.haltonSequence[index].x, taaData.haltonSequence[index].y);
 		jitter.x = ((jitter.x - 0.5f) / settings.viewportRes.x) * 2.0;
 		jitter.y = ((jitter.y - 0.5f) / settings.viewportRes.y) * 2.0;

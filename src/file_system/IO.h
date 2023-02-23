@@ -3,7 +3,7 @@
 #include "file_system.h"
 #include <filesystem>
 
-namespace io
+namespace ad_astris::io
 {
 	class EngineFileStream : public Stream
 	{
@@ -25,9 +25,9 @@ namespace io
 			EngineFileSystem(const char* path);
 			~EngineFileSystem() final;
 
-			EngineFileStream* open(const io::URI& path, const char* mode) final;
+			EngineFileStream* open(const URI& path, const char* mode) final;
 			bool close(Stream* stream) final;
-			void* map_to_system(const io::URI& uri, size_t& size, const char* mode = "rb") final;
+			void* map_to_system(const URI& uri, size_t& size, const char* mode = "rb") final;
 			bool unmap_from_system(void* data) final;
 		private:
 			std::filesystem::path rootPath;
