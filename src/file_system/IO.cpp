@@ -53,7 +53,7 @@ namespace ad_astris
 		if (!path.is_absolute())
 			path = rootPath / path;
 
-		if (!std::filesystem::exists(path))
+		if (!std::filesystem::exists(path) && strcmp(mode, "wb") != 0)
 		{
 			LOG_ERROR("Path {} is invlaid", path.string().c_str())
 			return nullptr;

@@ -16,36 +16,38 @@
 
 namespace ad_astris
 {
-	bool Shader::load_shader_module(const char* filePath)
+	bool Shader::load_shader_module(rhi::ShaderInfo shaderInfo)
 	{
-		std::ifstream file(filePath, std::ios::ate | std::ios::binary);
-
-		if (!file.is_open())
-		{
-			LOG_ERROR("Failed to open file {}", filePath);
-			return false;
-		}
-
-		size_t fileSize = static_cast<size_t>(file.tellg());
-
-		code.resize(fileSize / sizeof(uint32_t));
-
-		file.seekg(0);
-
-		file.read(reinterpret_cast<char*>(code.data()), fileSize);
-
-		file.close();
+		// std::ifstream file(filePath, std::ios::ate | std::ios::binary);
+		//
+		// if (!file.is_open())
+		// {
+		// 	LOG_ERROR("Failed to open file {}", filePath);
+		// 	return false;
+		// }
+		//
+		// size_t fileSize = static_cast<size_t>(file.tellg());
+		//
+		// code.resize(fileSize / sizeof(uint32_t));
+		//
+		// file.seekg(0);
+		//
+		// file.read(reinterpret_cast<char*>(code.data()), fileSize);
+		//
+		// file.close();
 
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		createInfo.pNext = nullptr;
 
-		createInfo.codeSize = code.size() * sizeof(uint32_t);
+		code.resize(shaderInfo.size / sizeof(uint32_t));
+		memcpy(code.data(), shaderInfo.data, shaderInfo.size);
+		createInfo.codeSize = shaderInfo.size;
 		createInfo.pCode = code.data();
 
 		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
 		{
-			LOG_ERROR("Failed to create shader module");
+			LOG_ERROR("Failed to create shader module")
 			return false;
 		}
 

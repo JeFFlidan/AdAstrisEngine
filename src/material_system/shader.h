@@ -1,5 +1,6 @@
 #pragma once
 
+#include <rhi/resources.h>
 #include <stdint.h>
 #include <vector>
 
@@ -12,7 +13,7 @@ namespace ad_astris
 		public:
 			Shader(VkDevice dev) : device(dev) {}
 			
-			bool load_shader_module(const char* filePath);
+			bool load_shader_module(rhi::ShaderInfo shaderInfo);
 			
 			void delete_shader_module();
 

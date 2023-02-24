@@ -201,6 +201,7 @@ ComputePipelineBuilder::ComputePipelineBuilder(VkDevice device) : _device(device
 {
 	_pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 	_pipelineInfo.pNext = nullptr;
+	_pipelineInfo.flags = 0;
 }
 
 VkPipeline ComputePipelineBuilder::build(ShaderEffect::ShaderStage stage, VkPipelineLayout layout)

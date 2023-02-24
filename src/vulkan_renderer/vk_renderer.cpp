@@ -2,7 +2,6 @@
 #include "vulkan_rhi/vulkan_rhi.h"
 #include "rhi/engine_rhi.h"
 #include "material_asset.h"
-#include "render_core/shader_compiler.h"
 #include "file_system/IO.h"
 #include "SDL_events.h"
 #include "SDL_mouse.h"
@@ -247,12 +246,12 @@ namespace ad_astris
 		VkSampler* vkSampler = static_cast<VkSampler*>(sampler.handle);
 		_linearSampler = *vkSampler;
 		
-		io::FileSystem* fileSystem = new io::EngineFileSystem("E:/MyEngine/MyEngine/VulkanEngine");
-		rcore::ShaderCompiler* shaderCompiler = new rcore::ShaderCompiler(fileSystem);
-		io::URI path = "E:/MyEngine/MyEngine/VulkanEngine/shaders/default_lit.frag";
-		rhi::ShaderInfo shaderInfo;
-		shaderCompiler->compile_into_spv(path, &shaderInfo);
-		LOG_INFO("Shader's code size is: {}", shaderInfo.size)
+		// io::FileSystem* fileSystem = new io::EngineFileSystem("E:/MyEngine/MyEngine/VulkanEngine");
+		// rcore::ShaderCompiler* shaderCompiler = new rcore::ShaderCompiler(fileSystem);
+		// io::URI path = "test/test_shader.vert";
+		// rhi::ShaderInfo shaderInfo;
+		// shaderCompiler->compile_into_spv(path, &shaderInfo);
+		// LOG_INFO("Shader's code size is: {}", shaderInfo.size)
 
 		// tests
 		// rhi::BufferInfo info(rhi::STORAGE_BUFFER, rhi::CPU, false, true);
@@ -286,6 +285,9 @@ namespace ad_astris
 		{
 			_frames[i]._dynamicDescriptorAllocator.init(_device);
 		}
+
+		_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
+		_shaderCompiler = rcore::ShaderCompiler(_fileSystem);
 
 		_materialSystem.init(this);
 		_renderScene.init();
@@ -985,12 +987,19 @@ namespace ad_astris
 
 	void VkRenderer::init_pipelines()
 	{
-		LOG_INFO("Init pipelines");
+		LOG_INFO("Init pipelines")
 		Shader depthReduceShader(_device);
-		depthReduceShader.load_shader_module((_projectPath + "/shaders/reduce_depth.comp.glsl.spv").c_str());
+		rhi::ShaderInfo depthReduceInfo;
+		io::URI depthReduceURI("shaders/compute/reduce_depth.comp");
+		_shaderCompiler.compile_into_spv(depthReduceURI, &depthReduceInfo);
+		depthReduceShader.load_shader_module(depthReduceInfo);
+		
 		Shader drawCullShader(_device);
-		drawCullShader.load_shader_module((_projectPath + "/shaders/draw_cull.comp.glsl.spv").c_str());
-
+		rhi::ShaderInfo drawCullInfo;
+		io::URI drawCullURI("shaders/compute/draw_cull.comp");
+		_shaderCompiler.compile_into_spv(drawCullURI, &drawCullInfo);
+		drawCullShader.load_shader_module(drawCullInfo);
+		
 		setup_compute_pipeline(&depthReduceShader, _depthReducePipeline, _depthReduceLayout);
 		setup_compute_pipeline(&drawCullShader, _cullingPipeline, _cullintPipelineLayout);
 
@@ -1517,8 +1526,8 @@ namespace ad_astris
 	void TransparencyFirstPassData::create_shader_pass(VkRenderer* engine)
 	{
 		ShaderEffect* effect = engine->_materialSystem.build_shader_effect({
-			"/shaders/oit_geometry.vert.spv",
-			"/shaders/oit_geometry.frag.spv"
+			"shaders/oit/oit_geometry.vert",
+			"shaders/oit/oit_geometry.frag"
 		});
 		LOG_INFO("Before building shader pass")
 		geometryPass = engine->_materialSystem.build_shader_pass(renderPass, pipelineBuilder, effect);

@@ -66,7 +66,7 @@ namespace ad_astris
 		{
 			if (shaderPaths[i].empty())
 			{
-				LOG_WARNING("Shader path is empty!");
+				LOG_WARNING("Shader path is empty!")
 				continue;
 			}
 
@@ -90,7 +90,10 @@ namespace ad_astris
 			else
 			{
 				Shader* temp = new Shader{_engine->_device};
-				temp->load_shader_module((_engine->_projectPath + shaderPaths[i]).c_str());
+				rhi::ShaderInfo shaderInfo;
+				io::URI shaderURI(shaderPaths[i].c_str());
+				_engine->_shaderCompiler.compile_into_spv(shaderURI, &shaderInfo);
+				temp->load_shader_module(shaderInfo);
 				_shaderCache[shaderPaths[i]] = temp;
 				shaderEffect->add_stage(temp, stage);
 			}
@@ -125,39 +128,39 @@ namespace ad_astris
 		//	"/shaders/instancing.vert.spv",
 		//	"/shaders/textured_lit.frag.spv" });
 		ShaderEffect* postprocessingEffect = build_shader_effect({
-		    "/shaders/postprocessing.vert.spv",
-			"/shaders/postprocessing.frag.spv"});
+		    "shaders/common_shaders/quad.vert",
+			"shaders/postprocessing/postprocessing.frag"});
 		ShaderEffect* dirShadowEffect = build_shader_effect({
-			"/shaders/dir_light_depth_map.vert.spv",
-			"/shaders/dir_light_depth_map.frag.spv"
+			"shaders/shadow_mapping/dir_light_depth_map.vert",
+			"shaders/shadow_mapping/depth_map.frag"
 		});
 		ShaderEffect* pointShadowEffect = build_shader_effect({
-			"/shaders/point_light_depth_map.vert.spv",
-			"/shaders/point_light_depth_map.frag.spv"
+			"shaders/shadow_mapping/point_light_depth_map.vert",
+			"shaders/shadow_mapping/point_light_depth_map.frag"
 		});
 		ShaderEffect* spotShadowEffect = build_shader_effect({
-			"/shaders/spot_light_depth_map.vert.spv",
-			"/shaders/spot_light_depth_map.frag.spv"
+			"shaders/shadow_mapping/spot_light_depth_map.vert",
+			"shaders/shadow_mapping/depth_map.frag"
 		});
 		ShaderEffect* transparencyEffect = build_shader_effect({
-			"/shaders/transparency.vert.spv",
-			"/shaders/transparency.frag.spv"
+			"shaders/oit/transparency.vert",
+			"shaders/oit/transparency.frag"
 		});
 		ShaderEffect* GBufferEffect = build_shader_effect({
-			"/shaders/GBuffer.vert.spv",
-			"/shaders/GBuffer.frag.spv"
+			"shaders/deferred/GBuffer.vert",
+			"shaders/deferred/GBuffer.frag"
 		});
 		ShaderEffect* deferredEffect = build_shader_effect({
-			"/shaders/deferred_lighting.vert.spv",
-			"/shaders/deferred_lighting.frag.spv"
+			"shaders/deferred/deferred_lighting.vert",
+			"shaders/deferred/deferred_lighting.frag"
 		});
 		ShaderEffect* taaEffect = build_shader_effect({
-			"/shaders/postprocessing.vert.spv",
-			"/shaders/taa.frag.spv"
+			"shaders/common_shaders/quad.vert",
+			"shaders/anti_aliasing/taa.frag"
 		});
 		ShaderEffect* compositeEffect = build_shader_effect({
-			"/shaders/postprocessing.vert.spv",
-			"/shaders/composite.frag.spv"
+			"shaders/common_shaders/quad.vert",
+			"shaders/postprocessing/composite.frag"
 		});
 			
 		//ShaderEffect* coloredLitEffect = build_shader_effect({

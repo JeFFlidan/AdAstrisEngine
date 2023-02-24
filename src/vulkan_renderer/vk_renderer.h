@@ -2,6 +2,7 @@
 
 #include "vk_types.h"
 #include "rhi/engine_rhi.h"
+#include "render_core/shader_compiler.h"
 #include "vk_mesh.h"
 #include "material_system/material_system.h"
 #include "vk_pipeline.h"
@@ -349,6 +350,8 @@ namespace ad_astris
 			MaterialSystem _materialSystem;
 			RenderScene _renderScene;
 			UserInterface _userInterface;
+			rcore::ShaderCompiler _shaderCompiler;
+			io::FileSystem* _fileSystem;
 
 			Attachment _mainOpaqueDepthAttach;
 			Attachment _mainOpaqueColorAttach;

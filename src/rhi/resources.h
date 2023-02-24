@@ -304,7 +304,7 @@ namespace ad_astris::rhi
 	struct ShaderInfo
 	{
 		ShaderType shaderType{ UNDEFINED_SHADER_TYPE };
-		uint8_t* data{ nullptr };		// Pointer to SPIRV or DXIL data (depends on chosen API)
+		uint32_t* data{ nullptr };		// Pointer to SPIRV or DXIL data (depends on chosen API)
 		uint64_t size{ 0 };
 	};
 
