@@ -4,10 +4,84 @@
 
 using namespace ad_astris;
 
+shaderc_include_result* rcore::include_resolver(
+	void* userData,
+	const char* requested_source,
+	int type,
+	const char* requesting_source,
+	size_t includeDepth)
+{
+	// LOG_INFO("Requested source {}", requested_source)
+	// LOG_INFO("Requesting source {}", requesting_source)
+	// LOG_INFO("Include depth {}", includeDepth)
+
+	io::FileSystem* fileSystem = static_cast<io::FileSystem*>(userData);
+	assert(fileSystem && "Invalid file system");
+
+	shaderc_include_result* includeResult = new shaderc_include_result();
+	includeResult->user_data = userData;
+	includeResult->source_name = nullptr;
+	includeResult->content = nullptr;
+	includeResult->source_name_length = 0;
+	includeResult->content_length = 0;
+
+	std::string includePath;
+	
+	switch (type)
+	{
+		case shaderc_include_type_relative:
+		{
+			LOG_INFO("Relative")
+			std::string shaderPath(requesting_source);
+			size_t pos = shaderPath.find_last_of("/\\");
+			includePath = shaderPath.substr(0, pos + 1);
+			break;
+		}
+	}
+
+	includePath += std::string(requested_source);
+
+	uint64_t size;
+	void* data = fileSystem->map_to_system(includePath.c_str(), size);
+
+	if (!data)
+	{
+		LOG_ERROR("ShaderCompiler::include_resolver(): invalid data after reading from file {}", includePath)
+		return includeResult;
+	}
+
+	char* path = new char[includePath.size() + 1];
+	memcpy(path, includePath.c_str(), includePath.size());
+	path[includePath.size()] = '\x0';
+
+	includeResult->source_name = path;
+	includeResult->source_name_length = includePath.size();
+	includeResult->content = static_cast<const char*>(data);
+	includeResult->content_length = size;
+
+	return includeResult;
+}
+
+void rcore::include_releaser(void* userData, shaderc_include_result* result)
+{
+	io::FileSystem* fileSystem = static_cast<io::FileSystem*>(userData);
+	assert(fileSystem && "Invalid file system");
+
+	fileSystem->unmap_from_system(const_cast<char*>(result->content));
+
+	delete[] result->source_name;
+	delete result;
+}
+
 rcore::ShaderCompiler::ShaderCompiler(io::FileSystem* fileSystem) : _fileSystem(fileSystem)
 {
 	_compiler = shaderc_compiler_initialize();
 	_options = shaderc_compile_options_initialize();
+
+	shaderc_compile_options_set_target_env(_options, shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+	shaderc_compile_options_set_target_spirv(_options, shaderc_spirv_version_1_4);
+	shaderc_compile_options_set_source_language(_options, shaderc_source_language_glsl);
+	shaderc_compile_options_set_include_callbacks(_options, include_resolver, include_releaser, _fileSystem);
 }
 
 void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info)
@@ -36,7 +110,6 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 	}
 
 	size_t codeLength = shaderc_result_get_length(preprocessResult);
-	LOG_INFO("Code length: {}", codeLength)
 	const char* codeBin = shaderc_result_get_bytes(preprocessResult);
 
 	// I have to implement shader cache in the future
@@ -63,12 +136,14 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 	}
 
 	info->size = shaderc_result_get_length(finalResult);
-	const uint8_t* code = reinterpret_cast<const uint8_t*>(shaderc_result_get_bytes(finalResult));
-	info->data = const_cast<uint8_t*>(code);
+	const uint32_t* code = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(finalResult));
+	info->data = const_cast<uint32_t*>(code);
+	
 	shaderc_result_release(finalResult);
 }
 
 // private methods
+
 shaderc_shader_kind rcore::ShaderCompiler::get_shader_kind(rhi::ShaderType shaderType)
 {
 	switch (shaderType)
@@ -107,7 +182,6 @@ shaderc_shader_kind rcore::ShaderCompiler::get_shader_kind(rhi::ShaderType shade
 rhi::ShaderType rcore::ShaderCompiler::get_shader_type(io::URI& path)
 {
 	std::string extension(std::filesystem::path(path.c_str()).extension().string().erase(0, 1));
-	LOG_INFO("Shader extensions: {}", extension.c_str())
 
 	if (extension == "vert")
 		return rhi::VERTEX;

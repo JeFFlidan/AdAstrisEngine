@@ -6,9 +6,19 @@
 
 namespace ad_astris::rcore
 {
+	shaderc_include_result* include_resolver(
+		void* userData,
+		const char* requested_source,
+		int type,
+		const char* requesting_source,
+		size_t includeDepth);
+
+	void include_releaser(void* userData, shaderc_include_result* result);
+	
 	class ShaderCompiler
 	{
 		public:
+			ShaderCompiler() = default;
 			ShaderCompiler(io::FileSystem* fileSystem);
 
 			void compile_into_spv(io::URI& path, rhi::ShaderInfo* info);
