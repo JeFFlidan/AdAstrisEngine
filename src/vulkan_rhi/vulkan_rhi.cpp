@@ -204,7 +204,7 @@ vkb::Instance vulkan::VulkanRHI::create_instance()
 	LOG_INFO("Start creating Vulkan instance")
 	vkb::InstanceBuilder builder;
 	builder.set_app_name("AdAstris Engine");
-	builder.require_api_version(1, 2, 0);
+	builder.require_api_version(1, 3, 0);
 #ifndef VK_RELEASE
 	builder.use_default_debug_messenger();
 	builder.request_validation_layers(true);

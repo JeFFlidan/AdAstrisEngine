@@ -7,6 +7,8 @@ layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec3 aTangent;
 layout(location = 3) in vec2 aTexCoords;
 
+layout(location = 0) out vec3 data;
+
 layout(set = 0, binding = 0) buffer readonly ObjectBuffer
 {
 	ObjectData data[];
@@ -26,5 +28,6 @@ void main()
 {
 	uint id = instanceBuffer.IDs[gl_InstanceIndex];
 	gl_Position = dirLight.lightSpaceMat * objectBuffer.data[id].model * vec4(aPos, 1.0);
+	data = vec3(1.0);
 }
 

@@ -47,7 +47,7 @@ float calculatePointLightShadow(PointLight pointLight, textureCube shadowMap, sa
 	for (int i = 0; i != samples; ++i)
 	{
 		vec3 coords = lightToFrag + sampleOffsetDirections[i] * distRadius;
-		float closestDepth = texture(nonuniformEXT(samplerCube(shadowMap, samp)), coords).r;
+		float closestDepth = texture(samplerCube(shadowMap, samp), coords).r;
 		closestDepth *= pointLight.farPlane;
 		if (currentDepth > closestDepth)
 			shadow += 1.0;
@@ -69,7 +69,7 @@ float calculateSpotLightShadow(SpotLight spotLight, texture2D shadowMap, sampler
 	float bias = 0.0035;
 	float shadow = 0.0;
 
-	float closestDepth = texture(nonuniformEXT(sampler2D(shadowMap, samp)), projCoords.xy).r;
+	float closestDepth = texture(sampler2D(shadowMap, samp), projCoords.xy).r;
 
 	shadow = currentDepth > closestDepth ? 1.0 : 0.0;
 

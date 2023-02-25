@@ -99,7 +99,7 @@ void main()
 			pointLightsL0 += calculatePointLight(F0, fragPos, normal, view, pointLight, albedo, roughMetal);
 			if (pointLight.castShadows != 0)
 			{
-				pointShadow = calculatePointLightShadow(pointLights.casters[i], pointShadowMaps[i], shadowSamp, fragPos);
+				pointShadow = calculatePointLightShadow(pointLights.casters[i], pointShadowMaps[nonuniformEXT(i)], shadowSamp, fragPos);
 			}
 		}
 	}
@@ -114,7 +114,7 @@ void main()
 			spotLightsL0 += calculateSpotLight(F0, fragPos, normal, view, spotLight, albedo, roughMetal);
 			if (spotLight.castShadows != 0)
 			{
-				spotShadow = calculateSpotLightShadow(spotLights.casters[i], spotShadowMaps[i], shadowSamp, fragPos);
+				spotShadow = calculateSpotLightShadow(spotLights.casters[i], spotShadowMaps[nonuniformEXT(i)], shadowSamp, fragPos);
 			}
 		}
 	}

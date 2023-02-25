@@ -96,6 +96,7 @@ namespace ad_astris
 				temp->load_shader_module(shaderInfo);
 				_shaderCache[shaderPaths[i]] = temp;
 				shaderEffect->add_stage(temp, stage);
+				LOG_INFO("Compiled shader {} into spv", shaderURI.c_str())
 			}
 		}
 

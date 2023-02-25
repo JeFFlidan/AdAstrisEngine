@@ -99,6 +99,7 @@ vkb::PhysicalDevice vulkan::VulkanDevice::pick_physical_device(vkb::Instance& in
 	features1_2.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
 	features1_2.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 	features1_2.samplerFilterMinmax = VK_TRUE;
+	features1_2.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 	
 	VkPhysicalDeviceFeatures enabledFeatures{};
 	set_feature(supportedFeatures.samplerAnisotropy, enabledFeatures.samplerAnisotropy, "samplerAnisotropy");
@@ -130,8 +131,13 @@ vkb::Device vulkan::VulkanDevice::pick_device(vkb::PhysicalDevice& physicalDevic
 	VkPhysicalDeviceMultiviewFeatures multiViewFeatures{};
 	multiViewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
 	multiViewFeatures.multiview = VK_TRUE;
-	
+
 	deviceBuilder.add_pNext(&multiViewFeatures);
+	
+	VkPhysicalDeviceMaintenance4Features maintenance4Features{};
+	maintenance4Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES;
+	maintenance4Features.maintenance4 = VK_TRUE;
+	deviceBuilder.add_pNext(&maintenance4Features);
 	
 	LOG_INFO("Finish picking logical device")
 	return deviceBuilder.build().value();

@@ -44,7 +44,8 @@ namespace ad_astris::vulkan
 			std::vector<std::string> _requieredExtensions{
 				"VK_EXT_descriptor_indexing",
 				"VK_EXT_sampler_filter_minmax",
-				"VK_KHR_multiview" };
+				"VK_KHR_multiview",
+				"VK_KHR_maintenance4" };
 			std::vector<std::string> _optionalExtensions{
 				"VK_EXT_mesh_shader" };
 			OptionalExtensions _isOptionalExtensionsEnabled{};

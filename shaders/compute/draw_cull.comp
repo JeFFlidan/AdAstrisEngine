@@ -121,12 +121,13 @@ bool isVisible(uint objectIndex)
 	bool visible = true;
 
 	// the left/top/right/bottom plane culling utilizes frustum symmetry to cull against two planes at the same time
-	visible = visible && center.z * cullData.frustum[1] - abs(center.x) * cullData.frustum[0] > -radius;
-	visible = visible && center.z * cullData.frustum[3] - abs(center.y) * cullData.frustum[2] > -radius;
+	visible = center.z * cullData.frustum[1] - abs(center.x) * cullData.frustum[0] > -radius;
+	if (visible)
+		visible = center.z * cullData.frustum[3] - abs(center.y) * cullData.frustum[2] > -radius;
 
-	if (cullData.distCull != 0)
+	if (cullData.distCull != 0 && !visible)
 	{// the near/far plane culling uses camera space Z directly
-		visible = visible && center.z + radius > cullData.znear && center.z - radius < cullData.zfar;
+		visible = center.z + radius > cullData.znear && center.z - radius < cullData.zfar;
 	}
 
 	visible = visible || cullData.cullingEnabled == 0;
@@ -170,9 +171,13 @@ bool isVisibleAABB(uint objectIndex)
 	vec3 aabbmin = vec3(cullData.aabbmin_x, cullData.aabbmin_y, cullData.aabbmin_z) + vec3(radius);
 	vec3 aabbmax = vec3(cullData.aabbmax_x, cullData.aabbmax_y, cullData.aabbmax_z) + vec3(radius);
 
-	visible = visible && (center.x > aabbmin.x) && (center.x < aabbmax.x);
-	visible = visible && (center.y > aabbmin.y) && (center.y < aabbmax.y);
-	visible = visible && (center.z > aabbmin.z) && (center.z < aabbmax.z);
+	visible = (center.x > aabbmin.x) && (center.x < aabbmax.x);
+	if (!visible)
+		return visible;
+	visible = (center.y > aabbmin.y) && (center.y < aabbmax.y);
+	if (!visible)
+		return visible;
+	visible = (center.z > aabbmin.z) && (center.z < aabbmax.z);
 
 	return visible;
 }
@@ -184,15 +189,15 @@ void main()
 	{
 		uint objectID = compactInstanceBuffer.Instances[gID].objectID;
 		bool visible = false;
-		if (cullData.AABBcheck == 0)
+		int cullCheck = cullData.AABBcheck;
+		if (cullCheck != 0)
 		{
-			visible = isVisible(objectID);			
+			visible = isVisibleAABB(objectID);		
 		}
-		// shaderc can't compile this part of code. I don't understand the reason
-//		else
-//		{
-//			visible = isVisibleAABB(objectID);
-//		}
+		else
+		{
+			visible = isVisible(objectID);
+		}
 
 		if (visible)
 		{
