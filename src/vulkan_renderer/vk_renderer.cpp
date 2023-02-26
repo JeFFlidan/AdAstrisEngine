@@ -1,5 +1,6 @@
 ﻿#include "vk_renderer.h"
 #include "vulkan_rhi/vulkan_rhi.h"
+#include "engine_core/uuid.h"
 #include "rhi/engine_rhi.h"
 #include "material_asset.h"
 #include "file_system/IO.h"
@@ -245,6 +246,8 @@ namespace ad_astris
 		_eRhi->create_sampler(&sampler);
 		VkSampler* vkSampler = static_cast<VkSampler*>(sampler.handle);
 		_linearSampler = *vkSampler;
+
+		UUID uuid;
 		
 		// io::FileSystem* fileSystem = new io::EngineFileSystem("E:/MyEngine/MyEngine/VulkanEngine");
 		// rcore::ShaderCompiler* shaderCompiler = new rcore::ShaderCompiler(fileSystem);

@@ -7,11 +7,11 @@
 #include "material_system/material_system.h"
 #include "vk_pipeline.h"
 #include "vk_scene.h"
-#include "engine/engine_actors.h"
+#include "engine_core/engine_actors.h"
 #include "ui/user_interface.h"
 #include <stdint.h>
 #include "vk_descriptors.h"
-#include "engine/camera.h"
+#include "engine_core/camera.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

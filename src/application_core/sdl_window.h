@@ -2,7 +2,7 @@
 
 //For now I've added SDL support for Windows but I'll think is it a good idea after implementing win32 window 
 
-#include "engine/camera.h"
+#include "engine_core/camera.h"
 
 #include <SDL_events.h>
 #include <SDL_mouse.h>

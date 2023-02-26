@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "engine/engine_actors.h"
+#include "engine_core/engine_actors.h"
 
 #include <stdint.h>
 #include <vulkan/vulkan.h>

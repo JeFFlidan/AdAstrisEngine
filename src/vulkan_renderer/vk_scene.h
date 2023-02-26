@@ -3,7 +3,7 @@
 #include "vk_types.h"
 #include "vk_mesh.h"
 #include "material_system/material_system.h"
-#include "engine/engine_actors.h"
+#include "engine_core/engine_actors.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>

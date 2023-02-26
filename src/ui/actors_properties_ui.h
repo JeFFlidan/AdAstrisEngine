@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interfaces.h"
-#include "engine/engine_actors.h"
+#include "engine_core/engine_actors.h"
 #include "vulkan_renderer/vk_scene.h"
 
 namespace ad_astris::ui

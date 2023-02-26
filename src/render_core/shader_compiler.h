@@ -14,6 +14,8 @@ namespace ad_astris::rcore
 		size_t includeDepth);
 
 	void include_releaser(void* userData, shaderc_include_result* result);
+
+	
 	
 	class ShaderCompiler
 	{
