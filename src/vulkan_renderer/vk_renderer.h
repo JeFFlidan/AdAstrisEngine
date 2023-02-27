@@ -350,7 +350,7 @@ namespace ad_astris
 			MaterialSystem _materialSystem;
 			RenderScene _renderScene;
 			UserInterface _userInterface;
-			rcore::ShaderCompiler _shaderCompiler;
+			rcore::ShaderCompiler* _shaderCompiler;
 			io::FileSystem* _fileSystem;
 
 			Attachment _mainOpaqueDepthAttach;

@@ -82,22 +82,21 @@ namespace ad_astris
 					break;
 			}
 
-			auto it = _shaderCache.find(shaderPaths[i]);
-			if (it != _shaderCache.end())
-			{
-				shaderEffect->add_stage(it->second, stage);
-			}
-			else
-			{
-				Shader* temp = new Shader{_engine->_device};
-				rhi::ShaderInfo shaderInfo;
-				io::URI shaderURI(shaderPaths[i].c_str());
-				_engine->_shaderCompiler.compile_into_spv(shaderURI, &shaderInfo);
-				temp->load_shader_module(shaderInfo);
-				_shaderCache[shaderPaths[i]] = temp;
-				shaderEffect->add_stage(temp, stage);
-				LOG_INFO("Compiled shader {} into spv", shaderURI.c_str())
-			}
+			//auto it = _shaderCache.find(shaderPaths[i]);
+			Shader* temp = new Shader{_engine->_device};
+			rhi::ShaderInfo shaderInfo;
+			io::URI shaderURI(shaderPaths[i].c_str());
+			_engine->_shaderCompiler->compile_into_spv(shaderURI, &shaderInfo);
+			temp->load_shader_module(shaderInfo);
+			shaderEffect->add_stage(temp, stage);
+			LOG_INFO("Compiled shader {} into spv", shaderURI.c_str())
+			// if (it != _shaderCache.end())
+			// {
+			// 		shaderEffect->add_stage(it->second, stage);
+			// }
+			// else
+			// {
+			// }
 		}
 
 		return shaderEffect;
@@ -128,6 +127,7 @@ namespace ad_astris
 		//ShaderEffect* texturedLitEffect = build_shader_effect({
 		//	"/shaders/instancing.vert.spv",
 		//	"/shaders/textured_lit.frag.spv" });
+		auto start = std::chrono::system_clock::now();
 		ShaderEffect* postprocessingEffect = build_shader_effect({
 		    "shaders/common_shaders/quad.vert",
 			"shaders/postprocessing/postprocessing.frag"});
@@ -164,6 +164,9 @@ namespace ad_astris
 			"shaders/postprocessing/composite.frag"
 		});
 			
+		auto end = std::chrono::system_clock::now();
+		auto diff = end - start;
+		LOG_INFO("Compiling shaders took {} {}", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / 1000000.0, "ms");
 		//ShaderEffect* coloredLitEffect = build_shader_effect({
 		//	"/shaders/mesh.vert.spv",
 		//	"/shaders/default_lit.frag.spv"});

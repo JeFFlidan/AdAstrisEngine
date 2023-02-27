@@ -90,6 +90,13 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 	info->shaderType = shaderType;
 	uint64_t count;
 	void* data = _fileSystem->map_to_system(uri, count);
+
+	if (_shaderCache.check_in_cache(info, data, count))
+	{
+		LOG_INFO("Shader info was taken from shader cache")
+		return;
+	}
+	
 	shaderc_shader_kind shaderKind = get_shader_kind(shaderType);
 	shaderc_compilation_result_t preprocessResult = nullptr;
 	preprocessResult = shaderc_compile_into_preprocessed_text(
@@ -125,7 +132,6 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 		_options);
 	
 	shaderc_result_release(preprocessResult);
-	_fileSystem->unmap_from_system(data);
 	
 	if (shaderc_result_get_compilation_status(finalResult) != shaderc_compilation_status_success)
 	{
@@ -138,6 +144,9 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 	info->size = shaderc_result_get_length(finalResult);
 	const uint32_t* code = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(finalResult));
 	info->data = const_cast<uint32_t*>(code);
+
+	_shaderCache.add_to_cache(info, data, count);
+	_fileSystem->unmap_from_system(data);
 	
 	shaderc_result_release(finalResult);
 }

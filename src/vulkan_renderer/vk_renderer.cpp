@@ -290,7 +290,7 @@ namespace ad_astris
 		}
 
 		_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
-		_shaderCompiler = rcore::ShaderCompiler(_fileSystem);
+		_shaderCompiler = new rcore::ShaderCompiler(_fileSystem);
 
 		_materialSystem.init(this);
 		_renderScene.init();
@@ -994,14 +994,16 @@ namespace ad_astris
 		Shader depthReduceShader(_device);
 		rhi::ShaderInfo depthReduceInfo;
 		io::URI depthReduceURI("shaders/compute/reduce_depth.comp");
-		_shaderCompiler.compile_into_spv(depthReduceURI, &depthReduceInfo);
+		_shaderCompiler->compile_into_spv(depthReduceURI, &depthReduceInfo);
 		depthReduceShader.load_shader_module(depthReduceInfo);
+		LOG_INFO("Compiled shader {} into spv", depthReduceURI.c_str())
 		
 		Shader drawCullShader(_device);
 		rhi::ShaderInfo drawCullInfo;
 		io::URI drawCullURI("shaders/compute/draw_cull.comp");
-		_shaderCompiler.compile_into_spv(drawCullURI, &drawCullInfo);
+		_shaderCompiler->compile_into_spv(drawCullURI, &drawCullInfo);
 		drawCullShader.load_shader_module(drawCullInfo);
+		LOG_INFO("Compiled shader {} into spv", drawCullURI.c_str())
 		
 		setup_compute_pipeline(&depthReduceShader, _depthReducePipeline, _depthReduceLayout);
 		setup_compute_pipeline(&drawCullShader, _cullingPipeline, _cullintPipelineLayout);

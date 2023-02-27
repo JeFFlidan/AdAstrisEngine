@@ -15,7 +15,7 @@ def compile_script():
     if needsReconfig:
         subprocess.check_call('cmake -G "MinGW Makefiles" ' + build_path, shell=True)
     os.chdir(build_path)
-    subprocess.check_call('mingw32-make -j4')
+    subprocess.check_call('mingw32-make -j8')
     os.chdir(root_path)
     if not os.path.isfile(root_path + "/Makefile"):
         subprocess.check_call('cmake -G "MinGW Makefiles" ' + root_path, shell=True)
