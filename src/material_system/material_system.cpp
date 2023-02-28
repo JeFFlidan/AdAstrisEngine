@@ -93,9 +93,9 @@ namespace ad_astris
 			// if (it != _shaderCache.end())
 			// {
 			// 		shaderEffect->add_stage(it->second, stage);
-			// }
 			// else
-			// {
+				// }
+        		// {
 			// }
 		}
 

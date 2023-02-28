@@ -1,8 +1,30 @@
 ﻿#pragma once
 #include <cstdint>
+#include <vector>
 
 namespace ad_astris::rhi
 {
+	enum LogicOp
+	{
+		LOGIC_OP_CLEAR,
+		LOGIC_OP_AND,
+		LOGIC_OP_AND_REVERSE,
+		LOGIC_OP_COPY,
+		LOGIC_OP_AND_INVERTED,
+		LOGIC_OP_NO_OP,
+		LOGIC_OP_XOR,
+		LOGIC_OP_OR,
+		LOGIC_OP_NOR,
+		LOGIC_OP_EQUIVALENT,
+		LOGIC_OP_INVERT,
+		LOGIC_OP_OR_REVERSE,
+		LOGIC_OP_COPY_INVERTED,
+		LOGIC_OP_OR_INVERTED,
+		LOGIC_OP_NAND,
+		LOGIC_OP_SET,
+	};
+
+	
 	enum ResourceUsage
 	{
 		UNDEFINED_USAGE,
@@ -29,7 +51,7 @@ namespace ad_astris::rhi
 		CPU_TO_GPU
 	};
 	
-	enum TextureFormat
+	enum Format
 	{
 		UNDEFINED_FORMAT = 0,
 		R4G4_UNORM,
@@ -89,6 +111,10 @@ namespace ad_astris::rhi
 		R32G32_SINT,
 		R32G32_SFLOAT,
 
+		R32G32B32_UINT,
+		R32G32B32_SINT,
+		R32G32B32_SFLOAT,
+		
 		R32G32B32A32_UINT,
 		R32G32B32A32_SINT,
 		R32G32B32A32_SFLOAT,
@@ -202,18 +228,18 @@ namespace ad_astris::rhi
 		RAY_MISS,
 		RAY_CALLABLE
 	};
-
+	
 	struct TextureInfo
 	{
 		TextureInfo() = default;
-		TextureInfo(uint32_t width, uint32_t height, TextureFormat format, ResourceUsage usage, bool transSrc, bool transDst)
+		TextureInfo(uint32_t width, uint32_t height, Format format, ResourceUsage usage, bool transSrc, bool transDst)
 			: width(width), height(height), format(format), textureUsage(usage), transferSrc(transSrc), transferDst(transDst) {}
 		
 		uint32_t width{ 0 };
 		uint32_t height{ 0 };
 		uint32_t mipLevels{ 1 };
 		uint32_t layersCount{ 1 };
-		TextureFormat format{ UNDEFINED_FORMAT };
+		Format format{ UNDEFINED_FORMAT };
 		ResourceUsage textureUsage{ UNDEFINED_USAGE };
 		MemoryUsage memoryUsage{ GPU };
 		SampleCount samplesCount{ SAMPLE_COUNT_1_BIT };
@@ -311,5 +337,205 @@ namespace ad_astris::rhi
 	struct Shader : public ObjectHandle
 	{
 		ShaderType type;
+	};
+	
+	enum TopologyType
+	{
+		TOPOLOGY_POINT,
+		TOPOLOGY_LINE,
+		TOPOLOGY_TRIANGLE,
+		TOPOLOGY_PATCH,
+	};
+
+	struct AssemblyState
+	{
+		
+		TopologyType topologyType{ TOPOLOGY_TRIANGLE };
+	};
+
+	/**
+	 * POLYGON_MODE_POINT available only if you use Vulkan
+	 */
+	enum PolygonMode
+	{
+		POLYGON_MODE_FILL,
+		POLYGON_MODE_LINE,
+		POLYGON_MODE_POINT
+	};
+
+	/**
+	 * CULL_MODE_FRONT_AND_BACK available only if you use Vulkan
+	 */
+	enum CullMode
+	{
+		CULL_MODE_NONE,
+		CULL_MODE_FRONT,
+		CULL_MODE_BACK,
+		CULL_MODE_FRONT_AND_BACK
+	};
+
+	enum FrontFace
+	{
+		FRONT_FACE_CLOCKWISE,
+		FRONT_FACE_COUNTER_CLOCKWISE
+	};
+
+	struct RasterizationState
+	{
+		PolygonMode polygonMode{ POLYGON_MODE_FILL };
+		CullMode cullMode{ CULL_MODE_BACK };
+		FrontFace frontFace{ FRONT_FACE_COUNTER_CLOCKWISE };
+		bool isBiasEnabled{ false };
+		float lineWidth{ 1.0f };
+	};
+
+	struct VertexBindingDescription
+	{
+		VertexBindingDescription() = default;
+		VertexBindingDescription(uint32_t binding, uint32_t stride) : binding(binding), stride(stride) {}
+		uint32_t binding{ 0 };
+		uint32_t stride{ 0 };
+	};
+
+	struct VertexAttributeDescription
+	{
+		VertexAttributeDescription() = default;
+		VertexAttributeDescription(uint32_t binding, uint32_t location, uint32_t offset, Format format) :
+			binding(binding), location(location), offset(offset), format(format) {}
+		uint32_t binding{ 0 };
+		uint32_t location{ 0 };
+		uint32_t offset{ 0 };
+		Format format{ UNDEFINED_FORMAT };
+	};
+
+	struct MultisampleState
+	{
+		SampleCount sampleCount{ SAMPLE_COUNT_1_BIT };
+		bool isEnabled{ false };
+	};
+
+	enum BlendFactor
+	{
+		BLEND_FACTOR_ZERO,
+		BLEND_FACTOR_ONE,
+		BLEND_FACTOR_SRC_COLOR,
+		BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+		BLEND_FACTOR_DST_COLOR,
+		BLEND_FACTOR_ONE_MINUS_DST_COLOR,
+		BLEND_FACTOR_SRC_ALPHA,
+		BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+		BLEND_FACTOR_DST_ALPHA,
+		BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
+		BLEND_FACTOR_CONSTANT_COLOR,
+		BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR,
+		BLEND_FACTOR_CONSTANT_ALPHA,
+		BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
+		BLEND_FACTOR_SRC_ALPHA_SATURATE,
+		BLEND_FACTOR_SRC1_COLOR,
+		BLEND_FACTOR_ONE_MINUS_SRC1_COLOR,
+		BLEND_FACTOR_SRC1_ALPHA,
+		BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA,
+	};
+
+	enum BlendOp
+	{
+		BLEND_OP_ADD,
+		BLEND_OP_SUBTRACT,
+		BLEND_OP_REVERSE_SUBTRACT,
+		BLEND_OP_MIN,
+		BLEND_OP_MAX,
+	};
+
+	struct ColorBlendAttachmentState
+	{
+		bool isBlendEnabled{ false };
+		BlendFactor srcColorBlendFactor;
+		BlendFactor dstColorBlendFactor;
+		BlendOp colorBlendOp;
+		BlendFactor srcAlphaBlendFactor;
+		BlendFactor dstAlphaBlendFactor;
+		BlendOp alphaBlendOp;
+		uint64_t colorWriteMask{ 0xF };
+	};
+
+	struct ColorBlendState
+	{
+		bool isLogicOpEnabled{ false };
+		LogicOp logicOp{ LOGIC_OP_COPY };
+		std::vector<ColorBlendAttachmentState> colorBlendAttachments;
+	};
+
+	enum CompareOp
+	{
+		COMPARE_OP_NEVER,
+		COMPARE_OP_LESS,
+		COMPARE_OP_EQUAL,
+		COMPARE_OP_LESS_OR_EQUAL,
+		COMPARE_OP_GREATER,
+		COMPARE_OP_NOT_EQUAL,
+		COMPARE_OP_GREATER_OR_EQUAL,
+		COMPARE_OP_ALWAYS,
+	};
+
+	enum StencilOp
+	{
+		STENCIL_OP_KEEP,
+		STENCIL_OP_ZERO,
+		STENCIL_OP_REPLACE,
+		STENCIL_OP_INCREMENT_AND_CLAMP,
+		STENCIL_OP_DECREMENT_AND_CLAMP,
+		STENCIL_OP_INVERT,
+		STENCIL_OP_INCREMENT_AND_WRAP,
+		STENCIL_OP_DECREMENT_AND_WRAP,
+	};
+
+	struct StencilOpState
+	{
+		StencilOp failOp;
+		StencilOp passOp;
+		StencilOp depthFailOp;
+		CompareOp compareOp;
+		uint32_t compareMask;
+		uint32_t writeMask;
+		uint32_t reference;
+	};
+
+	struct DepthStencilState
+	{
+		bool isDepthTestEnabled{ true };
+		bool isDepthWriteEnabled{ true };
+		CompareOp compareOp{ COMPARE_OP_LESS_OR_EQUAL };
+		bool isStencilTestEnabled{ false };
+		StencilOpState frontStencil;
+		StencilOpState backStencil;
+	};
+	
+	struct RenderPass : public ObjectHandle
+	{
+		
+	};
+
+	struct GraphicsPipelineInfo
+	{
+		AssemblyState assemblyState;
+		RasterizationState rasterizationState;
+		MultisampleState multisampleState;
+		ColorBlendState colorBlendState;
+		DepthStencilState depthStencilState;
+		std::vector<Shader> shaderStages;
+		std::vector<VertexBindingDescription> bindingDescriptrions;
+		std::vector<VertexAttributeDescription> attributeDescriptions;
+		RenderPass renderPass;
+	};
+
+	struct Pipeline : public ObjectHandle
+	{
+		enum class PipelineType
+		{
+			UNDEFINED_PIPELINE_TYPE,
+			GRAPHICS_PIPELINE,
+			COMPUTE_PIPELINE,
+			RAY_TRACING_PIPELINE
+		} type = PipelineType::UNDEFINED_PIPELINE_TYPE;
 	};
 }

@@ -10,6 +10,26 @@
 
 namespace ad_astris::vulkan
 {
+	VkFormat get_format(rhi::Format format);
+	VkSampleCountFlagBits get_sample_count(rhi::SampleCount sampleCount);
+	VkImageType get_image_type(rhi::TextureDimension dimension);
+	VmaMemoryUsage get_memory_usage(rhi::MemoryUsage memoryUsage);
+	void get_filter(rhi::Filter filter, VkSamplerCreateInfo& samplerInfo);
+	VkBorderColor get_border_color(rhi::BorderColor borderColor);
+	VkSamplerAddressMode get_address_mode(rhi::AddressMode addressMode);
+	VkBufferUsageFlags get_buffer_usage(rhi::ResourceUsage usage);
+	VkImageUsageFlags get_image_usage(rhi::ResourceUsage usage);
+	VkPrimitiveTopology get_primitive_topology(rhi::TopologyType topologyType);
+	VkPolygonMode get_polygon_mode(rhi::PolygonMode polygonMode);
+	VkCullModeFlags get_cull_mode(rhi::CullMode cullMode);
+	VkFrontFace get_front_face(rhi::FrontFace frontFace);
+	VkShaderStageFlags get_shader_stage(rhi::ShaderType shaderType);
+	VkLogicOp get_logic_op(rhi::LogicOp logicOp);
+	VkBlendFactor get_blend_factor(rhi::BlendFactor blendFactor);
+	VkBlendOp get_blend_op(rhi::BlendOp blendOp);
+	VkCompareOp get_compare_op(rhi::CompareOp compareOp);
+	VkStencilOp get_stencil_op(rhi::StencilOp stencilOp);
+	
 	class VulkanRHI : public rhi::IEngineRHI
 	{
 		public:
@@ -36,6 +56,7 @@ namespace ad_astris::vulkan
 			virtual void create_texture(rhi::Texture* texture) final override;
 			virtual void create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture) final override;
 			virtual void create_sampler(rhi::Sampler* sampler) final override;
+			virtual void create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info) final override;
 
 			// Only for tests. Will be removed in the final implementation
 			VkInstance get_instance() { return _instance; }
@@ -51,14 +72,5 @@ namespace ad_astris::vulkan
 
 			vkb::Instance create_instance();
 			void create_allocator();
-			VkFormat get_texture_format(rhi::TextureFormat format);
-			VkSampleCountFlagBits get_sample_count(rhi::SampleCount sampleCount);
-			VkImageType get_image_type(rhi::TextureDimension dimension);
-			VmaMemoryUsage get_memory_usage(rhi::MemoryUsage memoryUsage);
-			void get_filter(rhi::Filter filter, VkSamplerCreateInfo& samplerInfo);
-			VkBorderColor get_border_color(rhi::BorderColor borderColor);
-			VkSamplerAddressMode get_address_mode(rhi::AddressMode addressMode);
-			VkBufferUsageFlags get_buffer_usage(rhi::ResourceUsage usage);
-			VkImageUsageFlags get_image_usage(rhi::ResourceUsage usage);
 	};
 }
