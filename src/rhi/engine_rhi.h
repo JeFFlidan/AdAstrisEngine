@@ -12,11 +12,11 @@ namespace ad_astris::rhi
 			virtual void init(void* window) = 0;
 			virtual void cleanup() = 0;
 
-			virtual void create_buffer(Buffer* buffer, uint64_t size, void* data = nullptr) = 0;
+			virtual void create_buffer(Buffer* buffer, BufferInfo* info, uint64_t size, void* data = nullptr) = 0;
 			virtual void update_buffer_data(Buffer* buffer, uint64_t size, void* data) = 0;
-			virtual void create_texture(Texture* texture) = 0;
-			virtual void create_texture_view(TextureView* textureView, Texture* texture) = 0;
-			virtual void create_sampler(Sampler* sampler) = 0;
+			virtual void create_texture(Texture* texture, TextureInfo* info) = 0;
+			virtual void create_texture_view(TextureView* textureView, TextureViewInfo* info, Texture* texture) = 0;
+			virtual void create_sampler(Sampler* sampler, SamplerInfo* info) = 0;
 			virtual void create_graphics_pipeline(Pipeline* pipeline, GraphicsPipelineInfo* info) = 0;
 	};
 }

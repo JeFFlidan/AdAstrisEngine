@@ -227,23 +227,36 @@ namespace ad_astris
 		_graphicsQueue = queueData->queue;
 		_graphicsQueueFamily = queueData->queueFamily;
 
-		rhi::TextureInfo info(1700, 900, rhi::R8G8B8A8_UNORM, rhi::COLOR_ATTACHMENT, false, false);
-		rhi::Texture texture(info);
-		_eRhi->create_texture(&texture);
+		rhi::TextureInfo info{};
+		info.format = rhi::R8G8B8A8_UNORM;
+		info.height = 800;
+		info.width = 1700;
+		info.transferDst = true;
+		info.layersCount = 1;
+		info.mipLevels = 1;
+		info.textureUsage = rhi::COLOR_ATTACHMENT;
+		info.samplesCount = rhi::SAMPLE_COUNT_1_BIT;
+		info.textureDimension = rhi::TEXTURE2D;
+		info.memoryUsage = rhi::GPU;
+		rhi::Texture texture;
+		_eRhi->create_texture(&texture, &info);
 		if (!texture.data)
 			LOG_ERROR("ERROR")
 		if (texture.data)
 			LOG_INFO("Info {}", texture.size)
 
 		rhi::TextureViewInfo viewInfo{};
-		rhi::TextureView view(viewInfo);
-		_eRhi->create_texture_view(&view, &texture);
+		viewInfo.baseLayer = 0;
+		viewInfo.baseMipLevel = 0;
+		rhi::TextureView view;
+		_eRhi->create_texture_view(&view, &viewInfo, &texture);
 
 		rhi::SamplerInfo samplerInfo;
 		samplerInfo.filter = rhi::MAXIMUM_ANISOTROPIC;
 		samplerInfo.addressMode = rhi::CLAMP_TO_EDGE;
-		rhi::Sampler sampler(samplerInfo);
-		_eRhi->create_sampler(&sampler);
+		samplerInfo.borderColor = rhi::FLOAT_OPAQUE_WHITE;
+		rhi::Sampler sampler;
+		_eRhi->create_sampler(&sampler, &samplerInfo);
 		VkSampler* vkSampler = static_cast<VkSampler*>(sampler.handle);
 		_linearSampler = *vkSampler;
 

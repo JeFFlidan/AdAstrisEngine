@@ -26,7 +26,7 @@ void vulkan::VulkanRHI::cleanup()
 	
 }
 
-void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, uint64_t size, void* data)
+void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, uint64_t size, void* data)
 {
 	if (!buffer)
 	{
@@ -34,29 +34,29 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, uint64_t size, void* 
 		return;
 	}
 	
-	auto& info = buffer->bufferInfo;
-	VkBufferUsageFlags bufferUsage = get_buffer_usage(info.bufferUsage);
+	VkBufferUsageFlags bufferUsage = get_buffer_usage(bufInfo->bufferUsage);
 	if (!bufferUsage)
 	{
 		LOG_ERROR("Invalid buffer usage")
 		return;
 	}
 	
-	VmaMemoryUsage memoryUsage = get_memory_usage(info.memoryUsage);
+	VmaMemoryUsage memoryUsage = get_memory_usage(bufInfo->memoryUsage);
 	if (memoryUsage == VMA_MEMORY_USAGE_UNKNOWN)
 	{
 		LOG_ERROR("Invalid memory usage (buffer)")
 		return;
 	}
-	if (info.transferDst)
+	if (bufInfo->transferDst)
 		bufferUsage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-	if (info.transferSrc)
+	if (bufInfo->transferSrc)
 		bufferUsage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
 	VulkanBuffer* vulkanBuffer = new VulkanBuffer(&_allocator, size, bufferUsage, memoryUsage);
 	buffer->data = vulkanBuffer;
 	buffer->size = size;
 	buffer->type = rhi::Resource::ResourceType::BUFFER;
+	buffer->bufferInfo = *bufInfo;
 	if (data == nullptr)
 		return;
 	if (data != nullptr && memoryUsage == VMA_MEMORY_USAGE_GPU_ONLY)
@@ -90,45 +90,58 @@ void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, v
 	vulkanBuffer->copy_from(&_allocator, data, size);
 }
 
-void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
+void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo)
 {
 	if (!texture)
 	{
 		LOG_ERROR("Can't create texture if texture parameter is invalid")
 		return;
 	}
-	
-	auto& info = texture->textureInfo;
 
-	if (info.format == rhi::UNDEFINED_FORMAT)
+	if (texInfo->format == rhi::UNDEFINED_FORMAT)
 	{
 		LOG_ERROR("Can't create texture because of undefined format")
 		return;
 	}
-	if (info.textureUsage == rhi::UNDEFINED_USAGE)
+	if (texInfo->textureUsage == rhi::UNDEFINED_USAGE)
 	{
 		LOG_ERROR("Can't create texture because of undefined usage")
 		return;
 	}
+	if (texInfo->memoryUsage == rhi::UNDEFINED_MEMORY_USAGE)
+	{
+		LOG_ERROR("VulkanRHI::create_texture(): Undefined memory usage. Failed to create VkImage")
+		return;
+	}
+	if (texInfo->samplesCount == rhi::UNDEFINED_SAMPLE_COUNT)
+	{
+		LOG_ERROR("VulkanRHI::create_texture(): Undefined memory usage. Failed to create VkImage")
+		return;
+	}
+	if (texInfo->textureDimension == rhi::UNDEFINED_TEXTURE_DIMENSION)
+	{
+		LOG_ERROR("VulkanRHI::create_texture(): Undefined texture dimension. Failed to create VkImage")
+		return;
+	}
 	
-	VmaMemoryUsage memoryUsage = get_memory_usage(info.memoryUsage);
+	VmaMemoryUsage memoryUsage = get_memory_usage(texInfo->memoryUsage);
 	
 	VkImageCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	createInfo.format = get_format(info.format);
-	createInfo.arrayLayers = info.layersCount;
-	createInfo.mipLevels = info.mipLevels;
+	createInfo.format = get_format(texInfo->format);
+	createInfo.arrayLayers = texInfo->layersCount;
+	createInfo.mipLevels = texInfo->mipLevels;
 	createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	createInfo.extent = VkExtent3D{ info.width, info.height, 1 };
-	createInfo.samples = get_sample_count(info.samplesCount);
+	createInfo.extent = VkExtent3D{ texInfo->width, texInfo->height, 1 };
+	createInfo.samples = get_sample_count(texInfo->samplesCount);
 
-	VkImageUsageFlags imgUsage = get_image_usage(info.textureUsage);
-	if (info.transferSrc)
+	VkImageUsageFlags imgUsage = get_image_usage(texInfo->textureUsage);
+	if (texInfo->transferSrc)
 		imgUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-	if (info.transferDst)
+	if (texInfo->transferDst)
 		imgUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	createInfo.usage = imgUsage;
-	createInfo.imageType = get_image_type(info.textureDimension);
+	createInfo.imageType = get_image_type(texInfo->textureDimension);
 	
 	VulkanTexture* vkText = new VulkanTexture(createInfo, &_allocator, memoryUsage);
 	if (vkText->_image == VK_NULL_HANDLE)
@@ -138,9 +151,10 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 	}
 	texture->data = vkText;
 	texture->type = rhi::Resource::ResourceType::TEXTURE;
+	texture->textureInfo = *texInfo;
 }
 
-void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture)
+void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::TextureViewInfo* viewInfo, rhi::Texture* texture)
 {
 	if (!textureView || !texture)
 	{
@@ -148,7 +162,6 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	}
 	
 	rhi::TextureInfo texInfo = texture->textureInfo;
-	rhi::TextureViewInfo viewInfo = textureView->viewInfo;
 	VulkanTexture* vkTexture = static_cast<VulkanTexture*>(texture->data);
 	
 	VkFormat format = get_format(texInfo.format);
@@ -165,44 +178,68 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	createInfo.image = vkTexture->_image;
 	createInfo.format = format;
-	createInfo.subresourceRange.baseMipLevel = viewInfo.baseMipLevel;
+	createInfo.subresourceRange.baseMipLevel = viewInfo->baseMipLevel;
 	createInfo.subresourceRange.levelCount = 1;
-	createInfo.subresourceRange.baseArrayLayer = viewInfo.baseLayer;
+	createInfo.subresourceRange.baseArrayLayer = viewInfo->baseLayer;
 	createInfo.subresourceRange.layerCount = 1;
 	createInfo.subresourceRange.aspectMask = aspectFlags;
 
 	VkImageView* view = new VkImageView();
 	VK_CHECK(vkCreateImageView(_vulkanDevice.get_device(), &createInfo, nullptr, view));
 	textureView->handle = view;
+	textureView->viewInfo = *viewInfo;
 }
 
-void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler)
+void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo)
 {
 	if (!sampler)
 	{
 		LOG_ERROR("Can't create sampler if sampler parameter is invalid")
 		return;
 	}
-	rhi::SamplerInfo info = sampler->info;
+	if (sampInfo->addressMode == rhi::UNDEFINED_ADDRESS_MODE)
+	{
+		LOG_ERROR("VulkanRHI::create_sampler(): Undefined address mode. Failed to create VkSampler")
+		return;
+	}
+	if (sampInfo->filter == rhi::UNDEFINED_FILTER)
+	{
+		LOG_ERROR("VulkanRHI::create_sampler(): Undefined filter. Failed to create VkSampler")
+		return;
+	}
+	if (sampInfo->borderColor == rhi::UNDEFINED_BORDER_COLOR)
+	{
+		LOG_ERROR("VulkanRHI::create_sampler(): Undefined border color. Failed to create VkSampler")
+		return;
+	}
 	VkSamplerCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	get_filter(info.filter, createInfo);
-	createInfo.addressModeU = get_address_mode(info.addressMode);
+	get_filter(sampInfo->filter, createInfo);
+	createInfo.addressModeU = get_address_mode(sampInfo->addressMode);
 	createInfo.addressModeV = createInfo.addressModeU;
 	createInfo.addressModeW = createInfo.addressModeU;
-	createInfo.minLod = info.minLod;
-	createInfo.maxLod = info.maxLod;
+	createInfo.minLod = sampInfo->minLod;
+	createInfo.maxLod = sampInfo->maxLod;
 	if (createInfo.anisotropyEnable == VK_TRUE)
-		createInfo.maxAnisotropy = info.maxAnisotropy;
+		createInfo.maxAnisotropy = sampInfo->maxAnisotropy;
+	if (sampInfo->borderColor != rhi::UNDEFINED_BORDER_COLOR)
+		createInfo.borderColor = get_border_color(sampInfo->borderColor);
 	VkSampler* vkSampler = new VkSampler();
 	VK_CHECK(vkCreateSampler(_vulkanDevice.get_device(), &createInfo, nullptr, vkSampler));
 	sampler->handle = vkSampler;
+	sampler->sampInfo = *sampInfo;
 }
 
 void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info)
 {
 	pipeline->type = rhi::Pipeline::PipelineType::GRAPHICS_PIPELINE;
 
+	if (info->assemblyState.topologyType == rhi::UNDEFINED_TOPOLOGY_TYPE)
+	{
+		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined topology type. Failed to create VkPipeline")
+		return;
+	}
+	
 	VkPipelineInputAssemblyStateCreateInfo assemblyState{};
 	assemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	assemblyState.topology = get_primitive_topology(info->assemblyState.topologyType);
@@ -216,6 +253,22 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 	viewportState.pViewports = nullptr;
 	viewportState.viewportCount = 1;
 
+	if (info->rasterizationState.cullMode == rhi::UNDEFINED_CULL_MODE)
+	{
+		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined cull mode. Failed to create VkPipeline")
+		return;
+	}
+	if (info->rasterizationState.polygonMode == rhi::UNDEFINED_POLYGON_MODE)
+	{
+		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined polygon mode. Failed to create VkPipeline")
+		return;
+	}
+	if (info->rasterizationState.frontFace == rhi::UNDEFINED_FRONT_FACE)
+	{
+		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined front face. Failed to create VkPipeline")
+		return;
+	}
+
 	VkPipelineRasterizationStateCreateInfo rasterizationState{};
 	rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizationState.depthClampEnable = VK_FALSE;
@@ -228,6 +281,12 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 	rasterizationState.depthBiasConstantFactor = 0.0f;
 	rasterizationState.depthBiasClamp = 0.0f;
 	rasterizationState.depthBiasSlopeFactor = 0.0f;
+
+	if (info->multisampleState.sampleCount == rhi::UNDEFINED_SAMPLE_COUNT)
+	{
+		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined sample count. Failed to create VkPipeline")
+		return;
+	}
 
 	VkPipelineMultisampleStateCreateInfo multisampleState{};
 	multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -251,6 +310,11 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 	std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	for (auto& desc : info->attributeDescriptions)
 	{
+		if (desc.format == rhi::UNDEFINED_FORMAT)
+		{
+			LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined format. Failed to create VkPipeline")
+			return;
+		}
 		VkVertexInputAttributeDescription description;
 		description.binding = desc.binding;
 		description.format = get_format(desc.format);
@@ -281,9 +345,39 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 	for (auto& attach : info->colorBlendState.colorBlendAttachments)
 	{
 		VkPipelineColorBlendAttachmentState attachmentState{};
-		attachmentState.colorWriteMask = attach.colorWriteMask;
+		attachmentState.colorWriteMask = (VkColorComponentFlags)attach.colorWriteMask;
 		if (attach.isBlendEnabled)
 		{
+			if (attach.srcColorBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
+			{
+				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined src color blend factor. Failed to create VkPipeline")
+				return;
+			}
+			if (attach.dstColorBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
+			{
+				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined dst color blend factor. Failed to create VkPipeline")
+				return;
+			}
+			if (attach.srcAlphaBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
+			{
+				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined src alpha blend factor. Failed to create VkPipeline")
+				return;
+			}
+			if (attach.dstAlphaBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
+			{
+				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined dst alpha blend factor. Failed to create VkPipeline")
+				return;
+			}
+			if (attach.colorBlendOp == rhi::UNDEFINED_BLEND_OP)
+			{
+				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined color blend op. Failed to create VkPipeline")
+				return;
+			}
+			if (attach.alphaBlendOp == rhi::UNDEFINED_BLEND_OP)
+			{
+				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined alpha blend op. Failed to create VkPipeline")
+				return;
+			}
 			attachmentState.blendEnable = VK_TRUE;
 			attachmentState.srcColorBlendFactor = get_blend_factor(attach.srcColorBlendFactor);
 			attachmentState.dstColorBlendFactor = get_blend_factor(attach.dstColorBlendFactor);
@@ -318,6 +412,11 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 		pipelineStages.push_back(shaderStage);
 	}
 
+	if (info->depthStencilState.compareOp == rhi::UNDEFINED_COMPARE_OP)
+	{
+		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined compare op, depth. Failed to create VkPipeline")
+		return;
+	}
 	VkPipelineDepthStencilStateCreateInfo depthStencilState{};
 	depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencilState.depthTestEnable = info->depthStencilState.isDepthTestEnabled ? VK_TRUE : VK_FALSE;
@@ -325,30 +424,46 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 	depthStencilState.depthCompareOp = get_compare_op(info->depthStencilState.compareOp);
 	depthStencilState.minDepthBounds = 0.0f;
 	depthStencilState.maxDepthBounds = 1.0f;
-	VkStencilOpState back, front;
+	depthStencilState.stencilTestEnable = VK_FALSE;
+	std::vector<rhi::StencilOpState> stencilOps = { info->depthStencilState.backStencil, info->depthStencilState.frontStencil };
 	if (info->depthStencilState.isStencilTestEnabled)
 	{
 		depthStencilState.stencilTestEnable = VK_TRUE;
 
-		rhi::StencilOpState& backState = info->depthStencilState.backStencil;
-		back.failOp = get_stencil_op(backState.failOp);
-		back.passOp = get_stencil_op(backState.passOp);
-		back.depthFailOp = get_stencil_op(backState.depthFailOp);
-		back.compareOp = get_compare_op(backState.compareOp);
-		back.compareMask = backState.compareMask;
-		back.writeMask = backState.writeMask;
-		back.reference = backState.reference;
-
-		rhi::StencilOpState frontState = info->depthStencilState.frontStencil;
-		front.failOp = get_stencil_op(frontState.failOp);
-		front.passOp = get_stencil_op(frontState.passOp);
-		front.depthFailOp = get_stencil_op(frontState.depthFailOp);
-		front.compareOp = get_compare_op(frontState.compareOp);
-		front.compareMask = frontState.compareMask;
-		front.writeMask = frontState.writeMask;
-		front.reference = frontState.reference;
+		std::vector<VkStencilOpState> vkStencilStates;
+		for (auto& stencilState : stencilOps)
+		{
+			if (stencilState.compareOp == rhi::UNDEFINED_COMPARE_OP)
+			{
+				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined compare op, stencil. Failed to create VkPipeline")
+				return;
+			}
+			if (stencilState.failOp == rhi::UNDEFINED_STENCIL_OP)
+			{
+				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined fail op stencil. Failed to create VkPipeline")
+				return;
+			}
+			if (stencilState.passOp == rhi::UNDEFINED_STENCIL_OP)
+			{
+				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined pass op stencil. Failed to create VkPipeline")
+				return;
+			}
+			if (stencilState.depthFailOp == rhi::UNDEFINED_STENCIL_OP)
+			{
+				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined depth fail op stencil. Failed to create VkPipeline")
+				return;
+			}
+			VkStencilOpState stencilOp{};
+			stencilOp.failOp = get_stencil_op(stencilState.failOp);
+			stencilOp.passOp = get_stencil_op(stencilState.passOp);
+			stencilOp.depthFailOp = get_stencil_op(stencilState.depthFailOp);
+			stencilOp.compareOp = get_compare_op(stencilState.compareOp);
+			stencilOp.compareMask = stencilState.compareMask;
+			stencilOp.writeMask = stencilState.writeMask;
+			stencilOp.reference = stencilState.reference;
+			vkStencilStates.push_back(stencilOp);
+		}
 	}
-	depthStencilState.stencilTestEnable = VK_FALSE;
 
 	VkPipelineLayout pipelineLayout = shaderStages.get_pipeline_layout(_vulkanDevice.get_device());
 

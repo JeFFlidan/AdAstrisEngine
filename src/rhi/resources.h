@@ -6,6 +6,7 @@ namespace ad_astris::rhi
 {
 	enum LogicOp
 	{
+		UNDEFINED_LOGIC_OP,
 		LOGIC_OP_CLEAR,
 		LOGIC_OP_AND,
 		LOGIC_OP_AND_REVERSE,
@@ -130,6 +131,7 @@ namespace ad_astris::rhi
 
 	enum AddressMode
 	{
+		UNDEFINED_ADDRESS_MODE,
 		REPEAT,
 		MIRRORED_REPEAT,
 		CLAMP_TO_EDGE,
@@ -140,6 +142,7 @@ namespace ad_astris::rhi
 	// Base on D3D12
 	enum Filter
 	{
+		UNDEFINED_FILTER,
 		MIN_MAG_MIP_NEAREST,
 		MIN_MAG_NEAREST_MIP_LINEAR,
 		MIN_NEAREST_MAG_LINEAR_MIP_NEAREST,
@@ -180,6 +183,7 @@ namespace ad_astris::rhi
 
 	enum SampleCount
 	{
+		UNDEFINED_SAMPLE_COUNT,
 		SAMPLE_COUNT_1_BIT,
 		SAMPLE_COUNT_2_BIT,
 		SAMPLE_COUNT_4_BIT,
@@ -191,6 +195,7 @@ namespace ad_astris::rhi
 
 	enum TextureDimension
 	{
+		UNDEFINED_TEXTURE_DIMENSION,
 		TEXTURE1D,
 		TEXTURE2D,
 		TEXTURE3D
@@ -198,6 +203,7 @@ namespace ad_astris::rhi
 
 	enum BorderColor
 	{
+		UNDEFINED_BORDER_COLOR,
 		FLOAT_TRANSPARENT_BLACK,
 		INT_TRANSPARENT_BLACK,
 		FLOAT_OPAQUE_BLACK,
@@ -231,30 +237,21 @@ namespace ad_astris::rhi
 	
 	struct TextureInfo
 	{
-		TextureInfo() = default;
-		TextureInfo(uint32_t width, uint32_t height, Format format, ResourceUsage usage, bool transSrc, bool transDst)
-			: width(width), height(height), format(format), textureUsage(usage), transferSrc(transSrc), transferDst(transDst) {}
-		
 		uint32_t width{ 0 };
 		uint32_t height{ 0 };
 		uint32_t mipLevels{ 1 };
 		uint32_t layersCount{ 1 };
 		Format format{ UNDEFINED_FORMAT };
 		ResourceUsage textureUsage{ UNDEFINED_USAGE };
-		MemoryUsage memoryUsage{ GPU };
-		SampleCount samplesCount{ SAMPLE_COUNT_1_BIT };
-		TextureDimension textureDimension{ TEXTURE2D };
+		MemoryUsage memoryUsage{ UNDEFINED_MEMORY_USAGE };
+		SampleCount samplesCount{ UNDEFINED_SAMPLE_COUNT };
+		TextureDimension textureDimension{ UNDEFINED_TEXTURE_DIMENSION };
 		bool transferSrc{ false };
 		bool transferDst{ false };
 	};
-	
 
 	struct BufferInfo
 	{
-		BufferInfo() = default;
-		BufferInfo(ResourceUsage bufferUsage, MemoryUsage memoryUsage, bool transSrc, bool transDst)
-			: bufferUsage(bufferUsage), memoryUsage(memoryUsage), transferSrc(transSrc), transferDst(transDst) {}
-		
 		ResourceUsage bufferUsage{ UNDEFINED_USAGE };
 		MemoryUsage memoryUsage{ UNDEFINED_MEMORY_USAGE };
 		bool transferSrc{ false };
@@ -281,15 +278,11 @@ namespace ad_astris::rhi
 
 	struct Buffer : public Resource
 	{
-		Buffer() = default;
-		Buffer(BufferInfo info) : bufferInfo(info) {}
 		BufferInfo bufferInfo;
 	};
 
 	struct Texture : public Resource
 	{
-		Texture() = default;
-		Texture(TextureInfo info) : textureInfo(info) {}
 		TextureInfo textureInfo;
 	};
 
@@ -301,9 +294,9 @@ namespace ad_astris::rhi
 	
 	struct SamplerInfo
 	{
-		Filter filter{ MIN_MAG_MIP_LINEAR };
-		AddressMode addressMode{ REPEAT };
-		BorderColor borderColor{ FLOAT_OPAQUE_WHITE };
+		Filter filter{ UNDEFINED_FILTER};
+		AddressMode addressMode{ UNDEFINED_ADDRESS_MODE };
+		BorderColor borderColor{ UNDEFINED_BORDER_COLOR };
 		float minLod{ 0.0f };
 		float maxLod{ 1.0f };
 		float maxAnisotropy{ 1.0f };
@@ -311,19 +304,17 @@ namespace ad_astris::rhi
 
 	struct Sampler : public ObjectHandle
 	{
-		Sampler(SamplerInfo info) : info(info) {}
-		SamplerInfo info;
+		SamplerInfo sampInfo;
 	};
 
 	struct TextureViewInfo
 	{
-		uint8_t baseMipLevel{ 0 };
-		uint8_t baseLayer{ 0 };
+		uint8_t baseMipLevel;
+		uint8_t baseLayer;
 	};
 
 	struct TextureView : public ObjectHandle
 	{
-		TextureView(TextureViewInfo info) : viewInfo(info) {}
 		TextureViewInfo viewInfo;
 	};
 
@@ -341,6 +332,7 @@ namespace ad_astris::rhi
 	
 	enum TopologyType
 	{
+		UNDEFINED_TOPOLOGY_TYPE,
 		TOPOLOGY_POINT,
 		TOPOLOGY_LINE,
 		TOPOLOGY_TRIANGLE,
@@ -349,8 +341,7 @@ namespace ad_astris::rhi
 
 	struct AssemblyState
 	{
-		
-		TopologyType topologyType{ TOPOLOGY_TRIANGLE };
+		TopologyType topologyType{ UNDEFINED_TOPOLOGY_TYPE };
 	};
 
 	/**
@@ -358,6 +349,7 @@ namespace ad_astris::rhi
 	 */
 	enum PolygonMode
 	{
+		UNDEFINED_POLYGON_MODE,
 		POLYGON_MODE_FILL,
 		POLYGON_MODE_LINE,
 		POLYGON_MODE_POINT
@@ -368,6 +360,7 @@ namespace ad_astris::rhi
 	 */
 	enum CullMode
 	{
+		UNDEFINED_CULL_MODE,
 		CULL_MODE_NONE,
 		CULL_MODE_FRONT,
 		CULL_MODE_BACK,
@@ -376,46 +369,43 @@ namespace ad_astris::rhi
 
 	enum FrontFace
 	{
+		UNDEFINED_FRONT_FACE,
 		FRONT_FACE_CLOCKWISE,
 		FRONT_FACE_COUNTER_CLOCKWISE
 	};
 
 	struct RasterizationState
 	{
-		PolygonMode polygonMode{ POLYGON_MODE_FILL };
-		CullMode cullMode{ CULL_MODE_BACK };
-		FrontFace frontFace{ FRONT_FACE_COUNTER_CLOCKWISE };
-		bool isBiasEnabled{ false };
+		PolygonMode polygonMode{ UNDEFINED_POLYGON_MODE };
+		CullMode cullMode{ UNDEFINED_CULL_MODE };
+		FrontFace frontFace{ UNDEFINED_FRONT_FACE };
+		bool isBiasEnabled;
 		float lineWidth{ 1.0f };
 	};
 
 	struct VertexBindingDescription
 	{
-		VertexBindingDescription() = default;
-		VertexBindingDescription(uint32_t binding, uint32_t stride) : binding(binding), stride(stride) {}
-		uint32_t binding{ 0 };
-		uint32_t stride{ 0 };
+		uint32_t binding;
+		uint32_t stride;
 	};
 
 	struct VertexAttributeDescription
 	{
-		VertexAttributeDescription() = default;
-		VertexAttributeDescription(uint32_t binding, uint32_t location, uint32_t offset, Format format) :
-			binding(binding), location(location), offset(offset), format(format) {}
-		uint32_t binding{ 0 };
-		uint32_t location{ 0 };
-		uint32_t offset{ 0 };
+		uint32_t binding;
+		uint32_t location;
+		uint32_t offset;
 		Format format{ UNDEFINED_FORMAT };
 	};
 
 	struct MultisampleState
 	{
-		SampleCount sampleCount{ SAMPLE_COUNT_1_BIT };
-		bool isEnabled{ false };
+		SampleCount sampleCount{ UNDEFINED_SAMPLE_COUNT };
+		bool isEnabled;
 	};
 
 	enum BlendFactor
 	{
+		UNDEFINED_BLEND_FACTOR,
 		BLEND_FACTOR_ZERO,
 		BLEND_FACTOR_ONE,
 		BLEND_FACTOR_SRC_COLOR,
@@ -439,6 +429,7 @@ namespace ad_astris::rhi
 
 	enum BlendOp
 	{
+		UNDEFINED_BLEND_OP,
 		BLEND_OP_ADD,
 		BLEND_OP_SUBTRACT,
 		BLEND_OP_REVERSE_SUBTRACT,
@@ -448,25 +439,26 @@ namespace ad_astris::rhi
 
 	struct ColorBlendAttachmentState
 	{
-		bool isBlendEnabled{ false };
-		BlendFactor srcColorBlendFactor;
-		BlendFactor dstColorBlendFactor;
-		BlendOp colorBlendOp;
-		BlendFactor srcAlphaBlendFactor;
-		BlendFactor dstAlphaBlendFactor;
-		BlendOp alphaBlendOp;
+		bool isBlendEnabled;
+		BlendFactor srcColorBlendFactor{ UNDEFINED_BLEND_FACTOR };
+		BlendFactor dstColorBlendFactor{ UNDEFINED_BLEND_FACTOR};
+		BlendOp colorBlendOp{ UNDEFINED_BLEND_OP };
+		BlendFactor srcAlphaBlendFactor{ UNDEFINED_BLEND_FACTOR };
+		BlendFactor dstAlphaBlendFactor{ UNDEFINED_BLEND_FACTOR };
+		BlendOp alphaBlendOp{ UNDEFINED_BLEND_OP };
 		uint64_t colorWriteMask{ 0xF };
 	};
 
 	struct ColorBlendState
 	{
-		bool isLogicOpEnabled{ false };
-		LogicOp logicOp{ LOGIC_OP_COPY };
+		bool isLogicOpEnabled;
+		LogicOp logicOp{ UNDEFINED_LOGIC_OP };
 		std::vector<ColorBlendAttachmentState> colorBlendAttachments;
 	};
 
 	enum CompareOp
 	{
+		UNDEFINED_COMPARE_OP,
 		COMPARE_OP_NEVER,
 		COMPARE_OP_LESS,
 		COMPARE_OP_EQUAL,
@@ -479,6 +471,7 @@ namespace ad_astris::rhi
 
 	enum StencilOp
 	{
+		UNDEFINED_STENCIL_OP,
 		STENCIL_OP_KEEP,
 		STENCIL_OP_ZERO,
 		STENCIL_OP_REPLACE,
@@ -491,21 +484,21 @@ namespace ad_astris::rhi
 
 	struct StencilOpState
 	{
-		StencilOp failOp;
-		StencilOp passOp;
-		StencilOp depthFailOp;
-		CompareOp compareOp;
+		StencilOp failOp{ UNDEFINED_STENCIL_OP };
+		StencilOp passOp{ UNDEFINED_STENCIL_OP };
+		StencilOp depthFailOp{ UNDEFINED_STENCIL_OP };
+		CompareOp compareOp{ UNDEFINED_COMPARE_OP };
 		uint32_t compareMask;
 		uint32_t writeMask;
 		uint32_t reference;
 	};
-
+	
 	struct DepthStencilState
 	{
-		bool isDepthTestEnabled{ true };
-		bool isDepthWriteEnabled{ true };
-		CompareOp compareOp{ COMPARE_OP_LESS_OR_EQUAL };
-		bool isStencilTestEnabled{ false };
+		bool isDepthTestEnabled;
+		bool isDepthWriteEnabled;
+		CompareOp compareOp{ UNDEFINED_COMPARE_OP };
+		bool isStencilTestEnabled;
 		StencilOpState frontStencil;
 		StencilOpState backStencil;
 	};

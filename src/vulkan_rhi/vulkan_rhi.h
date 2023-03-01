@@ -46,16 +46,22 @@ namespace ad_astris::vulkan
 			 @param size is a buffer size. Should be > 0
 			 @param data is a data for buffer. May be nullptr
 			 */
-			virtual void create_buffer(rhi::Buffer* buffer, uint64_t size, void* data = nullptr) final override;
+			virtual void create_buffer(
+				rhi::Buffer* buffer,
+				rhi::BufferInfo* bufInfo,
+				uint64_t size, void* data = nullptr) final override;
 			/** Update buffer data using CPU data (not host buffer)
 			 @param buffer should be valid pointer to the rhi::Buffer obj.
 			 @param size is a buffer size. Should be > 0
 			 @param data is a data for buffer. Should be a pointer to valid data
 			 */
 			virtual void update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data) final override;
-			virtual void create_texture(rhi::Texture* texture) final override;
-			virtual void create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture) final override;
-			virtual void create_sampler(rhi::Sampler* sampler) final override;
+			virtual void create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo) final override;
+			virtual void create_texture_view(
+				rhi::TextureView* textureView,
+				rhi::TextureViewInfo* viewInfo,
+				rhi::Texture* texture) final override;
+			virtual void create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo) final override;
 			virtual void create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info) final override;
 
 			// Only for tests. Will be removed in the final implementation
