@@ -29,6 +29,10 @@ namespace ad_astris::vulkan
 	VkBlendOp get_blend_op(rhi::BlendOp blendOp);
 	VkCompareOp get_compare_op(rhi::CompareOp compareOp);
 	VkStencilOp get_stencil_op(rhi::StencilOp stencilOp);
+	VkAttachmentLoadOp get_attach_load_op(rhi::LoadOp loadOp);
+	VkAttachmentStoreOp get_attach_store_op(rhi::StoreOp storeOp);
+	VkImageLayout get_image_layout(rhi::ResourceLayout resourceLayout);
+	VkPipelineBindPoint get_pipeline_bind_point(rhi::PipelineType pipelineType);
 	
 	class VulkanRHI : public rhi::IEngineRHI
 	{
@@ -63,6 +67,7 @@ namespace ad_astris::vulkan
 				rhi::Texture* texture) final override;
 			virtual void create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo) final override;
 			virtual void create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info) final override;
+			virtual void create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo) final override;
 
 			// Only for tests. Will be removed in the final implementation
 			VkInstance get_instance() { return _instance; }

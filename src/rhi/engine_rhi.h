@@ -18,5 +18,6 @@ namespace ad_astris::rhi
 			virtual void create_texture_view(TextureView* textureView, TextureViewInfo* info, Texture* texture) = 0;
 			virtual void create_sampler(Sampler* sampler, SamplerInfo* info) = 0;
 			virtual void create_graphics_pipeline(Pipeline* pipeline, GraphicsPipelineInfo* info) = 0;
+			virtual void create_render_pass(RenderPass* renderPass, RenderPassInfo* passInfo) = 0;
 	};
 }

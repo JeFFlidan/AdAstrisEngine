@@ -25,6 +25,18 @@ namespace ad_astris::rhi
 		LOGIC_OP_SET,
 	};
 
+	enum ResourceLayout
+	{
+		RESOURCE_LAYOUT_UNDEFINED = 0,
+		RESOURCE_LAYOUT_GENERAL = 1 << 0,
+		RESOURCE_LAYOUT_SHADER_READ_ONLY = 1 << 1,
+		RESOURCE_LAYOUT_TRANSFER_SRC = 1 << 2,
+		RESOURCE_LAYOUT_TRANSFER_DST = 1 << 3,
+
+		RESOURCE_LAYOUT_COLOR_ATTACHMENT = 1 << 4,
+		RESOURCE_LAYOUT_DEPTH_STENCIL = 1 << 5,
+		RESOURCE_LAYOUT_DEPTH_STENCIL_READ_ONLY = 1 << 6,
+	};
 	
 	enum ResourceUsage
 	{
@@ -316,6 +328,7 @@ namespace ad_astris::rhi
 	struct TextureView : public ObjectHandle
 	{
 		TextureViewInfo viewInfo;
+		Texture* texture{ nullptr };
 	};
 
 	struct ShaderInfo
@@ -328,6 +341,55 @@ namespace ad_astris::rhi
 	struct Shader : public ObjectHandle
 	{
 		ShaderType type;
+	};
+
+	enum LoadOp
+	{
+		LOAD_OP_LOAD,
+		LOAD_OP_CLEAR,
+		LOAD_OP_DONT_CARE,
+	};
+
+	enum StoreOp
+	{
+		STORE_OP_STORE,
+		STORE_OP_DONT_CARE,
+	};
+
+	enum RenderTargetType
+	{
+		RENDER_TARGET_DEPTH,
+		RENDER_TARGET_COLOR,
+	};
+
+	struct RenderTarget
+	{
+		TextureView* target;
+		RenderTargetType type;
+		LoadOp loadOp;
+		StoreOp storeOp;
+		ResourceLayout initialLayout;
+		ResourceLayout renderPassLayout;
+		ResourceLayout finalLayout;
+	};
+
+	enum PipelineType
+	{
+		UNDEFINED_PIPELINE_TYPE,
+		GRAPHICS_PIPELINE,
+		COMPUTE_PIPELINE,
+		RAY_TRACING_PIPELINE
+	};
+
+	struct RenderPassInfo
+	{
+		std::vector<RenderTarget> renderTargets;
+		PipelineType pipelineType{ UNDEFINED_PIPELINE_TYPE };
+	};
+	
+	struct RenderPass : public ObjectHandle
+	{
+		
 	};
 	
 	enum TopologyType
@@ -503,10 +565,6 @@ namespace ad_astris::rhi
 		StencilOpState backStencil;
 	};
 	
-	struct RenderPass : public ObjectHandle
-	{
-		
-	};
 
 	struct GraphicsPipelineInfo
 	{
@@ -523,12 +581,6 @@ namespace ad_astris::rhi
 
 	struct Pipeline : public ObjectHandle
 	{
-		enum class PipelineType
-		{
-			UNDEFINED_PIPELINE_TYPE,
-			GRAPHICS_PIPELINE,
-			COMPUTE_PIPELINE,
-			RAY_TRACING_PIPELINE
-		} type = PipelineType::UNDEFINED_PIPELINE_TYPE;
+		PipelineType type = PipelineType::UNDEFINED_PIPELINE_TYPE;
 	};
 }

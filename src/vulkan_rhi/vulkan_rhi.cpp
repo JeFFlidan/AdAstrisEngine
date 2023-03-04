@@ -8,6 +8,7 @@
 #include "profiler/logger.h"
 #include <VkBootstrap.h>
 
+#include "imstb_rectpack.h"
 #include "vulkan_texture.h"
 
 using namespace ad_astris;
@@ -188,6 +189,7 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	VK_CHECK(vkCreateImageView(_vulkanDevice.get_device(), &createInfo, nullptr, view));
 	textureView->handle = view;
 	textureView->viewInfo = *viewInfo;
+	textureView->texture = texture;
 }
 
 void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo)
@@ -232,7 +234,7 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 
 void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info)
 {
-	pipeline->type = rhi::Pipeline::PipelineType::GRAPHICS_PIPELINE;
+	pipeline->type = rhi::PipelineType::GRAPHICS_PIPELINE;
 
 	if (info->assemblyState.topologyType == rhi::UNDEFINED_TOPOLOGY_TYPE)
 	{
@@ -488,6 +490,107 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 	VK_CHECK(vkCreateGraphicsPipelines(_vulkanDevice.get_device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, vkPipeline));
 
 	pipeline->handle = vkPipeline;
+}
+
+void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
+{
+	std::vector<VkAttachmentDescription> attachDescriptions;
+	std::vector<VkAttachmentReference> colorAttachRefs;
+	VkAttachmentReference depthAttachRef;
+	bool oneDepth = false;
+
+	if (passInfo->renderTargets.empty())
+	{
+		LOG_ERROR("VulkanRHI::create_render_pass(): Failed to create VkRenderPass because there are no render targets")
+		return;
+	}
+	
+	for (auto& target: passInfo->renderTargets)
+	{
+		rhi::TextureInfo texInfo = target.target->texture->textureInfo;
+		VkAttachmentDescription attachInfo{};
+		attachInfo.format = get_format(texInfo.format);
+		attachInfo.samples = get_sample_count(texInfo.samplesCount);
+		attachInfo.loadOp = get_attach_load_op(target.loadOp);
+		attachInfo.storeOp = get_attach_store_op(target.storeOp);
+		attachInfo.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachInfo.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachInfo.initialLayout = get_image_layout(target.initialLayout);
+		attachInfo.finalLayout = get_image_layout(target.finalLayout);
+		attachDescriptions.push_back(attachInfo);
+
+		VkAttachmentReference attachRef{};
+		attachRef.attachment = attachDescriptions.size() - 1;
+		attachRef.layout = get_image_layout(target.renderPassLayout);
+
+		if (target.type == rhi::RENDER_TARGET_DEPTH && !oneDepth)
+		{
+			depthAttachRef = attachRef;
+			oneDepth = true;
+		}
+		else if (target.type == rhi::RENDER_TARGET_DEPTH && oneDepth)
+		{
+			LOG_WARNING("VulkanRHI::create_render_pass(): There are more than one depth attachment. Old one will be overwritten")
+			depthAttachRef = attachRef;
+		}
+		else
+		{
+			colorAttachRefs.push_back(attachRef);
+		}
+	}
+
+	VkSubpassDescription subpass{};
+	if (passInfo->pipelineType == rhi::COMPUTE_PIPELINE || passInfo->pipelineType == rhi::UNDEFINED_PIPELINE_TYPE)
+	{
+		LOG_ERROR("VulkanRHI::create_render_pass(): Invalid pipeline type")
+		return;
+	}
+
+	subpass.pipelineBindPoint = get_pipeline_bind_point(passInfo->pipelineType);
+	if (!colorAttachRefs.empty())
+	{
+		subpass.colorAttachmentCount = colorAttachRefs.size();
+		subpass.pColorAttachments = colorAttachRefs.data();
+	}
+	if (oneDepth)
+		subpass.pDepthStencilAttachment = &depthAttachRef;
+
+	std::vector<VkSubpassDependency> dependencies;
+	if (!colorAttachRefs.empty())
+	{
+		VkSubpassDependency colorDependency{};
+		colorDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		colorDependency.dstSubpass = 0;
+		colorDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		colorDependency.srcAccessMask = 0;
+		colorDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		colorDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		dependencies.push_back(colorDependency);
+	}
+	if (oneDepth)
+	{
+		VkSubpassDependency depthDependency{};
+		depthDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		depthDependency.dstSubpass = 0;
+		depthDependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		depthDependency.srcAccessMask = 0;
+		depthDependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		depthDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		dependencies.push_back(depthDependency);
+	}
+
+	VkRenderPassCreateInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.attachmentCount = attachDescriptions.size();
+	renderPassInfo.pAttachments = attachDescriptions.data();
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = dependencies.size();
+	renderPassInfo.pDependencies = dependencies.data();
+
+	VkRenderPass* vkRenderPass = new VkRenderPass();
+	VK_CHECK(vkCreateRenderPass(_vulkanDevice.get_device(), &renderPassInfo, nullptr, vkRenderPass));
+	renderPass->handle = vkRenderPass;
 }
 
 // private methods
@@ -1127,5 +1230,63 @@ VkStencilOp vulkan::get_stencil_op(rhi::StencilOp stencilOp)
 			return VK_STENCIL_OP_INCREMENT_AND_WRAP;
 		case rhi::STENCIL_OP_DECREMENT_AND_WRAP:
 			return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+	}
+}
+
+VkAttachmentLoadOp vulkan::get_attach_load_op(rhi::LoadOp loadOp)
+{
+	switch (loadOp)
+	{
+		case rhi::LOAD_OP_LOAD:
+			return VK_ATTACHMENT_LOAD_OP_LOAD;
+		case rhi::LOAD_OP_CLEAR:
+			return VK_ATTACHMENT_LOAD_OP_CLEAR;
+		case rhi::LOAD_OP_DONT_CARE:
+			return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	}
+}
+
+VkAttachmentStoreOp vulkan::get_attach_store_op(rhi::StoreOp storeOp)
+{
+	switch (storeOp)
+	{
+		case rhi::STORE_OP_STORE:
+			return VK_ATTACHMENT_STORE_OP_STORE;
+		case rhi::STORE_OP_DONT_CARE:
+			return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	}
+}
+
+VkImageLayout vulkan::get_image_layout(rhi::ResourceLayout resourceLayout)
+{
+	switch (resourceLayout)
+	{
+		case rhi::RESOURCE_LAYOUT_UNDEFINED:
+			return VK_IMAGE_LAYOUT_UNDEFINED;
+		case rhi::RESOURCE_LAYOUT_GENERAL:
+			return VK_IMAGE_LAYOUT_GENERAL;
+		case rhi::RESOURCE_LAYOUT_SHADER_READ_ONLY:
+			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		case rhi::RESOURCE_LAYOUT_TRANSFER_SRC:
+			return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		case rhi::RESOURCE_LAYOUT_TRANSFER_DST:
+			return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		case rhi::RESOURCE_LAYOUT_COLOR_ATTACHMENT:
+			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		case rhi::RESOURCE_LAYOUT_DEPTH_STENCIL:
+			return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		case rhi::RESOURCE_LAYOUT_DEPTH_STENCIL_READ_ONLY:
+			return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+	}
+}
+
+VkPipelineBindPoint vulkan::get_pipeline_bind_point(rhi::PipelineType pipelineType)
+{
+	switch (pipelineType)
+	{
+		case rhi::GRAPHICS_PIPELINE:
+			return VK_PIPELINE_BIND_POINT_GRAPHICS;
+		case rhi::RAY_TRACING_PIPELINE:
+			return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
 	}
 }
