@@ -10,15 +10,15 @@
 
 using namespace ad_astris;
 
-bool vulkan::VulkanShader::create_shader_module(rhi::ShaderInfo shaderInfo)
+bool vulkan::VulkanShader::create_shader_module(rhi::ShaderInfo* shaderInfo)
 {
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.pNext = nullptr;
 
-	_code.resize(shaderInfo.size / sizeof(uint32_t));
-	memcpy(_code.data(), shaderInfo.data, shaderInfo.size);
-	createInfo.codeSize = shaderInfo.size;
+	_code.resize(shaderInfo->size / sizeof(uint32_t));
+	memcpy(_code.data(), shaderInfo->data, shaderInfo->size);
+	createInfo.codeSize = shaderInfo->size;
 	createInfo.pCode = _code.data();
 
 	if (vkCreateShaderModule(_device, &createInfo, nullptr, &_shaderModule) != VK_SUCCESS)

@@ -28,7 +28,7 @@ namespace ad_astris::vulkan
 					vkDestroyShaderModule(_device, _shaderModule, nullptr);
 			}
 		
-			bool create_shader_module(rhi::ShaderInfo shaderInfo);
+			bool create_shader_module(rhi::ShaderInfo* shaderInfo);
 				
 			void delete_shader_module();
 

@@ -232,6 +232,24 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 	sampler->sampInfo = *sampInfo;
 }
 
+void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shaderInfo)
+{
+	if (!shader)
+	{
+		LOG_ERROR("VulkanRHI::create_shader(): Invalid pointer to rhi::Shader")
+		return;
+	}
+	if (!shaderInfo)
+	{
+		LOG_ERROR("VulkanRHI::create_shader(): Invalid pointer to rhi::Shader")
+		return;
+	}
+	VulkanShader* vulkanShader = new VulkanShader(_vulkanDevice.get_device());
+	vulkanShader->create_shader_module(shaderInfo);
+	shader->type = shaderInfo->shaderType;
+	shader->handle = vulkanShader;
+}
+
 void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info)
 {
 	pipeline->type = rhi::PipelineType::GRAPHICS_PIPELINE;
@@ -403,6 +421,11 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 	std::vector<VkPipelineShaderStageCreateInfo> pipelineStages; 
 	for (auto& shader : info->shaderStages)
 	{
+		if (shader.type == rhi::UNDEFINED_SHADER_TYPE)
+		{
+			LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Shader type is undefined")
+			return;
+		}
 		VulkanShader* vulkanShader = static_cast<VulkanShader*>(shader.handle);
 		shaderStages.add_stage(vulkanShader, (VkShaderStageFlagBits)get_shader_stage(shader.type));
 		VkPipelineShaderStageCreateInfo shaderStage{};
@@ -486,11 +509,54 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 	pipelineInfo.pDepthStencilState = &depthStencilState;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	VkPipeline* vkPipeline = new VkPipeline();
-	VK_CHECK(vkCreateGraphicsPipelines(_vulkanDevice.get_device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, vkPipeline));
+	VkPipeline vkPipeline;
+	VK_CHECK(vkCreateGraphicsPipelines(_vulkanDevice.get_device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkPipeline));
 
-	pipeline->handle = vkPipeline;
+	VulkanPipeline* vulkanPipeline = new VulkanPipeline();
+	vulkanPipeline->pipeline = vkPipeline;
+	vulkanPipeline->pipelineLayout = pipelineLayout;
+	pipeline->handle = vulkanPipeline;
 }
+
+void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info)
+{
+	if (!pipeline)
+	{
+		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid rhi::Pipeline pointer")
+		return;
+	}
+	if (!info)
+	{
+		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid ComputePipelieInfo pointer")
+		return;
+	}
+
+	VkShaderStageFlagBits stageBit = (VkShaderStageFlagBits)get_shader_stage(info->shaderStage.type);
+	VulkanShader* vkShader = static_cast<VulkanShader*>(info->shaderStage.handle); 
+	VulkanShaderStages vkStage;
+	vkStage.add_stage(vkShader, stageBit);
+	VkPipelineLayout layout = vkStage.get_pipeline_layout(_vulkanDevice.get_device());
+
+	VkPipelineShaderStageCreateInfo shaderStage{};
+	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStage.module = vkShader->get_shader_module();
+	shaderStage.stage = stageBit;
+	shaderStage.pName = "main";
+	
+	VkComputePipelineCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	createInfo.layout = layout;
+	createInfo.stage = shaderStage;
+
+	VkPipeline vkPipeline;
+	VK_CHECK(vkCreateComputePipelines(_vulkanDevice.get_device(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &vkPipeline));
+	VulkanPipeline* vulkanPipeline = new VulkanPipeline();
+	vulkanPipeline->pipeline = vkPipeline;
+	vulkanPipeline->pipelineLayout = layout;
+	pipeline->handle = vulkanPipeline;
+	pipeline->type = rhi::COMPUTE_PIPELINE;
+}
+
 
 void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
 {
@@ -501,7 +567,17 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 
 	if (passInfo->renderTargets.empty())
 	{
-		LOG_ERROR("VulkanRHI::create_render_pass(): Failed to create VkRenderPass because there are no render targets")
+		LOG_ERROR("VulkanRHI::create_render_pass(): There are no render targets")
+		return;
+	}
+	if (!renderPass)
+	{
+		LOG_ERROR("VulkanRHI::create_render_pass(): Invalid pointer to rhi::RenderPass")
+		return;
+	}
+	if (!passInfo)
+	{
+		LOG_ERROR("VulkanRHI::create_render_pass(): Invalid pointer to rhi::RenderPassInfo")
 		return;
 	}
 	

@@ -340,7 +340,7 @@ namespace ad_astris::rhi
 
 	struct Shader : public ObjectHandle
 	{
-		ShaderType type;
+		ShaderType type{ UNDEFINED_SHADER_TYPE };
 	};
 
 	enum LoadOp
@@ -565,7 +565,6 @@ namespace ad_astris::rhi
 		StencilOpState backStencil;
 	};
 	
-
 	struct GraphicsPipelineInfo
 	{
 		AssemblyState assemblyState;
@@ -577,6 +576,11 @@ namespace ad_astris::rhi
 		std::vector<VertexBindingDescription> bindingDescriptrions;
 		std::vector<VertexAttributeDescription> attributeDescriptions;
 		RenderPass renderPass;
+	};
+
+	struct ComputePipelineInfo
+	{
+		Shader shaderStage;
 	};
 
 	struct Pipeline : public ObjectHandle

@@ -1024,7 +1024,19 @@ namespace ad_astris
 		rhi::ShaderInfo depthReduceInfo;
 		io::URI depthReduceURI("shaders/compute/reduce_depth.comp");
 		_shaderCompiler->compile_into_spv(depthReduceURI, &depthReduceInfo);
-		depthReduceShader.load_shader_module(depthReduceInfo);
+
+		rhi::Shader shader;
+		_eRhi->create_shader(&shader, &depthReduceInfo);
+		rhi::ComputePipelineInfo pipeInfo;
+		pipeInfo.shaderStage = shader;
+		rhi::Pipeline pipeline;
+		_eRhi->create_compute_pipeline(&pipeline, &pipeInfo);
+
+		vulkan::VulkanPipeline* vkPipeline = static_cast<vulkan::VulkanPipeline*>(pipeline.handle);
+		_depthReducePipeline = vkPipeline->pipeline;
+		_depthReduceLayout = vkPipeline->pipelineLayout;
+		
+		//depthReduceShader.load_shader_module(depthReduceInfo);
 		LOG_INFO("Compiled shader {} into spv", depthReduceURI.c_str())
 		
 		Shader drawCullShader(_device);
@@ -1034,7 +1046,7 @@ namespace ad_astris
 		drawCullShader.load_shader_module(drawCullInfo);
 		LOG_INFO("Compiled shader {} into spv", drawCullURI.c_str())
 		
-		setup_compute_pipeline(&depthReduceShader, _depthReducePipeline, _depthReduceLayout);
+		//setup_compute_pipeline(&depthReduceShader, _depthReducePipeline, _depthReduceLayout);
 		setup_compute_pipeline(&drawCullShader, _cullingPipeline, _cullintPipelineLayout);
 
 		_mainDeletionQueue.push_function([&](){
@@ -1045,7 +1057,7 @@ namespace ad_astris
 			vkDestroyPipelineLayout(_device, _cullintPipelineLayout, nullptr);
 		});
 
-		depthReduceShader.delete_shader_module();
+		//depthReduceShader.delete_shader_module();
 		drawCullShader.delete_shader_module();
 	}
 
