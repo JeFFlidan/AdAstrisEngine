@@ -250,6 +250,22 @@ namespace ad_astris
 		viewInfo.baseMipLevel = 0;
 		rhi::TextureView view;
 		_eRhi->create_texture_view(&view, &viewInfo, &texture);
+		
+		rhi::RenderTarget target1;
+		target1.type = rhi::RENDER_TARGET_COLOR;
+		target1.target = &view;
+		target1.initialLayout = rhi::RESOURCE_LAYOUT_UNDEFINED;
+		target1.renderPassLayout = rhi::RESOURCE_LAYOUT_COLOR_ATTACHMENT;
+		target1.finalLayout = rhi::RESOURCE_LAYOUT_COLOR_ATTACHMENT;
+		target1.loadOp = rhi::LOAD_OP_CLEAR;
+		target1.storeOp = rhi::STORE_OP_STORE;
+
+		rhi::RenderPassInfo passInfo;
+		passInfo.renderTargets.push_back(target1);
+		passInfo.pipelineType = rhi::GRAPHICS_PIPELINE;
+
+		rhi::RenderPass renderPass;
+		_eRhi->create_render_pass(&renderPass, &passInfo);
 
 		rhi::SamplerInfo samplerInfo;
 		samplerInfo.filter = rhi::MAXIMUM_ANISOTROPIC;

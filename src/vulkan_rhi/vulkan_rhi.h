@@ -8,6 +8,8 @@
 #include "vk_mem_alloc.h"
 #include <VkBootstrap.h>
 
+#include <vector>
+
 namespace ad_astris::vulkan
 {
 	VkFormat get_format(rhi::Format format);
@@ -33,6 +35,12 @@ namespace ad_astris::vulkan
 	VkAttachmentStoreOp get_attach_store_op(rhi::StoreOp storeOp);
 	VkImageLayout get_image_layout(rhi::ResourceLayout resourceLayout);
 	VkPipelineBindPoint get_pipeline_bind_point(rhi::PipelineType pipelineType);
+
+	struct VulkanRenderPass
+	{
+		VkRenderPass renderPass;
+		VkFramebuffer framebuffer;
+	};
 	
 	class VulkanRHI : public rhi::IEngineRHI
 	{
@@ -83,5 +91,6 @@ namespace ad_astris::vulkan
 
 			vkb::Instance create_instance();
 			void create_allocator();
+			VkFramebuffer create_framebuffer(VkRenderPass renderPass, std::vector<rhi::RenderTarget>& renderTargets);
 	};
 }

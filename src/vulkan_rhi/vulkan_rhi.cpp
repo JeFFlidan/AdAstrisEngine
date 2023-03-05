@@ -588,9 +588,13 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 	renderPassInfo.dependencyCount = dependencies.size();
 	renderPassInfo.pDependencies = dependencies.data();
 
-	VkRenderPass* vkRenderPass = new VkRenderPass();
-	VK_CHECK(vkCreateRenderPass(_vulkanDevice.get_device(), &renderPassInfo, nullptr, vkRenderPass));
-	renderPass->handle = vkRenderPass;
+	VkRenderPass vkRenderPass;
+	VK_CHECK(vkCreateRenderPass(_vulkanDevice.get_device(), &renderPassInfo, nullptr, &vkRenderPass));
+	VkFramebuffer framebuffer = create_framebuffer(vkRenderPass, passInfo->renderTargets);
+	VulkanRenderPass* vkPass = new VulkanRenderPass();
+	vkPass->renderPass = vkRenderPass;
+	vkPass->framebuffer = framebuffer;
+	renderPass->handle = vkPass;
 }
 
 // private methods
@@ -619,6 +623,29 @@ void vulkan::VulkanRHI::create_allocator()
 	allocatorInfo.instance = _instance;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
 	LOG_INFO("End creating allocator")
+}
+
+VkFramebuffer vulkan::VulkanRHI::create_framebuffer(VkRenderPass renderPass, std::vector<rhi::RenderTarget>& renderTargets)
+{
+	std::vector<VkImageView> attachViews;
+	for (auto& target : renderTargets)
+	{
+		VkImageView view = *static_cast<VkImageView*>(target.target->handle);
+		attachViews.push_back(view);
+	}
+	
+	VkFramebufferCreateInfo framebufferInfo{};
+	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	framebufferInfo.layers = 1;
+	framebufferInfo.width = renderTargets[0].target->texture->textureInfo.width;
+	framebufferInfo.height = renderTargets[0].target->texture->textureInfo.height;
+	framebufferInfo.renderPass = renderPass;
+	framebufferInfo.pAttachments = attachViews.data();
+	framebufferInfo.attachmentCount = attachViews.size();
+
+	VkFramebuffer framebuffer;
+	VK_CHECK(vkCreateFramebuffer(_vulkanDevice.get_device(), &framebufferInfo, nullptr, &framebuffer));
+	return framebuffer;
 }
 
 VkFormat vulkan::get_format(rhi::Format format)
