@@ -39,11 +39,10 @@ namespace ad_astris
 		io.DisplaySize.x = static_cast<float>(engine->_windowExtent.width);
 		io.DisplaySize.y = static_cast<float>(engine->_windowExtent.height);
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		io.IniFilename = nullptr;
 
 		ImGui::LoadIniSettingsFromDisk((engine->_projectPath + "/configs/imgui.ini").c_str());
-		
 		ImGui_ImplSDL2_InitForVulkan(engine->_sdlWindow.get_window());
 
 		ImGui_ImplVulkan_InitInfo init_info{};
@@ -55,7 +54,7 @@ namespace ad_astris
 		init_info.MinImageCount = 3;
 		init_info.ImageCount = 3;
 		init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-
+		
 		ImGui_ImplVulkan_Init(&init_info, engine->_renderPass);
 
 		engine->immediate_submit([&](VkCommandBuffer cmd) {
@@ -173,6 +172,7 @@ namespace ad_astris
 		_projSettingsWindow.draw_window(&engine->_settings);
 		
 		ImGui::EndFrame();
+		ImGui::UpdatePlatformWindows();
 	}
 
 	void UserInterface::render_ui()

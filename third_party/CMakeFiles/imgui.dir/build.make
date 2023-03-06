@@ -113,41 +113,26 @@ third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.s"
 	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_draw.cpp -o CMakeFiles\imgui.dir\imgui\imgui_draw.cpp.s
 
-third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj: third_party/CMakeFiles/imgui.dir/flags.make
-third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj: third_party/CMakeFiles/imgui.dir/includes_CXX.rsp
-third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj: third_party/imgui/imgui_widgets.cpp
-third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj -MF CMakeFiles\imgui.dir\imgui\imgui_widgets.cpp.obj.d -o CMakeFiles\imgui.dir\imgui\imgui_widgets.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_widgets.cpp
+third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj: third_party/CMakeFiles/imgui.dir/flags.make
+third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj: third_party/CMakeFiles/imgui.dir/includes_CXX.rsp
+third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj: third_party/imgui/imgui_impl_sdl2.cpp
+third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj -MF CMakeFiles\imgui.dir\imgui\imgui_impl_sdl2.cpp.obj.d -o CMakeFiles\imgui.dir\imgui\imgui_impl_sdl2.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_impl_sdl2.cpp
 
-third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_widgets.cpp > CMakeFiles\imgui.dir\imgui\imgui_widgets.cpp.i
+third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.i"
+	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_impl_sdl2.cpp > CMakeFiles\imgui.dir\imgui\imgui_impl_sdl2.cpp.i
 
-third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_widgets.cpp -o CMakeFiles\imgui.dir\imgui\imgui_widgets.cpp.s
-
-third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj: third_party/CMakeFiles/imgui.dir/flags.make
-third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj: third_party/CMakeFiles/imgui.dir/includes_CXX.rsp
-third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj: third_party/imgui/imgui_tables.cpp
-third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj -MF CMakeFiles\imgui.dir\imgui\imgui_tables.cpp.obj.d -o CMakeFiles\imgui.dir\imgui\imgui_tables.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_tables.cpp
-
-third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_tables.cpp > CMakeFiles\imgui.dir\imgui\imgui_tables.cpp.i
-
-third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_tables.cpp -o CMakeFiles\imgui.dir\imgui\imgui_tables.cpp.s
+third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.s"
+	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_impl_sdl2.cpp -o CMakeFiles\imgui.dir\imgui\imgui_impl_sdl2.cpp.s
 
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj: third_party/CMakeFiles/imgui.dir/flags.make
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj: third_party/CMakeFiles/imgui.dir/includes_CXX.rsp
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj: third_party/imgui/imgui_impl_vulkan.cpp
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj"
 	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj -MF CMakeFiles\imgui.dir\imgui\imgui_impl_vulkan.cpp.obj.d -o CMakeFiles\imgui.dir\imgui\imgui_impl_vulkan.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_impl_vulkan.cpp
 
 third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.i: cmake_force
@@ -158,30 +143,45 @@ third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.s"
 	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_impl_vulkan.cpp -o CMakeFiles\imgui.dir\imgui\imgui_impl_vulkan.cpp.s
 
-third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.obj: third_party/CMakeFiles/imgui.dir/flags.make
-third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.obj: third_party/CMakeFiles/imgui.dir/includes_CXX.rsp
-third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.obj: third_party/imgui/imgui_impl_sdl.cpp
-third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.obj: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.obj -MF CMakeFiles\imgui.dir\imgui\imgui_impl_sdl.cpp.obj.d -o CMakeFiles\imgui.dir\imgui\imgui_impl_sdl.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_impl_sdl.cpp
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj: third_party/CMakeFiles/imgui.dir/flags.make
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj: third_party/CMakeFiles/imgui.dir/includes_CXX.rsp
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj: third_party/imgui/imgui_tables.cpp
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj -MF CMakeFiles\imgui.dir\imgui\imgui_tables.cpp.obj.d -o CMakeFiles\imgui.dir\imgui\imgui_tables.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_tables.cpp
 
-third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_impl_sdl.cpp > CMakeFiles\imgui.dir\imgui\imgui_impl_sdl.cpp.i
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i"
+	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_tables.cpp > CMakeFiles\imgui.dir\imgui\imgui_tables.cpp.i
 
-third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_impl_sdl.cpp -o CMakeFiles\imgui.dir\imgui\imgui_impl_sdl.cpp.s
+third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s"
+	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_tables.cpp -o CMakeFiles\imgui.dir\imgui\imgui_tables.cpp.s
+
+third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj: third_party/CMakeFiles/imgui.dir/flags.make
+third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj: third_party/CMakeFiles/imgui.dir/includes_CXX.rsp
+third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj: third_party/imgui/imgui_widgets.cpp
+third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj: third_party/CMakeFiles/imgui.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj -MF CMakeFiles\imgui.dir\imgui\imgui_widgets.cpp.obj.d -o CMakeFiles\imgui.dir\imgui\imgui_widgets.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_widgets.cpp
+
+third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.i"
+	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_widgets.cpp > CMakeFiles\imgui.dir\imgui\imgui_widgets.cpp.i
+
+third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.s"
+	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\imgui\imgui_widgets.cpp -o CMakeFiles\imgui.dir\imgui\imgui_widgets.cpp.s
 
 # Object files for target imgui
 imgui_OBJECTS = \
 "CMakeFiles/imgui.dir/imgui/imgui.cpp.obj" \
 "CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.obj" \
 "CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.obj" \
-"CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj" \
-"CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj" \
+"CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj" \
 "CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj" \
-"CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.obj"
+"CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj" \
+"CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj"
 
 # External object files for target imgui
 imgui_EXTERNAL_OBJECTS =
@@ -189,10 +189,10 @@ imgui_EXTERNAL_OBJECTS =
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.obj
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.obj
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.obj
-third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj
-third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj
+third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj
-third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.obj
+third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj
+third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/build.make
 third_party/libimgui.a: third_party/CMakeFiles/imgui.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX static library libimgui.a"

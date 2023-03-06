@@ -1,4 +1,5 @@
 ﻿#include "sdl_window.h"
+#include "profiler/logger.h"
 #include "SDL.h"
 #include <imgui_impl_sdl2.h>
 

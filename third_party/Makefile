@@ -319,29 +319,29 @@ imgui/imgui_draw.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.s
 .PHONY : imgui/imgui_draw.cpp.s
 
-imgui/imgui_impl_sdl.obj: imgui/imgui_impl_sdl.cpp.obj
-.PHONY : imgui/imgui_impl_sdl.obj
+imgui/imgui_impl_sdl2.obj: imgui/imgui_impl_sdl2.cpp.obj
+.PHONY : imgui/imgui_impl_sdl2.obj
 
 # target to build an object file
-imgui/imgui_impl_sdl.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.obj
-.PHONY : imgui/imgui_impl_sdl.cpp.obj
+imgui/imgui_impl_sdl2.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj
+.PHONY : imgui/imgui_impl_sdl2.cpp.obj
 
-imgui/imgui_impl_sdl.i: imgui/imgui_impl_sdl.cpp.i
-.PHONY : imgui/imgui_impl_sdl.i
+imgui/imgui_impl_sdl2.i: imgui/imgui_impl_sdl2.cpp.i
+.PHONY : imgui/imgui_impl_sdl2.i
 
 # target to preprocess a source file
-imgui/imgui_impl_sdl.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.i
-.PHONY : imgui/imgui_impl_sdl.cpp.i
+imgui/imgui_impl_sdl2.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.i
+.PHONY : imgui/imgui_impl_sdl2.cpp.i
 
-imgui/imgui_impl_sdl.s: imgui/imgui_impl_sdl.cpp.s
-.PHONY : imgui/imgui_impl_sdl.s
+imgui/imgui_impl_sdl2.s: imgui/imgui_impl_sdl2.cpp.s
+.PHONY : imgui/imgui_impl_sdl2.s
 
 # target to generate assembly for a file
-imgui/imgui_impl_sdl.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl.cpp.s
-.PHONY : imgui/imgui_impl_sdl.cpp.s
+imgui/imgui_impl_sdl2.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.s
+.PHONY : imgui/imgui_impl_sdl2.cpp.s
 
 imgui/imgui_impl_vulkan.obj: imgui/imgui_impl_vulkan.cpp.obj
 .PHONY : imgui/imgui_impl_vulkan.obj
@@ -540,9 +540,9 @@ help:
 	@echo ... imgui/imgui_draw.obj
 	@echo ... imgui/imgui_draw.i
 	@echo ... imgui/imgui_draw.s
-	@echo ... imgui/imgui_impl_sdl.obj
-	@echo ... imgui/imgui_impl_sdl.i
-	@echo ... imgui/imgui_impl_sdl.s
+	@echo ... imgui/imgui_impl_sdl2.obj
+	@echo ... imgui/imgui_impl_sdl2.i
+	@echo ... imgui/imgui_impl_sdl2.s
 	@echo ... imgui/imgui_impl_vulkan.obj
 	@echo ... imgui/imgui_impl_vulkan.i
 	@echo ... imgui/imgui_impl_vulkan.s

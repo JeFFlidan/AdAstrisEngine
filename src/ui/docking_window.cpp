@@ -5,12 +5,14 @@ using namespace ad_astris::ui;
 
 void DockingWindow::draw_window(void* data)
 {
-	ImGui::SetNextWindowSize(_windowSize);
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowSize(viewport->WorkSize);
+	ImGui::SetNextWindowPos(viewport->WorkPos);
+	ImGui::SetNextWindowViewport(viewport->ID);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
 	windowFlags |= ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 	windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoCollapse;
 	

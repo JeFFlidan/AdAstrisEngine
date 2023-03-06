@@ -188,14 +188,14 @@ void main()
 		uint objectID = compactInstanceBuffer.Instances[gID].objectID;
 		bool visible = false;
 		int cullCheck = cullData.AABBcheck;
-		if (cullCheck == 0)
+		if (cullCheck != 0)
 		{
-			visible = isVisible(objectID);	
+			visible = isVisibleAABB(objectID);	
 		}
-//		else
-//		{
-//			visible = isVisible(objectID);
-//		}
+		else
+		{
+			visible = isVisible(objectID);
+		}
 
 		if (visible)
 		{

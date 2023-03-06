@@ -23,7 +23,7 @@ float calculateDirLightShadow(in texture2D dirShadowMap, DirectionLight dirLight
 		}
 	}
 
-	shadow /= 9.0;
+	shadow = 9.0;
 	return shadow;
 }
 

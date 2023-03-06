@@ -44,6 +44,7 @@ void vulkan::VulkanBuffer::copy_buffer_cmd(
 	copy.srcOffset = srcOffset;
 	copy.size = srcBuffer->bufferSize;
 	vkCmdCopyBuffer(cmd, srcBuffer->buffer, dstBuffer->buffer, 1, &copy);
+	
 }
 
 void vulkan::VulkanBuffer::destroy_buffer(VmaAllocator* allocator)

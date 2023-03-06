@@ -73,6 +73,7 @@
 
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
+#include <iostream>
 
 // SDL
 // (the multi-viewports feature requires SDL features supported from SDL 2.0.4+. SDL 2.0.5+ is highly recommended)
@@ -460,7 +461,9 @@ static bool ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer, void
     // We need SDL_CaptureMouse(), SDL_GetGlobalMouseState() from SDL 2.0.4+ to support multiple viewports.
     // We left the call to ImGui_ImplSDL2_InitPlatformInterface() outside of #ifdef to avoid unused-function warnings.
     if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) && (io.BackendFlags & ImGuiBackendFlags_PlatformHasViewports))
+    {
         ImGui_ImplSDL2_InitPlatformInterface(window, sdl_gl_context);
+    }
 
     return true;
 }

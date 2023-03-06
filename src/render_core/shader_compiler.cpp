@@ -79,7 +79,7 @@ rcore::ShaderCompiler::ShaderCompiler(io::FileSystem* fileSystem) : _fileSystem(
 	_options = shaderc_compile_options_initialize();
 
 	shaderc_compile_options_set_target_env(_options, shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
-	shaderc_compile_options_set_target_spirv(_options, shaderc_spirv_version_1_6);
+	shaderc_compile_options_set_target_spirv(_options, shaderc_spirv_version_1_4);
 	shaderc_compile_options_set_source_language(_options, shaderc_source_language_glsl);
 	shaderc_compile_options_set_include_callbacks(_options, include_resolver, include_releaser, _fileSystem);
 }

@@ -1521,7 +1521,7 @@ static void ImGui_ImplVulkan_CreateWindow(ImGuiViewport* viewport)
 {
     ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
     ImGui_ImplVulkan_ViewportData* vd = IM_NEW(ImGui_ImplVulkan_ViewportData)();
-    viewport->RendererUserData = vd;
+    viewport->RendererUserData = vd; 
     ImGui_ImplVulkanH_Window* wd = &vd->Window;
     ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
 

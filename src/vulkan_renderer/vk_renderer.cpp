@@ -1175,12 +1175,23 @@ namespace ad_astris
 			vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, _afterShadowsBarriers.size(), _afterShadowsBarriers.data());
 			_afterShadowsBarriers.clear();
 		}
-
+		
 		draw_deferred_pass(cmd);
 		draw_tranparency_pass(cmd);
 		draw_compositing_pass(cmd);
 		draw_taa_pass(cmd);
 		draw_final_quad(cmd, swapchainImageIndex);
+
+		const VkPhysicalDeviceMemoryProperties* memProp = nullptr;
+		vmaGetMemoryProperties(_allocator, &memProp);
+		
+		VmaBudget budget[VK_MAX_MEMORY_HEAPS];
+		vmaGetHeapBudgets(_allocator, budget);
+		for (int i = 0; i != memProp->memoryHeapCount; ++i)
+		{
+			uint64_t size = static_cast<uint64_t>(budget[i].statistics.allocationBytes);
+			LOG_INFO("Allocated bytes: {}", size / (1024 * 1024))
+		}
 
 		depth_reduce(cmd);
 
