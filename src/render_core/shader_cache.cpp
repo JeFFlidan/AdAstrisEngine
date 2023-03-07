@@ -39,7 +39,7 @@ void rcore::ShaderCache::add_to_cache(rhi::ShaderInfo* shaderInfo, void* dataFro
 	rhi::ShaderInfo newInfo;
 	newInfo.shaderType = shaderInfo->shaderType;
 	newInfo.size = shaderInfo->size;
-	newInfo.data = new uint32_t[shaderInfo->size / 4];
+	newInfo.data = new uint8_t[shaderInfo->size];
 	memcpy(newInfo.data, shaderInfo->data, newInfo.size);
 	_cache[key] = newInfo;
 }

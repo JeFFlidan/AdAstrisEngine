@@ -12,14 +12,14 @@ using namespace ad_astris;
 
 bool vulkan::VulkanShader::create_shader_module(rhi::ShaderInfo* shaderInfo)
 {
+	_code = shaderInfo->data;
+	_size = shaderInfo->size;
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.pNext = nullptr;
-
-	_code.resize(shaderInfo->size / sizeof(uint32_t));
-	memcpy(_code.data(), shaderInfo->data, shaderInfo->size);
+	
 	createInfo.codeSize = shaderInfo->size;
-	createInfo.pCode = _code.data();
+	createInfo.pCode = reinterpret_cast<uint32_t*>(_code);
 
 	if (vkCreateShaderModule(_device, &createInfo, nullptr, &_shaderModule) != VK_SUCCESS)
 	{
@@ -45,10 +45,10 @@ VkPipelineLayout vulkan::VulkanShaderStages::get_pipeline_layout(VkDevice device
 	for (auto& stage : stages)
 	{
 		auto code = stage.shader->get_code();
+		auto size = stage.shader->get_size();
 
 		SpvReflectShaderModule shaderModule;
-		uint32_t size = code.size() * sizeof(uint32_t);
-		SpvReflectResult res = spvReflectCreateShaderModule(size, code.data(), &shaderModule);
+		SpvReflectResult res = spvReflectCreateShaderModule(size, code, &shaderModule);
 		assert(res == SPV_REFLECT_RESULT_SUCCESS);
 
 		uint32_t descriptorSetAmount;

@@ -18,11 +18,13 @@ namespace ad_astris
 			void delete_shader_module();
 
 			VkShaderModule get_shader_module() const { return shaderModule; }
-			std::vector<uint32_t> get_code() const { return code; }
+			uint8_t* get_code() const { return code; }
+			uint64_t get_size() const { return size; }
 		private:
 			VkDevice device;
 			VkShaderModule shaderModule;
-			std::vector<uint32_t> code;
+			uint8_t* code;
+			uint64_t size;
 	};
 	
 	struct ShaderEffect

@@ -33,12 +33,14 @@ namespace ad_astris::vulkan
 			void delete_shader_module();
 
 			VkShaderModule get_shader_module() const { return _shaderModule; }
-			std::vector<uint32_t> get_code() const { return _code; }
+			uint8_t* get_code() const { return _code; }
+			uint64_t get_size() const { return _size; }
 		
 		private:
 			VkDevice _device;
 			VkShaderModule _shaderModule{ VK_NULL_HANDLE };
-			std::vector<uint32_t> _code;
+			uint8_t* _code;
+			uint64_t _size;
 	};
 	
 	struct VulkanShaderStages

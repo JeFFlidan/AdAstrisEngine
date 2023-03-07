@@ -31,6 +31,8 @@ namespace ad_astris::vulkan
 			VkPhysicalDevice get_physical_device() { return _physicalDevice; }
 			VkDevice get_device() { return _device; }
 
+			uint32_t get_max_multiview_view_count() { return _maxMultiviewView; }
+
 			QueueData* get_graphics_queue() { return _graphicsQueue; }
 			QueueData* get_present_queue() { return _presentQueue; }
 			QueueData* get_compute_queue() { return _computeQueue; }
@@ -49,6 +51,7 @@ namespace ad_astris::vulkan
 			std::vector<std::string> _optionalExtensions{
 				"VK_EXT_mesh_shader" };
 			OptionalExtensions _isOptionalExtensionsEnabled{};
+			uint32_t _maxMultiviewView;
 
 			QueueData* _graphicsQueue{ nullptr };
 			QueueData* _presentQueue{ nullptr };

@@ -2,6 +2,8 @@
 #include "profiler/logger.h"
 #include <string>
 
+#include "../../third_party/vulkan_base/vulkan/vulkan_core.h"
+
 using namespace ad_astris;
 
 shaderc_include_result* rcore::include_resolver(
@@ -79,7 +81,7 @@ rcore::ShaderCompiler::ShaderCompiler(io::FileSystem* fileSystem) : _fileSystem(
 	_options = shaderc_compile_options_initialize();
 
 	shaderc_compile_options_set_target_env(_options, shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
-	shaderc_compile_options_set_target_spirv(_options, shaderc_spirv_version_1_4);
+	shaderc_compile_options_set_target_spirv(_options, shaderc_spirv_version_1_6);
 	shaderc_compile_options_set_source_language(_options, shaderc_source_language_glsl);
 	shaderc_compile_options_set_include_callbacks(_options, include_resolver, include_releaser, _fileSystem);
 }
@@ -142,12 +144,13 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 	}
 
 	info->size = shaderc_result_get_length(finalResult);
-	const uint32_t* code = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(finalResult));
-	info->data = const_cast<uint32_t*>(code);
-
-	_shaderCache.add_to_cache(info, data, count);
-	_fileSystem->unmap_from_system(data);
+	const uint8_t* code = reinterpret_cast<const uint8_t*>(shaderc_result_get_bytes(finalResult));
+	info->data = const_cast<uint8_t*>(code);
 	
+	_shaderCache.add_to_cache(info, data, count);
+	_shaderCache.check_in_cache(info, data, count);
+	
+	_fileSystem->unmap_from_system(data);
 	shaderc_result_release(finalResult);
 }
 

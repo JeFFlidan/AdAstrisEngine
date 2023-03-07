@@ -4,6 +4,11 @@
 
 namespace ad_astris::rhi
 {
+	enum ResourceFlags
+	{
+		CUBE_TEXTURE = 1 << 0,
+	};
+	
 	enum LogicOp
 	{
 		UNDEFINED_LOGIC_OP,
@@ -258,6 +263,7 @@ namespace ad_astris::rhi
 		MemoryUsage memoryUsage{ UNDEFINED_MEMORY_USAGE };
 		SampleCount samplesCount{ UNDEFINED_SAMPLE_COUNT };
 		TextureDimension textureDimension{ UNDEFINED_TEXTURE_DIMENSION };
+		ResourceFlags resourceFlags;	// not necessary
 		bool transferSrc{ false };
 		bool transferDst{ false };
 	};
@@ -334,7 +340,7 @@ namespace ad_astris::rhi
 	struct ShaderInfo
 	{
 		ShaderType shaderType{ UNDEFINED_SHADER_TYPE };
-		uint32_t* data{ nullptr };		// Pointer to SPIRV or DXIL data (depends on chosen API)
+		uint8_t* data{ nullptr };		// Pointer to SPIRV or DXIL data (depends on chosen API)
 		uint64_t size{ 0 };
 	};
 
@@ -381,10 +387,17 @@ namespace ad_astris::rhi
 		RAY_TRACING_PIPELINE
 	};
 
+	struct MultiviewInfo
+	{
+		bool isEnabled{ false }; // false is default
+		uint32_t viewCount{ 0 };
+	};
+
 	struct RenderPassInfo
 	{
 		std::vector<RenderTarget> renderTargets;
 		PipelineType pipelineType{ UNDEFINED_PIPELINE_TYPE };
+		MultiviewInfo multiviewInfo;	// not necessary
 	};
 	
 	struct RenderPass : public ObjectHandle

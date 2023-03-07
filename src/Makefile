@@ -753,6 +753,30 @@ vulkan_rhi/vulkan_buffer.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_buffer.cpp.s
 .PHONY : vulkan_rhi/vulkan_buffer.cpp.s
 
+vulkan_rhi/vulkan_common.obj: vulkan_rhi/vulkan_common.cpp.obj
+.PHONY : vulkan_rhi/vulkan_common.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_common.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_common.cpp.obj
+.PHONY : vulkan_rhi/vulkan_common.cpp.obj
+
+vulkan_rhi/vulkan_common.i: vulkan_rhi/vulkan_common.cpp.i
+.PHONY : vulkan_rhi/vulkan_common.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_common.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_common.cpp.i
+.PHONY : vulkan_rhi/vulkan_common.cpp.i
+
+vulkan_rhi/vulkan_common.s: vulkan_rhi/vulkan_common.cpp.s
+.PHONY : vulkan_rhi/vulkan_common.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_common.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_common.cpp.s
+.PHONY : vulkan_rhi/vulkan_common.cpp.s
+
 vulkan_rhi/vulkan_device.obj: vulkan_rhi/vulkan_device.cpp.obj
 .PHONY : vulkan_rhi/vulkan_device.obj
 
@@ -937,6 +961,9 @@ help:
 	@echo ... vulkan_rhi/vulkan_buffer.obj
 	@echo ... vulkan_rhi/vulkan_buffer.i
 	@echo ... vulkan_rhi/vulkan_buffer.s
+	@echo ... vulkan_rhi/vulkan_common.obj
+	@echo ... vulkan_rhi/vulkan_common.i
+	@echo ... vulkan_rhi/vulkan_common.s
 	@echo ... vulkan_rhi/vulkan_device.obj
 	@echo ... vulkan_rhi/vulkan_device.i
 	@echo ... vulkan_rhi/vulkan_device.s

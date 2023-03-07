@@ -7,6 +7,8 @@
 
 namespace ad_astris::rcore
 {
+	const uint32_t magicNumber = 0x07230203;
+	
 	shaderc_include_result* include_resolver(
 		void* userData,
 		const char* requested_source,

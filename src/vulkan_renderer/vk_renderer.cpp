@@ -229,15 +229,16 @@ namespace ad_astris
 
 		rhi::TextureInfo info{};
 		info.format = rhi::R8G8B8A8_UNORM;
-		info.height = 800;
-		info.width = 1700;
+		info.height = 2048;
+		info.width = 2048;
 		info.transferDst = true;
-		info.layersCount = 1;
+		info.layersCount = 6;
 		info.mipLevels = 1;
 		info.textureUsage = rhi::COLOR_ATTACHMENT;
 		info.samplesCount = rhi::SAMPLE_COUNT_1_BIT;
 		info.textureDimension = rhi::TEXTURE2D;
 		info.memoryUsage = rhi::GPU;
+		info.resourceFlags = rhi::CUBE_TEXTURE;
 		rhi::Texture texture;
 		_eRhi->create_texture(&texture, &info);
 		if (!texture.data)
@@ -260,15 +261,20 @@ namespace ad_astris
 		target1.loadOp = rhi::LOAD_OP_CLEAR;
 		target1.storeOp = rhi::STORE_OP_STORE;
 
+		rhi::MultiviewInfo multiviewInfo;
+		multiviewInfo.isEnabled = true;
+		multiviewInfo.viewCount = 6;
+
 		rhi::RenderPassInfo passInfo;
 		passInfo.renderTargets.push_back(target1);
 		passInfo.pipelineType = rhi::GRAPHICS_PIPELINE;
+		passInfo.multiviewInfo = multiviewInfo;
 
 		rhi::RenderPass renderPass;
 		_eRhi->create_render_pass(&renderPass, &passInfo);
 
 		rhi::SamplerInfo samplerInfo;
-		samplerInfo.filter = rhi::MAXIMUM_ANISOTROPIC;
+		samplerInfo.filter = rhi::ANISOTROPIC;
 		samplerInfo.addressMode = rhi::CLAMP_TO_EDGE;
 		samplerInfo.borderColor = rhi::FLOAT_OPAQUE_WHITE;
 		rhi::Sampler sampler;
@@ -837,7 +843,7 @@ namespace ad_astris
 				VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 				VK_IMAGE_ASPECT_DEPTH_BIT);
 
-			const uint32_t viewMask = 0b00111111;
+			const uint32_t viewMask = 0b111111;
 			const uint32_t correlationMask = 0b00111111;
 
 			VkRenderPassMultiviewCreateInfoKHR renderPassMultiviewInfo{};
@@ -1031,13 +1037,13 @@ namespace ad_astris
 		pipeInfo.shaderStage = shader;
 		rhi::Pipeline pipeline;
 		_eRhi->create_compute_pipeline(&pipeline, &pipeInfo);
+		LOG_INFO("Compiled shader {} into spv", depthReduceURI.c_str())
 
 		vulkan::VulkanPipeline* vkPipeline = static_cast<vulkan::VulkanPipeline*>(pipeline.handle);
 		_depthReducePipeline = vkPipeline->pipeline;
 		_depthReduceLayout = vkPipeline->pipelineLayout;
 		
 		//depthReduceShader.load_shader_module(depthReduceInfo);
-		LOG_INFO("Compiled shader {} into spv", depthReduceURI.c_str())
 		
 		Shader drawCullShader(_device);
 		rhi::ShaderInfo drawCullInfo;
@@ -1045,7 +1051,6 @@ namespace ad_astris
 		_shaderCompiler->compile_into_spv(drawCullURI, &drawCullInfo);
 		drawCullShader.load_shader_module(drawCullInfo);
 		LOG_INFO("Compiled shader {} into spv", drawCullURI.c_str())
-		
 		//setup_compute_pipeline(&depthReduceShader, _depthReducePipeline, _depthReduceLayout);
 		setup_compute_pipeline(&drawCullShader, _cullingPipeline, _cullintPipelineLayout);
 

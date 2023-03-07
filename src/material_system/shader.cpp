@@ -18,39 +18,20 @@ namespace ad_astris
 {
 	bool Shader::load_shader_module(rhi::ShaderInfo shaderInfo)
 	{
-		// std::ifstream file(filePath, std::ios::ate | std::ios::binary);
-		//
-		// if (!file.is_open())
-		// {
-		// 	LOG_ERROR("Failed to open file {}", filePath);
-		// 	return false;
-		// }
-		//
-		// size_t fileSize = static_cast<size_t>(file.tellg());
-		//
-		// code.resize(fileSize / sizeof(uint32_t));
-		//
-		// file.seekg(0);
-		//
-		// file.read(reinterpret_cast<char*>(code.data()), fileSize);
-		//
-		// file.close();
-
+		code = shaderInfo.data;
+		size = shaderInfo.size;
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		createInfo.pNext = nullptr;
-
-		code.resize(shaderInfo.size / sizeof(uint32_t));
-		memcpy(code.data(), shaderInfo.data, shaderInfo.size);
+		
 		createInfo.codeSize = shaderInfo.size;
-		createInfo.pCode = code.data();
-
+		createInfo.pCode = reinterpret_cast<uint32_t*>(code);
 		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
 		{
 			LOG_ERROR("Failed to create shader module")
 			return false;
 		}
-
+		
 		return true;
 	}
 
@@ -83,10 +64,10 @@ namespace ad_astris
 		for (auto& stage : stages)
 		{
 			auto code = stage.shader->get_code();
+			auto size = stage.shader->get_size();
 
 			SpvReflectShaderModule shaderModule;
-			uint32_t size = code.size() * sizeof(uint32_t);
-			SpvReflectResult res = spvReflectCreateShaderModule(size, code.data(), &shaderModule);
+			SpvReflectResult res = spvReflectCreateShaderModule(size, code, &shaderModule);
 			assert(res == SPV_REFLECT_RESULT_SUCCESS);
 
 			uint32_t descriptorSetAmount;

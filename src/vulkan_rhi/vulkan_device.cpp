@@ -128,6 +128,15 @@ vkb::Device vulkan::VulkanDevice::pick_device(vkb::PhysicalDevice& physicalDevic
 
 	deviceBuilder.add_pNext(&shaderDrawParametersFeatures);
 
+	VkPhysicalDeviceMultiviewProperties multiviewProperties{};
+	multiviewProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES;
+	VkPhysicalDeviceProperties2 properties2{};
+	properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	properties2.pNext = &multiviewProperties;
+	vkGetPhysicalDeviceProperties2(physicalDevice.physical_device, &properties2);
+	_maxMultiviewView = multiviewProperties.maxMultiviewViewCount;
+	LOG_INFO("Max multiview view: {}", _maxMultiviewView)
+	
 	VkPhysicalDeviceMultiviewFeatures multiViewFeatures{};
 	multiViewFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES;
 	multiViewFeatures.multiview = VK_TRUE;
