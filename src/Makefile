@@ -849,6 +849,30 @@ vulkan_rhi/vulkan_shader.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_shader.cpp.s
 .PHONY : vulkan_rhi/vulkan_shader.cpp.s
 
+vulkan_rhi/vulkan_swap_chain.obj: vulkan_rhi/vulkan_swap_chain.cpp.obj
+.PHONY : vulkan_rhi/vulkan_swap_chain.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_swap_chain.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_swap_chain.cpp.obj
+.PHONY : vulkan_rhi/vulkan_swap_chain.cpp.obj
+
+vulkan_rhi/vulkan_swap_chain.i: vulkan_rhi/vulkan_swap_chain.cpp.i
+.PHONY : vulkan_rhi/vulkan_swap_chain.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_swap_chain.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_swap_chain.cpp.i
+.PHONY : vulkan_rhi/vulkan_swap_chain.cpp.i
+
+vulkan_rhi/vulkan_swap_chain.s: vulkan_rhi/vulkan_swap_chain.cpp.s
+.PHONY : vulkan_rhi/vulkan_swap_chain.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_swap_chain.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_swap_chain.cpp.s
+.PHONY : vulkan_rhi/vulkan_swap_chain.cpp.s
+
 vulkan_rhi/vulkan_texture.obj: vulkan_rhi/vulkan_texture.cpp.obj
 .PHONY : vulkan_rhi/vulkan_texture.obj
 
@@ -973,6 +997,9 @@ help:
 	@echo ... vulkan_rhi/vulkan_shader.obj
 	@echo ... vulkan_rhi/vulkan_shader.i
 	@echo ... vulkan_rhi/vulkan_shader.s
+	@echo ... vulkan_rhi/vulkan_swap_chain.obj
+	@echo ... vulkan_rhi/vulkan_swap_chain.i
+	@echo ... vulkan_rhi/vulkan_swap_chain.s
 	@echo ... vulkan_rhi/vulkan_texture.obj
 	@echo ... vulkan_rhi/vulkan_texture.i
 	@echo ... vulkan_rhi/vulkan_texture.s

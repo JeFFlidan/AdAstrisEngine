@@ -309,6 +309,19 @@ namespace ad_astris::rhi
 		void* handle{ nullptr };
 		bool is_valid() { return handle; }
 	};
+
+	struct SwapChainInfo
+	{
+		bool sync;
+		uint8_t buffersCount;
+		uint32_t width;
+		uint32_t height;
+	};
+
+	struct SwapChain : public ObjectHandle
+	{
+		
+	};
 	
 	struct SamplerInfo
 	{

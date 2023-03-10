@@ -3,6 +3,7 @@
 #include "vulkan_buffer.h"
 #include "vulkan_texture.h"
 #include "vulkan_shader.h"
+#include "vulkan_swap_chain.h"
 #include "vulkan_renderer/vk_initializers.h"
 
 #include "profiler/logger.h"
@@ -25,6 +26,27 @@ void vulkan::VulkanRHI::init(void* window)
 void vulkan::VulkanRHI::cleanup()
 {
 	
+}
+
+void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info)
+{
+	if (!swapChain || !info)
+	{
+		LOG_ERROR("VulkanRHI::create_swap_chain(): Invalid pointers")
+		return;
+	}
+	swapChain->handle = new VulkanSwapChain(info, &_vulkanDevice);
+}
+
+void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
+{
+	if (!swapChain)
+	{
+		LOG_ERROR("VulkanRHI::destroy_swap_chain(): Invalid pointer to rhi::SwapChain")
+		return;
+	}
+	VulkanSwapChain* vkSwapChain = static_cast<VulkanSwapChain*>(swapChain->handle);
+	delete vkSwapChain;
 }
 
 void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, uint64_t size, void* data)

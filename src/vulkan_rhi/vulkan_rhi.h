@@ -35,6 +35,9 @@ namespace ad_astris::vulkan
 			virtual void init(void* window) final override;
 			virtual void cleanup() final override;
 
+			virtual void create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info) final override;
+			virtual void destroy_swap_chain(rhi::SwapChain* swapChain) final override;
+
 			/** Create a VulkanBuffer and assign the VulkanBuffer to Buffer.data (void*)  
 			 @param buffer should be valid pointer to the rhi::Buffer obj.
 			 @param size is a buffer size. Should be > 0

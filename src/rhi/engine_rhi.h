@@ -12,6 +12,9 @@ namespace ad_astris::rhi
 			virtual void init(void* window) = 0;
 			virtual void cleanup() = 0;
 
+			virtual void create_swap_chain(SwapChain* swapChain, SwapChainInfo* info) = 0;
+			virtual void destroy_swap_chain(SwapChain* swapChain) = 0;
+		
 			virtual void create_buffer(Buffer* buffer, BufferInfo* info, uint64_t size, void* data = nullptr) = 0;
 			virtual void update_buffer_data(Buffer* buffer, uint64_t size, void* data) = 0;
 			virtual void create_texture(Texture* texture, TextureInfo* info) = 0;

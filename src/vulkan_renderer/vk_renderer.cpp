@@ -1,5 +1,6 @@
 ﻿#include "vk_renderer.h"
 #include "vulkan_rhi/vulkan_rhi.h"
+#include "vulkan_rhi/vulkan_swap_chain.h"
 #include "engine_core/uuid.h"
 #include "rhi/engine_rhi.h"
 #include "material_asset.h"
@@ -336,23 +337,37 @@ namespace ad_astris
 	void VkRenderer::init_swapchain()
 	{
 		LOG_INFO("Init swapchain")
-		VkSurfaceFormatKHR format;
-		format.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-		format.format = VK_FORMAT_B8G8R8A8_SRGB;
-		vkb::SwapchainBuilder swapchainBuilder{_chosenGPU, _device, _surface};
-		vkb::Swapchain vkbSwapchain = swapchainBuilder
-			.use_default_format_selection()
-			.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
-			.set_desired_extent(_windowExtent.width, _windowExtent.height)
-			.set_desired_format(format)
-			.build()
-			.value();
-
-		_swapchain = vkbSwapchain.swapchain;
-		_swapchainImages = vkbSwapchain.get_images().value();
-		_swapchainImageViews = vkbSwapchain.get_image_views().value();
-
-		_swapchainImageFormat = vkbSwapchain.image_format;
+		// VkSurfaceFormatKHR format;
+		// format.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+		// format.format = VK_FORMAT_B8G8R8A8_SRGB;
+		// vkb::SwapchainBuilder swapchainBuilder{_chosenGPU, _device, _surface};
+		// vkb::Swapchain vkbSwapchain = swapchainBuilder
+		// 	.use_default_format_selection()
+		// 	.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+		// 	.set_desired_extent(_windowExtent.width, _windowExtent.height)
+		// 	.set_desired_format(format)
+		// 	.build()
+		// 	.value();
+		//
+		// _swapchain = vkbSwapchain.swapchain;
+		// _swapchainImages = vkbSwapchain.get_images().value();
+		// _swapchainImageViews = vkbSwapchain.get_image_views().value();
+		//
+		// _swapchainImageFormat = vkbSwapchain.image_format;
+		
+		rhi::SwapChainInfo swapChainInfo;
+		swapChainInfo.sync = true;
+		swapChainInfo.buffersCount = 2;
+		swapChainInfo.height = _windowExtent.height;
+		swapChainInfo.width = _windowExtent.width;
+		rhi::SwapChain swapChain;
+		// Memory leak. Only for test. In the future renderer will be completely rewritten using rhi
+		_eRhi->create_swap_chain(&swapChain, &swapChainInfo);
+		vulkan::VulkanSwapChain* vulkanSwapChain = static_cast<vulkan::VulkanSwapChain*>(swapChain.handle);
+		_swapchain = vulkanSwapChain->get_swap_chain();
+		_swapchainImages = vulkanSwapChain->get_images();
+		_swapchainImageViews = vulkanSwapChain->get_image_views();
+		_swapchainImageFormat = vulkanSwapChain->get_format();
 
 		VkExtent3D imageExtent = {
 			_windowExtent.width,
