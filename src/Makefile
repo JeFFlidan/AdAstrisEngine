@@ -753,6 +753,30 @@ vulkan_rhi/vulkan_buffer.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_buffer.cpp.s
 .PHONY : vulkan_rhi/vulkan_buffer.cpp.s
 
+vulkan_rhi/vulkan_command_manager.obj: vulkan_rhi/vulkan_command_manager.cpp.obj
+.PHONY : vulkan_rhi/vulkan_command_manager.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_command_manager.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_command_manager.cpp.obj
+.PHONY : vulkan_rhi/vulkan_command_manager.cpp.obj
+
+vulkan_rhi/vulkan_command_manager.i: vulkan_rhi/vulkan_command_manager.cpp.i
+.PHONY : vulkan_rhi/vulkan_command_manager.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_command_manager.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_command_manager.cpp.i
+.PHONY : vulkan_rhi/vulkan_command_manager.cpp.i
+
+vulkan_rhi/vulkan_command_manager.s: vulkan_rhi/vulkan_command_manager.cpp.s
+.PHONY : vulkan_rhi/vulkan_command_manager.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_command_manager.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_command_manager.cpp.s
+.PHONY : vulkan_rhi/vulkan_command_manager.cpp.s
+
 vulkan_rhi/vulkan_common.obj: vulkan_rhi/vulkan_common.cpp.obj
 .PHONY : vulkan_rhi/vulkan_common.obj
 
@@ -800,6 +824,30 @@ vulkan_rhi/vulkan_device.s: vulkan_rhi/vulkan_device.cpp.s
 vulkan_rhi/vulkan_device.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_device.cpp.s
 .PHONY : vulkan_rhi/vulkan_device.cpp.s
+
+vulkan_rhi/vulkan_queue.obj: vulkan_rhi/vulkan_queue.cpp.obj
+.PHONY : vulkan_rhi/vulkan_queue.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_queue.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_queue.cpp.obj
+.PHONY : vulkan_rhi/vulkan_queue.cpp.obj
+
+vulkan_rhi/vulkan_queue.i: vulkan_rhi/vulkan_queue.cpp.i
+.PHONY : vulkan_rhi/vulkan_queue.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_queue.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_queue.cpp.i
+.PHONY : vulkan_rhi/vulkan_queue.cpp.i
+
+vulkan_rhi/vulkan_queue.s: vulkan_rhi/vulkan_queue.cpp.s
+.PHONY : vulkan_rhi/vulkan_queue.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_queue.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_queue.cpp.s
+.PHONY : vulkan_rhi/vulkan_queue.cpp.s
 
 vulkan_rhi/vulkan_rhi.obj: vulkan_rhi/vulkan_rhi.cpp.obj
 .PHONY : vulkan_rhi/vulkan_rhi.obj
@@ -985,12 +1033,18 @@ help:
 	@echo ... vulkan_rhi/vulkan_buffer.obj
 	@echo ... vulkan_rhi/vulkan_buffer.i
 	@echo ... vulkan_rhi/vulkan_buffer.s
+	@echo ... vulkan_rhi/vulkan_command_manager.obj
+	@echo ... vulkan_rhi/vulkan_command_manager.i
+	@echo ... vulkan_rhi/vulkan_command_manager.s
 	@echo ... vulkan_rhi/vulkan_common.obj
 	@echo ... vulkan_rhi/vulkan_common.i
 	@echo ... vulkan_rhi/vulkan_common.s
 	@echo ... vulkan_rhi/vulkan_device.obj
 	@echo ... vulkan_rhi/vulkan_device.i
 	@echo ... vulkan_rhi/vulkan_device.s
+	@echo ... vulkan_rhi/vulkan_queue.obj
+	@echo ... vulkan_rhi/vulkan_queue.i
+	@echo ... vulkan_rhi/vulkan_queue.s
 	@echo ... vulkan_rhi/vulkan_rhi.obj
 	@echo ... vulkan_rhi/vulkan_rhi.i
 	@echo ... vulkan_rhi/vulkan_rhi.s

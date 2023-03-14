@@ -3,6 +3,8 @@
 #include "rhi/engine_rhi.h"
 #include "rhi/resources.h"
 #include "vulkan_device.h"
+#include "vulkan_command_manager.h"
+#include "vulkan_swap_chain.h"
 #include <vulkan/vulkan.h>
 
 #include "vk_mem_alloc.h"
@@ -64,6 +66,10 @@ namespace ad_astris::vulkan
 			virtual void create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info) final override;
 			virtual void create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info) final override;
 
+			virtual void begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType = rhi::GRAPHICS_QUEUE) final override;
+			virtual void wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd) final override;
+			virtual void submit(rhi::QueueType queueType = rhi::GRAPHICS_QUEUE) final override;
+
 			// Only for tests. Will be removed in the final implementation
 			VkInstance get_instance() { return _instance; }
 			VulkanDevice get_device() { return _vulkanDevice; }
@@ -75,6 +81,8 @@ namespace ad_astris::vulkan
 			VkDebugUtilsMessengerEXT _debugMessenger{ VK_NULL_HANDLE };
 			VmaAllocator _allocator;
 			VulkanDevice _vulkanDevice;
+			VulkanSwapChain* _swapChain{ nullptr };
+			VulkanCommandManager* _cmdManager{ nullptr };
 
 			vkb::Instance create_instance();
 			void create_allocator();

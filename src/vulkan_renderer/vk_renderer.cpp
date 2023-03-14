@@ -1,6 +1,7 @@
 ﻿#include "vk_renderer.h"
 #include "vulkan_rhi/vulkan_rhi.h"
 #include "vulkan_rhi/vulkan_swap_chain.h"
+#include "vulkan_rhi/vulkan_queue.h"
 #include "engine_core/uuid.h"
 #include "rhi/engine_rhi.h"
 #include "material_asset.h"
@@ -224,9 +225,9 @@ namespace ad_astris
 		_chosenGPU = vulkanDevice.get_physical_device();
 		_instance = rhi->get_instance();
 		_allocator = rhi->get_allocator();
-		auto queueData = vulkanDevice.get_graphics_queue();
-		_graphicsQueue = queueData->queue;
-		_graphicsQueueFamily = queueData->queueFamily;
+		auto queue = vulkanDevice.get_graphics_queue();
+		_graphicsQueue = queue->get_queue();
+		_graphicsQueueFamily = queue->get_family();
 
 		rhi::TextureInfo info{};
 		info.format = rhi::R8G8B8A8_UNORM;

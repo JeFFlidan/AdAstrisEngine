@@ -19,7 +19,7 @@ namespace ad_astris::vulkan
 
 			// Only for test
 			std::vector<VkImageView>& get_image_views() { return _imageViews; }
-			std::vector<VkImage> get_images() { return _images; } 
+			std::vector<VkImage> get_images() { return _images; }
 		private:
 			VkSwapchainKHR _swapChain;
 			std::vector<rhi::TextureView> _textureViews; 

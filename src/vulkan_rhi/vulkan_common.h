@@ -19,6 +19,8 @@
 
 namespace ad_astris::vulkan
 {
+	void create_semaphore(VkDevice device, VkSemaphore* semaphore);
+	
 	VkFormat get_format(rhi::Format format);
 	VkSampleCountFlagBits get_sample_count(rhi::SampleCount sampleCount);
 	VkImageType get_image_type(rhi::TextureDimension dimension);

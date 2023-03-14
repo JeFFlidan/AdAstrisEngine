@@ -3,6 +3,14 @@
 
 using namespace ad_astris;
 
+void vulkan::create_semaphore(VkDevice device, VkSemaphore* semaphore)
+{
+	VkSemaphoreCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	info.flags = 0;
+	VK_CHECK(vkCreateSemaphore(device, &info, nullptr, semaphore));
+}
+
 VkFormat vulkan::get_format(rhi::Format format)
 {
 	switch (format)

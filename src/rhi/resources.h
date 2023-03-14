@@ -320,7 +320,7 @@ namespace ad_astris::rhi
 
 	struct SwapChain : public ObjectHandle
 	{
-		
+
 	};
 	
 	struct SamplerInfo
@@ -611,6 +611,19 @@ namespace ad_astris::rhi
 
 	struct Pipeline : public ObjectHandle
 	{
-		PipelineType type = PipelineType::UNDEFINED_PIPELINE_TYPE;
+		PipelineType type = UNDEFINED_PIPELINE_TYPE;
+	};
+
+	enum QueueType
+	{
+		GRAPHICS_QUEUE,
+		COMPUTE_QUEUE,
+		TRANSFER_QUEUE,
+	};
+
+	// queueType will be GRAPHICS_QUEUE if begin_command_buffer() was called without parameters
+	struct CommandBuffer : public ObjectHandle
+	{
+		QueueType queueType;
 	};
 }

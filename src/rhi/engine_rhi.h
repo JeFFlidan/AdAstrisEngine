@@ -24,5 +24,9 @@ namespace ad_astris::rhi
 			virtual void create_render_pass(RenderPass* renderPass, RenderPassInfo* passInfo) = 0;
 			virtual void create_graphics_pipeline(Pipeline* pipeline, GraphicsPipelineInfo* info) = 0;
 			virtual void create_compute_pipeline(Pipeline* pipeline, ComputePipelineInfo* info) = 0;
+
+			virtual void begin_command_buffer(CommandBuffer* cmd, QueueType queueType = GRAPHICS_QUEUE) = 0;
+			virtual void wait_command_buffer(CommandBuffer* cmd, CommandBuffer* waitForCmd) = 0;
+			virtual void submit(QueueType queueType = GRAPHICS_QUEUE) = 0;
 	};
 }

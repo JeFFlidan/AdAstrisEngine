@@ -1,4 +1,5 @@
 ﻿#include "vulkan_device.h"
+#include "vulkan_queue.h"
 #include "profiler/logger.h"
 #include "vulkan_common.h"
 #include <SDL_video.h>
@@ -17,19 +18,32 @@ void vulkan::VulkanDevice::init(vkb::Instance& instance, void* window)
 	vkb::PhysicalDevice vkbPhysDevice = pick_physical_device(instance);
 	vkb::Device vkbDevice = pick_device(vkbPhysDevice);
 
-	_graphicsQueue = new QueueData();
-	_computeQueue = new QueueData();
-	_presentQueue = new QueueData();
-	_transferQueue = new QueueData();
+	QueueData graphicsQueue;
+	QueueData computeQueue;
+	QueueData presentQueue;
+	QueueData transferQueue;
 
-	_graphicsQueue->queue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
-	_graphicsQueue->queueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
-	_computeQueue->queue = vkbDevice.get_queue(vkb::QueueType::compute).value();
-	_computeQueue->queueFamily = vkbDevice.get_queue_index(vkb::QueueType::compute).value();
-	_presentQueue->queue = vkbDevice.get_queue(vkb::QueueType::present).value();
-	_presentQueue->queueFamily = vkbDevice.get_queue_index(vkb::QueueType::present).value();
-	_transferQueue->queue = vkbDevice.get_queue(vkb::QueueType::transfer).value();
-	_transferQueue->queueFamily = vkbDevice.get_queue_index(vkb::QueueType::transfer).value();
+	graphicsQueue.queue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
+	graphicsQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+	graphicsQueue.queueType = rhi::GRAPHICS_QUEUE;
+	_graphicsQueue = new VulkanQueue(graphicsQueue);
+	LOG_INFO("VulkanDevice::init(): Graphics queue family: {}", _graphicsQueue->get_family())
+	computeQueue.queue = vkbDevice.get_queue(vkb::QueueType::compute).value();
+	computeQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::compute).value();
+	computeQueue.queueType = rhi::COMPUTE_QUEUE;
+	_computeQueue = new VulkanQueue(computeQueue);
+	LOG_INFO("VulkanDevice::init(): Compute queue family: {}", _computeQueue->get_family())
+	// Maybe I'll remove present queue
+	presentQueue.queue = vkbDevice.get_queue(vkb::QueueType::present).value();
+	presentQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::present).value();
+	presentQueue.queueType = rhi::GRAPHICS_QUEUE;
+	_presentQueue = new VulkanQueue(presentQueue);
+	LOG_INFO("VulkanDevice::init(): Present queue family: {}", _presentQueue->get_family())
+	transferQueue.queue = vkbDevice.get_queue(vkb::QueueType::transfer).value();
+	transferQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::transfer).value();
+	transferQueue.queueType = rhi::TRANSFER_QUEUE;
+	_transferQueue = new VulkanQueue(transferQueue);
+	LOG_INFO("VulkanDevice::init(): Transfer queue family: {}", _transferQueue->get_family())
 
 	_physicalDevice = vkbPhysDevice.physical_device;
 	_device = vkbDevice.device;

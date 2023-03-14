@@ -25,7 +25,8 @@ void vulkan::VulkanRHI::init(void* window)
 
 void vulkan::VulkanRHI::cleanup()
 {
-	
+	delete _swapChain;
+	delete _cmdManager;
 }
 
 void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info)
@@ -35,7 +36,9 @@ void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapCh
 		LOG_ERROR("VulkanRHI::create_swap_chain(): Invalid pointers")
 		return;
 	}
-	swapChain->handle = new VulkanSwapChain(info, &_vulkanDevice);
+	_swapChain = new VulkanSwapChain(info, &_vulkanDevice);
+	_cmdManager = new VulkanCommandManager(&_vulkanDevice, _swapChain);
+	swapChain->handle = _swapChain;
 }
 
 void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
@@ -47,6 +50,8 @@ void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
 	}
 	VulkanSwapChain* vkSwapChain = static_cast<VulkanSwapChain*>(swapChain->handle);
 	delete vkSwapChain;
+	swapChain->handle = nullptr;
+	_swapChain = nullptr;
 }
 
 void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, uint64_t size, void* data)
@@ -802,6 +807,23 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 	vkPass->renderPass = vkRenderPass;
 	vkPass->framebuffer = framebuffer;
 	renderPass->handle = vkPass;
+}
+
+void vulkan::VulkanRHI::begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType)
+{
+	cmd->handle = _cmdManager->get_command_buffer();
+}
+
+void vulkan::VulkanRHI::wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd)
+{
+	VulkanCommandBuffer* cmd1 = static_cast<VulkanCommandBuffer*>(cmd->handle);
+	VulkanCommandBuffer* cmd2 = static_cast<VulkanCommandBuffer*>(waitForCmd->handle);
+	_cmdManager->wait_for_cmd_buffer(cmd1, cmd2);
+}
+
+void vulkan::VulkanRHI::submit(rhi::QueueType queueType)
+{
+	_cmdManager->submit(queueType);
 }
 
 // private methods

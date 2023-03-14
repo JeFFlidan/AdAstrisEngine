@@ -13,12 +13,7 @@ namespace ad_astris::vulkan
 		uint8_t meshShader{ 0 };
 	};
 
-	// Maybe I'll create class for QueueData with some methods because of multithreading
-	struct QueueData
-	{
-		VkQueue queue;
-		uint32_t queueFamily;
-	};
+	class VulkanQueue;
 
 	class VulkanDevice
 	{
@@ -33,10 +28,10 @@ namespace ad_astris::vulkan
 
 			uint32_t get_max_multiview_view_count() { return _maxMultiviewView; }
 
-			QueueData* get_graphics_queue() { return _graphicsQueue; }
-			QueueData* get_present_queue() { return _presentQueue; }
-			QueueData* get_compute_queue() { return _computeQueue; }
-			QueueData* get_transfer_queue() { return _transferQueue; }
+			VulkanQueue* get_graphics_queue() { return _graphicsQueue; }
+			VulkanQueue* get_present_queue() { return _presentQueue; }
+			VulkanQueue* get_compute_queue() { return _computeQueue; }
+			VulkanQueue* get_transfer_queue() { return _transferQueue; }
 		
 		private:
 			VkSurfaceKHR _surface{ VK_NULL_HANDLE };
@@ -53,10 +48,10 @@ namespace ad_astris::vulkan
 			OptionalExtensions _isOptionalExtensionsEnabled{};
 			uint32_t _maxMultiviewView;
 
-			QueueData* _graphicsQueue{ nullptr };
-			QueueData* _presentQueue{ nullptr };
-			QueueData* _computeQueue{ nullptr };
-			QueueData* _transferQueue{ nullptr };
+			VulkanQueue* _graphicsQueue{ nullptr };
+			VulkanQueue* _presentQueue{ nullptr };
+			VulkanQueue* _computeQueue{ nullptr };
+			VulkanQueue* _transferQueue{ nullptr };
 
 			// I use SDL window for Windows but it will be replaced
 			/** Creates Vulkan surface.
