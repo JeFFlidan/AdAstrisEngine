@@ -13,10 +13,6 @@ shaderc_include_result* rcore::include_resolver(
 	const char* requesting_source,
 	size_t includeDepth)
 {
-	// LOG_INFO("Requested source {}", requested_source)
-	// LOG_INFO("Requesting source {}", requesting_source)
-	// LOG_INFO("Include depth {}", includeDepth)
-
 	io::FileSystem* fileSystem = static_cast<io::FileSystem*>(userData);
 	assert(fileSystem && "Invalid file system");
 
@@ -145,10 +141,13 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 
 	info->size = shaderc_result_get_length(finalResult);
 	const uint8_t* code = reinterpret_cast<const uint8_t*>(shaderc_result_get_bytes(finalResult));
-	info->data = const_cast<uint8_t*>(code);
+	uint8_t* codeNoConst = const_cast<uint8_t*>(code);
+	uint8_t* newCode = new uint8_t[info->size];
+	memcpy(newCode, codeNoConst, info->size);
+	
+	info->data = newCode;
 	
 	_shaderCache.add_to_cache(info, data, count);
-	_shaderCache.check_in_cache(info, data, count);
 	
 	_fileSystem->unmap_from_system(data);
 	shaderc_result_release(finalResult);
