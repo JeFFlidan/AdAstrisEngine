@@ -825,6 +825,30 @@ vulkan_rhi/vulkan_device.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_device.cpp.s
 .PHONY : vulkan_rhi/vulkan_device.cpp.s
 
+vulkan_rhi/vulkan_pipeline.obj: vulkan_rhi/vulkan_pipeline.cpp.obj
+.PHONY : vulkan_rhi/vulkan_pipeline.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_pipeline.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_pipeline.cpp.obj
+.PHONY : vulkan_rhi/vulkan_pipeline.cpp.obj
+
+vulkan_rhi/vulkan_pipeline.i: vulkan_rhi/vulkan_pipeline.cpp.i
+.PHONY : vulkan_rhi/vulkan_pipeline.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_pipeline.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_pipeline.cpp.i
+.PHONY : vulkan_rhi/vulkan_pipeline.cpp.i
+
+vulkan_rhi/vulkan_pipeline.s: vulkan_rhi/vulkan_pipeline.cpp.s
+.PHONY : vulkan_rhi/vulkan_pipeline.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_pipeline.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_pipeline.cpp.s
+.PHONY : vulkan_rhi/vulkan_pipeline.cpp.s
+
 vulkan_rhi/vulkan_queue.obj: vulkan_rhi/vulkan_queue.cpp.obj
 .PHONY : vulkan_rhi/vulkan_queue.obj
 
@@ -848,6 +872,30 @@ vulkan_rhi/vulkan_queue.s: vulkan_rhi/vulkan_queue.cpp.s
 vulkan_rhi/vulkan_queue.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_queue.cpp.s
 .PHONY : vulkan_rhi/vulkan_queue.cpp.s
+
+vulkan_rhi/vulkan_render_pass.obj: vulkan_rhi/vulkan_render_pass.cpp.obj
+.PHONY : vulkan_rhi/vulkan_render_pass.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_render_pass.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_render_pass.cpp.obj
+.PHONY : vulkan_rhi/vulkan_render_pass.cpp.obj
+
+vulkan_rhi/vulkan_render_pass.i: vulkan_rhi/vulkan_render_pass.cpp.i
+.PHONY : vulkan_rhi/vulkan_render_pass.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_render_pass.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_render_pass.cpp.i
+.PHONY : vulkan_rhi/vulkan_render_pass.cpp.i
+
+vulkan_rhi/vulkan_render_pass.s: vulkan_rhi/vulkan_render_pass.cpp.s
+.PHONY : vulkan_rhi/vulkan_render_pass.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_render_pass.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_render_pass.cpp.s
+.PHONY : vulkan_rhi/vulkan_render_pass.cpp.s
 
 vulkan_rhi/vulkan_rhi.obj: vulkan_rhi/vulkan_rhi.cpp.obj
 .PHONY : vulkan_rhi/vulkan_rhi.obj
@@ -1042,9 +1090,15 @@ help:
 	@echo ... vulkan_rhi/vulkan_device.obj
 	@echo ... vulkan_rhi/vulkan_device.i
 	@echo ... vulkan_rhi/vulkan_device.s
+	@echo ... vulkan_rhi/vulkan_pipeline.obj
+	@echo ... vulkan_rhi/vulkan_pipeline.i
+	@echo ... vulkan_rhi/vulkan_pipeline.s
 	@echo ... vulkan_rhi/vulkan_queue.obj
 	@echo ... vulkan_rhi/vulkan_queue.i
 	@echo ... vulkan_rhi/vulkan_queue.s
+	@echo ... vulkan_rhi/vulkan_render_pass.obj
+	@echo ... vulkan_rhi/vulkan_render_pass.i
+	@echo ... vulkan_rhi/vulkan_render_pass.s
 	@echo ... vulkan_rhi/vulkan_rhi.obj
 	@echo ... vulkan_rhi/vulkan_rhi.i
 	@echo ... vulkan_rhi/vulkan_rhi.s

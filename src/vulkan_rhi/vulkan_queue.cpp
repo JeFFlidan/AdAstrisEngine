@@ -47,6 +47,7 @@ void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager)
 		info.waitSemaphoreCount = cmdBuffer->_waitSemaphores.size();
 		info.pWaitSemaphores = cmdBuffer->_waitSemaphores.data();
 		info.pWaitDstStageMask = cmdBuffer->_waitFlags.data();
+		submitInfos.push_back(info);
 	}
 
 	// TODO need to use the correct fence

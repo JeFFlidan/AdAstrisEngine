@@ -14,7 +14,8 @@ namespace ad_astris::rhi
 
 			virtual void create_swap_chain(SwapChain* swapChain, SwapChainInfo* info) = 0;
 			virtual void destroy_swap_chain(SwapChain* swapChain) = 0;
-		
+
+			// Can create an empty buffer or buffer with data
 			virtual void create_buffer(Buffer* buffer, BufferInfo* info, uint64_t size, void* data = nullptr) = 0;
 			virtual void update_buffer_data(Buffer* buffer, uint64_t size, void* data) = 0;
 			virtual void create_texture(Texture* texture, TextureInfo* info) = 0;
@@ -28,5 +29,19 @@ namespace ad_astris::rhi
 			virtual void begin_command_buffer(CommandBuffer* cmd, QueueType queueType = GRAPHICS_QUEUE) = 0;
 			virtual void wait_command_buffer(CommandBuffer* cmd, CommandBuffer* waitForCmd) = 0;
 			virtual void submit(QueueType queueType = GRAPHICS_QUEUE) = 0;
+
+			// Can bind only one vertex buffer.
+			virtual void bind_vertex_buffer(CommandBuffer* cmd, Buffer* buffer) = 0;
+			virtual void bind_index_buffer(CommandBuffer* cmd, Buffer* buffer) = 0;
+			virtual void begin_render_pass(CommandBuffer* cmd, RenderPass* renderPass) = 0;
+			virtual void end_render_pass(CommandBuffer* cmd) = 0;
+			// virtual void draw(CommandBuffer* cmd) = 0;
+			// virtual void draw_indexed(CommandBuffer* cmd) = 0;
+			// virtual void draw_indirect(CommandBuffer* cmd) = 0;
+			// virtual void draw_indexed_indirect(CommandBuffer* cmd) = 0;
+			// virtual void set_viewport(CommandBuffer* cmd) = 0;
+			// virtual void set_scissor(CommandBuffer* cmd) = 0;
+			// virtual void bind_pipeline(CommandBuffer* cmd, Pipeline* pipeline) = 0;
+			
 	};
 }

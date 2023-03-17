@@ -8,15 +8,10 @@ namespace ad_astris::vulkan
 	class VulkanBuffer
 	{
 		public:
-			VkBuffer buffer = VK_NULL_HANDLE;
-			VmaAllocation allocation;
-
-			uint64_t bufferSize = 0;
-
 			VulkanBuffer() = default;
 			VulkanBuffer(VmaAllocator* allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 			void create_buffer(VmaAllocator* allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
-				
+					
 			void copy_from(VmaAllocator* allocator, void* srcBuffer, size_t sizeInBytes);
 			void destroy_buffer(VmaAllocator* allocator);
 			VkDescriptorBufferInfo get_info(bool isStorage = false, VkDeviceSize offset = 0);
@@ -26,8 +21,15 @@ namespace ad_astris::vulkan
 				VulkanBuffer* dstBuffer,
 				VkDeviceSize dstOffset = 0, 
 				VkDeviceSize srcOffset = 0);
-		
-		protected:
+
+			VkBuffer* get_handle() { return &_buffer; }
+			uint64_t get_size() { return _bufferSize; }
+			
+		private:
+			VkBuffer _buffer = VK_NULL_HANDLE;
+			VmaAllocation _allocation;
+
+			uint64_t _bufferSize = 0;
 			void allocate_buffer(VmaAllocator* allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);		
 	};
 }

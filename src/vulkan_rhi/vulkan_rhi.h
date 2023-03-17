@@ -14,46 +14,23 @@
 
 namespace ad_astris::vulkan
 {
-	struct VulkanRenderPass
-	{
-		VkRenderPass renderPass;
-		VkFramebuffer framebuffer;
-	};
-
-	struct VulkanPipeline
-	{
-		VkPipeline pipeline{ VK_NULL_HANDLE };
-		VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
-	};
-	
 	class VulkanRHI : public rhi::IEngineRHI
 	{
 		public:
 			~VulkanRHI() final override = default;
 
-			/** Init necessary Vulkan objects.
-			 @param window should be valid pointer to the window (SDL or WinApi)
-			 */
 			virtual void init(void* window) final override;
 			virtual void cleanup() final override;
 
 			virtual void create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info) final override;
 			virtual void destroy_swap_chain(rhi::SwapChain* swapChain) final override;
-
-			/** Create a VulkanBuffer and assign the VulkanBuffer to Buffer.data (void*)  
-			 @param buffer should be valid pointer to the rhi::Buffer obj.
-			 @param size is a buffer size. Should be > 0
-			 @param data is a data for buffer. May be nullptr
-			 */
+		
 			virtual void create_buffer(
 				rhi::Buffer* buffer,
 				rhi::BufferInfo* bufInfo,
-				uint64_t size, void* data = nullptr) final override;
-			/** Update buffer data using CPU data (not host buffer)
-			 @param buffer should be valid pointer to the rhi::Buffer obj.
-			 @param size is a buffer size. Should be > 0
-			 @param data is a data for buffer. Should be a pointer to valid data
-			 */
+				uint64_t size,
+				void* data = nullptr) final override;
+
 			virtual void update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data) final override;
 			virtual void create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo) final override;
 			virtual void create_texture_view(
@@ -70,6 +47,11 @@ namespace ad_astris::vulkan
 			virtual void wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd) final override;
 			virtual void submit(rhi::QueueType queueType = rhi::GRAPHICS_QUEUE) final override;
 
+			virtual void bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;
+			virtual void bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;
+			virtual void begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass) final override;
+			virtual void end_render_pass(rhi::CommandBuffer* cmd) final override;
+
 			// Only for tests. Will be removed in the final implementation
 			VkInstance get_instance() { return _instance; }
 			VulkanDevice get_device() { return _vulkanDevice; }
@@ -85,7 +67,5 @@ namespace ad_astris::vulkan
 			VulkanCommandManager* _cmdManager{ nullptr };
 
 			vkb::Instance create_instance();
-			void create_allocator();
-			VkFramebuffer create_framebuffer(VkRenderPass renderPass, std::vector<rhi::RenderTarget>& renderTargets);
-	};
+			void create_allocator();};
 }

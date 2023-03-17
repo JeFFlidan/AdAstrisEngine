@@ -83,7 +83,6 @@ namespace ad_astris::vulkan
 		
 			/** Reset all command buffers which are dedicated for particular frame.
 			 * Should be called only in the beginning of the frame.
-			 * _imageIndex is set to imageIndex
 			 * @param imageIndex should be received from vkAcquireNextImageKHR
 			 */
 			void flush_cmd_buffers(uint32_t imageIndex);

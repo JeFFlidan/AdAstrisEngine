@@ -1,5 +1,6 @@
 ﻿#include "vk_renderer.h"
 #include "vulkan_rhi/vulkan_rhi.h"
+#include "vulkan_rhi/vulkan_pipeline.h"
 #include "vulkan_rhi/vulkan_swap_chain.h"
 #include "vulkan_rhi/vulkan_queue.h"
 #include "engine_core/uuid.h"
@@ -1056,8 +1057,8 @@ namespace ad_astris
 		LOG_INFO("Compiled shader {} into spv", depthReduceURI.c_str())
 
 		vulkan::VulkanPipeline* vkPipeline = static_cast<vulkan::VulkanPipeline*>(pipeline.handle);
-		_depthReducePipeline = vkPipeline->pipeline;
-		_depthReduceLayout = vkPipeline->pipelineLayout;
+		_depthReducePipeline = vkPipeline->get_handle();
+		_depthReduceLayout = vkPipeline->get_layout();
 		
 		//depthReduceShader.load_shader_module(depthReduceInfo);
 		

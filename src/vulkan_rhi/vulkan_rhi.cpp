@@ -1,8 +1,13 @@
 ﻿#include "vulkan_rhi.h"
+
+#include <valarray>
+
 #include "vulkan_common.h"
 #include "vulkan_buffer.h"
 #include "vulkan_texture.h"
 #include "vulkan_shader.h"
+#include "vulkan_pipeline.h"
+#include "vulkan_render_pass.h"
 #include "vulkan_swap_chain.h"
 #include "vulkan_renderer/vk_initializers.h"
 
@@ -361,318 +366,28 @@ void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shad
 
 void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info)
 {
+	if (!pipeline || !info)
+	{
+		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Invalid pointers")
+		return;
+	}
 	pipeline->type = rhi::PipelineType::GRAPHICS_PIPELINE;
-
-	if (info->assemblyState.topologyType == rhi::UNDEFINED_TOPOLOGY_TYPE)
-	{
-		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined topology type. Failed to create VkPipeline")
-		return;
-	}
-	
-	VkPipelineInputAssemblyStateCreateInfo assemblyState{};
-	assemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	assemblyState.topology = get_primitive_topology(info->assemblyState.topologyType);
-	assemblyState.primitiveRestartEnable = VK_FALSE;
-
-	// Only dynamic viewports, no static
-	VkPipelineViewportStateCreateInfo viewportState{};
-	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportState.pScissors = nullptr;
-	viewportState.scissorCount = 1;
-	viewportState.pViewports = nullptr;
-	viewportState.viewportCount = 1;
-
-	if (info->rasterizationState.cullMode == rhi::UNDEFINED_CULL_MODE)
-	{
-		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined cull mode. Failed to create VkPipeline")
-		return;
-	}
-	if (info->rasterizationState.polygonMode == rhi::UNDEFINED_POLYGON_MODE)
-	{
-		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined polygon mode. Failed to create VkPipeline")
-		return;
-	}
-	if (info->rasterizationState.frontFace == rhi::UNDEFINED_FRONT_FACE)
-	{
-		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined front face. Failed to create VkPipeline")
-		return;
-	}
-
-	VkPipelineRasterizationStateCreateInfo rasterizationState{};
-	rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizationState.depthClampEnable = VK_FALSE;
-	rasterizationState.rasterizerDiscardEnable = VK_FALSE;
-	rasterizationState.polygonMode = get_polygon_mode(info->rasterizationState.polygonMode);
-	rasterizationState.lineWidth = 1.0f;
-	rasterizationState.cullMode = get_cull_mode(info->rasterizationState.cullMode);
-	rasterizationState.frontFace = get_front_face(info->rasterizationState.frontFace);
-	rasterizationState.depthBiasEnable = info->rasterizationState.isBiasEnabled ? VK_TRUE : VK_FALSE;
-	rasterizationState.depthBiasConstantFactor = 0.0f;
-	rasterizationState.depthBiasClamp = 0.0f;
-	rasterizationState.depthBiasSlopeFactor = 0.0f;
-
-	if (info->multisampleState.sampleCount == rhi::UNDEFINED_SAMPLE_COUNT)
-	{
-		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined sample count. Failed to create VkPipeline")
-		return;
-	}
-
-	VkPipelineMultisampleStateCreateInfo multisampleState{};
-	multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampleState.sampleShadingEnable = info->multisampleState.isEnabled ? VK_TRUE : VK_FALSE;
-	multisampleState.rasterizationSamples = get_sample_count(info->multisampleState.sampleCount);
-	multisampleState.minSampleShading = 1.0f;
-	multisampleState.pSampleMask = nullptr;
-	multisampleState.alphaToCoverageEnable = info->multisampleState.isEnabled ? VK_TRUE : VK_FALSE;
-	multisampleState.alphaToOneEnable = info->multisampleState.isEnabled ? VK_TRUE : VK_FALSE;
-
-	std::vector<VkVertexInputBindingDescription> bindingDescriptions;
-	for (auto& desc : info->bindingDescriptrions)
-	{
-		VkVertexInputBindingDescription description;
-		description.binding = desc.binding;
-		description.stride = desc.stride;
-		description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		bindingDescriptions.push_back(description);
-	}
-
-	std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-	for (auto& desc : info->attributeDescriptions)
-	{
-		if (desc.format == rhi::UNDEFINED_FORMAT)
-		{
-			LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined format. Failed to create VkPipeline")
-			return;
-		}
-		VkVertexInputAttributeDescription description;
-		description.binding = desc.binding;
-		description.format = get_format(desc.format);
-		description.location = desc.location;
-		description.offset = desc.offset;
-		attributeDescriptions.push_back(description);
-	}
-
-	VkPipelineVertexInputStateCreateInfo inputState{};
-	inputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	inputState.pVertexBindingDescriptions = bindingDescriptions.data();
-	inputState.vertexBindingDescriptionCount = bindingDescriptions.size();
-	inputState.pVertexAttributeDescriptions = attributeDescriptions.data();
-	inputState.vertexAttributeDescriptionCount = attributeDescriptions.size();
-
-	std::vector<VkDynamicState> dynamicStates;
-	dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
-	dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
-	if (info->rasterizationState.isBiasEnabled)
-		dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
-
-	VkPipelineDynamicStateCreateInfo dynamicState{};
-	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicState.dynamicStateCount = dynamicStates.size();
-	dynamicState.pDynamicStates = dynamicStates.data();
-
-	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
-	for (auto& attach : info->colorBlendState.colorBlendAttachments)
-	{
-		VkPipelineColorBlendAttachmentState attachmentState{};
-		attachmentState.colorWriteMask = (VkColorComponentFlags)attach.colorWriteMask;
-		if (attach.isBlendEnabled)
-		{
-			if (attach.srcColorBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
-			{
-				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined src color blend factor. Failed to create VkPipeline")
-				return;
-			}
-			if (attach.dstColorBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
-			{
-				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined dst color blend factor. Failed to create VkPipeline")
-				return;
-			}
-			if (attach.srcAlphaBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
-			{
-				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined src alpha blend factor. Failed to create VkPipeline")
-				return;
-			}
-			if (attach.dstAlphaBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
-			{
-				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined dst alpha blend factor. Failed to create VkPipeline")
-				return;
-			}
-			if (attach.colorBlendOp == rhi::UNDEFINED_BLEND_OP)
-			{
-				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined color blend op. Failed to create VkPipeline")
-				return;
-			}
-			if (attach.alphaBlendOp == rhi::UNDEFINED_BLEND_OP)
-			{
-				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined alpha blend op. Failed to create VkPipeline")
-				return;
-			}
-			attachmentState.blendEnable = VK_TRUE;
-			attachmentState.srcColorBlendFactor = get_blend_factor(attach.srcColorBlendFactor);
-			attachmentState.dstColorBlendFactor = get_blend_factor(attach.dstColorBlendFactor);
-			attachmentState.srcAlphaBlendFactor = get_blend_factor(attach.srcAlphaBlendFactor);
-			attachmentState.dstAlphaBlendFactor = get_blend_factor(attach.dstAlphaBlendFactor);
-			attachmentState.colorBlendOp = get_blend_op(attach.colorBlendOp);
-			attachmentState.alphaBlendOp = get_blend_op(attach.alphaBlendOp);
-		}
-		attachmentState.blendEnable = VK_FALSE;
-		colorBlendAttachments.push_back(attachmentState);
-	}
-
-	VkPipelineColorBlendStateCreateInfo colorBlendState{};
-	colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	colorBlendState.attachmentCount = colorBlendAttachments.size();
-	colorBlendState.pAttachments = colorBlendAttachments.data();
-	colorBlendState.logicOpEnable = info->colorBlendState.isLogicOpEnabled ? VK_TRUE : VK_FALSE;
-	colorBlendState.logicOp = get_logic_op(info->colorBlendState.logicOp);
-
-	VulkanShaderStages shaderStages;
-	std::vector<VkPipelineShaderStageCreateInfo> pipelineStages; 
-	for (auto& shader : info->shaderStages)
-	{
-		if (shader.type == rhi::UNDEFINED_SHADER_TYPE)
-		{
-			LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Shader type is undefined")
-			return;
-		}
-		VulkanShader* vulkanShader = static_cast<VulkanShader*>(shader.handle);
-		shaderStages.add_stage(vulkanShader, (VkShaderStageFlagBits)get_shader_stage(shader.type));
-		VkPipelineShaderStageCreateInfo shaderStage{};
-		shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStage.module = vulkanShader->get_shader_module();
-		shaderStage.stage = (VkShaderStageFlagBits)get_shader_stage(shader.type);
-		shaderStage.pName = "main";
-		shaderStage.pSpecializationInfo = nullptr;
-		pipelineStages.push_back(shaderStage);
-	}
-
-	if (info->depthStencilState.compareOp == rhi::UNDEFINED_COMPARE_OP)
-	{
-		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined compare op, depth. Failed to create VkPipeline")
-		return;
-	}
-	VkPipelineDepthStencilStateCreateInfo depthStencilState{};
-	depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	depthStencilState.depthTestEnable = info->depthStencilState.isDepthTestEnabled ? VK_TRUE : VK_FALSE;
-	depthStencilState.depthWriteEnable = info->depthStencilState.isDepthWriteEnabled ? VK_TRUE : VK_FALSE;
-	depthStencilState.depthCompareOp = get_compare_op(info->depthStencilState.compareOp);
-	depthStencilState.minDepthBounds = 0.0f;
-	depthStencilState.maxDepthBounds = 1.0f;
-	depthStencilState.stencilTestEnable = VK_FALSE;
-	std::vector<rhi::StencilOpState> stencilOps = { info->depthStencilState.backStencil, info->depthStencilState.frontStencil };
-	if (info->depthStencilState.isStencilTestEnabled)
-	{
-		depthStencilState.stencilTestEnable = VK_TRUE;
-
-		std::vector<VkStencilOpState> vkStencilStates;
-		for (auto& stencilState : stencilOps)
-		{
-			if (stencilState.compareOp == rhi::UNDEFINED_COMPARE_OP)
-			{
-				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined compare op, stencil. Failed to create VkPipeline")
-				return;
-			}
-			if (stencilState.failOp == rhi::UNDEFINED_STENCIL_OP)
-			{
-				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined fail op stencil. Failed to create VkPipeline")
-				return;
-			}
-			if (stencilState.passOp == rhi::UNDEFINED_STENCIL_OP)
-			{
-				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined pass op stencil. Failed to create VkPipeline")
-				return;
-			}
-			if (stencilState.depthFailOp == rhi::UNDEFINED_STENCIL_OP)
-			{
-				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined depth fail op stencil. Failed to create VkPipeline")
-				return;
-			}
-			VkStencilOpState stencilOp{};
-			stencilOp.failOp = get_stencil_op(stencilState.failOp);
-			stencilOp.passOp = get_stencil_op(stencilState.passOp);
-			stencilOp.depthFailOp = get_stencil_op(stencilState.depthFailOp);
-			stencilOp.compareOp = get_compare_op(stencilState.compareOp);
-			stencilOp.compareMask = stencilState.compareMask;
-			stencilOp.writeMask = stencilState.writeMask;
-			stencilOp.reference = stencilState.reference;
-			vkStencilStates.push_back(stencilOp);
-		}
-	}
-
-	VkPipelineLayout pipelineLayout = shaderStages.get_pipeline_layout(_vulkanDevice.get_device());
-
-	VkGraphicsPipelineCreateInfo pipelineInfo{};
-	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.layout = pipelineLayout;
-	pipelineInfo.renderPass = *static_cast<VkRenderPass*>(info->renderPass.handle);
-	pipelineInfo.subpass = 0;
-	pipelineInfo.stageCount = pipelineStages.size();
-	pipelineInfo.pStages = pipelineStages.data();
-	pipelineInfo.pVertexInputState = &inputState;
-	pipelineInfo.pInputAssemblyState = &assemblyState;
-	pipelineInfo.pViewportState = &viewportState;
-	pipelineInfo.pRasterizationState = &rasterizationState;
-	pipelineInfo.pMultisampleState = &multisampleState;
-	pipelineInfo.pDynamicState = &dynamicState;
-	pipelineInfo.pColorBlendState = &colorBlendState;
-	pipelineInfo.pDepthStencilState = &depthStencilState;
-	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
-	VkPipeline vkPipeline;
-	VK_CHECK(vkCreateGraphicsPipelines(_vulkanDevice.get_device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &vkPipeline));
-
-	VulkanPipeline* vulkanPipeline = new VulkanPipeline();
-	vulkanPipeline->pipeline = vkPipeline;
-	vulkanPipeline->pipelineLayout = pipelineLayout;
-	pipeline->handle = vulkanPipeline;
+	pipeline->handle = new VulkanPipeline(&_vulkanDevice, info);
 }
 
 void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info)
 {
-	if (!pipeline)
+	if (!pipeline || !info)
 	{
-		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid rhi::Pipeline pointer")
+		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid pointers")
 		return;
 	}
-	if (!info)
-	{
-		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid ComputePipelieInfo pointer")
-		return;
-	}
-
-	VkShaderStageFlagBits stageBit = (VkShaderStageFlagBits)get_shader_stage(info->shaderStage.type);
-	VulkanShader* vkShader = static_cast<VulkanShader*>(info->shaderStage.handle); 
-	VulkanShaderStages vkStage;
-	vkStage.add_stage(vkShader, stageBit);
-	VkPipelineLayout layout = vkStage.get_pipeline_layout(_vulkanDevice.get_device());
-
-	VkPipelineShaderStageCreateInfo shaderStage{};
-	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	shaderStage.module = vkShader->get_shader_module();
-	shaderStage.stage = stageBit;
-	shaderStage.pName = "main";
-	
-	VkComputePipelineCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-	createInfo.layout = layout;
-	createInfo.stage = shaderStage;
-
-	VkPipeline vkPipeline;
-	VK_CHECK(vkCreateComputePipelines(_vulkanDevice.get_device(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &vkPipeline));
-	VulkanPipeline* vulkanPipeline = new VulkanPipeline();
-	vulkanPipeline->pipeline = vkPipeline;
-	vulkanPipeline->pipelineLayout = layout;
-	pipeline->handle = vulkanPipeline;
 	pipeline->type = rhi::COMPUTE_PIPELINE;
+	pipeline->handle = new VulkanPipeline(&_vulkanDevice, info);
 }
 
 void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
 {
-	std::vector<VkAttachmentDescription> attachDescriptions;
-	std::vector<VkAttachmentReference> colorAttachRefs;
-	VkAttachmentReference depthAttachRef;
-	bool oneDepth = false;
-
 	if (passInfo->renderTargets.empty())
 	{
 		LOG_ERROR("VulkanRHI::create_render_pass(): There are no render targets")
@@ -688,125 +403,8 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 		LOG_ERROR("VulkanRHI::create_render_pass(): Invalid pointer to rhi::RenderPassInfo")
 		return;
 	}
-	
-	for (auto& target: passInfo->renderTargets)
-	{
-		rhi::TextureInfo texInfo = target.target->texture->textureInfo;
-		VkAttachmentDescription attachInfo{};
-		attachInfo.format = get_format(texInfo.format);
-		attachInfo.samples = get_sample_count(texInfo.samplesCount);
-		attachInfo.loadOp = get_attach_load_op(target.loadOp);
-		attachInfo.storeOp = get_attach_store_op(target.storeOp);
-		attachInfo.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		attachInfo.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		attachInfo.initialLayout = get_image_layout(target.initialLayout);
-		attachInfo.finalLayout = get_image_layout(target.finalLayout);
-		attachDescriptions.push_back(attachInfo);
 
-		VkAttachmentReference attachRef{};
-		attachRef.attachment = attachDescriptions.size() - 1;
-		attachRef.layout = get_image_layout(target.renderPassLayout);
-
-		if (target.type == rhi::RENDER_TARGET_DEPTH && !oneDepth)
-		{
-			depthAttachRef = attachRef;
-			oneDepth = true;
-		}
-		else if (target.type == rhi::RENDER_TARGET_DEPTH && oneDepth)
-		{
-			LOG_WARNING("VulkanRHI::create_render_pass(): There are more than one depth attachment. Old one will be overwritten")
-			depthAttachRef = attachRef;
-		}
-		else
-		{
-			colorAttachRefs.push_back(attachRef);
-		}
-	}
-
-	VkSubpassDescription subpass{};
-	if (passInfo->pipelineType == rhi::COMPUTE_PIPELINE || passInfo->pipelineType == rhi::UNDEFINED_PIPELINE_TYPE)
-	{
-		LOG_ERROR("VulkanRHI::create_render_pass(): Invalid pipeline type")
-		return;
-	}
-
-	subpass.pipelineBindPoint = get_pipeline_bind_point(passInfo->pipelineType);
-	if (!colorAttachRefs.empty())
-	{
-		subpass.colorAttachmentCount = colorAttachRefs.size();
-		subpass.pColorAttachments = colorAttachRefs.data();
-	}
-	if (oneDepth)
-		subpass.pDepthStencilAttachment = &depthAttachRef;
-
-	std::vector<VkSubpassDependency> dependencies;
-	if (!colorAttachRefs.empty())
-	{
-		VkSubpassDependency colorDependency{};
-		colorDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		colorDependency.dstSubpass = 0;
-		colorDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		colorDependency.srcAccessMask = 0;
-		colorDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		colorDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		dependencies.push_back(colorDependency);
-	}
-	if (oneDepth)
-	{
-		VkSubpassDependency depthDependency{};
-		depthDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		depthDependency.dstSubpass = 0;
-		depthDependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		depthDependency.srcAccessMask = 0;
-		depthDependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-		depthDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-		dependencies.push_back(depthDependency);
-	}
-
-	VkRenderPassCreateInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = attachDescriptions.size();
-	renderPassInfo.pAttachments = attachDescriptions.data();
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = dependencies.size();
-	renderPassInfo.pDependencies = dependencies.data();
-
-	rhi::MultiviewInfo& multiviewInfo = passInfo->multiviewInfo;
-	VkRenderPassMultiviewCreateInfoKHR renderPassMultiviewInfo{};
-	
-	if (multiviewInfo.isEnabled)
-	{
-		if (!multiviewInfo.viewCount)
-		{
-			LOG_ERROR("VulkanRHI::create_render_pass(): If multiview is used, view count can't be 0")
-			return;
-		}
-		if (multiviewInfo.viewCount > _vulkanDevice.get_max_multiview_view_count())
-		{
-			LOG_ERROR("VulkanRHI::create_render_pass(): View count can't be greater than {}", _vulkanDevice.get_max_multiview_view_count())
-			return;
-		}
-
-		const uint32_t viewMask = (1 << multiviewInfo.viewCount) - 1;
-		const uint32_t correlationMask = (1 << multiviewInfo.viewCount) - 1;
-		
-		renderPassMultiviewInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO_KHR;
-		renderPassMultiviewInfo.subpassCount = 1;
-		renderPassMultiviewInfo.pViewMasks = &viewMask;
-		renderPassMultiviewInfo.correlationMaskCount = 1;
-		renderPassMultiviewInfo.pCorrelationMasks = &correlationMask;
-
-		renderPassInfo.pNext = &renderPassMultiviewInfo;
-	}
-
-	VkRenderPass vkRenderPass;
-	VK_CHECK(vkCreateRenderPass(_vulkanDevice.get_device(), &renderPassInfo, nullptr, &vkRenderPass));
-	VkFramebuffer framebuffer = create_framebuffer(vkRenderPass, passInfo->renderTargets);
-	VulkanRenderPass* vkPass = new VulkanRenderPass();
-	vkPass->renderPass = vkRenderPass;
-	vkPass->framebuffer = framebuffer;
-	renderPass->handle = vkPass;
+	renderPass->handle = new VulkanRenderPass(&_vulkanDevice, passInfo);
 }
 
 void vulkan::VulkanRHI::begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType)
@@ -824,6 +422,65 @@ void vulkan::VulkanRHI::wait_command_buffer(rhi::CommandBuffer* cmd, rhi::Comman
 void vulkan::VulkanRHI::submit(rhi::QueueType queueType)
 {
 	_cmdManager->submit(queueType);
+}
+
+void vulkan::VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
+{
+	if (!cmd || !buffer)
+	{
+		LOG_ERROR("VulkanRHI::bind_vertex_buffer(): Invalid pointers")
+		return;
+	}
+	if (buffer->bufferInfo.bufferUsage != rhi::VERTEX_BUFFER)
+	{
+		LOG_ERROR("VulkanRHI::bind_vertex_buffer(): Buffer wasn't created with VERTEX_BUFFER usage")
+		return;
+	}
+	VulkanCommandBuffer* vkCmd = static_cast<VulkanCommandBuffer*>(cmd->handle);
+	VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(buffer->data);
+
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(vkCmd->get_handle(), 0, 1, vkBuffer->get_handle(), &offset);
+}
+
+void vulkan::VulkanRHI::bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
+{
+	if (!cmd || !buffer)
+	{
+		LOG_ERROR("VulkanRHI::bind_index_buffer(): Invalid pointers")
+		return;
+	}
+	if (buffer->bufferInfo.bufferUsage != rhi::INDEX_BUFFER)
+	{
+		LOG_ERROR("VulkanRHI::bind_index_buffer(): Buffer wasn't created with INDEX_BUFFER usage")
+		return;
+	}
+	VulkanCommandBuffer* vkCmd = static_cast<VulkanCommandBuffer*>(cmd->handle);
+	VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(buffer->data);
+
+	VkDeviceSize offset = 0;
+	vkCmdBindIndexBuffer(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, VK_INDEX_TYPE_UINT32);
+}
+
+void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass)
+{
+	if (!cmd || !renderPass)
+	{
+		LOG_ERROR("VulkanRHI::bind_render_pass(): Invalid pointers")
+		return;
+	}
+
+	VulkanCommandBuffer* vkCmd = static_cast<VulkanCommandBuffer*>(cmd->handle);
+	VulkanRenderPass* pass = static_cast<VulkanRenderPass*>(renderPass->handle);
+
+	VkRenderPassBeginInfo beginInfo = pass->get_begin_info();
+
+	vkCmdBeginRenderPass(vkCmd->get_handle(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void vulkan::VulkanRHI::end_render_pass(rhi::CommandBuffer* cmd)
+{
+	
 }
 
 // private methods
@@ -852,27 +509,4 @@ void vulkan::VulkanRHI::create_allocator()
 	allocatorInfo.instance = _instance;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
 	LOG_INFO("End creating allocator")
-}
-
-VkFramebuffer vulkan::VulkanRHI::create_framebuffer(VkRenderPass renderPass, std::vector<rhi::RenderTarget>& renderTargets)
-{
-	std::vector<VkImageView> attachViews;
-	for (auto& target : renderTargets)
-	{
-		VkImageView view = *static_cast<VkImageView*>(target.target->handle);
-		attachViews.push_back(view);
-	}
-	
-	VkFramebufferCreateInfo framebufferInfo{};
-	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	framebufferInfo.layers = 1;
-	framebufferInfo.width = renderTargets[0].target->texture->textureInfo.width;
-	framebufferInfo.height = renderTargets[0].target->texture->textureInfo.height;
-	framebufferInfo.renderPass = renderPass;
-	framebufferInfo.pAttachments = attachViews.data();
-	framebufferInfo.attachmentCount = attachViews.size();
-
-	VkFramebuffer framebuffer;
-	VK_CHECK(vkCreateFramebuffer(_vulkanDevice.get_device(), &framebufferInfo, nullptr, &framebuffer));
-	return framebuffer;
 }

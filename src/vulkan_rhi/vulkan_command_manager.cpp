@@ -120,7 +120,7 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 				{
 					commandPool = new VulkanCommandPool(_device, graphicsQueue);
 					tempPools.push_back(commandPool);
-					if (tempPools.size() == poolsPerQueue / buffersCount || tempPools.size() == poolsPerQueue)
+					if (tempPools.size() == poolsPerQueue / buffersCount)
 					{
 						_freeGraphicsCmdPools.push_back(tempPools);
 						tempPools.clear();
@@ -131,7 +131,7 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 				{
 					commandPool = new VulkanCommandPool(_device, computeQueue);
 					tempPools.push_back(commandPool);
-					if (tempPools.size() == poolsPerQueue / buffersCount || tempPools.size() == poolsPerQueue)
+					if (tempPools.size() == poolsPerQueue / buffersCount)
 					{
 						_freeComputeCmdPools.push_back(tempPools);
 						tempPools.clear();
@@ -142,7 +142,7 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 				{
 					commandPool = new VulkanCommandPool(_device, transferQueue);
 					tempPools.push_back(commandPool);
-					if (tempPools.size() == poolsPerQueue / buffersCount || tempPools.size() == poolsPerQueue)
+					if (tempPools.size() == poolsPerQueue / buffersCount)
 					{
 						_freeTransferCmdPools.push_back(tempPools);
 						tempPools.clear();
@@ -152,6 +152,14 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 			}
 		}
 	}
+	LOG_INFO("First frame graphics: {}", _freeGraphicsCmdPools[0].size())
+	LOG_INFO("Second frame graphics: {}", _freeGraphicsCmdPools[1].size())
+
+	LOG_INFO("First frame transfer: {}", _freeTransferCmdPools[0].size())
+	LOG_INFO("Second frame transfer: {}", _freeTransferCmdPools[1].size())
+
+	LOG_INFO("First frame compute: {}", _freeComputeCmdPools[0].size())
+	LOG_INFO("Second frame compute: {}", _freeComputeCmdPools[1].size())
 
 	for (size_t i = 0; i != buffersCount; ++i)
 	{
