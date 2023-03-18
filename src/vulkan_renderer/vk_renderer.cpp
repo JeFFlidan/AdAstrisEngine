@@ -234,7 +234,6 @@ namespace ad_astris
 		info.format = rhi::Format::R8G8B8A8_UNORM;
 		info.height = 2048;
 		info.width = 2048;
-		info.transferDst = true;
 		info.layersCount = 6;
 		info.mipLevels = 1;
 		info.textureUsage = rhi::ResourceUsage::COLOR_ATTACHMENT | rhi::ResourceUsage::SAMPLED_TEXTURE;
@@ -1203,22 +1202,10 @@ namespace ad_astris
 		draw_compositing_pass(cmd);
 		draw_taa_pass(cmd);
 		draw_final_quad(cmd, swapchainImageIndex);
-
-		const VkPhysicalDeviceMemoryProperties* memProp = nullptr;
-		vmaGetMemoryProperties(_allocator, &memProp);
 		
-		VmaBudget budget[VK_MAX_MEMORY_HEAPS];
-		vmaGetHeapBudgets(_allocator, budget);
-		for (int i = 0; i != memProp->memoryHeapCount; ++i)
-		{
-			uint64_t size = static_cast<uint64_t>(budget[i].statistics.allocationBytes);
-			LOG_INFO("Allocated bytes: {}", size / (1024 * 1024))
-		}
-
 		depth_reduce(cmd);
 
 		VK_CHECK(vkEndCommandBuffer(get_current_frame()._mainCommandBuffer));
-
 		submit(cmd, swapchainImageIndex);
 	
 		LOG_INFO("Frame number is {}", _frameNumber)

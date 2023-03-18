@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "resources.h"
+#include "vector"
 
 namespace ad_astris::rhi
 {
@@ -51,5 +52,6 @@ namespace ad_astris::rhi
 			virtual void draw_indexed_indirect(CommandBuffer* cmd, Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) = 0;
 			virtual void dispatch(CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
 			virtual void fill_buffer(CommandBuffer* cmd, Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data) = 0;
+			virtual void add_pipeline_barriers(CommandBuffer* cmd, std::vector<PipelineBarrier>& barriers) = 0;
 	};
 }

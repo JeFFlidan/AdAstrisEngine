@@ -12,6 +12,7 @@ namespace ad_astris::vulkan
 			VkExtent3D _extent;
 			uint32_t _mipLevels;
 
+			VulkanTexture() = default;
 			VulkanTexture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);
 			
 			void create_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);

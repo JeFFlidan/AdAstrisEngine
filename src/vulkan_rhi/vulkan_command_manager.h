@@ -23,6 +23,7 @@ namespace ad_astris::vulkan
 		friend VulkanQueue;
 		
 		public:
+			VulkanCommandBuffer() = default;
 			VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, VkPipelineStageFlags waitFlag);
 			~VulkanCommandBuffer();
 

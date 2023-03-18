@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include "vulkan_rhi/vulkan_texture.h"
+#include "vulkan_rhi/vulkan_command_manager.h"
 #include <cmath>
 #include "engine_core/engine_actors.h"
 #include "fmt/core.h"
@@ -758,7 +760,7 @@ namespace ad_astris
 		VkImageMemoryBarrier imgBarrier1 = vkinit::image_barrier(
 			_temporalFilter.taaOldColorAttach.imageData.image,
 			VK_ACCESS_SHADER_READ_BIT,
-			VK_ACCESS_MEMORY_WRITE_BIT,
+			VK_ACCESS_TRANSFER_WRITE_BIT,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_ASPECT_COLOR_BIT);
@@ -766,7 +768,7 @@ namespace ad_astris
 		VkImageMemoryBarrier imgBarrier2 = vkinit::image_barrier(
 			_temporalFilter.taaCurrentColorAttach.imageData.image,
 			VK_ACCESS_SHADER_READ_BIT,
-			VK_ACCESS_MEMORY_READ_BIT,
+			VK_ACCESS_TRANSFER_READ_BIT,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 			VK_IMAGE_ASPECT_COLOR_BIT);
@@ -815,7 +817,7 @@ namespace ad_astris
 	{
 		VkImageMemoryBarrier imgBarrier1 = vkinit::image_barrier(
 			_temporalFilter.taaOldColorAttach.imageData.image,
-			VK_ACCESS_MEMORY_WRITE_BIT,
+			VK_ACCESS_TRANSFER_WRITE_BIT,
 			VK_ACCESS_SHADER_READ_BIT,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -828,7 +830,7 @@ namespace ad_astris
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 			VK_IMAGE_ASPECT_COLOR_BIT);
-
+		
 		VkImageMemoryBarrier imgBarriers[2] = { imgBarrier1, imgBarrier2 };
 	
 		vkCmdPipelineBarrier(
@@ -854,22 +856,7 @@ namespace ad_astris
 		taaCurrentImage.sampler = _linearSampler;
 		taaCurrentImage.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		taaCurrentImage.imageView = _temporalFilter.taaCurrentColorAttach.imageView;
-		//
-		// VkDescriptorImageInfo GBufferDepthImgInfo;
-		// GBufferDepthImgInfo.sampler = _linearSampler;
-		// GBufferDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		// GBufferDepthImgInfo.imageView = _GBuffer.depth.imageView;
-		//
-		// VkDescriptorImageInfo transpColorImgInfo;
-		// transpColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		// transpColorImgInfo.imageView = _transparencyColorAttach.imageView;
-		// transpColorImgInfo.sampler = _linearSampler;
-		//
-		// VkDescriptorImageInfo transpDepthImgInfo;
-		// transpDepthImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		// transpDepthImgInfo.imageView = _transparencyDepthAttach.imageView;
-		// transpDepthImgInfo.sampler = _linearSampler;
-		//
+
 		VkDescriptorSet offscrColorImageSet;
 	
 		DescriptorBuilder::begin(&_descriptorLayoutCache, &get_current_frame()._dynamicDescriptorAllocator)

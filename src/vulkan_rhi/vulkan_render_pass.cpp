@@ -64,6 +64,18 @@ void vulkan::VulkanRenderPass::create_render_pass(rhi::RenderPassInfo* passInfo)
 		attachInfo.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachInfo.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachInfo.initialLayout = get_image_layout(target.initialLayout);
+		if (target.finalLayout == rhi::ResourceLayout::COLOR_ATTACHMENT)
+		{
+			LOG_INFO("create_render_pass(): COLOR ATTACH")
+			if (has_flag(target.finalLayout, rhi::ResourceLayout::UNDEFINED))
+			{
+				LOG_ERROR("UNDEFINED")
+			}
+			else
+			{
+				LOG_INFO("YEEEEEEESS")
+			}
+		}
 		attachInfo.finalLayout = get_image_layout(target.finalLayout);
 		attachDescriptions.push_back(attachInfo);
 

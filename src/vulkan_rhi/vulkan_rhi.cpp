@@ -74,11 +74,7 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufI
 		LOG_ERROR("Invalid memory usage (buffer)")
 		return;
 	}
-	if (bufInfo->transferDst)
-		bufferUsage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-	if (bufInfo->transferSrc)
-		bufferUsage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
+	
 	VulkanBuffer* vulkanBuffer = new VulkanBuffer(&_allocator, size, bufferUsage, memoryUsage);
 	buffer->data = vulkanBuffer;
 	buffer->size = size;
@@ -105,11 +101,6 @@ void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, v
 	if (buffer->bufferInfo.memoryUsage == rhi::MemoryUsage::GPU)
 	{
 		LOG_ERROR("Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
-		return;
-	}
-	if (!buffer->bufferInfo.transferDst)
-	{
-		LOG_ERROR("Can't copy because buffer usage doesn't have the transfer dst flag")
 		return;
 	}
 
@@ -161,24 +152,11 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 	createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	createInfo.extent = VkExtent3D{ texInfo->width, texInfo->height, 1 };
 	createInfo.samples = get_sample_count(texInfo->samplesCount);
-
-	if (has_flag(texInfo->textureUsage, rhi::ResourceUsage::SAMPLED_TEXTURE))
-	{
-		LOG_INFO("SampledTexture")
-	}
-	if (has_flag(texInfo->textureUsage, rhi::ResourceUsage::COLOR_ATTACHMENT))
-	{
-		LOG_INFO("ColorAttachment")
-	}
-
+	
 	if (has_flag(texInfo->resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
 		createInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 	VkImageUsageFlags imgUsage = get_image_usage(texInfo->textureUsage);
-	if (texInfo->transferSrc)
-		imgUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-	if (texInfo->transferDst)
-		imgUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	createInfo.usage = imgUsage;
 	createInfo.imageType = get_image_type(texInfo->textureDimension);
 	
@@ -207,7 +185,7 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	VkImageUsageFlags imgUsage = get_image_usage(texInfo.textureUsage);
 
 	VkImageAspectFlags aspectFlags;
-	if (imgUsage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+	if ((imgUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
 		aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
 	else
 		aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -610,6 +588,86 @@ void vulkan::VulkanRHI::fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
 	vkCmdFillBuffer(vkCmd->get_handle(), *vkBuffer->get_handle(), dstOffset, size, data);
+}
+
+void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vector<rhi::PipelineBarrier>& barriers)
+{
+	std::vector<VkMemoryBarrier> memoryBarriers;
+	std::vector<VkBufferMemoryBarrier> bufferBarriers;
+	std::vector<VkImageMemoryBarrier> imageBarriers;
+	for (auto& barrier : barriers)
+	{
+		switch (barrier.type)
+		{
+			case rhi::PipelineBarrier::BarrierType::MEMORY:
+			{
+				LOG_INFO("Memory barrier")
+				VkMemoryBarrier memoryBarrier{};
+				memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+				memoryBarrier.srcAccessMask = get_access(barrier.memoryBarrier.srcLayout);
+				memoryBarrier.dstAccessMask = get_access(barrier.memoryBarrier.dstLayout);
+				memoryBarriers.push_back(memoryBarrier);
+				break;
+			}
+			case rhi::PipelineBarrier::BarrierType::BUFFER:
+			{
+				LOG_INFO("Buffer barrier")
+				VkBufferMemoryBarrier bufferBarrier{};
+				bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+				bufferBarrier.srcAccessMask = get_access(barrier.bufferBarrier.srcLayout);
+				bufferBarrier.dstAccessMask = get_access(barrier.bufferBarrier.dstLayout);
+				bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				bufferBarriers.push_back(bufferBarrier);
+				break;
+			}
+			case rhi::PipelineBarrier::BarrierType::IMAGE:
+			{
+				LOG_INFO("Image barrier")
+				VkImageMemoryBarrier imageBarrier{};
+				imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+				imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				imageBarrier.srcAccessMask = get_access(barrier.textureBarrier.srcLayout);
+				imageBarrier.dstAccessMask = get_access(barrier.textureBarrier.dstLayout);
+				imageBarrier.oldLayout = get_image_layout(barrier.textureBarrier.srcLayout);
+				imageBarrier.newLayout = get_image_layout(barrier.textureBarrier.dstLayout);
+				rhi::PipelineBarrier::TextureBarrier texBarrier = barrier.textureBarrier;
+				VulkanTexture* vkTexture = get_vk_obj(texBarrier.texture);
+				imageBarrier.image = vkTexture->_image;
+				LOG_INFO("Image 2 ID {}", (uint64_t)imageBarrier.image)
+				VkImageSubresourceRange range;
+				if (has_flag(texBarrier.texture->textureInfo.textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
+				{
+					range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+				}
+				else
+				{
+					range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				}
+				range.layerCount = VK_REMAINING_ARRAY_LAYERS;
+				range.baseArrayLayer = texBarrier.baseLayer;
+				range.levelCount = VK_REMAINING_MIP_LEVELS;
+				range.baseMipLevel = texBarrier.baseMipLevel;
+				imageBarrier.subresourceRange = range;
+				imageBarriers.push_back(imageBarrier);
+				break;
+			}
+		}
+	}
+
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	vkCmdPipelineBarrier(
+		vkCmd->get_handle(),
+		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		0,
+		memoryBarriers.size(),
+		memoryBarriers.data(),
+		bufferBarriers.size(),
+		bufferBarriers.data(),
+		imageBarriers.size(),
+		imageBarriers.data());
 }
 
 // private methods

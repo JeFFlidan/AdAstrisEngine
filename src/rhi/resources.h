@@ -33,15 +33,23 @@ namespace ad_astris::rhi
 
 	enum class ResourceLayout
 	{
-		UNDEFINED = 0,
-		GENERAL = 1 << 0,
-		SHADER_READ_ONLY = 1 << 1,
-		TRANSFER_SRC = 1 << 2,
-		TRANSFER_DST = 1 << 3,
+		UNDEFINED = 1 << 0,
+		GENERAL = 1 << 1,
+		SHADER_READ = 1 << 2,
+		SHADER_WRITE = 1 << 3,
+		MEMORY_READ = 1 << 4,
+		MEMORY_WRITE = 1 << 5,
+		TRANSFER_SRC = 1 << 6,
+		TRANSFER_DST = 1 << 7,
 
-		COLOR_ATTACHMENT = 1 << 4,
-		DEPTH_STENCIL = 1 << 5,
-		DEPTH_STENCIL_READ_ONLY = 1 << 6,
+		COLOR_ATTACHMENT = 1 << 8,
+		DEPTH_STENCIL = 1 << 9,
+		DEPTH_STENCIL_READ_ONLY = 1 << 10,
+
+		INDIRECT_COMMAND_BUFFER = 1 << 11,
+		VERTEX_BUFFER = 1 << 12,
+		INDEX_BUFFER = 1 << 13,
+		UNIFORM_BUFFER = 1 << 14
 	};
 	
 	enum class ResourceUsage
@@ -267,16 +275,12 @@ namespace ad_astris::rhi
 		SampleCount samplesCount{ SampleCount::UNDEFINED };
 		TextureDimension textureDimension{ TextureDimension::UNDEFINED };
 		ResourceFlags resourceFlags;	// not necessary
-		bool transferSrc{ false };
-		bool transferDst{ false };
 	};
 
 	struct BufferInfo
 	{
 		ResourceUsage bufferUsage{ ResourceUsage::UNDEFINED };
 		MemoryUsage memoryUsage{ MemoryUsage::UNDEFINED };
-		bool transferSrc{ false };
-		bool transferDst{ false };
 	};
 	
 	struct Resource
@@ -629,7 +633,87 @@ namespace ad_astris::rhi
 	{
 		QueueType queueType;
 	};
+	
+	struct PipelineBarrier
+	{
+		enum class BarrierType
+		{
+			MEMORY,
+			BUFFER,
+			IMAGE
+		} type;
 
+		struct MemoryBarrier
+		{
+			ResourceLayout srcLayout;
+			ResourceLayout dstLayout;
+		};
+
+		struct BufferBarrier
+		{
+			Buffer* buffer;
+			ResourceLayout srcLayout;
+			ResourceLayout dstLayout;
+		};
+
+		struct TextureBarrier
+		{
+			Texture* texture;
+			ResourceLayout srcLayout;
+			ResourceLayout dstLayout;
+			uint32_t baseMipLevel;
+			uint32_t baseLayer;
+		};
+
+		union
+		{
+			MemoryBarrier memoryBarrier;
+			BufferBarrier bufferBarrier;
+			TextureBarrier textureBarrier;
+		};
+
+		static PipelineBarrier set_memory_barrier(ResourceLayout srcLayout, ResourceLayout dstLayout)
+		{
+			MemoryBarrier memoryBarrier;
+			memoryBarrier.srcLayout = srcLayout;
+			memoryBarrier.dstLayout = dstLayout;
+			PipelineBarrier pipelineBarrier;
+			pipelineBarrier.type = BarrierType::MEMORY;
+			pipelineBarrier.memoryBarrier = memoryBarrier;
+			return pipelineBarrier;
+		}
+
+		static PipelineBarrier set_buffer_barrier(Buffer* buffer, ResourceLayout srcLayout, ResourceLayout dstLayout)
+		{
+			BufferBarrier bufferBarrier;
+			bufferBarrier.buffer = buffer;
+			bufferBarrier.srcLayout = srcLayout;
+			bufferBarrier.dstLayout = dstLayout;
+			PipelineBarrier pipelineBarrier;
+			pipelineBarrier.bufferBarrier = bufferBarrier;
+			pipelineBarrier.type = BarrierType::BUFFER;
+			return pipelineBarrier;
+		}
+
+		static PipelineBarrier set_texture_barrier(
+			Texture* texture,
+			ResourceLayout srcLayout,
+			ResourceLayout dstLayout,
+			uint32_t baseMipLevel = 0,
+			uint32_t baseLayer = 0)
+		{
+			TextureBarrier textureBarrier;
+			textureBarrier.texture = texture;
+			textureBarrier.srcLayout = srcLayout;
+			textureBarrier.dstLayout = dstLayout;
+			textureBarrier.baseMipLevel = baseMipLevel;
+			textureBarrier.baseLayer = baseLayer;
+			PipelineBarrier pipelineBarrier;
+			pipelineBarrier.textureBarrier = textureBarrier;
+			pipelineBarrier.type = BarrierType::IMAGE;
+			return pipelineBarrier;
+		}
+	};
 }
 
 template<>
