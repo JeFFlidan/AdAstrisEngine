@@ -231,17 +231,17 @@ namespace ad_astris
 		_graphicsQueueFamily = queue->get_family();
 
 		rhi::TextureInfo info{};
-		info.format = rhi::R8G8B8A8_UNORM;
+		info.format = rhi::Format::R8G8B8A8_UNORM;
 		info.height = 2048;
 		info.width = 2048;
 		info.transferDst = true;
 		info.layersCount = 6;
 		info.mipLevels = 1;
-		info.textureUsage = rhi::COLOR_ATTACHMENT;
-		info.samplesCount = rhi::SAMPLE_COUNT_1_BIT;
-		info.textureDimension = rhi::TEXTURE2D;
-		info.memoryUsage = rhi::GPU;
-		info.resourceFlags = rhi::CUBE_TEXTURE;
+		info.textureUsage = rhi::ResourceUsage::COLOR_ATTACHMENT | rhi::ResourceUsage::SAMPLED_TEXTURE;
+		info.samplesCount = rhi::SampleCount::BIT_1;
+		info.textureDimension = rhi::TextureDimension::TEXTURE2D;
+		info.memoryUsage = rhi::MemoryUsage::GPU;
+		info.resourceFlags = rhi::ResourceFlags::CUBE_TEXTURE;
 		rhi::Texture texture;
 		_eRhi->create_texture(&texture, &info);
 		if (!texture.data)
@@ -256,13 +256,13 @@ namespace ad_astris
 		_eRhi->create_texture_view(&view, &viewInfo, &texture);
 		
 		rhi::RenderTarget target1;
-		target1.type = rhi::RENDER_TARGET_COLOR;
+		target1.type = rhi::RenderTargetType::COLOR;
 		target1.target = &view;
-		target1.initialLayout = rhi::RESOURCE_LAYOUT_UNDEFINED;
-		target1.renderPassLayout = rhi::RESOURCE_LAYOUT_COLOR_ATTACHMENT;
-		target1.finalLayout = rhi::RESOURCE_LAYOUT_COLOR_ATTACHMENT;
-		target1.loadOp = rhi::LOAD_OP_CLEAR;
-		target1.storeOp = rhi::STORE_OP_STORE;
+		target1.initialLayout = rhi::ResourceLayout::UNDEFINED;
+		target1.renderPassLayout = rhi::ResourceLayout::COLOR_ATTACHMENT;
+		target1.finalLayout = rhi::ResourceLayout::COLOR_ATTACHMENT;
+		target1.loadOp = rhi::LoadOp::CLEAR;
+		target1.storeOp = rhi::StoreOp::STORE;
 
 		rhi::MultiviewInfo multiviewInfo;
 		multiviewInfo.isEnabled = true;
@@ -270,16 +270,16 @@ namespace ad_astris
 
 		rhi::RenderPassInfo passInfo;
 		passInfo.renderTargets.push_back(target1);
-		passInfo.pipelineType = rhi::GRAPHICS_PIPELINE;
+		passInfo.pipelineType = rhi::PipelineType::GRAPHICS;
 		passInfo.multiviewInfo = multiviewInfo;
 
 		rhi::RenderPass renderPass;
 		_eRhi->create_render_pass(&renderPass, &passInfo);
 
 		rhi::SamplerInfo samplerInfo;
-		samplerInfo.filter = rhi::ANISOTROPIC;
-		samplerInfo.addressMode = rhi::CLAMP_TO_EDGE;
-		samplerInfo.borderColor = rhi::FLOAT_OPAQUE_WHITE;
+		samplerInfo.filter = rhi::Filter::ANISOTROPIC;
+		samplerInfo.addressMode = rhi::AddressMode::CLAMP_TO_EDGE;
+		samplerInfo.borderColor = rhi::BorderColor::FLOAT_OPAQUE_WHITE;
 		rhi::Sampler sampler;
 		_eRhi->create_sampler(&sampler, &samplerInfo);
 		VkSampler* vkSampler = static_cast<VkSampler*>(sampler.handle);

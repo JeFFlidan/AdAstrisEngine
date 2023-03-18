@@ -16,17 +16,17 @@ void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager)
 	std::vector<VulkanCommandPool*>* cmdPools;
 	switch (_queueType)
 	{
-		case rhi::GRAPHICS_QUEUE:
+		case rhi::QueueType::GRAPHICS:
 		{
 			cmdPools = &cmdManager._lockedGraphicsCmdPools[cmdManager._imageIndex];
 			break;
 		}
-		case rhi::COMPUTE_QUEUE:
+		case rhi::QueueType::COMPUTE:
 		{
 			cmdPools = &cmdManager._lockedComputeCmdPools[cmdManager._imageIndex];
 			break;
 		}
-		case rhi::TRANSFER_QUEUE:
+		case rhi::QueueType::TRANSFER:
 		{
 			cmdPools = &cmdManager._lockedTransferCmdPools[cmdManager._imageIndex];
 			break;

@@ -43,15 +43,30 @@ namespace ad_astris::vulkan
 			virtual void create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info) final override;
 			virtual void create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info) final override;
 
-			virtual void begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType = rhi::GRAPHICS_QUEUE) final override;
+			virtual void begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType = rhi::QueueType::GRAPHICS) final override;
 			virtual void wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd) final override;
-			virtual void submit(rhi::QueueType queueType = rhi::GRAPHICS_QUEUE) final override;
+			virtual void submit(rhi::QueueType queueType = rhi::QueueType::GRAPHICS) final override;
 
+			virtual void set_viewport(rhi::CommandBuffer* cmd, float width, float height) final override;
+			virtual void set_scissor(rhi::CommandBuffer* cmd, uint32_t width, uint32_t height, int32_t offsetX = 0, int32_t offsetY = 0) final override;
 			virtual void bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;
 			virtual void bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;
+			virtual void bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline) final override;
 			virtual void begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass) final override;
 			virtual void end_render_pass(rhi::CommandBuffer* cmd) final override;
-
+			virtual void draw(rhi::CommandBuffer* cmd, uint64_t vertexCount) final override;
+			virtual void draw_indexed(
+				rhi::CommandBuffer* cmd,
+				uint32_t indexCount,
+				uint32_t instanceCount,
+				uint32_t firstIndex,
+				int32_t vertexOffset,
+				uint32_t firstInstance) final override;
+			virtual void draw_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) final override;
+			virtual void draw_indexed_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) final override;
+			virtual void dispatch(rhi::CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) final override;
+			virtual void fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data) final override;
+		
 			// Only for tests. Will be removed in the final implementation
 			VkInstance get_instance() { return _instance; }
 			VulkanDevice get_device() { return _vulkanDevice; }

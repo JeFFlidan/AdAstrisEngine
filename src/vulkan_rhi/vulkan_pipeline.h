@@ -21,7 +21,7 @@ namespace ad_astris::vulkan
 			VulkanDevice* _device;
 			VkPipeline _pipeline;
 			VkPipelineLayout _layout;
-			rhi::PipelineType _type{ rhi::UNDEFINED_PIPELINE_TYPE };
+			rhi::PipelineType _type{ rhi::PipelineType::UNDEFINED };
 
 			void create_graphics_pipeline(rhi::GraphicsPipelineInfo* info);
 			void create_compute_pipeline(rhi::ComputePipelineInfo* info);

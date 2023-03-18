@@ -159,33 +159,33 @@ shaderc_shader_kind rcore::ShaderCompiler::get_shader_kind(rhi::ShaderType shade
 {
 	switch (shaderType)
 	{
-		case rhi::VERTEX:
+		case rhi::ShaderType::VERTEX:
 			return shaderc_vertex_shader;
-		case rhi::FRAGMENT:
+		case rhi::ShaderType::FRAGMENT:
 			return shaderc_fragment_shader;
-		case rhi::TESSELLATION_CONTROL:
+		case rhi::ShaderType::TESSELLATION_CONTROL:
 			return shaderc_tess_control_shader;
-		case rhi::TESSELLATION_EVALUATION:
+		case rhi::ShaderType::TESSELLATION_EVALUATION:
 			return shaderc_tess_evaluation_shader;
-		case rhi::GEOMETRY:
+		case rhi::ShaderType::GEOMETRY:
 			return shaderc_geometry_shader;
-		case rhi::COMPUTE:
+		case rhi::ShaderType::COMPUTE:
 			return shaderc_compute_shader;
-		case rhi::MESH:
+		case rhi::ShaderType::MESH:
 			return shaderc_mesh_shader;
-		case rhi::TASK:
+		case rhi::ShaderType::TASK:
 			return shaderc_task_shader;
-		case rhi::RAY_GENERATION:
+		case rhi::ShaderType::RAY_GENERATION:
 			return shaderc_raygen_shader;
-		case rhi::RAY_INTERSECTION:
+		case rhi::ShaderType::RAY_INTERSECTION:
 			return shaderc_intersection_shader;
-		case rhi::RAY_ANY_HIT:
+		case rhi::ShaderType::RAY_ANY_HIT:
 			return shaderc_anyhit_shader;
-		case rhi::RAY_CLOSEST_HIT:
+		case rhi::ShaderType::RAY_CLOSEST_HIT:
 			return shaderc_closesthit_shader;
-		case rhi::RAY_MISS:
+		case rhi::ShaderType::RAY_MISS:
 			return shaderc_miss_shader;
-		case rhi::RAY_CALLABLE:
+		case rhi::ShaderType::RAY_CALLABLE:
 			return shaderc_callable_shader;
 	}
 }
@@ -195,34 +195,34 @@ rhi::ShaderType rcore::ShaderCompiler::get_shader_type(io::URI& path)
 	std::string extension(std::filesystem::path(path.c_str()).extension().string().erase(0, 1));
 
 	if (extension == "vert")
-		return rhi::VERTEX;
+		return rhi::ShaderType::VERTEX;
 	if (extension == "frag")
-		return rhi::FRAGMENT;
+		return rhi::ShaderType::FRAGMENT;
 	if (extension == "tesc")
-		return rhi::TESSELLATION_CONTROL;
+		return rhi::ShaderType::TESSELLATION_CONTROL;
 	if (extension == "tese")
-		return rhi::TESSELLATION_EVALUATION;
+		return rhi::ShaderType::TESSELLATION_EVALUATION;
 	if (extension == "geom")
-		return rhi::GEOMETRY;
+		return rhi::ShaderType::GEOMETRY;
 	if (extension == "comp")
-		return rhi::COMPUTE;
+		return rhi::ShaderType::COMPUTE;
 	if (extension == "mesh")
-		return rhi::MESH;
+		return rhi::ShaderType::MESH;
 	if (extension == "task")
-		return rhi::TASK;
+		return rhi::ShaderType::TASK;
 	if (extension == "rgen")
-		return rhi::RAY_GENERATION;
+		return rhi::ShaderType::RAY_GENERATION;
 	if (extension == "rint")
-		return rhi::RAY_INTERSECTION;
+		return rhi::ShaderType::RAY_INTERSECTION;
 	if (extension == "rahit")
-		return rhi::RAY_ANY_HIT;
+		return rhi::ShaderType::RAY_ANY_HIT;
 	if (extension == "rchit")
-		return rhi::RAY_CLOSEST_HIT;
+		return rhi::ShaderType::RAY_CLOSEST_HIT;
 	if (extension == "rmiss")
-		return rhi::RAY_MISS;
+		return rhi::ShaderType::RAY_MISS;
 	if (extension == "rcall")
-		return rhi::RAY_CALLABLE;
+		return rhi::ShaderType::RAY_CALLABLE;
 
 	LOG_ERROR("Unsopported shader extension {}", extension.c_str())
-	return rhi::UNDEFINED_SHADER_TYPE;
+	return rhi::ShaderType::UNDEFINED;
 }

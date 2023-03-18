@@ -1,77 +1,80 @@
 ﻿#pragma once
+#include "flags_operations.h"
 #include <cstdint>
 #include <vector>
 
 namespace ad_astris::rhi
 {
-	enum ResourceFlags
+	enum class ResourceFlags
 	{
 		CUBE_TEXTURE = 1 << 0,
 	};
 	
-	enum LogicOp
+	enum class LogicOp
 	{
-		UNDEFINED_LOGIC_OP,
-		LOGIC_OP_CLEAR,
-		LOGIC_OP_AND,
-		LOGIC_OP_AND_REVERSE,
-		LOGIC_OP_COPY,
-		LOGIC_OP_AND_INVERTED,
-		LOGIC_OP_NO_OP,
-		LOGIC_OP_XOR,
-		LOGIC_OP_OR,
-		LOGIC_OP_NOR,
-		LOGIC_OP_EQUIVALENT,
-		LOGIC_OP_INVERT,
-		LOGIC_OP_OR_REVERSE,
-		LOGIC_OP_COPY_INVERTED,
-		LOGIC_OP_OR_INVERTED,
-		LOGIC_OP_NAND,
-		LOGIC_OP_SET,
+		UNDEFINED,
+		CLEAR,
+		AND,
+		AND_REVERSE,
+		COPY,
+		AND_INVERTED,
+		NO_OP,
+		XOR,
+		OR,
+		NOR,
+		EQUIVALENT,
+		INVERT,
+		OR_REVERSE,
+		COPY_INVERTED,
+		OR_INVERTED,
+		NAND,
+		SET,
 	};
 
-	enum ResourceLayout
+	enum class ResourceLayout
 	{
-		RESOURCE_LAYOUT_UNDEFINED = 0,
-		RESOURCE_LAYOUT_GENERAL = 1 << 0,
-		RESOURCE_LAYOUT_SHADER_READ_ONLY = 1 << 1,
-		RESOURCE_LAYOUT_TRANSFER_SRC = 1 << 2,
-		RESOURCE_LAYOUT_TRANSFER_DST = 1 << 3,
+		UNDEFINED = 0,
+		GENERAL = 1 << 0,
+		SHADER_READ_ONLY = 1 << 1,
+		TRANSFER_SRC = 1 << 2,
+		TRANSFER_DST = 1 << 3,
 
-		RESOURCE_LAYOUT_COLOR_ATTACHMENT = 1 << 4,
-		RESOURCE_LAYOUT_DEPTH_STENCIL = 1 << 5,
-		RESOURCE_LAYOUT_DEPTH_STENCIL_READ_ONLY = 1 << 6,
+		COLOR_ATTACHMENT = 1 << 4,
+		DEPTH_STENCIL = 1 << 5,
+		DEPTH_STENCIL_READ_ONLY = 1 << 6,
 	};
 	
-	enum ResourceUsage
+	enum class ResourceUsage
 	{
-		UNDEFINED_USAGE,
-		SAMPLED_TEXTURE,
-		STORAGE_TEXTURE,
-		COLOR_ATTACHMENT,
-		DEPTH_STENCIL_ATTACHMENT,
-		TRANSIENT_ATTACHMENT,
-		INPUT_ATTACHMENT,
-		UNIFORM_TEXEL_BUFFER,
-		STORAGE_TEXEL_BUFFER,
-		UNIFORM_BUFFER,
-		STORAGE_BUFFER,
-		INDEX_BUFFER,
-		VERTEX_BUFFER,
-		INDIRECT_BUFFER
+		UNDEFINED = 1 << 0,
+		TRANSFER_SRC = 1 << 1,
+		TRANSFER_DST = 1 << 2,
+		SAMPLED_TEXTURE = 1 << 3,
+		STORAGE_TEXTURE = 1 << 4,
+		COLOR_ATTACHMENT = 1 << 5,
+		DEPTH_STENCIL_ATTACHMENT = 1 << 6,
+		TRANSIENT_ATTACHMENT = 1 << 7,
+		INPUT_ATTACHMENT = 1 << 8,
+		UNIFORM_TEXEL_BUFFER = 1 << 10,
+		STORAGE_TEXEL_BUFFER = 1 << 11,
+		UNIFORM_BUFFER = 1 << 12,
+		STORAGE_BUFFER = 1 << 13,
+		INDEX_BUFFER = 1 << 14,
+		VERTEX_BUFFER = 1 << 15,
+		INDIRECT_BUFFER = 1 << 16
 	};
 
-	enum MemoryUsage
+	enum class MemoryUsage
 	{
-		UNDEFINED_MEMORY_USAGE,
+		UNDEFINED,
 		CPU,
 		GPU,
 		CPU_TO_GPU
 	};
 	
-	enum Format
+	enum class Format
 	{
-		UNDEFINED_FORMAT = 0,
+		UNDEFINED = 0,
 		R4G4_UNORM,
 		R4G4B4A4_UNORM,
 		B4G4R4A4_UNORM,
@@ -146,9 +149,9 @@ namespace ad_astris::rhi
 		D32_SFLOAT_S8_UINT,
 	};
 
-	enum AddressMode
+	enum class AddressMode
 	{
-		UNDEFINED_ADDRESS_MODE,
+		UNDEFINED,
 		REPEAT,
 		MIRRORED_REPEAT,
 		CLAMP_TO_EDGE,
@@ -157,9 +160,9 @@ namespace ad_astris::rhi
 	};
 
 	// Base on D3D12
-	enum Filter
+	enum class Filter
 	{
-		UNDEFINED_FILTER,
+		UNDEFINED,
 		MIN_MAG_MIP_NEAREST,
 		MIN_MAG_NEAREST_MIP_LINEAR,
 		MIN_NEAREST_MAG_LINEAR_MIP_NEAREST,
@@ -198,29 +201,29 @@ namespace ad_astris::rhi
 		MAXIMUM_ANISOTROPIC
 	};
 
-	enum SampleCount
+	enum class SampleCount
 	{
-		UNDEFINED_SAMPLE_COUNT,
-		SAMPLE_COUNT_1_BIT,
-		SAMPLE_COUNT_2_BIT,
-		SAMPLE_COUNT_4_BIT,
-		SAMPLE_COUNT_8_BIT,
-		SAMPLE_COUNT_16_BIT,
-		SAMPLE_COUNT_32_BIT,
-		SAMPLE_COUNT_64_BIT
+		UNDEFINED,
+		BIT_1,
+		BIT_2,
+		BIT_4,
+		BIT_8,
+		BIT_16,
+		BIT_32,
+		BIT_64
 	};
 
-	enum TextureDimension
+	enum class TextureDimension
 	{
-		UNDEFINED_TEXTURE_DIMENSION,
+		UNDEFINED,
 		TEXTURE1D,
 		TEXTURE2D,
 		TEXTURE3D
 	};
 
-	enum BorderColor
+	enum class BorderColor
 	{
-		UNDEFINED_BORDER_COLOR,
+		UNDEFINED,
 		FLOAT_TRANSPARENT_BLACK,
 		INT_TRANSPARENT_BLACK,
 		FLOAT_OPAQUE_BLACK,
@@ -229,9 +232,9 @@ namespace ad_astris::rhi
 		INT_OPAQUE_WHITE
 	};
 
-	enum ShaderType
+	enum class ShaderType
 	{
-		UNDEFINED_SHADER_TYPE,
+		UNDEFINED,
 		
 		VERTEX,
 		FRAGMENT,
@@ -258,11 +261,11 @@ namespace ad_astris::rhi
 		uint32_t height{ 0 };
 		uint32_t mipLevels{ 1 };
 		uint32_t layersCount{ 1 };
-		Format format{ UNDEFINED_FORMAT };
-		ResourceUsage textureUsage{ UNDEFINED_USAGE };
-		MemoryUsage memoryUsage{ UNDEFINED_MEMORY_USAGE };
-		SampleCount samplesCount{ UNDEFINED_SAMPLE_COUNT };
-		TextureDimension textureDimension{ UNDEFINED_TEXTURE_DIMENSION };
+		Format format{ Format::UNDEFINED };
+		ResourceUsage textureUsage{ ResourceUsage::UNDEFINED };
+		MemoryUsage memoryUsage{ MemoryUsage::UNDEFINED };
+		SampleCount samplesCount{ SampleCount::UNDEFINED };
+		TextureDimension textureDimension{ TextureDimension::UNDEFINED };
 		ResourceFlags resourceFlags;	// not necessary
 		bool transferSrc{ false };
 		bool transferDst{ false };
@@ -270,8 +273,8 @@ namespace ad_astris::rhi
 
 	struct BufferInfo
 	{
-		ResourceUsage bufferUsage{ UNDEFINED_USAGE };
-		MemoryUsage memoryUsage{ UNDEFINED_MEMORY_USAGE };
+		ResourceUsage bufferUsage{ ResourceUsage::UNDEFINED };
+		MemoryUsage memoryUsage{ MemoryUsage::UNDEFINED };
 		bool transferSrc{ false };
 		bool transferDst{ false };
 	};
@@ -325,9 +328,9 @@ namespace ad_astris::rhi
 	
 	struct SamplerInfo
 	{
-		Filter filter{ UNDEFINED_FILTER};
-		AddressMode addressMode{ UNDEFINED_ADDRESS_MODE };
-		BorderColor borderColor{ UNDEFINED_BORDER_COLOR };
+		Filter filter{ Filter::UNDEFINED};
+		AddressMode addressMode{ AddressMode::UNDEFINED };
+		BorderColor borderColor{ BorderColor::UNDEFINED };
 		float minLod{ 0.0f };
 		float maxLod{ 1.0f };
 		float maxAnisotropy{ 1.0f };
@@ -352,33 +355,33 @@ namespace ad_astris::rhi
 
 	struct ShaderInfo
 	{
-		ShaderType shaderType{ UNDEFINED_SHADER_TYPE };
+		ShaderType shaderType{ ShaderType::UNDEFINED };
 		uint8_t* data{ nullptr };		// Pointer to SPIRV or DXIL data (depends on chosen API)
 		uint64_t size{ 0 };
 	};
 
 	struct Shader : public ObjectHandle
 	{
-		ShaderType type{ UNDEFINED_SHADER_TYPE };
+		ShaderType type{ ShaderType::UNDEFINED };
 	};
 
-	enum LoadOp
+	enum class LoadOp
 	{
-		LOAD_OP_LOAD,
-		LOAD_OP_CLEAR,
-		LOAD_OP_DONT_CARE,
+		LOAD,
+		CLEAR,
+		DONT_CARE,
 	};
 
-	enum StoreOp
+	enum class StoreOp
 	{
-		STORE_OP_STORE,
-		STORE_OP_DONT_CARE,
+		STORE,
+		DONT_CARE,
 	};
 
-	enum RenderTargetType
+	enum class RenderTargetType
 	{
-		RENDER_TARGET_DEPTH,
-		RENDER_TARGET_COLOR,
+		DEPTH,
+		COLOR,
 	};
 
 	struct RenderTarget
@@ -392,12 +395,12 @@ namespace ad_astris::rhi
 		ResourceLayout finalLayout;
 	};
 
-	enum PipelineType
+	enum class PipelineType
 	{
-		UNDEFINED_PIPELINE_TYPE,
-		GRAPHICS_PIPELINE,
-		COMPUTE_PIPELINE,
-		RAY_TRACING_PIPELINE
+		UNDEFINED,
+		GRAPHICS,
+		COMPUTE,
+		RAY_TRACING
 	};
 
 	struct MultiviewInfo
@@ -409,7 +412,7 @@ namespace ad_astris::rhi
 	struct RenderPassInfo
 	{
 		std::vector<RenderTarget> renderTargets;
-		PipelineType pipelineType{ UNDEFINED_PIPELINE_TYPE };
+		PipelineType pipelineType{ PipelineType::UNDEFINED };
 		MultiviewInfo multiviewInfo;	// not necessary
 	};
 	
@@ -418,55 +421,55 @@ namespace ad_astris::rhi
 		
 	};
 	
-	enum TopologyType
+	enum class TopologyType
 	{
-		UNDEFINED_TOPOLOGY_TYPE,
-		TOPOLOGY_POINT,
-		TOPOLOGY_LINE,
-		TOPOLOGY_TRIANGLE,
-		TOPOLOGY_PATCH,
+		UNDEFINED,
+		POINT,
+		LINE,
+		TRIANGLE,
+		PATCH,
 	};
 
 	struct AssemblyState
 	{
-		TopologyType topologyType{ UNDEFINED_TOPOLOGY_TYPE };
+		TopologyType topologyType{ TopologyType::UNDEFINED };
 	};
 
 	/**
 	 * POLYGON_MODE_POINT available only if you use Vulkan
 	 */
-	enum PolygonMode
+	enum class PolygonMode
 	{
-		UNDEFINED_POLYGON_MODE,
-		POLYGON_MODE_FILL,
-		POLYGON_MODE_LINE,
-		POLYGON_MODE_POINT
+		UNDEFINED,
+		FILL,
+		LINE,
+		POINT
 	};
 
 	/**
 	 * CULL_MODE_FRONT_AND_BACK available only if you use Vulkan
 	 */
-	enum CullMode
+	enum class CullMode
 	{
-		UNDEFINED_CULL_MODE,
-		CULL_MODE_NONE,
-		CULL_MODE_FRONT,
-		CULL_MODE_BACK,
-		CULL_MODE_FRONT_AND_BACK
+		UNDEFINED,
+		NONE,
+		FRONT,
+		BACK,
+		FRONT_AND_BACK
 	};
 
-	enum FrontFace
+	enum class FrontFace
 	{
-		UNDEFINED_FRONT_FACE,
-		FRONT_FACE_CLOCKWISE,
-		FRONT_FACE_COUNTER_CLOCKWISE
+		UNDEFINED,
+		CLOCKWISE,
+		COUNTER_CLOCKWISE
 	};
 
 	struct RasterizationState
 	{
-		PolygonMode polygonMode{ UNDEFINED_POLYGON_MODE };
-		CullMode cullMode{ UNDEFINED_CULL_MODE };
-		FrontFace frontFace{ UNDEFINED_FRONT_FACE };
+		PolygonMode polygonMode{ PolygonMode::UNDEFINED };
+		CullMode cullMode{ CullMode::UNDEFINED };
+		FrontFace frontFace{ FrontFace::UNDEFINED };
 		bool isBiasEnabled;
 		float lineWidth{ 1.0f };
 	};
@@ -482,100 +485,100 @@ namespace ad_astris::rhi
 		uint32_t binding;
 		uint32_t location;
 		uint32_t offset;
-		Format format{ UNDEFINED_FORMAT };
+		Format format{ Format::UNDEFINED };
 	};
 
 	struct MultisampleState
 	{
-		SampleCount sampleCount{ UNDEFINED_SAMPLE_COUNT };
+		SampleCount sampleCount{ SampleCount::UNDEFINED };
 		bool isEnabled;
 	};
 
-	enum BlendFactor
+	enum class BlendFactor
 	{
-		UNDEFINED_BLEND_FACTOR,
-		BLEND_FACTOR_ZERO,
-		BLEND_FACTOR_ONE,
-		BLEND_FACTOR_SRC_COLOR,
-		BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
-		BLEND_FACTOR_DST_COLOR,
-		BLEND_FACTOR_ONE_MINUS_DST_COLOR,
-		BLEND_FACTOR_SRC_ALPHA,
-		BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-		BLEND_FACTOR_DST_ALPHA,
-		BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
-		BLEND_FACTOR_CONSTANT_COLOR,
-		BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR,
-		BLEND_FACTOR_CONSTANT_ALPHA,
-		BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
-		BLEND_FACTOR_SRC_ALPHA_SATURATE,
-		BLEND_FACTOR_SRC1_COLOR,
-		BLEND_FACTOR_ONE_MINUS_SRC1_COLOR,
-		BLEND_FACTOR_SRC1_ALPHA,
-		BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA,
+		UNDEFINED,
+		ZERO,
+		ONE,
+		SRC_COLOR,
+		ONE_MINUS_SRC_COLOR,
+		DST_COLOR,
+		ONE_MINUS_DST_COLOR,
+		SRC_ALPHA,
+		ONE_MINUS_SRC_ALPHA,
+		DST_ALPHA,
+		ONE_MINUS_DST_ALPHA,
+		CONSTANT_COLOR,
+		ONE_MINUS_CONSTANT_COLOR,
+		CONSTANT_ALPHA,
+		ONE_MINUS_CONSTANT_ALPHA,
+		SRC_ALPHA_SATURATE,
+		SRC1_COLOR,
+		ONE_MINUS_SRC1_COLOR,
+		SRC1_ALPHA,
+		ONE_MINUS_SRC1_ALPHA,
 	};
 
-	enum BlendOp
+	enum class BlendOp
 	{
-		UNDEFINED_BLEND_OP,
-		BLEND_OP_ADD,
-		BLEND_OP_SUBTRACT,
-		BLEND_OP_REVERSE_SUBTRACT,
-		BLEND_OP_MIN,
-		BLEND_OP_MAX,
+		UNDEFINED,
+		ADD,
+		SUBTRACT,
+		REVERSE_SUBTRACT,
+		MIN,
+		MAX,
 	};
 
 	struct ColorBlendAttachmentState
 	{
 		bool isBlendEnabled;
-		BlendFactor srcColorBlendFactor{ UNDEFINED_BLEND_FACTOR };
-		BlendFactor dstColorBlendFactor{ UNDEFINED_BLEND_FACTOR};
-		BlendOp colorBlendOp{ UNDEFINED_BLEND_OP };
-		BlendFactor srcAlphaBlendFactor{ UNDEFINED_BLEND_FACTOR };
-		BlendFactor dstAlphaBlendFactor{ UNDEFINED_BLEND_FACTOR };
-		BlendOp alphaBlendOp{ UNDEFINED_BLEND_OP };
+		BlendFactor srcColorBlendFactor{ BlendFactor::UNDEFINED };
+		BlendFactor dstColorBlendFactor{ BlendFactor::UNDEFINED};
+		BlendOp colorBlendOp{ BlendOp::UNDEFINED };
+		BlendFactor srcAlphaBlendFactor{ BlendFactor::UNDEFINED };
+		BlendFactor dstAlphaBlendFactor{ BlendFactor::UNDEFINED };
+		BlendOp alphaBlendOp{ BlendOp::UNDEFINED };
 		uint64_t colorWriteMask{ 0xF };
 	};
 
 	struct ColorBlendState
 	{
 		bool isLogicOpEnabled;
-		LogicOp logicOp{ UNDEFINED_LOGIC_OP };
+		LogicOp logicOp{ LogicOp::UNDEFINED };
 		std::vector<ColorBlendAttachmentState> colorBlendAttachments;
 	};
 
-	enum CompareOp
+	enum class CompareOp
 	{
-		UNDEFINED_COMPARE_OP,
-		COMPARE_OP_NEVER,
-		COMPARE_OP_LESS,
-		COMPARE_OP_EQUAL,
-		COMPARE_OP_LESS_OR_EQUAL,
-		COMPARE_OP_GREATER,
-		COMPARE_OP_NOT_EQUAL,
-		COMPARE_OP_GREATER_OR_EQUAL,
-		COMPARE_OP_ALWAYS,
+		UNDEFINED,
+		NEVER,
+		LESS,
+		EQUAL,
+		LESS_OR_EQUAL,
+		GREATER,
+		NOT_EQUAL,
+		GREATER_OR_EQUAL,
+		ALWAYS,
 	};
 
-	enum StencilOp
+	enum class StencilOp
 	{
-		UNDEFINED_STENCIL_OP,
-		STENCIL_OP_KEEP,
-		STENCIL_OP_ZERO,
-		STENCIL_OP_REPLACE,
-		STENCIL_OP_INCREMENT_AND_CLAMP,
-		STENCIL_OP_DECREMENT_AND_CLAMP,
-		STENCIL_OP_INVERT,
-		STENCIL_OP_INCREMENT_AND_WRAP,
-		STENCIL_OP_DECREMENT_AND_WRAP,
+		UNDEFINED,
+		KEEP,
+		ZERO,
+		REPLACE,
+		INCREMENT_AND_CLAMP,
+		DECREMENT_AND_CLAMP,
+		INVERT,
+		INCREMENT_AND_WRAP,
+		DECREMENT_AND_WRAP,
 	};
 
 	struct StencilOpState
 	{
-		StencilOp failOp{ UNDEFINED_STENCIL_OP };
-		StencilOp passOp{ UNDEFINED_STENCIL_OP };
-		StencilOp depthFailOp{ UNDEFINED_STENCIL_OP };
-		CompareOp compareOp{ UNDEFINED_COMPARE_OP };
+		StencilOp failOp{ StencilOp::UNDEFINED };
+		StencilOp passOp{ StencilOp::UNDEFINED };
+		StencilOp depthFailOp{ StencilOp::UNDEFINED };
+		CompareOp compareOp{ CompareOp::UNDEFINED };
 		uint32_t compareMask;
 		uint32_t writeMask;
 		uint32_t reference;
@@ -585,7 +588,7 @@ namespace ad_astris::rhi
 	{
 		bool isDepthTestEnabled;
 		bool isDepthWriteEnabled;
-		CompareOp compareOp{ UNDEFINED_COMPARE_OP };
+		CompareOp compareOp{ CompareOp::UNDEFINED };
 		bool isStencilTestEnabled;
 		StencilOpState frontStencil;
 		StencilOpState backStencil;
@@ -611,14 +614,14 @@ namespace ad_astris::rhi
 
 	struct Pipeline : public ObjectHandle
 	{
-		PipelineType type = UNDEFINED_PIPELINE_TYPE;
+		PipelineType type = PipelineType::UNDEFINED;
 	};
 
-	enum QueueType
+	enum class QueueType
 	{
-		GRAPHICS_QUEUE,
-		COMPUTE_QUEUE,
-		TRANSFER_QUEUE,
+		GRAPHICS,
+		COMPUTE,
+		TRANSFER,
 	};
 
 	// queueType will be GRAPHICS_QUEUE if begin_command_buffer() was called without parameters
@@ -626,4 +629,23 @@ namespace ad_astris::rhi
 	{
 		QueueType queueType;
 	};
+
 }
+
+template<>
+struct EnableBitMaskOperator<ad_astris::rhi::ResourceUsage>
+{
+	static const bool enable = true;
+};
+
+template<>
+struct EnableBitMaskOperator<ad_astris::rhi::ResourceFlags>
+{
+	static const bool enable = true;
+};
+
+template<>
+struct EnableBitMaskOperator<ad_astris::rhi::ResourceLayout>
+{
+	static const bool enable = true;
+};

@@ -1,7 +1,5 @@
 ﻿#include "vulkan_rhi.h"
 
-#include <valarray>
-
 #include "vulkan_common.h"
 #include "vulkan_buffer.h"
 #include "vulkan_texture.h"
@@ -9,13 +7,9 @@
 #include "vulkan_pipeline.h"
 #include "vulkan_render_pass.h"
 #include "vulkan_swap_chain.h"
-#include "vulkan_renderer/vk_initializers.h"
 
 #include "profiler/logger.h"
 #include <VkBootstrap.h>
-
-#include "imstb_rectpack.h"
-#include "vulkan_texture.h"
 
 using namespace ad_astris;
 
@@ -108,7 +102,7 @@ void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, v
 		return;
 	}
 	
-	if (buffer->bufferInfo.memoryUsage == rhi::GPU)
+	if (buffer->bufferInfo.memoryUsage == rhi::MemoryUsage::GPU)
 	{
 		LOG_ERROR("Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
 		return;
@@ -131,27 +125,27 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 		return;
 	}
 
-	if (texInfo->format == rhi::UNDEFINED_FORMAT)
+	if (texInfo->format == rhi::Format::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Undefined format")
 		return;
 	}
-	if (texInfo->textureUsage == rhi::UNDEFINED_USAGE)
+	if (texInfo->textureUsage == rhi::ResourceUsage::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Undefined texture usage.")
 		return;
 	}
-	if (texInfo->memoryUsage == rhi::UNDEFINED_MEMORY_USAGE)
+	if (texInfo->memoryUsage == rhi::MemoryUsage::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Undefined memory usage.")
 		return;
 	}
-	if (texInfo->samplesCount == rhi::UNDEFINED_SAMPLE_COUNT)
+	if (texInfo->samplesCount == rhi::SampleCount::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Undefined sample count.")
 		return;
 	}
-	if (texInfo->textureDimension == rhi::UNDEFINED_TEXTURE_DIMENSION)
+	if (texInfo->textureDimension == rhi::TextureDimension::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Undefined texture dimension.")
 		return;
@@ -168,7 +162,16 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 	createInfo.extent = VkExtent3D{ texInfo->width, texInfo->height, 1 };
 	createInfo.samples = get_sample_count(texInfo->samplesCount);
 
-	if (texInfo->resourceFlags == rhi::CUBE_TEXTURE)
+	if (has_flag(texInfo->textureUsage, rhi::ResourceUsage::SAMPLED_TEXTURE))
+	{
+		LOG_INFO("SampledTexture")
+	}
+	if (has_flag(texInfo->textureUsage, rhi::ResourceUsage::COLOR_ATTACHMENT))
+	{
+		LOG_INFO("ColorAttachment")
+	}
+
+	if (has_flag(texInfo->resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
 		createInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 	VkImageUsageFlags imgUsage = get_image_usage(texInfo->textureUsage);
@@ -212,7 +215,7 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	VkImageViewCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 
-	if (texInfo.textureDimension == rhi::TEXTURE1D)
+	if (texInfo.textureDimension == rhi::TextureDimension::TEXTURE1D)
 	{
 		if (texInfo.layersCount == 1)
 		{
@@ -223,11 +226,11 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
 		}
 	}
-	else if (texInfo.textureDimension == rhi::TEXTURE2D)
+	else if (texInfo.textureDimension == rhi::TextureDimension::TEXTURE2D)
 	{
 		if (texInfo.layersCount > 1)
 		{
-			if (texInfo.resourceFlags == rhi::CUBE_TEXTURE)
+			if (has_flag(texInfo.resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
 			{
 				if (texInfo.layersCount > 6)
 				{
@@ -248,7 +251,7 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		}
 	}
-	else if (texInfo.textureDimension == rhi::TEXTURE3D)
+	else if (texInfo.textureDimension == rhi::TextureDimension::TEXTURE3D)
 	{
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
 	}
@@ -281,17 +284,17 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 		LOG_ERROR("Can't create sampler if sampler parameter is invalid")
 		return;
 	}
-	if (sampInfo->addressMode == rhi::UNDEFINED_ADDRESS_MODE)
+	if (sampInfo->addressMode == rhi::AddressMode::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_sampler(): Undefined address mode. Failed to create VkSampler")
 		return;
 	}
-	if (sampInfo->filter == rhi::UNDEFINED_FILTER)
+	if (sampInfo->filter == rhi::Filter::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_sampler(): Undefined filter. Failed to create VkSampler")
 		return;
 	}
-	if (sampInfo->borderColor == rhi::UNDEFINED_BORDER_COLOR)
+	if (sampInfo->borderColor == rhi::BorderColor::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_sampler(): Undefined border color. Failed to create VkSampler")
 		return;
@@ -306,7 +309,7 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 	createInfo.maxLod = sampInfo->maxLod;
 	if (createInfo.anisotropyEnable == VK_TRUE)
 		createInfo.maxAnisotropy = sampInfo->maxAnisotropy;
-	if (sampInfo->borderColor != rhi::UNDEFINED_BORDER_COLOR)
+	if (sampInfo->borderColor != rhi::BorderColor::UNDEFINED)
 		createInfo.borderColor = get_border_color(sampInfo->borderColor);
 
 	// Using of min max sampler filter
@@ -314,27 +317,27 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 	reductionMode.sType = VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO;
 	switch (sampInfo->filter)
 	{
-		case rhi::MINIMUM_MIN_MAG_MIP_NEAREST:
-		case rhi::MINIMUM_MIN_MAG_NEAREST_MIP_LINEAR:
-		case rhi::MINIMUM_MIN_NEAREST_MAG_LINEAR_MIP_NEAREST:
-		case rhi::MINIMUM_MIN_NEAREST_MAG_MIP_LINEAR:
-		case rhi::MINIMUM_MIN_LINEAR_MAG_MIP_NEAREST:
-		case rhi::MINIMUM_MIN_LINEAR_MAG_NEAREST_MIP_LINEAR:
-		case rhi::MINIMUM_MIN_MAG_LINEAR_MIP_NEAREST:
-		case rhi::MINIMUM_MIN_MAG_MIP_LINEAR:
-		case rhi::MINIMUM_ANISOTROPIC:
+		case rhi::Filter::MINIMUM_MIN_MAG_MIP_NEAREST:
+		case rhi::Filter::MINIMUM_MIN_MAG_NEAREST_MIP_LINEAR:
+		case rhi::Filter::MINIMUM_MIN_NEAREST_MAG_LINEAR_MIP_NEAREST:
+		case rhi::Filter::MINIMUM_MIN_NEAREST_MAG_MIP_LINEAR:
+		case rhi::Filter::MINIMUM_MIN_LINEAR_MAG_MIP_NEAREST:
+		case rhi::Filter::MINIMUM_MIN_LINEAR_MAG_NEAREST_MIP_LINEAR:
+		case rhi::Filter::MINIMUM_MIN_MAG_LINEAR_MIP_NEAREST:
+		case rhi::Filter::MINIMUM_MIN_MAG_MIP_LINEAR:
+		case rhi::Filter::MINIMUM_ANISOTROPIC:
 			reductionMode.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
 			createInfo.pNext = &reductionMode;
 			break;
-		case rhi::MAXIMUM_MIN_MAG_MIP_NEAREST:
-		case rhi::MAXIMUM_MIN_MAG_NEAREST_MIP_LINEAR:
-		case rhi::MAXIMUM_MIN_NEAREST_MAG_LINEAR_MIP_NEAREST:
-		case rhi::MAXIMUM_MIN_NEAREST_MAG_MIP_LINEAR:
-		case rhi::MAXIMUM_MIN_LINEAR_MAG_MIP_NEAREST:
-		case rhi::MAXIMUM_MIN_LINEAR_MAG_NEAREST_MIP_LINEAR:
-		case rhi::MAXIMUM_MIN_MAG_LINEAR_MIP_NEAREST:
-		case rhi::MAXIMUM_MIN_MAG_MIP_LINEAR:
-		case rhi::MAXIMUM_ANISOTROPIC:
+		case rhi::Filter::MAXIMUM_MIN_MAG_MIP_NEAREST:
+		case rhi::Filter::MAXIMUM_MIN_MAG_NEAREST_MIP_LINEAR:
+		case rhi::Filter::MAXIMUM_MIN_NEAREST_MAG_LINEAR_MIP_NEAREST:
+		case rhi::Filter::MAXIMUM_MIN_NEAREST_MAG_MIP_LINEAR:
+		case rhi::Filter::MAXIMUM_MIN_LINEAR_MAG_MIP_NEAREST:
+		case rhi::Filter::MAXIMUM_MIN_LINEAR_MAG_NEAREST_MIP_LINEAR:
+		case rhi::Filter::MAXIMUM_MIN_MAG_LINEAR_MIP_NEAREST:
+		case rhi::Filter::MAXIMUM_MIN_MAG_MIP_LINEAR:
+		case rhi::Filter::MAXIMUM_ANISOTROPIC:
 			reductionMode.reductionMode = VK_SAMPLER_REDUCTION_MODE_MAX;
 			createInfo.pNext = &reductionMode;
 			break;
@@ -371,7 +374,7 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Invalid pointers")
 		return;
 	}
-	pipeline->type = rhi::PipelineType::GRAPHICS_PIPELINE;
+	pipeline->type = rhi::PipelineType::GRAPHICS;
 	pipeline->handle = new VulkanPipeline(&_vulkanDevice, info);
 }
 
@@ -382,7 +385,7 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid pointers")
 		return;
 	}
-	pipeline->type = rhi::COMPUTE_PIPELINE;
+	pipeline->type = rhi::PipelineType::COMPUTE;
 	pipeline->handle = new VulkanPipeline(&_vulkanDevice, info);
 }
 
@@ -424,6 +427,39 @@ void vulkan::VulkanRHI::submit(rhi::QueueType queueType)
 	_cmdManager->submit(queueType);
 }
 
+void vulkan::VulkanRHI::set_viewport(rhi::CommandBuffer* cmd, float width, float height)
+{
+	if (!cmd)
+	{
+		LOG_ERROR("VulkanRHI::set_viewport(): Invalid pointer")
+	}
+	VkViewport viewport;
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	viewport.width = width;
+	viewport.height = height;
+
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	vkCmdSetViewport(vkCmd->get_handle(), 0, 1, &viewport);
+}
+
+void vulkan::VulkanRHI::set_scissor(rhi::CommandBuffer* cmd, uint32_t width, uint32_t height, int32_t offsetX, int32_t offsetY)
+{
+	if (!cmd)
+	{
+		LOG_ERROR("VulkanRHI::set_scissor(): Invalid pointer")
+		return;
+	}
+	VkExtent2D extent = { width, height };
+	VkRect2D scissor;
+	scissor.extent = extent;
+	scissor.offset = { offsetX, offsetY };
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	vkCmdSetScissor(vkCmd->get_handle(), 0, 1, &scissor);
+}
+
 void vulkan::VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
 {
 	if (!cmd || !buffer)
@@ -431,13 +467,13 @@ void vulkan::VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer*
 		LOG_ERROR("VulkanRHI::bind_vertex_buffer(): Invalid pointers")
 		return;
 	}
-	if (buffer->bufferInfo.bufferUsage != rhi::VERTEX_BUFFER)
+	if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::VERTEX_BUFFER))
 	{
 		LOG_ERROR("VulkanRHI::bind_vertex_buffer(): Buffer wasn't created with VERTEX_BUFFER usage")
 		return;
 	}
-	VulkanCommandBuffer* vkCmd = static_cast<VulkanCommandBuffer*>(cmd->handle);
-	VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(buffer->data);
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
 
 	VkDeviceSize offset = 0;
 	vkCmdBindVertexBuffers(vkCmd->get_handle(), 0, 1, vkBuffer->get_handle(), &offset);
@@ -450,16 +486,28 @@ void vulkan::VulkanRHI::bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* 
 		LOG_ERROR("VulkanRHI::bind_index_buffer(): Invalid pointers")
 		return;
 	}
-	if (buffer->bufferInfo.bufferUsage != rhi::INDEX_BUFFER)
+	if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::INDEX_BUFFER))
 	{
 		LOG_ERROR("VulkanRHI::bind_index_buffer(): Buffer wasn't created with INDEX_BUFFER usage")
 		return;
 	}
-	VulkanCommandBuffer* vkCmd = static_cast<VulkanCommandBuffer*>(cmd->handle);
-	VulkanBuffer* vkBuffer = static_cast<VulkanBuffer*>(buffer->data);
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
 
 	VkDeviceSize offset = 0;
 	vkCmdBindIndexBuffer(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, VK_INDEX_TYPE_UINT32);
+}
+
+void vulkan::VulkanRHI::bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline)
+{
+	if (!cmd || !pipeline)
+	{
+		LOG_ERROR("VulkanRHI::bind_pipeline(): Invalid pointers")
+		return;
+	}
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanPipeline* vkPipeline = get_vk_obj(pipeline);
+	vkCmdBindPipeline(vkCmd->get_handle(), get_pipeline_bind_point(vkPipeline->get_type()), vkPipeline->get_handle());
 }
 
 void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass)
@@ -470,8 +518,8 @@ void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPa
 		return;
 	}
 
-	VulkanCommandBuffer* vkCmd = static_cast<VulkanCommandBuffer*>(cmd->handle);
-	VulkanRenderPass* pass = static_cast<VulkanRenderPass*>(renderPass->handle);
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanRenderPass* pass = get_vk_obj(renderPass);
 
 	VkRenderPassBeginInfo beginInfo = pass->get_begin_info();
 
@@ -480,7 +528,88 @@ void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPa
 
 void vulkan::VulkanRHI::end_render_pass(rhi::CommandBuffer* cmd)
 {
-	
+	if (!cmd)
+	{
+		LOG_ERROR("VulkanRHI::end_render_pass(): Invalid pointer")
+		return;
+	}
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	vkCmdEndRenderPass(vkCmd->get_handle());
+}
+
+void vulkan::VulkanRHI::draw(rhi::CommandBuffer* cmd, uint64_t vertexCount)
+{
+	if (!cmd)
+	{
+		LOG_ERROR("VulkanRHI::draw(): Invalid pointer")
+		return;
+	}
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	vkCmdDraw(vkCmd->get_handle(), vertexCount, 1, 0, 0);
+}
+
+void vulkan::VulkanRHI::draw_indexed(
+	rhi::CommandBuffer* cmd,
+	uint32_t indexCount,
+	uint32_t instanceCount,
+	uint32_t firstIndex,
+	int32_t vertexOffset,
+	uint32_t firstInstance)
+{
+	if (!cmd)
+	{
+		LOG_ERROR("VulkanRHI::draw_indexed(): Invalid pointer")
+		return;
+	}
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	vkCmdDrawIndexed(vkCmd->get_handle(), indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+void vulkan::VulkanRHI::draw_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+{
+	if (!cmd || !buffer)
+	{
+		LOG_ERROR("VulkanRHI::draw_indirect(): Invalid pointers")
+		return;
+	}
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
+	vkCmdDrawIndirect(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, drawCount, stride);
+}
+
+void vulkan::VulkanRHI::draw_indexed_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+{
+	if (!cmd || !buffer)
+	{
+		LOG_ERROR("VulkanRHI::draw_indirect(): Invalid pointers")
+		return;
+	}
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
+	vkCmdDrawIndexedIndirect(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, drawCount, stride);
+}
+
+void vulkan::VulkanRHI::dispatch(rhi::CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+	if (!cmd)
+	{
+		LOG_ERROR("VulkanRHI::dispatch(): Invalid pointer")
+		return;
+	}
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	vkCmdDispatch(vkCmd->get_handle(), groupCountX, groupCountY, groupCountZ);
+}
+
+void vulkan::VulkanRHI::fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data)
+{
+	if (!cmd || !buffer)
+	{
+		LOG_ERROR("VulkanRHI::fill_buffer(): Invalid pointers")
+		return;
+	}
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
+	vkCmdFillBuffer(vkCmd->get_handle(), *vkBuffer->get_handle(), dstOffset, size, data);
 }
 
 // private methods

@@ -71,13 +71,13 @@ void vulkan::VulkanRenderPass::create_render_pass(rhi::RenderPassInfo* passInfo)
 		attachRef.attachment = attachDescriptions.size() - 1;
 		attachRef.layout = get_image_layout(target.renderPassLayout);
 
-		if (target.type == rhi::RENDER_TARGET_DEPTH && !oneDepth)
+		if (target.type == rhi::RenderTargetType::DEPTH && !oneDepth)
 		{
 			depthAttachRef = attachRef;
 			oneDepth = true;
 			++_depthAttachCount;
 		}
-		else if (target.type == rhi::RENDER_TARGET_DEPTH && oneDepth)
+		else if (target.type == rhi::RenderTargetType::DEPTH && oneDepth)
 		{
 			LOG_WARNING("VulkanRHI::create_render_pass(): There are more than one depth attachment. Old one will be overwritten")
 			depthAttachRef = attachRef;
@@ -90,7 +90,7 @@ void vulkan::VulkanRenderPass::create_render_pass(rhi::RenderPassInfo* passInfo)
 	}
 
 	VkSubpassDescription subpass{};
-	if (passInfo->pipelineType == rhi::COMPUTE_PIPELINE || passInfo->pipelineType == rhi::UNDEFINED_PIPELINE_TYPE)
+	if (passInfo->pipelineType == rhi::PipelineType::COMPUTE || passInfo->pipelineType == rhi::PipelineType::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_render_pass(): Invalid pipeline type")
 		return;

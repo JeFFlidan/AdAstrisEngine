@@ -36,17 +36,17 @@ vulkan::VulkanCommandPool::VulkanCommandPool(VulkanDevice* device, VulkanQueue* 
 	// Need to think about flags
 	switch (queue->get_queue_type())
 	{
-		case rhi::GRAPHICS_QUEUE:
+		case rhi::QueueType::GRAPHICS:
 		{
 			_waitFlag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 			break;
 		}
-		case rhi::COMPUTE_QUEUE:
+		case rhi::QueueType::COMPUTE:
 		{
 			_waitFlag = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 			break;
 		}
-		case rhi::TRANSFER_QUEUE:
+		case rhi::QueueType::TRANSFER:
 		{
 			_waitFlag = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			break;
@@ -194,7 +194,7 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 	VulkanCommandBuffer* cmdBuffer;
 	switch (queueType)
 	{
-		case rhi::GRAPHICS_QUEUE:
+		case rhi::QueueType::GRAPHICS:
 		{
 			if (!_freeGraphicsCmdPools[_imageIndex].empty())
 			{
@@ -207,7 +207,7 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 			cmdBuffer = cmdPool->get_cmd_buffer();
 			break;
 		}
-		case rhi::COMPUTE_QUEUE:
+		case rhi::QueueType::COMPUTE:
 		{
 			if (!_freeComputeCmdPools[_imageIndex].empty())
 			{
@@ -220,7 +220,7 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 			cmdBuffer = cmdPool->get_cmd_buffer();
 			break;
 		}
-		case rhi::TRANSFER_QUEUE:
+		case rhi::QueueType::TRANSFER:
 		{
 			if (!_freeTransferCmdPools[_imageIndex].empty())
 			{
@@ -257,7 +257,7 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
 {
 	switch (queueType)
 	{
-		case rhi::GRAPHICS_QUEUE:
+		case rhi::QueueType::GRAPHICS:
 		{
 			_device->get_graphics_queue()->submit(*this);
 			std::vector<VulkanCommandPool*>& lockedPools = _lockedGraphicsCmdPools[_imageIndex];
@@ -265,7 +265,7 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
 			clear_after_submission(freePools, lockedPools);
 			break;
 		}
-		case rhi::COMPUTE_QUEUE:
+		case rhi::QueueType::COMPUTE:
 		{
 			_device->get_compute_queue()->submit(*this);
 			std::vector<VulkanCommandPool*>& lockedPools = _lockedComputeCmdPools[_imageIndex];
@@ -273,7 +273,7 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
 			clear_after_submission(freePools, lockedPools);
 			break;
 		}
-		case rhi::TRANSFER_QUEUE:
+		case rhi::QueueType::TRANSFER:
 		{
 			_device->get_transfer_queue()->submit(*this);
 			std::vector<VulkanCommandPool*>& lockedPools = _lockedTransferCmdPools[_imageIndex];

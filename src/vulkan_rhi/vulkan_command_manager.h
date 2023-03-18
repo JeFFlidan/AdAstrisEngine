@@ -76,7 +76,7 @@ namespace ad_astris::vulkan
 			VulkanCommandManager(VulkanDevice* device, VulkanSwapChain* swapChain);
 			~VulkanCommandManager();
 		
-			VulkanCommandBuffer* get_command_buffer(rhi::QueueType queueType = rhi::GRAPHICS_QUEUE);
+			VulkanCommandBuffer* get_command_buffer(rhi::QueueType queueType = rhi::QueueType::GRAPHICS);
 			// cmd waits for waitForCmd
 			void wait_for_cmd_buffer(VulkanCommandBuffer* cmd, VulkanCommandBuffer* waitForCmd);
 			void submit(rhi::QueueType queueType);

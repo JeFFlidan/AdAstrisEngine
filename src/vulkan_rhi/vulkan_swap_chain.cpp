@@ -52,10 +52,10 @@ vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDev
 	for (int i = 0; i != swapInfo->buffersCount; ++i)
 	{
 		rhi::TextureInfo texInfo;
-		texInfo.samplesCount = rhi::SAMPLE_COUNT_1_BIT;
+		texInfo.samplesCount = rhi::SampleCount::BIT_1;
 		texInfo.width = swapInfo->width;
 		texInfo.height = swapInfo->height;
-		texInfo.format = rhi::B8G8R8A8_SRGB;
+		texInfo.format = rhi::Format::B8G8R8A8_SRGB;
 		rhi::Texture* text = new rhi::Texture();
 		text->textureInfo = texInfo;
 		VkImageView* view = new VkImageView();

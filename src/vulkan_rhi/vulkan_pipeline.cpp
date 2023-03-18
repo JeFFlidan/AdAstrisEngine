@@ -8,13 +8,13 @@ using namespace ad_astris;
 vulkan::VulkanPipeline::VulkanPipeline(VulkanDevice* device, rhi::GraphicsPipelineInfo* info) : _device(device)
 {
 	create_graphics_pipeline(info);
-	_type = rhi::GRAPHICS_PIPELINE;
+	_type = rhi::PipelineType::GRAPHICS;
 }
 
 vulkan::VulkanPipeline::VulkanPipeline(VulkanDevice* device, rhi::ComputePipelineInfo* info) : _device(device)
 {
 	create_compute_pipeline(info);
-	_type = rhi::COMPUTE_PIPELINE;
+	_type = rhi::PipelineType::COMPUTE;
 }
 
 vulkan::VulkanPipeline::~VulkanPipeline()
@@ -26,7 +26,7 @@ vulkan::VulkanPipeline::~VulkanPipeline()
 //private
 void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo* info)
 {
-		VkPipelineInputAssemblyStateCreateInfo assemblyState{};
+	VkPipelineInputAssemblyStateCreateInfo assemblyState{};
 	assemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	assemblyState.topology = get_primitive_topology(info->assemblyState.topologyType);
 	assemblyState.primitiveRestartEnable = VK_FALSE;
@@ -39,17 +39,17 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 	viewportState.pViewports = nullptr;
 	viewportState.viewportCount = 1;
 
-	if (info->rasterizationState.cullMode == rhi::UNDEFINED_CULL_MODE)
+	if (info->rasterizationState.cullMode == rhi::CullMode::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined cull mode. Failed to create VkPipeline")
 		return;
 	}
-	if (info->rasterizationState.polygonMode == rhi::UNDEFINED_POLYGON_MODE)
+	if (info->rasterizationState.polygonMode == rhi::PolygonMode::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined polygon mode. Failed to create VkPipeline")
 		return;
 	}
-	if (info->rasterizationState.frontFace == rhi::UNDEFINED_FRONT_FACE)
+	if (info->rasterizationState.frontFace == rhi::FrontFace::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined front face. Failed to create VkPipeline")
 		return;
@@ -68,7 +68,7 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 	rasterizationState.depthBiasClamp = 0.0f;
 	rasterizationState.depthBiasSlopeFactor = 0.0f;
 
-	if (info->multisampleState.sampleCount == rhi::UNDEFINED_SAMPLE_COUNT)
+	if (info->multisampleState.sampleCount == rhi::SampleCount::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined sample count. Failed to create VkPipeline")
 		return;
@@ -96,7 +96,7 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 	std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	for (auto& desc : info->attributeDescriptions)
 	{
-		if (desc.format == rhi::UNDEFINED_FORMAT)
+		if (desc.format == rhi::Format::UNDEFINED)
 		{
 			LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined format. Failed to create VkPipeline")
 			return;
@@ -134,32 +134,32 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 		attachmentState.colorWriteMask = (VkColorComponentFlags)attach.colorWriteMask;
 		if (attach.isBlendEnabled)
 		{
-			if (attach.srcColorBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
+			if (attach.srcColorBlendFactor == rhi::BlendFactor::UNDEFINED)
 			{
 				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined src color blend factor. Failed to create VkPipeline")
 				return;
 			}
-			if (attach.dstColorBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
+			if (attach.dstColorBlendFactor == rhi::BlendFactor::UNDEFINED)
 			{
 				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined dst color blend factor. Failed to create VkPipeline")
 				return;
 			}
-			if (attach.srcAlphaBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
+			if (attach.srcAlphaBlendFactor == rhi::BlendFactor::UNDEFINED)
 			{
 				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined src alpha blend factor. Failed to create VkPipeline")
 				return;
 			}
-			if (attach.dstAlphaBlendFactor == rhi::UNDEFINED_BLEND_FACTOR)
+			if (attach.dstAlphaBlendFactor == rhi::BlendFactor::UNDEFINED)
 			{
 				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined dst alpha blend factor. Failed to create VkPipeline")
 				return;
 			}
-			if (attach.colorBlendOp == rhi::UNDEFINED_BLEND_OP)
+			if (attach.colorBlendOp == rhi::BlendOp::UNDEFINED)
 			{
 				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined color blend op. Failed to create VkPipeline")
 				return;
 			}
-			if (attach.alphaBlendOp == rhi::UNDEFINED_BLEND_OP)
+			if (attach.alphaBlendOp == rhi::BlendOp::UNDEFINED)
 			{
 				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined alpha blend op. Failed to create VkPipeline")
 				return;
@@ -187,7 +187,7 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 	std::vector<VkPipelineShaderStageCreateInfo> pipelineStages; 
 	for (auto& shader : info->shaderStages)
 	{
-		if (shader.type == rhi::UNDEFINED_SHADER_TYPE)
+		if (shader.type == rhi::ShaderType::UNDEFINED)
 		{
 			LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Shader type is undefined")
 			return;
@@ -203,7 +203,7 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 		pipelineStages.push_back(shaderStage);
 	}
 
-	if (info->depthStencilState.compareOp == rhi::UNDEFINED_COMPARE_OP)
+	if (info->depthStencilState.compareOp == rhi::CompareOp::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined compare op, depth. Failed to create VkPipeline")
 		return;
@@ -224,22 +224,22 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 		std::vector<VkStencilOpState> vkStencilStates;
 		for (auto& stencilState : stencilOps)
 		{
-			if (stencilState.compareOp == rhi::UNDEFINED_COMPARE_OP)
+			if (stencilState.compareOp == rhi::CompareOp::UNDEFINED)
 			{
 				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined compare op, stencil. Failed to create VkPipeline")
 				return;
 			}
-			if (stencilState.failOp == rhi::UNDEFINED_STENCIL_OP)
+			if (stencilState.failOp == rhi::StencilOp::UNDEFINED)
 			{
 				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined fail op stencil. Failed to create VkPipeline")
 				return;
 			}
-			if (stencilState.passOp == rhi::UNDEFINED_STENCIL_OP)
+			if (stencilState.passOp == rhi::StencilOp::UNDEFINED)
 			{
 				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined pass op stencil. Failed to create VkPipeline")
 				return;
 			}
-			if (stencilState.depthFailOp == rhi::UNDEFINED_STENCIL_OP)
+			if (stencilState.depthFailOp == rhi::StencilOp::UNDEFINED)
 			{
 				LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Undefined depth fail op stencil. Failed to create VkPipeline")
 				return;

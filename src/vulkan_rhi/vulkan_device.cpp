@@ -25,23 +25,23 @@ void vulkan::VulkanDevice::init(vkb::Instance& instance, void* window)
 
 	graphicsQueue.queue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
 	graphicsQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
-	graphicsQueue.queueType = rhi::GRAPHICS_QUEUE;
+	graphicsQueue.queueType = rhi::QueueType::GRAPHICS;
 	_graphicsQueue = new VulkanQueue(graphicsQueue);
 	LOG_INFO("VulkanDevice::init(): Graphics queue family: {}", _graphicsQueue->get_family())
 	computeQueue.queue = vkbDevice.get_queue(vkb::QueueType::compute).value();
 	computeQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::compute).value();
-	computeQueue.queueType = rhi::COMPUTE_QUEUE;
+	computeQueue.queueType = rhi::QueueType::COMPUTE;
 	_computeQueue = new VulkanQueue(computeQueue);
 	LOG_INFO("VulkanDevice::init(): Compute queue family: {}", _computeQueue->get_family())
 	// Maybe I'll remove present queue
 	presentQueue.queue = vkbDevice.get_queue(vkb::QueueType::present).value();
 	presentQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::present).value();
-	presentQueue.queueType = rhi::GRAPHICS_QUEUE;
+	presentQueue.queueType = rhi::QueueType::GRAPHICS;
 	_presentQueue = new VulkanQueue(presentQueue);
 	LOG_INFO("VulkanDevice::init(): Present queue family: {}", _presentQueue->get_family())
 	transferQueue.queue = vkbDevice.get_queue(vkb::QueueType::transfer).value();
 	transferQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::transfer).value();
-	transferQueue.queueType = rhi::TRANSFER_QUEUE;
+	transferQueue.queueType = rhi::QueueType::TRANSFER;
 	_transferQueue = new VulkanQueue(transferQueue);
 	LOG_INFO("VulkanDevice::init(): Transfer queue family: {}", _transferQueue->get_family())
 
