@@ -9,6 +9,11 @@ vulkan::VulkanTexture::VulkanTexture(VkImageCreateInfo info, VmaAllocator* alloc
 	allocate_texture(info, allocator, memoryUsage);
 }
 
+vulkan::VulkanTexture::~VulkanTexture()
+{
+	vmaDestroyImage(*_allocator, _image, _allocation);
+}
+
 void vulkan::VulkanTexture::create_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage)
 {
 	allocate_texture(info, allocator, memoryUsage);

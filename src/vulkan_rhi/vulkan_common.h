@@ -50,6 +50,7 @@ namespace ad_astris::vulkan
 	VkImageLayout get_image_layout(rhi::ResourceLayout resourceLayout);
 	VkAccessFlags get_access(rhi::ResourceLayout resourceLayout);
 	VkPipelineBindPoint get_pipeline_bind_point(rhi::PipelineType pipelineType);
+	VkImageAspectFlags get_image_aspect(rhi::ResourceUsage usage);
 
 	inline VulkanCommandBuffer* get_vk_obj(rhi::CommandBuffer* cmd)
 	{

@@ -161,7 +161,7 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 	createInfo.imageType = get_image_type(texInfo->textureDimension);
 	
 	VulkanTexture* vkText = new VulkanTexture(createInfo, &_allocator, memoryUsage);
-	if (vkText->_image == VK_NULL_HANDLE)
+	if (vkText->get_handle() == VK_NULL_HANDLE)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Failed to allocate VkImage")
 		return;
@@ -240,7 +240,7 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	}
 	
 	//createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	createInfo.image = vkTexture->_image;
+	createInfo.image = vkTexture->get_handle();
 	createInfo.format = format;
 	createInfo.subresourceRange.baseMipLevel = viewInfo->baseMipLevel;
 	createInfo.subresourceRange.levelCount = 1;
@@ -403,6 +403,165 @@ void vulkan::VulkanRHI::wait_command_buffer(rhi::CommandBuffer* cmd, rhi::Comman
 void vulkan::VulkanRHI::submit(rhi::QueueType queueType)
 {
 	_cmdManager->submit(queueType);
+}
+
+void vulkan::VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Buffer* dstBuffer, uint32_t size, uint32_t srcOffset, uint32_t dstOffset)
+{
+	if (!cmd || !srcBuffer || !dstBuffer)
+	{
+		LOG_INFO("VulkanRHI::copy_buffer(): Invalid pointers")
+		return;
+	}
+	if (!has_flag(srcBuffer->bufferInfo.bufferUsage, rhi::ResourceUsage::TRANSFER_SRC))
+	{
+		LOG_INFO("VulkanRHI::copy_buffer(): Source buffer doesn't have TRANSFER_SRC usage")
+		return;
+	}
+	if (!has_flag(dstBuffer->bufferInfo.bufferUsage, rhi::ResourceUsage::TRANSFER_DST))
+	{
+		LOG_INFO("VulkanRHI::copy_buffer(): Destination buffer doesn't have TRANSFER_DST usage")
+		return;
+	}
+	
+	//VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VkCommandBuffer vkCmd = *static_cast<VkCommandBuffer*>(cmd->handle);
+	VulkanBuffer* vkSrcBuffer = get_vk_obj(srcBuffer);
+	VulkanBuffer* vkDstBuffer = get_vk_obj(dstBuffer);
+
+	VkBufferCopy copy;
+	copy.srcOffset = srcOffset;
+	copy.dstOffset = dstOffset;
+	if (!size)
+	{
+		copy.size = srcBuffer->size;
+	}
+	else
+	{
+		copy.size = size;
+	}
+
+	vkCmdCopyBuffer(vkCmd, *vkSrcBuffer->get_handle(), *vkDstBuffer->get_handle(), 1, &copy);
+}
+
+void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcTexture, rhi::Texture* dstTexture, std::array<int32_t, 3>& srcOffset, std::array<int32_t, 3>& dstOffset, uint32_t srcMipLevel, uint32_t dstMipLevel, uint32_t srcBaseLayer, uint32_t dstBaseLayer)
+{
+	if (!cmd || !srcTexture || !dstTexture)
+	{
+		LOG_INFO("VulkanRHI::blit_texture(): Invalid pointers")
+		return;
+	}
+	if (!has_flag(srcTexture->textureInfo.textureUsage, rhi::ResourceUsage::TRANSFER_SRC))
+	{
+		LOG_INFO("VulkanRHI::blit_texture(): Source buffer doesn't have TRANSFER_SRC usage")
+		return;
+	}
+	if (!has_flag(dstTexture->textureInfo.textureUsage, rhi::ResourceUsage::TRANSFER_DST))
+	{
+		LOG_INFO("VulkanRHI::blit_texture(): Destination buffer doesn't have TRANSFER_DST usage")
+		return;
+	}
+
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanTexture* vkSrcTexture = get_vk_obj(srcTexture);
+	VulkanTexture* vkDstTexture = get_vk_obj(dstTexture);
+	rhi::TextureInfo& srcInfo = srcTexture->textureInfo;
+	rhi::TextureInfo& dstInfo = dstTexture->textureInfo;
+
+	VkImageBlit imageBlit{};
+	imageBlit.srcOffsets[1].x = srcOffset[0];
+	imageBlit.srcOffsets[1].y = srcOffset[1];
+	imageBlit.srcOffsets[1].z = srcOffset[2];
+	imageBlit.dstOffsets[1].x = dstOffset[0];
+	imageBlit.dstOffsets[1].y = dstOffset[1];
+	imageBlit.dstOffsets[1].x = dstOffset[2];
+	
+	imageBlit.srcSubresource.aspectMask = get_image_aspect(srcInfo.textureUsage);
+	imageBlit.srcSubresource.layerCount = srcInfo.layersCount;
+	imageBlit.srcSubresource.baseArrayLayer = srcBaseLayer;
+	imageBlit.srcSubresource.mipLevel = srcMipLevel;
+	imageBlit.dstSubresource.aspectMask = get_image_aspect(dstInfo.textureUsage);
+	imageBlit.dstSubresource.layerCount = dstInfo.layersCount;
+	imageBlit.dstSubresource.baseArrayLayer = dstBaseLayer;
+	imageBlit.dstSubresource.mipLevel = dstMipLevel;
+
+	vkCmdBlitImage(
+		vkCmd->get_handle(),
+		vkSrcTexture->get_handle(),
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		vkDstTexture->get_handle(),
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1,
+		&imageBlit,
+		VK_FILTER_LINEAR);
+}
+
+void vulkan::VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Texture* dstTexture, rhi::ResourceUsage textureUsage)
+{
+	if (!cmd || !srcBuffer || !dstTexture)
+	{
+		LOG_INFO("VulkanRHI::copy_buffer_to_texture(): Invalid pointers")
+		return;
+	}
+	if (!has_flag(srcBuffer->bufferInfo.bufferUsage, rhi::ResourceUsage::TRANSFER_SRC))
+	{
+		LOG_INFO("VulkanRHI::copy_buffer_to_texture(): Source buffer doesn't have TRANSFER_SRC usage")
+		return;
+	}
+	if (!has_flag(dstTexture->textureInfo.textureUsage, rhi::ResourceUsage::TRANSFER_DST))
+	{
+		LOG_INFO("VulkanRHI::copy_buffer_to_texture(): Destination buffer doesn't have TRANSFER_DST usage")
+		return;
+	}
+
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanBuffer* vkBuffer = get_vk_obj(srcBuffer);
+	VulkanTexture* vkTexture = get_vk_obj(dstTexture);
+	rhi::TextureInfo& texInfo = dstTexture->textureInfo;
+
+	VkImageMemoryBarrier imageBarrierToTransfer{};
+	imageBarrierToTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imageBarrierToTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageBarrierToTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imageBarrierToTransfer.srcAccessMask = 0;
+	imageBarrierToTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	imageBarrierToTransfer.image = vkTexture->get_handle();
+	imageBarrierToTransfer.subresourceRange = {
+		get_image_aspect(texInfo.textureUsage),
+		0,
+		texInfo.mipLevels,
+		0,
+		texInfo.layersCount };
+
+	vkCmdPipelineBarrier(
+		vkCmd->get_handle(),
+		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		0, 0, nullptr, 0, nullptr,
+		1, &imageBarrierToTransfer);
+	
+	VkBufferImageCopy copyRegion{};
+	copyRegion.bufferOffset = 0;
+	copyRegion.bufferRowLength = 0;
+	copyRegion.bufferImageHeight = 0;
+	copyRegion.imageExtent = vkTexture->get_extent();
+	copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	copyRegion.imageSubresource.mipLevel = 0;
+	copyRegion.imageSubresource.baseArrayLayer = 0;
+	copyRegion.imageSubresource.layerCount = texInfo.layersCount;
+	vkCmdCopyBufferToImage(vkCmd->get_handle(), *vkBuffer->get_handle(), vkTexture->get_handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+
+	VkImageMemoryBarrier imageBarrierToReadable = imageBarrierToTransfer;
+	imageBarrierToReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imageBarrierToReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageBarrierToReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	imageBarrierToTransfer.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+	vkCmdPipelineBarrier(
+		vkCmd->get_handle(),
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		0, 0, nullptr, 0, nullptr,
+		1, &imageBarrierToReadable);
 }
 
 void vulkan::VulkanRHI::set_viewport(rhi::CommandBuffer* cmd, float width, float height)
@@ -601,7 +760,6 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vect
 		{
 			case rhi::PipelineBarrier::BarrierType::MEMORY:
 			{
-				LOG_INFO("Memory barrier")
 				VkMemoryBarrier memoryBarrier{};
 				memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
 				memoryBarrier.srcAccessMask = get_access(barrier.memoryBarrier.srcLayout);
@@ -611,7 +769,6 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vect
 			}
 			case rhi::PipelineBarrier::BarrierType::BUFFER:
 			{
-				LOG_INFO("Buffer barrier")
 				VkBufferMemoryBarrier bufferBarrier{};
 				bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
 				bufferBarrier.srcAccessMask = get_access(barrier.bufferBarrier.srcLayout);
@@ -623,7 +780,6 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vect
 			}
 			case rhi::PipelineBarrier::BarrierType::IMAGE:
 			{
-				LOG_INFO("Image barrier")
 				VkImageMemoryBarrier imageBarrier{};
 				imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 				imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -634,8 +790,7 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vect
 				imageBarrier.newLayout = get_image_layout(barrier.textureBarrier.dstLayout);
 				rhi::PipelineBarrier::TextureBarrier texBarrier = barrier.textureBarrier;
 				VulkanTexture* vkTexture = get_vk_obj(texBarrier.texture);
-				imageBarrier.image = vkTexture->_image;
-				LOG_INFO("Image 2 ID {}", (uint64_t)imageBarrier.image)
+				imageBarrier.image = vkTexture->get_handle();
 				VkImageSubresourceRange range;
 				if (has_flag(texBarrier.texture->textureInfo.textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
 				{

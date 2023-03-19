@@ -47,6 +47,28 @@ namespace ad_astris::vulkan
 			virtual void wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd) final override;
 			virtual void submit(rhi::QueueType queueType = rhi::QueueType::GRAPHICS) final override;
 
+			virtual void copy_buffer(
+				rhi::CommandBuffer* cmd,
+				rhi::Buffer* srcBuffer,
+				rhi::Buffer* dstBuffer,
+				uint32_t size = 0,
+				uint32_t srcOffset = 0,
+				uint32_t dstOffset = 0) final override;
+			virtual void blit_texture(
+				rhi::CommandBuffer* cmd,
+				rhi::Texture* srcTexture,
+				rhi::Texture* dstTexture,
+				std::array<int32_t, 3>& srcOffset,
+				std::array<int32_t, 3>& dstOffset,
+				uint32_t srcMipLevel = 0,
+				uint32_t dstMipLevel = 0,
+				uint32_t srcBaseLayer = 0,
+				uint32_t dstBaseLayer = 0) final override;
+			virtual void copy_buffer_to_texture(
+				rhi::CommandBuffer* cmd,
+				rhi::Buffer* srcBuffer,
+				rhi::Texture* dstTexture,
+				rhi::ResourceUsage textureUsage) final override;
 			virtual void set_viewport(rhi::CommandBuffer* cmd, float width, float height) final override;
 			virtual void set_scissor(rhi::CommandBuffer* cmd, uint32_t width, uint32_t height, int32_t offsetX = 0, int32_t offsetY = 0) final override;
 			virtual void bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;

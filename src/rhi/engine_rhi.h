@@ -1,7 +1,8 @@
 ﻿#pragma once
 
 #include "resources.h"
-#include "vector"
+#include <vector>
+#include <array>
 
 namespace ad_astris::rhi
 {
@@ -31,6 +32,30 @@ namespace ad_astris::rhi
 			virtual void wait_command_buffer(CommandBuffer* cmd, CommandBuffer* waitForCmd) = 0;
 			virtual void submit(QueueType queueType = QueueType::GRAPHICS) = 0;
 
+			// If size = 0 (default value), method will copy whole srcBuffer to dstBuffer
+			virtual void copy_buffer(
+				CommandBuffer* cmd,
+				Buffer* srcBuffer,
+				Buffer* dstBuffer,
+				uint32_t size = 0,
+				uint32_t srcOffset = 0,
+				uint32_t dstOffset = 0) = 0;
+			// srcTexture should have ResourceLayout TRANSFER_SRC, dstTexture should have ResourceLayout TRANSFER_DST
+			virtual void blit_texture(
+				CommandBuffer* cmd,
+				Texture* srcTexture,
+				Texture* dstTexture,
+				std::array<int32_t, 3>& srcOffset,
+				std::array<int32_t, 3>& dstOffset,
+				uint32_t srcMipLevel = 0,
+				uint32_t dstMipLevel = 0,
+				uint32_t srcBaseLayer = 0,
+				uint32_t dstBaseLayer = 0) = 0;
+			virtual void copy_buffer_to_texture(
+				CommandBuffer* cmd,
+				Buffer* srcBuffer,
+				Texture* dstTexture,
+				ResourceUsage textureUsage) = 0;
 			virtual void set_viewport(CommandBuffer* cmd, float width, float height) = 0;
 			virtual void set_scissor(CommandBuffer* cmd, uint32_t width, uint32_t height, int32_t offsetX = 0, int32_t offsetY = 0) = 0;
 			// Can bind only one vertex buffer.

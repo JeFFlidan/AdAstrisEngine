@@ -333,34 +333,15 @@ VkSamplerAddressMode vulkan::get_address_mode(rhi::AddressMode addressMode)
 
 VkBufferUsageFlags vulkan::get_buffer_usage(rhi::ResourceUsage usage)
 {
-	// switch (usage)
-	// {
-	// 	case rhi::SAMPLED_TEXTURE:
-	// 	case rhi::STORAGE_TEXTURE:
-	// 	case rhi::COLOR_ATTACHMENT:
-	// 	case rhi::DEPTH_STENCIL_ATTACHMENT:
-	// 	case rhi::TRANSIENT_ATTACHMENT:
-	// 	case rhi::INPUT_ATTACHMENT:
-	// 	case rhi::UNDEFINED_USAGE:
-	// 		LOG_ERROR("Invalid usage. Can't use buffer. 0 will be returned")
-	// 		return 0;
-	// 	case rhi::UNIFORM_TEXEL_BUFFER:
-	// 		return VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-	// 	case rhi::STORAGE_TEXEL_BUFFER:
-	// 		return VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-	// 	case rhi::UNIFORM_BUFFER:
-	// 		return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-	// 	case rhi::STORAGE_BUFFER:
-	// 		return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-	// 	case rhi::INDEX_BUFFER:
-	// 		return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-	// 	case rhi::VERTEX_BUFFER:
-	// 		return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	// 	case rhi::INDIRECT_BUFFER:
-	// 		return VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-	// }
-
 	VkBufferUsageFlags usageFlags = 0;
+	if (has_flag(usage, rhi::ResourceUsage::TRANSFER_SRC))
+	{
+		usageFlags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	}
+	if (has_flag(usage, rhi::ResourceUsage::TRANSFER_DST))
+	{
+		usageFlags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	}
 	if (has_flag(usage, rhi::ResourceUsage::UNIFORM_TEXEL_BUFFER))
 	{
 		usageFlags |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
@@ -394,33 +375,6 @@ VkBufferUsageFlags vulkan::get_buffer_usage(rhi::ResourceUsage usage)
 
 VkImageUsageFlags vulkan::get_image_usage(rhi::ResourceUsage usage)
 {
-	// switch (usage)
-	// {
-	// 	case rhi::UNIFORM_TEXEL_BUFFER:
-	// 	case rhi::STORAGE_TEXEL_BUFFER:
-	// 	case rhi::UNIFORM_BUFFER:
-	// 	case rhi::STORAGE_BUFFER:
-	// 	case rhi::INDEX_BUFFER:
-	// 	case rhi::VERTEX_BUFFER:
-	// 	case rhi::INDIRECT_BUFFER:
-	// 	case rhi::UNDEFINED_USAGE:
-	// 		LOG_ERROR("Invalid usage. Can't use image. 0 will be returned")
-	// 		return 0;
-	// 	case rhi::SAMPLED_TEXTURE:
-	// 		return VK_IMAGE_USAGE_SAMPLED_BIT;
-	// 	case rhi::STORAGE_TEXTURE:
-	// 		return VK_IMAGE_USAGE_STORAGE_BIT;
-	// 	case rhi::COLOR_ATTACHMENT:
-	// 		return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	// 	case rhi::DEPTH_STENCIL_ATTACHMENT:
-	// 		return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	// 	case rhi::TRANSIENT_ATTACHMENT:
-	// 		return VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-	// 	case rhi::INPUT_ATTACHMENT:
-	// 		return VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-	// }
-	//
-
 	VkImageUsageFlags usageFlags = 0;
 	if (has_flag(usage, rhi::ResourceUsage::TRANSFER_SRC))
 	{
@@ -847,4 +801,13 @@ VkPipelineBindPoint vulkan::get_pipeline_bind_point(rhi::PipelineType pipelineTy
 		case rhi::PipelineType::RAY_TRACING:
 			return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
 	}
+}
+
+VkImageAspectFlags vulkan::get_image_aspect(rhi::ResourceUsage usage)
+{
+	if (has_flag(usage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
+	{
+		return VK_IMAGE_ASPECT_DEPTH_BIT;
+	}
+	return VK_IMAGE_ASPECT_COLOR_BIT;
 }
