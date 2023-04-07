@@ -2,8 +2,6 @@
 #include "profiler/logger.h"
 #include <string>
 
-#include "../../third_party/vulkan_base/vulkan/vulkan_core.h"
-
 using namespace ad_astris;
 
 shaderc_include_result* rcore::include_resolver(
@@ -40,7 +38,7 @@ shaderc_include_result* rcore::include_resolver(
 	includePath += std::string(requested_source);
 
 	uint64_t size;
-	void* data = fileSystem->map_to_system(includePath.c_str(), size);
+	void* data = fileSystem->map_to_read(includePath.c_str(), size);
 
 	if (!data)
 	{
@@ -65,7 +63,7 @@ void rcore::include_releaser(void* userData, shaderc_include_result* result)
 	io::FileSystem* fileSystem = static_cast<io::FileSystem*>(userData);
 	assert(fileSystem && "Invalid file system");
 
-	fileSystem->unmap_from_system(const_cast<char*>(result->content));
+	fileSystem->unmap_after_reading(const_cast<char*>(result->content));
 
 	delete[] result->source_name;
 	delete result;
@@ -87,7 +85,7 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 	rhi::ShaderType shaderType = get_shader_type(uri);
 	info->shaderType = shaderType;
 	uint64_t count;
-	void* data = _fileSystem->map_to_system(uri, count);
+	void* data = _fileSystem->map_to_read(uri, count);
 
 	if (_shaderCache.check_in_cache(info, data, count))
 	{
@@ -149,7 +147,7 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 	
 	_shaderCache.add_to_cache(info, data, count);
 	
-	_fileSystem->unmap_from_system(data);
+	_fileSystem->unmap_after_reading(data);
 	shaderc_result_release(finalResult);
 }
 

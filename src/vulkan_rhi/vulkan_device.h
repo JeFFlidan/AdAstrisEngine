@@ -18,8 +18,8 @@ namespace ad_astris::vulkan
 	class VulkanDevice
 	{
 		public:
-			void init(vkb::Instance& instance, void* window);
-			void cleanup();
+			VulkanDevice(vkb::Instance& instance, void* window);
+			~VulkanDevice();
 
 			// Maybe I shouldn't make those variables private
 			VkSurfaceKHR get_surface() { return _surface; }
@@ -35,6 +35,7 @@ namespace ad_astris::vulkan
 		
 		private:
 			VkSurfaceKHR _surface{ VK_NULL_HANDLE };
+			VkInstance _instance{ VK_NULL_HANDLE };
 			VkPhysicalDevice _physicalDevice{ VK_NULL_HANDLE };
 			VkDevice _device{ VK_NULL_HANDLE };
 

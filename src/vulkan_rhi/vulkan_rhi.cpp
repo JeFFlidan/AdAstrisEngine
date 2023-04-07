@@ -18,7 +18,7 @@ void vulkan::VulkanRHI::init(void* window)
 	vkb::Instance vkbInstance = create_instance();
 	_instance = vkbInstance.instance;
 	_debugMessenger = vkbInstance.debug_messenger;
-	_vulkanDevice.init(vkbInstance, window);
+	_vulkanDevice = new VulkanDevice(vkbInstance, window);
 	create_allocator();
 }
 
@@ -35,8 +35,8 @@ void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapCh
 		LOG_ERROR("VulkanRHI::create_swap_chain(): Invalid pointers")
 		return;
 	}
-	_swapChain = new VulkanSwapChain(info, &_vulkanDevice);
-	_cmdManager = new VulkanCommandManager(&_vulkanDevice, _swapChain);
+	_swapChain = new VulkanSwapChain(info, _vulkanDevice);
+	_cmdManager = new VulkanCommandManager(_vulkanDevice, _swapChain);
 	swapChain->handle = _swapChain;
 }
 
@@ -249,7 +249,7 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	createInfo.subresourceRange.aspectMask = aspectFlags;
 
 	VkImageView* view = new VkImageView();
-	VK_CHECK(vkCreateImageView(_vulkanDevice.get_device(), &createInfo, nullptr, view));
+	VK_CHECK(vkCreateImageView(_vulkanDevice->get_device(), &createInfo, nullptr, view));
 	textureView->handle = view;
 	textureView->viewInfo = *viewInfo;
 	textureView->texture = texture;
@@ -322,7 +322,7 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 	}
 	
 	VkSampler* vkSampler = new VkSampler();
-	VK_CHECK(vkCreateSampler(_vulkanDevice.get_device(), &createInfo, nullptr, vkSampler));
+	VK_CHECK(vkCreateSampler(_vulkanDevice->get_device(), &createInfo, nullptr, vkSampler));
 	sampler->handle = vkSampler;
 	sampler->sampInfo = *sampInfo;
 }
@@ -339,7 +339,7 @@ void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shad
 		LOG_ERROR("VulkanRHI::create_shader(): Invalid pointer to rhi::Shader")
 		return;
 	}
-	VulkanShader* vulkanShader = new VulkanShader(_vulkanDevice.get_device());
+	VulkanShader* vulkanShader = new VulkanShader(_vulkanDevice->get_device());
 	vulkanShader->create_shader_module(shaderInfo);
 	shader->type = shaderInfo->shaderType;
 	shader->handle = vulkanShader;
@@ -353,7 +353,7 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 		return;
 	}
 	pipeline->type = rhi::PipelineType::GRAPHICS;
-	pipeline->handle = new VulkanPipeline(&_vulkanDevice, info);
+	pipeline->handle = new VulkanPipeline(_vulkanDevice, info);
 }
 
 void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info)
@@ -364,7 +364,7 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 		return;
 	}
 	pipeline->type = rhi::PipelineType::COMPUTE;
-	pipeline->handle = new VulkanPipeline(&_vulkanDevice, info);
+	pipeline->handle = new VulkanPipeline(_vulkanDevice, info);
 }
 
 void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
@@ -385,7 +385,7 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 		return;
 	}
 
-	renderPass->handle = new VulkanRenderPass(&_vulkanDevice, passInfo);
+	renderPass->handle = new VulkanRenderPass(_vulkanDevice, passInfo);
 }
 
 void vulkan::VulkanRHI::begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType)
@@ -846,8 +846,8 @@ void vulkan::VulkanRHI::create_allocator()
 {
 	LOG_INFO("Start creating allocator")
 	VmaAllocatorCreateInfo allocatorInfo{};
-	allocatorInfo.physicalDevice = _vulkanDevice.get_physical_device();
-	allocatorInfo.device = _vulkanDevice.get_device();
+	allocatorInfo.physicalDevice = _vulkanDevice->get_physical_device();
+	allocatorInfo.device = _vulkanDevice->get_device();
 	allocatorInfo.instance = _instance;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
 	LOG_INFO("End creating allocator")

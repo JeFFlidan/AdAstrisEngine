@@ -92,7 +92,7 @@ namespace ad_astris::vulkan
 		
 			// Only for tests. Will be removed in the final implementation
 			VkInstance get_instance() { return _instance; }
-			VulkanDevice get_device() { return _vulkanDevice; }
+			VulkanDevice* get_device() { return _vulkanDevice; }
 			VmaAllocator get_allocator() { return _allocator; }
 			VkDebugUtilsMessengerEXT get_messenger() { return _debugMessenger; }
 		
@@ -100,7 +100,7 @@ namespace ad_astris::vulkan
 			VkInstance _instance{ VK_NULL_HANDLE };
 			VkDebugUtilsMessengerEXT _debugMessenger{ VK_NULL_HANDLE };
 			VmaAllocator _allocator;
-			VulkanDevice _vulkanDevice;
+			VulkanDevice* _vulkanDevice;
 			VulkanSwapChain* _swapChain{ nullptr };
 			VulkanCommandManager* _cmdManager{ nullptr };
 

@@ -8,13 +8,11 @@
 
 using namespace ad_astris;
 
-void vulkan::VulkanDevice::init(vkb::Instance& instance, void* window)
+vulkan::VulkanDevice::VulkanDevice(vkb::Instance& instance, void* window)
 {
 	LOG_INFO("Start initing Device class (Vulkan)")
 
 	create_surface(instance, window);
-	if (_surface == VK_NULL_HANDLE)
-		LOG_ERROR("Null handle")
 	vkb::PhysicalDevice vkbPhysDevice = pick_physical_device(instance);
 	vkb::Device vkbDevice = pick_device(vkbPhysDevice);
 
@@ -27,36 +25,34 @@ void vulkan::VulkanDevice::init(vkb::Instance& instance, void* window)
 	graphicsQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 	graphicsQueue.queueType = rhi::QueueType::GRAPHICS;
 	_graphicsQueue = new VulkanQueue(graphicsQueue);
-	LOG_INFO("VulkanDevice::init(): Graphics queue family: {}", _graphicsQueue->get_family())
 	computeQueue.queue = vkbDevice.get_queue(vkb::QueueType::compute).value();
 	computeQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::compute).value();
 	computeQueue.queueType = rhi::QueueType::COMPUTE;
 	_computeQueue = new VulkanQueue(computeQueue);
-	LOG_INFO("VulkanDevice::init(): Compute queue family: {}", _computeQueue->get_family())
 	// Maybe I'll remove present queue
 	presentQueue.queue = vkbDevice.get_queue(vkb::QueueType::present).value();
 	presentQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::present).value();
 	presentQueue.queueType = rhi::QueueType::GRAPHICS;
 	_presentQueue = new VulkanQueue(presentQueue);
-	LOG_INFO("VulkanDevice::init(): Present queue family: {}", _presentQueue->get_family())
 	transferQueue.queue = vkbDevice.get_queue(vkb::QueueType::transfer).value();
 	transferQueue.queueFamily = vkbDevice.get_queue_index(vkb::QueueType::transfer).value();
 	transferQueue.queueType = rhi::QueueType::TRANSFER;
 	_transferQueue = new VulkanQueue(transferQueue);
-	LOG_INFO("VulkanDevice::init(): Transfer queue family: {}", _transferQueue->get_family())
 
 	_physicalDevice = vkbPhysDevice.physical_device;
 	_device = vkbDevice.device;
 
-	LOG_INFO("Finish initing Device class (Vulkan)")
+	LOG_INFO("Finished initing Device class (Vulkan)")
 }
 
-void vulkan::VulkanDevice::cleanup()
+vulkan::VulkanDevice::~VulkanDevice()
 {
 	delete _graphicsQueue;
 	delete _presentQueue;
 	delete _computeQueue;
 	delete _transferQueue;
+	vkDestroySurfaceKHR(_instance, _surface, nullptr);
+	vkDestroyDevice(_device, nullptr);
 }
 
 void vulkan::VulkanDevice::create_surface(VkInstance instance, void* window)

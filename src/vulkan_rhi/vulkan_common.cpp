@@ -677,46 +677,34 @@ VkImageLayout vulkan::get_image_layout(rhi::ResourceLayout resourceLayout)
 {
 	if (has_flag(resourceLayout, rhi::ResourceLayout::UNDEFINED))
 	{
-		LOG_INFO("get_image_layout(): undefined")
-		if (resourceLayout == rhi::ResourceLayout::COLOR_ATTACHMENT)
-		{
-			LOG_INFO("FUCCCCCCKKKKK")
-		}
 		return VK_IMAGE_LAYOUT_UNDEFINED;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::GENERAL))
 	{
-		LOG_INFO("get_image_layout(): general")
 		return VK_IMAGE_LAYOUT_GENERAL;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::SHADER_READ))
 	{
-		LOG_INFO("get_image_layout(): shader read")
 		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::COLOR_ATTACHMENT))
 	{
-		LOG_INFO("get_image_layout(): color attachment optimal")
 		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::DEPTH_STENCIL))
 	{
-		LOG_INFO("get_image_layout(): depth stencil")
 		return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::DEPTH_STENCIL_READ_ONLY))
 	{
-		LOG_INFO("get_image_layout(): depth stencil read only")
 		return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::TRANSFER_SRC))
 	{
-		LOG_INFO("get_image_layout(): transfer src")
 		return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::TRANSFER_DST))
 	{
-		LOG_INFO("get_image_layout(): transfer dst")
 		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	}
 }
@@ -726,67 +714,54 @@ VkAccessFlags vulkan::get_access(rhi::ResourceLayout resourceLayout)
 	VkAccessFlags accessFlags = 0;
 	if (has_flag(resourceLayout, rhi::ResourceLayout::INDIRECT_COMMAND_BUFFER))
 	{
-		LOG_INFO("get_access(): Indirect")
 		accessFlags |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::INDEX_BUFFER))
 	{
-		LOG_INFO("get_access(): Index")
 		accessFlags |= VK_ACCESS_INDEX_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::VERTEX_BUFFER))
 	{
-		LOG_INFO("get_access(): vertex")
 		accessFlags |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::UNIFORM_BUFFER))
 	{
-		LOG_INFO("get_access(): uniform")
 		accessFlags |= VK_ACCESS_UNIFORM_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::SHADER_READ))
 	{
-		LOG_INFO("get_access(): shader read")
 		accessFlags |= VK_ACCESS_SHADER_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::SHADER_WRITE))
 	{
-		LOG_INFO("get_access(): shader write")
 		accessFlags |= VK_ACCESS_SHADER_WRITE_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::COLOR_ATTACHMENT))
 	{
-		LOG_INFO("get_access(): color attach")
 		accessFlags |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::DEPTH_STENCIL))
 	{
-		LOG_INFO("get_access(): depth stencil")
 		accessFlags |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::DEPTH_STENCIL_READ_ONLY))
 	{
-		LOG_INFO("get_access(): depth stencil read only")
 		accessFlags |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::TRANSFER_SRC))
 	{
-		LOG_INFO("get_access(): transfer read")
 		accessFlags |= VK_ACCESS_TRANSFER_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::TRANSFER_DST))
 	{
-		LOG_INFO("get_access(): transfer write")
 		accessFlags |= VK_ACCESS_TRANSFER_WRITE_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::MEMORY_READ))
 	{
-		LOG_INFO("get_access(): memory read")
 		accessFlags |= VK_ACCESS_MEMORY_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::MEMORY_WRITE))
 	{
-		LOG_INFO("get_access(): memory write")
 		accessFlags |= VK_ACCESS_MEMORY_WRITE_BIT;
 	}
 	return accessFlags;

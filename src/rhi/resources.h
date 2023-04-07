@@ -306,6 +306,12 @@ namespace ad_astris::rhi
 		BufferInfo bufferInfo;
 	};
 
+	template<typename T>
+	struct TypedBuffer : public Buffer
+	{
+		
+	};
+
 	struct Texture : public Resource
 	{
 		TextureInfo textureInfo;

@@ -66,6 +66,7 @@ namespace ad_astris
 		}
 			
 		FILE* file = fopen(path.string().c_str(), mode);
+		LOG_INFO("Path is : {}", path.string().c_str())
 		assert(file && "EngineFileSystem::File is invalid after opening");
 		return new EngineFileStream(file);
 	}
@@ -77,7 +78,7 @@ namespace ad_astris
 		return true;
 	}
 
-	void* io::EngineFileSystem::map_to_system(const URI& path, size_t& size, const char* mode)
+	void* io::EngineFileSystem::map_to_read(const URI& path, size_t& size, const char* mode)
 	{
 		EngineFileStream* stream = open(path, mode);
 		if (!stream)
@@ -104,7 +105,7 @@ namespace ad_astris
 		return data;
 	}
 
-	bool io::EngineFileSystem::unmap_from_system(void* data)
+	bool io::EngineFileSystem::unmap_after_reading(void* data)
 	{
 		assert(data);
 		uint8_t* newData = reinterpret_cast<uint8_t*>(data);

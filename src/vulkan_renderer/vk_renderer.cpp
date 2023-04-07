@@ -1,4 +1,5 @@
 ﻿#include "vk_renderer.h"
+#include "resource_manager/resource_converter.h"
 #include "vulkan_rhi/vulkan_rhi.h"
 #include "vulkan_rhi/vulkan_pipeline.h"
 #include "vulkan_rhi/vulkan_swap_chain.h"
@@ -220,13 +221,13 @@ namespace ad_astris
 		_eRhi->init(_sdlWindow.get_window());
 		vulkan::VulkanRHI* rhi = reinterpret_cast<vulkan::VulkanRHI*>(_eRhi);
 		auto vulkanDevice = rhi->get_device();
-		_device = vulkanDevice.get_device();
+		_device = vulkanDevice->get_device();
 		_debug_messenger = rhi->get_messenger();
-		_surface = vulkanDevice.get_surface();
-		_chosenGPU = vulkanDevice.get_physical_device();
+		_surface = vulkanDevice->get_surface();
+		_chosenGPU = vulkanDevice->get_physical_device();
 		_instance = rhi->get_instance();
 		_allocator = rhi->get_allocator();
-		auto queue = vulkanDevice.get_graphics_queue();
+		auto queue = vulkanDevice->get_graphics_queue();
 		_graphicsQueue = queue->get_queue();
 		_graphicsQueueFamily = queue->get_family();
 
@@ -285,23 +286,6 @@ namespace ad_astris
 		_linearSampler = *vkSampler;
 
 		UUID uuid;
-		
-		// io::FileSystem* fileSystem = new io::EngineFileSystem("E:/MyEngine/MyEngine/VulkanEngine");
-		// rcore::ShaderCompiler* shaderCompiler = new rcore::ShaderCompiler(fileSystem);
-		// io::URI path = "test/test_shader.vert";
-		// rhi::ShaderInfo shaderInfo;
-		// shaderCompiler->compile_into_spv(path, &shaderInfo);
-		// LOG_INFO("Shader's code size is: {}", shaderInfo.size)
-
-		// tests
-		// rhi::BufferInfo info(rhi::STORAGE_BUFFER, rhi::CPU, false, true);
-		// rhi::Buffer buffer(info);
-		// std::vector<uint64_t> test(10);
-		// rhi.create_buffer(&buffer, test.size() * sizeof(uint64_t));
-		// LOG_INFO("Buffer size: {}", buffer.size)
-		//
-		// std::vector<uint64_t> test2(10, 15);
-		// rhi.update_buffer_data(&buffer, test2.size() * sizeof(uint64_t), test2.data());
 	}
 
 	/** Used to init material, render scene and other systems.
@@ -328,6 +312,10 @@ namespace ad_astris
 
 		_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
 		_shaderCompiler = new rcore::ShaderCompiler(_fileSystem);
+		resource::ResourceConverter resourceConverter(_fileSystem);
+		io::URI door = "E:\\gun.gltf";
+		resourceConverter.convert_to_aares_file(door);
+		
 
 		_materialSystem.init(this);
 		_renderScene.init();

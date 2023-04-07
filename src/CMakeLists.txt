@@ -18,6 +18,6 @@ set_property(TARGET AdAstrisEngine PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TAR
 target_include_directories(logger INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_sources(logger PRIVATE profiler/logger.h)
 target_include_directories(AdAstrisEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(AdAstrisEngine vkbootstrap spirv_reflect vma glm tinyobjloader imgui stb_image fmt_lib logger)
+target_link_libraries(AdAstrisEngine vkbootstrap spirv_reflect vma glm cgltf json lz4 tinyobjloader imgui stb_image fmt_lib logger)
 
 target_link_libraries(AdAstrisEngine Vulkan::Vulkan sdl2 assetlib shaderc)

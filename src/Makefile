@@ -297,6 +297,30 @@ material_system/shader.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/material_system/shader.cpp.s
 .PHONY : material_system/shader.cpp.s
 
+render_core/material_system.obj: render_core/material_system.cpp.obj
+.PHONY : render_core/material_system.obj
+
+# target to build an object file
+render_core/material_system.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/render_core/material_system.cpp.obj
+.PHONY : render_core/material_system.cpp.obj
+
+render_core/material_system.i: render_core/material_system.cpp.i
+.PHONY : render_core/material_system.i
+
+# target to preprocess a source file
+render_core/material_system.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/render_core/material_system.cpp.i
+.PHONY : render_core/material_system.cpp.i
+
+render_core/material_system.s: render_core/material_system.cpp.s
+.PHONY : render_core/material_system.s
+
+# target to generate assembly for a file
+render_core/material_system.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/render_core/material_system.cpp.s
+.PHONY : render_core/material_system.cpp.s
+
 render_core/shader_cache.obj: render_core/shader_cache.cpp.obj
 .PHONY : render_core/shader_cache.obj
 
@@ -344,6 +368,102 @@ render_core/shader_compiler.s: render_core/shader_compiler.cpp.s
 render_core/shader_compiler.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/render_core/shader_compiler.cpp.s
 .PHONY : render_core/shader_compiler.cpp.s
+
+renderer/renderer.obj: renderer/renderer.cpp.obj
+.PHONY : renderer/renderer.obj
+
+# target to build an object file
+renderer/renderer.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/renderer/renderer.cpp.obj
+.PHONY : renderer/renderer.cpp.obj
+
+renderer/renderer.i: renderer/renderer.cpp.i
+.PHONY : renderer/renderer.i
+
+# target to preprocess a source file
+renderer/renderer.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/renderer/renderer.cpp.i
+.PHONY : renderer/renderer.cpp.i
+
+renderer/renderer.s: renderer/renderer.cpp.s
+.PHONY : renderer/renderer.s
+
+# target to generate assembly for a file
+renderer/renderer.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/renderer/renderer.cpp.s
+.PHONY : renderer/renderer.cpp.s
+
+renderer/scene_manager.obj: renderer/scene_manager.cpp.obj
+.PHONY : renderer/scene_manager.obj
+
+# target to build an object file
+renderer/scene_manager.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/renderer/scene_manager.cpp.obj
+.PHONY : renderer/scene_manager.cpp.obj
+
+renderer/scene_manager.i: renderer/scene_manager.cpp.i
+.PHONY : renderer/scene_manager.i
+
+# target to preprocess a source file
+renderer/scene_manager.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/renderer/scene_manager.cpp.i
+.PHONY : renderer/scene_manager.cpp.i
+
+renderer/scene_manager.s: renderer/scene_manager.cpp.s
+.PHONY : renderer/scene_manager.s
+
+# target to generate assembly for a file
+renderer/scene_manager.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/renderer/scene_manager.cpp.s
+.PHONY : renderer/scene_manager.cpp.s
+
+resource_manager/resource_converter.obj: resource_manager/resource_converter.cpp.obj
+.PHONY : resource_manager/resource_converter.obj
+
+# target to build an object file
+resource_manager/resource_converter.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/resource_manager/resource_converter.cpp.obj
+.PHONY : resource_manager/resource_converter.cpp.obj
+
+resource_manager/resource_converter.i: resource_manager/resource_converter.cpp.i
+.PHONY : resource_manager/resource_converter.i
+
+# target to preprocess a source file
+resource_manager/resource_converter.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/resource_manager/resource_converter.cpp.i
+.PHONY : resource_manager/resource_converter.cpp.i
+
+resource_manager/resource_converter.s: resource_manager/resource_converter.cpp.s
+.PHONY : resource_manager/resource_converter.s
+
+# target to generate assembly for a file
+resource_manager/resource_converter.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/resource_manager/resource_converter.cpp.s
+.PHONY : resource_manager/resource_converter.cpp.s
+
+resource_manager/utils.obj: resource_manager/utils.cpp.obj
+.PHONY : resource_manager/utils.obj
+
+# target to build an object file
+resource_manager/utils.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/resource_manager/utils.cpp.obj
+.PHONY : resource_manager/utils.cpp.obj
+
+resource_manager/utils.i: resource_manager/utils.cpp.i
+.PHONY : resource_manager/utils.i
+
+# target to preprocess a source file
+resource_manager/utils.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/resource_manager/utils.cpp.i
+.PHONY : resource_manager/utils.cpp.i
+
+resource_manager/utils.s: resource_manager/utils.cpp.s
+.PHONY : resource_manager/utils.s
+
+# target to generate assembly for a file
+resource_manager/utils.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/resource_manager/utils.cpp.s
+.PHONY : resource_manager/utils.cpp.s
 
 ui/actors_properties_ui.obj: ui/actors_properties_ui.cpp.obj
 .PHONY : ui/actors_properties_ui.obj
@@ -801,6 +921,30 @@ vulkan_rhi/vulkan_common.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_common.cpp.s
 .PHONY : vulkan_rhi/vulkan_common.cpp.s
 
+vulkan_rhi/vulkan_descriptor_manager.obj: vulkan_rhi/vulkan_descriptor_manager.cpp.obj
+.PHONY : vulkan_rhi/vulkan_descriptor_manager.obj
+
+# target to build an object file
+vulkan_rhi/vulkan_descriptor_manager.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_descriptor_manager.cpp.obj
+.PHONY : vulkan_rhi/vulkan_descriptor_manager.cpp.obj
+
+vulkan_rhi/vulkan_descriptor_manager.i: vulkan_rhi/vulkan_descriptor_manager.cpp.i
+.PHONY : vulkan_rhi/vulkan_descriptor_manager.i
+
+# target to preprocess a source file
+vulkan_rhi/vulkan_descriptor_manager.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_descriptor_manager.cpp.i
+.PHONY : vulkan_rhi/vulkan_descriptor_manager.cpp.i
+
+vulkan_rhi/vulkan_descriptor_manager.s: vulkan_rhi/vulkan_descriptor_manager.cpp.s
+.PHONY : vulkan_rhi/vulkan_descriptor_manager.s
+
+# target to generate assembly for a file
+vulkan_rhi/vulkan_descriptor_manager.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/vulkan_rhi/vulkan_descriptor_manager.cpp.s
+.PHONY : vulkan_rhi/vulkan_descriptor_manager.cpp.s
+
 vulkan_rhi/vulkan_device.obj: vulkan_rhi/vulkan_device.cpp.obj
 .PHONY : vulkan_rhi/vulkan_device.obj
 
@@ -1024,12 +1168,27 @@ help:
 	@echo ... material_system/shader.obj
 	@echo ... material_system/shader.i
 	@echo ... material_system/shader.s
+	@echo ... render_core/material_system.obj
+	@echo ... render_core/material_system.i
+	@echo ... render_core/material_system.s
 	@echo ... render_core/shader_cache.obj
 	@echo ... render_core/shader_cache.i
 	@echo ... render_core/shader_cache.s
 	@echo ... render_core/shader_compiler.obj
 	@echo ... render_core/shader_compiler.i
 	@echo ... render_core/shader_compiler.s
+	@echo ... renderer/renderer.obj
+	@echo ... renderer/renderer.i
+	@echo ... renderer/renderer.s
+	@echo ... renderer/scene_manager.obj
+	@echo ... renderer/scene_manager.i
+	@echo ... renderer/scene_manager.s
+	@echo ... resource_manager/resource_converter.obj
+	@echo ... resource_manager/resource_converter.i
+	@echo ... resource_manager/resource_converter.s
+	@echo ... resource_manager/utils.obj
+	@echo ... resource_manager/utils.i
+	@echo ... resource_manager/utils.s
 	@echo ... ui/actors_properties_ui.obj
 	@echo ... ui/actors_properties_ui.i
 	@echo ... ui/actors_properties_ui.s
@@ -1087,6 +1246,9 @@ help:
 	@echo ... vulkan_rhi/vulkan_common.obj
 	@echo ... vulkan_rhi/vulkan_common.i
 	@echo ... vulkan_rhi/vulkan_common.s
+	@echo ... vulkan_rhi/vulkan_descriptor_manager.obj
+	@echo ... vulkan_rhi/vulkan_descriptor_manager.i
+	@echo ... vulkan_rhi/vulkan_descriptor_manager.s
 	@echo ... vulkan_rhi/vulkan_device.obj
 	@echo ... vulkan_rhi/vulkan_device.i
 	@echo ... vulkan_rhi/vulkan_device.s

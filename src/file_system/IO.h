@@ -27,8 +27,8 @@ namespace ad_astris::io
 
 			EngineFileStream* open(const URI& path, const char* mode) final;
 			bool close(Stream* stream) final;
-			void* map_to_system(const URI& uri, size_t& size, const char* mode = "rb") final;
-			bool unmap_from_system(void* data) final;
+			void* map_to_read(const URI& uri, size_t& size, const char* mode = "rb") final;
+			bool unmap_after_reading(void* data) final;
 		private:
 			std::filesystem::path rootPath;
 	};
