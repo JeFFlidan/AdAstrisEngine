@@ -103,6 +103,66 @@ ModelType utils::get_enum_model_type(std::string& type)
 		return ModelType::MOVABLE;
 }
 
+std::string utils::get_str_mipmap_mode(MipmapMode mode)
+{
+	switch (mode)
+	{
+		case MipmapMode::BASE_MIPMAPPING:
+			return "base_mipmapping";
+		case MipmapMode::NO_MIPMAPS:
+			return "no_mipmaps";
+	}
+}
+
+MipmapMode utils::get_enum_mipmap_mode(std::string& type)
+{
+	if (type == "base_mipmapping")
+		return MipmapMode::BASE_MIPMAPPING;
+	if (type == "no_mipmaps")
+		return MipmapMode::NO_MIPMAPS;
+}
+
+std::string utils::get_str_runtime_compression(RuntimeCompressionMode mode)
+{
+	switch (mode)
+	{
+		case RuntimeCompressionMode::DXT1:
+			return "dxt1";
+		case RuntimeCompressionMode::DXT5:
+			return "dxt5";
+	}
+}
+
+RuntimeCompressionMode utils::get_enum_runtime_compression(std::string& mode)
+{
+	if (mode == "dxt1")
+		return RuntimeCompressionMode::DXT1;
+	if (mode == "dxt5")
+		return RuntimeCompressionMode::DXT5;
+}
+
+std::string utils::get_str_tiling_mode(TilingMode mode)
+{
+	switch (mode)
+	{
+		case TilingMode::REPEAT:
+			return "repeat";
+		case TilingMode::CLAMP:
+			return "clamp";
+		case TilingMode::MIRROR:
+			return "mirror";
+	}
+}
+TilingMode utils::get_enum_tiling_mode(std::string& mode)
+{
+	if (mode == "repeat")
+		return TilingMode::REPEAT;
+	if (mode == "clamp")
+		return TilingMode::CLAMP;
+	if (mode == "mirror")
+		return TilingMode::MIRROR;
+}
+
 ModelBounds utils::calculate_model_bounds(VertexF32* vertices, uint64_t count)
 {
 	ModelBounds bounds;

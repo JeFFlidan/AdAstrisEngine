@@ -3,6 +3,8 @@
 #include "file_system/file_system.h"
 #include "resource_formats.h"
 
+#include <json.hpp>
+
 namespace ad_astris::resource
 {
 	class ResourceConverter
@@ -18,10 +20,19 @@ namespace ad_astris::resource
 		private:
 			io::FileSystem* _fileSystem{ nullptr };
 
-			void write_info_to_disk(ModelInfo& modelInfo);
-			void write_info_to_disk(TextureInfo& textureInfo);
-			void convert_to_model_info_from_gltf(io::URI& uri, ModelInfo& modelInfo);
-			void convert_to_model_info_from_obj(io::URI& uri, ModelInfo& modelInfo);
-			void convert_to_texture_info_from_raw_image(io::URI& uri, TextureInfo& texInfo);
+			void write_info_to_disk(ModelInfo* modelInfo);
+			void write_info_to_disk(TextureInfo* textureInfo);
+			void convert_to_model_info_from_gltf(io::URI& uri, ModelInfo* modelInfo);
+			void convert_to_model_info_from_obj(io::URI& uri, ModelInfo* modelInfo);
+			void convert_to_texture_info_from_raw_image(io::URI& uri, TextureInfo* texInfo);
+
+			struct BinaryBlob
+			{
+				BinaryBlob(uint64_t size, void* binBlob) : size(size), binaryBlob(binBlob) {}
+				uint64_t size;
+				void* binaryBlob;
+			};
+
+			void write_to_disk(io::URI& uri, nlohmann::json& json, BinaryBlob& binaryBlob);
 	};
 }

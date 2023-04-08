@@ -19,6 +19,15 @@ namespace ad_astris::resource::utils
 	std::string get_str_model_type(ModelType type);
 	ModelType get_enum_model_type(std::string& type);
 
+	std::string get_str_mipmap_mode(MipmapMode mode);
+	MipmapMode get_enum_mipmap_mode(std::string& type);
+
+	std::string get_str_runtime_compression(RuntimeCompressionMode mode);
+	RuntimeCompressionMode get_enum_runtime_compression(std::string& mode);
+
+	std::string get_str_tiling_mode(TilingMode mode);
+	TilingMode get_enum_tiling_mode(std::string& mode);
+
 	ModelBounds calculate_model_bounds(VertexF32* vertices, uint64_t count);
 	void calculate_tangent(VertexF32* vertices);
 

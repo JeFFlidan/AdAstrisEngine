@@ -317,6 +317,8 @@ namespace ad_astris
 		resourceConverter.convert_to_aares_file(door);
 		io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/gun2.obj";
 		resourceConverter.convert_to_aares_file(gunOBJ);
+		io::URI texture = "D:/cyberpunk location/Texture/Gun_2/Gun_2_BaseColor.tga";
+		resourceConverter.convert_to_aares_file(texture);
 
 		_materialSystem.init(this);
 		_renderScene.init();

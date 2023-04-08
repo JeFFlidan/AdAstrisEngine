@@ -58,11 +58,11 @@ namespace ad_astris::resource
 		uint64_t vertexBufferSize{ 0 };
 		uint64_t indexBufferSize{ 0 };
 		ModelBounds bounds;
-		uint8_t* modelData;
+		uint8_t* modelData{ nullptr };
 		VertexFormat vertexFormat{ VertexFormat::UNKNOWN };
 		CompressionMode compressionMode{ CompressionMode::NONE };
 
-		// Data to edit in engine
+		// Data to edit in the engine
 		std::string name;
 		glm::vec3 translation;
 		glm::vec4 rotation;
@@ -73,8 +73,43 @@ namespace ad_astris::resource
 
 	};
 
+	enum class MipmapMode
+	{
+		BASE_MIPMAPPING,
+		NO_MIPMAPS
+	};
+
+	// I have to implement it in the engine
+	enum class RuntimeCompressionMode
+	{
+		DXT1,
+		DXT5
+	};
+
+	enum class TilingMode
+	{
+		REPEAT,
+		CLAMP,
+		MIRROR
+	};
+
 	struct TextureInfo
 	{
-		
+		// Data for operations under hood
+		uint64_t size{ 0 };
+		uint64_t width{0};
+		uint64_t height{ 0 };
+		uint8_t* data{ nullptr };
+		CompressionMode compressionMode{ CompressionMode::NONE };
+
+		// Data to edit in the engine
+		std::string name;
+		MipmapMode mipmapMode;
+		RuntimeCompressionMode runtimeCompressionMode;
+		TilingMode tilingX;
+		TilingMode tilingY;
+		bool sRGB;
+		uint32_t brightness;
+		uint32_t saturation;
 	};
 }

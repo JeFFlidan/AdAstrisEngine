@@ -66,7 +66,6 @@ namespace ad_astris
 		}
 			
 		FILE* file = fopen(path.string().c_str(), mode);
-		LOG_INFO("Path is : {}", path.string().c_str())
 		assert(file && "EngineFileSystem::File is invalid after opening");
 		return new EngineFileStream(file);
 	}
