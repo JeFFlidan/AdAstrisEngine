@@ -10,17 +10,12 @@ std::string utils::get_resource_name(io::URI& uri)
 	auto index1 = path.find_last_of("\\");
 	if (index1 == std::string::npos)
 	{
-		LOG_INFO("NPOS")
 		index1 = path.find_last_of("/");
 	}
 
 	path.erase(path.begin(), path.begin() + index1 + 1);
-	LOG_INFO("Index 1: {}", path.c_str())
 	auto index2 = path.find(".");
-	LOG_INFO("Index 2 int {}", index2)
-	LOG_INFO("Path 3: {}", *(path.begin() + index2))
 	path.erase(path.begin() + index2, path.end());
-	LOG_INFO("NAME: {}", path)
 	return path;
 }
 
@@ -180,4 +175,15 @@ void utils::calculate_tangent(VertexF32* vertices)
 	thirdVert.tangent.x = tangent[0];
 	thirdVert.tangent.y = tangent[1];
 	thirdVert.tangent.z = tangent[2];
+}
+
+void utils::set_up_basic_model_info(ModelInfo* info)
+{
+	info->vertexFormat = VertexFormat::F32;
+	info->compressionMode = CompressionMode::LZ4;
+	info->translation = glm::vec3(0.0f);
+	info->rotation = glm::vec4(0.0f);
+	info->scale = glm::vec3(1.0f);
+	info->type = ModelType::STATIC;
+	info->isShadowCasted = true;
 }

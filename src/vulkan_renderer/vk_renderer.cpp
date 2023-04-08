@@ -315,7 +315,8 @@ namespace ad_astris
 		resource::ResourceConverter resourceConverter(_fileSystem);
 		io::URI door = "E:\\gun.gltf";
 		resourceConverter.convert_to_aares_file(door);
-		
+		io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/gun2.obj";
+		resourceConverter.convert_to_aares_file(gunOBJ);
 
 		_materialSystem.init(this);
 		_renderScene.init();

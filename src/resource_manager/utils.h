@@ -21,4 +21,6 @@ namespace ad_astris::resource::utils
 
 	ModelBounds calculate_model_bounds(VertexF32* vertices, uint64_t count);
 	void calculate_tangent(VertexF32* vertices);
+
+	void set_up_basic_model_info(ModelInfo* info);
 }

@@ -3,6 +3,9 @@
 #include "utils.h"
 
 #include <json.hpp>
+#include <tiny_obj_loader.h>
+//#define STB_IMAGE_IMPLEMENTATION
+//#include <stb_image.h>
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
 #include <complex>
@@ -10,6 +13,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <filesystem>
+
+#include "vulkan_renderer/vk_renderer.h"
 
 using namespace ad_astris;
 
@@ -31,8 +36,8 @@ void resource::ResourceConverter::convert_to_aares_file(io::URI& path)
 	else if (fileExt == "obj")
 	{
 		ModelInfo modelInfo;
-		//convert_to_model_info_from_obj(path, modelInfo);
-		//write_info_to_disk(modelInfo);
+		convert_to_model_info_from_obj(path, modelInfo);
+		write_info_to_disk(modelInfo);
 	}
 	else if (fileExt == "tga" || fileExt == "png")
 	{
@@ -71,9 +76,12 @@ void resource::ResourceConverter::write_info_to_disk(ModelInfo& modelInfo)
 	data[1] = modelInfo.translation.y;
 	data[2] = modelInfo.translation.z;
 	modelMetaData["translation"] = data;
+	data.resize(4);
 	data[0] = modelInfo.rotation.x;
 	data[1] = modelInfo.rotation.y;
 	data[2] = modelInfo.rotation.z;
+	data[3] = modelInfo.rotation.w;
+	data.resize(3);
 	modelMetaData["rotation"] = data;
 	data[0] = modelInfo.scale.x;
 	data[1] = modelInfo.scale.y;
@@ -86,12 +94,12 @@ void resource::ResourceConverter::write_info_to_disk(ModelInfo& modelInfo)
 
 	std::string strMetaData = modelMetaData.dump();
 	uint64_t metaDataLength = strMetaData.size();
-	
+
 	int compressStaging = LZ4_compressBound(modelInfo.vertexBufferSize + modelInfo.indexBufferSize);
 	std::vector<char> binaryBlob;
 	binaryBlob.resize(compressStaging);
 	int compressedSize = LZ4_compress_default(
-		(const char*)modelInfo.vertexData,
+		(const char*)modelInfo.modelData,
 		binaryBlob.data(),
 		modelInfo.vertexBufferSize + modelInfo.indexBufferSize,
 		compressStaging);
@@ -278,29 +286,105 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& uri, 
 	}
 
 	modelInfo.bounds = utils::calculate_model_bounds(vertexData.data(), vertexData.size());
-	modelInfo.vertexFormat = VertexFormat::F32;
-	modelInfo.compressionMode = CompressionMode::LZ4;
-	modelInfo.translation = glm::vec3(0.0f);
-	modelInfo.rotation = glm::vec4(0.0f);
-	modelInfo.scale = glm::vec3(1.0f);
-	modelInfo.type = ModelType::STATIC;
-	modelInfo.isShadowCasted = true;
+	utils::set_up_basic_model_info(&modelInfo);
 	modelInfo.name = utils::get_resource_name(uri);
-
-	std::vector<uint8_t> modelData;
+	
 	uint64_t vertexBufferSize = vertexData.size() * sizeof(VertexFormat::F32);
 	uint64_t indexBufferSize = modelIndices.size() * sizeof(uint32_t);
 	modelInfo.vertexBufferSize = vertexBufferSize;
 	modelInfo.indexBufferSize = indexBufferSize;
-	modelData.resize(vertexBufferSize + indexBufferSize);
-	memcpy(modelData.data(), vertexData.data(), vertexBufferSize);
-	memcpy(modelData.data() + vertexBufferSize, modelIndices.data(), indexBufferSize);
-	modelInfo.vertexData = modelData.data();
+	uint8_t* modelData = new uint8_t[vertexBufferSize + indexBufferSize];
+	memcpy(modelData, vertexData.data(), vertexBufferSize);
+	memcpy(modelData + vertexBufferSize, modelIndices.data(), indexBufferSize);
+	modelInfo.modelData = modelData;
 }
 
 void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& uri, ModelInfo& modelInfo)
 {
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
 
+	std::string warn;
+	std::string err;
+	
+	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, uri.c_str(), nullptr);
+
+	if (!warn.empty())
+	{
+		LOG_WARNING("Warning when loading material from obj file {}", warn)
+	}
+
+	if (!err.empty())
+	{
+		LOG_ERROR("ResourceConverter::convert_to_model_info_from_obj: {}", err.c_str())
+		return;
+	}
+
+	// Can't use vector because of the strange behavior of LZ4 compression
+	VertexF32 threeVertices[3];
+	size_t index = 0;
+	std::vector<VertexF32> vertexData;
+	std::vector<uint32_t> indices;
+	LOG_INFO("Before shapes")
+	for (size_t i = 0; i != shapes.size(); ++i)
+	{
+		LOG_INFO("i: {}", i)
+		size_t indexOffset = 0;
+		for (size_t j = 0; j != shapes[i].mesh.num_face_vertices.size(); ++j)
+		{
+			int fv = 3;
+			for (size_t q = 0; q != fv; ++q)
+			{
+				tinyobj::index_t idx = shapes[i].mesh.indices[indexOffset + q];
+
+				VertexF32 vertex;
+
+				vertex.position.x = attrib.vertices[3 * idx.vertex_index + 0];
+				vertex.position.y = attrib.vertices[3 * idx.vertex_index + 1];
+				vertex.position.z = attrib.vertices[3 * idx.vertex_index + 2];
+
+				vertex.normal.x = attrib.normals[3 * idx.normal_index + 0];
+				vertex.normal.y = attrib.normals[3 * idx.normal_index + 1];
+				vertex.normal.z = attrib.normals[3 * idx.normal_index + 2];
+
+				vertex.texCoord.x = attrib.texcoords[2 * idx.texcoord_index + 0];
+				vertex.texCoord.y = attrib.texcoords[2 * idx.texcoord_index + 1];
+
+				threeVertices[index] = vertex;
+				++index;
+				if (index == 3)
+				{
+					utils::calculate_tangent(threeVertices);
+					indices.push_back(vertexData.size());
+					vertexData.push_back(threeVertices[0]);
+					indices.push_back(vertexData.size());
+					vertexData.push_back(threeVertices[1]);
+					indices.push_back(vertexData.size());
+					vertexData.push_back(threeVertices[2]);
+					index = 0;
+				}
+			}
+		}
+	}
+
+	for (auto& material : materials)
+	{
+		modelInfo.materialsName.push_back(material.name);
+	}
+
+	modelInfo.bounds = utils::calculate_model_bounds(vertexData.data(), vertexData.size());
+	modelInfo.name = utils::get_resource_name(uri);
+	utils::set_up_basic_model_info(&modelInfo);
+
+	uint64_t vertexBufferSize = vertexData.size() * sizeof(VertexFormat::F32);
+	uint64_t indexBufferSize = indices.size() * sizeof(uint32_t);
+	modelInfo.vertexBufferSize = vertexBufferSize;
+	modelInfo.indexBufferSize = indexBufferSize;
+	uint8_t* modelData = new uint8_t[vertexBufferSize + indexBufferSize];
+	memcpy(modelData, vertexData.data(), vertexBufferSize);
+	memcpy(modelData + vertexBufferSize, indices.data(), indexBufferSize);
+	modelInfo.modelData = modelData;
 }
 
 void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI& uri, TextureInfo& texInfo)

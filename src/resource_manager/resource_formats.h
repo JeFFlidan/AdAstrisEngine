@@ -51,13 +51,14 @@ namespace ad_astris::resource
 	};
 
 	// I will add much more properties in the future
+	// modelData is stored in the heap so I should think about deleting it
 	struct ModelInfo
 	{
 		// Data for operations under hood
 		uint64_t vertexBufferSize{ 0 };
 		uint64_t indexBufferSize{ 0 };
 		ModelBounds bounds;
-		uint8_t* vertexData;
+		uint8_t* modelData;
 		VertexFormat vertexFormat{ VertexFormat::UNKNOWN };
 		CompressionMode compressionMode{ CompressionMode::NONE };
 
