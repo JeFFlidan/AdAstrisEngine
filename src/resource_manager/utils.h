@@ -32,4 +32,11 @@ namespace ad_astris::resource::utils
 	void calculate_tangent(VertexF32* vertices);
 
 	void set_up_basic_model_info(ModelInfo* info);
+	void set_up_basic_texture_info(TextureInfo* info);
+
+	ResourceInfo pack_model_info(ModelInfo* modelInfo);
+	ModelInfo* unpack_model_info(ResourceInfo* resourceInfo);
+
+	ResourceInfo pack_texture_info(TextureInfo* textureInfo);
+	TextureInfo* unpack_texture_info(ResourceInfo* resourceInfo);
 }

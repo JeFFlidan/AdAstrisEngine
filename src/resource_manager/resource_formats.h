@@ -9,18 +9,26 @@
 
 namespace ad_astris::resource
 {
-	enum class CompressionMode
-	{
-		NONE = 0,
-		LZ4,
-	};
-
 	enum class ResourceType
 	{
 		MODEL,
 		TEXTURE,
 		SCENE,
 		MATERIAL,
+	};
+	
+	struct ResourceInfo
+	{
+		ResourceType type;
+		std::string metaData;
+		uint64_t dataSize;
+		uint8_t* data;
+	};
+	
+	enum class CompressionMode
+	{
+		NONE = 0,
+		LZ4,
 	};
 	
 	struct VertexF32
@@ -61,11 +69,13 @@ namespace ad_astris::resource
 		uint8_t* modelData{ nullptr };
 		VertexFormat vertexFormat{ VertexFormat::UNKNOWN };
 		CompressionMode compressionMode{ CompressionMode::NONE };
+		std::string originalFile;
 
 		// Data to edit in the engine
 		std::string name;
 		glm::vec3 translation;
-		glm::vec4 rotation;
+		glm::vec3 rotationAxis;
+		float rotationAngle;
 		glm::vec3 scale;
 		ModelType type;
 		bool isShadowCasted;
@@ -101,6 +111,7 @@ namespace ad_astris::resource
 		uint64_t height{ 0 };
 		uint8_t* data{ nullptr };
 		CompressionMode compressionMode{ CompressionMode::NONE };
+		std::string originalFile;
 
 		// Data to edit in the engine
 		std::string name;

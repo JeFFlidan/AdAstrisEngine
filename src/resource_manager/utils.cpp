@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <json.hpp>
 #include <cmath>
 #include <limits>
 
@@ -242,8 +243,108 @@ void utils::set_up_basic_model_info(ModelInfo* info)
 	info->vertexFormat = VertexFormat::F32;
 	info->compressionMode = CompressionMode::LZ4;
 	info->translation = glm::vec3(0.0f);
-	info->rotation = glm::vec4(0.0f);
+	info->rotationAxis = glm::vec3(0.0f);
+	info->rotationAngle = 0.0f;
 	info->scale = glm::vec3(1.0f);
 	info->type = ModelType::STATIC;
 	info->isShadowCasted = true;
+}
+
+void utils::set_up_basic_texture_info(TextureInfo* info)
+{
+	info->compressionMode = CompressionMode::LZ4;
+	info->mipmapMode = MipmapMode::BASE_MIPMAPPING;
+	info->runtimeCompressionMode = RuntimeCompressionMode::DXT1;
+	info->tilingX = TilingMode::REPEAT;
+	info->tilingY = TilingMode::REPEAT;
+	info->sRGB = true;
+	info->brightness = 1.0;
+	info->saturation = 1.0;
+}
+
+ResourceInfo utils::pack_model_info(ModelInfo* modelInfo)
+{
+	nlohmann::json modelMetaData;
+	modelMetaData["original_file"] = modelInfo->originalFile;
+	modelMetaData["vertex_buffer_size"] = modelInfo->vertexBufferSize;
+	modelMetaData["index_buffer_size"] = modelInfo->indexBufferSize;
+
+	std::vector<float> data;
+	data.resize(7);
+	data[0] = modelInfo->bounds.origin.x;
+	data[1] = modelInfo->bounds.origin.y;
+	data[2] = modelInfo->bounds.origin.z;
+	data[3] = modelInfo->bounds.radius;
+	data[4] = modelInfo->bounds.extents.x;
+	data[5] = modelInfo->bounds.extents.y;
+	data[6] = modelInfo->bounds.extents.z;
+	modelMetaData["bounds"] = data;
+
+	modelMetaData["vertex_format"] = get_str_vertex_format(modelInfo->vertexFormat);
+	modelMetaData["compression_mode"] = get_str_compression_mode(modelInfo->compressionMode);
+	modelMetaData["name"] = modelInfo->name.c_str();
+	data.resize(3);
+	data[0] = modelInfo->translation.x;
+	data[1] = modelInfo->translation.y;
+	data[2] = modelInfo->translation.z;
+	modelMetaData["translation"] = data;
+	data[0] = modelInfo->rotationAxis.x;
+	data[1] = modelInfo->rotationAxis.y;
+	data[2] = modelInfo->rotationAxis.z;
+	modelMetaData["rotation_axis"] = data;
+	modelMetaData["rotation_angle"] = modelInfo->rotationAngle;
+	data.resize(3);
+	data[0] = modelInfo->scale.x;
+	data[1] = modelInfo->scale.y;
+	data[2] = modelInfo->scale.z;
+	modelMetaData["scale"] = data;
+
+	modelMetaData["type"] = get_str_model_type(modelInfo->type);
+	modelMetaData["isShadowCasted"] = modelInfo->isShadowCasted;
+	modelMetaData["materialNames"] = modelInfo->materialsName;
+
+	ResourceInfo resInfo;
+	resInfo.data = modelInfo->modelData;
+	resInfo.type = ResourceType::MODEL;
+	resInfo.dataSize = modelInfo->vertexBufferSize + modelInfo->indexBufferSize;
+	resInfo.metaData = modelMetaData.dump();
+
+	return resInfo;
+}
+
+ModelInfo* utils::unpack_model_info(ResourceInfo* resourceInfo)
+{
+	// TODO
+	return nullptr;
+}
+
+ResourceInfo utils::pack_texture_info(TextureInfo* textureInfo)
+{
+	nlohmann::json textureMetaData;
+	textureMetaData["original_file"] = textureInfo->originalFile;
+	textureMetaData["texture_size"] = textureInfo->size;
+	textureMetaData["texture_width"] = textureInfo->width;
+	textureMetaData["texture_height"] = textureInfo->height;
+	textureMetaData["compression_mode"] = get_str_compression_mode(textureInfo->compressionMode);
+	textureMetaData["mipmap_mode"] = get_str_mipmap_mode(textureInfo->mipmapMode);
+	textureMetaData["runtime_compression"] = get_str_runtime_compression(textureInfo->runtimeCompressionMode);
+	textureMetaData["tiling_x"] = get_str_tiling_mode(textureInfo->tilingX);
+	textureMetaData["tiling_y"] = get_str_tiling_mode(textureInfo->tilingY);
+	textureMetaData["sRGB"] = textureInfo->sRGB;
+	textureMetaData["brightness"] = textureInfo->brightness;
+	textureMetaData["saturation"] = textureInfo->saturation;
+	
+	ResourceInfo resInfo;
+	resInfo.data = textureInfo->data;
+	resInfo.type = ResourceType::TEXTURE;
+	resInfo.dataSize = textureInfo->size;
+	resInfo.metaData = textureMetaData.dump();
+
+	return resInfo;
+}
+
+TextureInfo* utils::unpack_texture_info(ResourceInfo* resourceInfo)
+{
+	// TODO
+	return nullptr;
 }

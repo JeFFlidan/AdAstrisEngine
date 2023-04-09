@@ -15,8 +15,6 @@
 
 #include <filesystem>
 
-#include "vulkan_renderer/vk_renderer.h"
-
 using namespace ad_astris;
 
 resource::ResourceConverter::ResourceConverter(io::FileSystem* fileSystem) : _fileSystem(fileSystem)
@@ -24,129 +22,85 @@ resource::ResourceConverter::ResourceConverter(io::FileSystem* fileSystem) : _fi
 	
 }
 
-void resource::ResourceConverter::convert_to_aares_file(io::URI& path)
+void* resource::ResourceConverter::convert_to_aares_file(io::URI& path, void* existedInfo)
 {
 	std::string fileExt(std::filesystem::path(path.c_str()).extension().string().erase(0, 1));
 
-	if (fileExt == "glb" || fileExt == "gltf")
+	if (fileExt == "glb" || fileExt == "gltf" || fileExt == "obj")
 	{
-		ModelInfo modelInfo;
-		convert_to_model_info_from_gltf(path, &modelInfo);
-		write_info_to_disk(&modelInfo);
-		delete[] modelInfo.modelData;
+		ModelInfo* modelInfo;
+		if (existedInfo != nullptr)
+		{
+			modelInfo = static_cast<ModelInfo*>(existedInfo);
+		}
+		else
+		{
+			modelInfo = new ModelInfo();
+			utils::set_up_basic_model_info(modelInfo);
+			modelInfo->name = utils::get_resource_name(path);
+			modelInfo->originalFile = path.c_str();
+		}
+		
+		if (fileExt == "glb" || fileExt == "gltf")
+		{
+			convert_to_model_info_from_gltf(path, modelInfo);
+			write_info_to_disk(modelInfo);
+		}
+		else if (fileExt == "obj")
+		{
+			convert_to_model_info_from_obj(path, modelInfo);
+			write_info_to_disk(modelInfo);
+		}
+		return modelInfo;
 	}
-	else if (fileExt == "obj")
+	
+	if (fileExt == "tga" || fileExt == "png")
 	{
-		ModelInfo modelInfo;
-		convert_to_model_info_from_obj(path, &modelInfo);
-		write_info_to_disk(&modelInfo);
-		delete[] modelInfo.modelData;
+		TextureInfo* textureInfo;
+		if (existedInfo != nullptr)
+		{
+			textureInfo = static_cast<TextureInfo*>(existedInfo);
+		}
+		else
+		{
+			textureInfo = new TextureInfo();
+			utils::set_up_basic_texture_info(textureInfo);
+			textureInfo->name = utils::get_resource_name(path);
+			textureInfo->originalFile = path.c_str();
+		}
+		convert_to_texture_info_from_raw_image(path, textureInfo);
+		write_info_to_disk(textureInfo);
+		return textureInfo;
 	}
-	else if (fileExt == "tga" || fileExt == "png")
-	{
-		TextureInfo textureInfo;
-		convert_to_texture_info_from_raw_image(path, &textureInfo);
-		write_info_to_disk(&textureInfo);
-		delete[] textureInfo.data;
-	}
-	else
-	{
-		LOG_ERROR("Unsupported file format")
-	}
+	
+	LOG_ERROR("Unsupported file format")
+	return nullptr;
 }
 
 void resource::ResourceConverter::write_info_to_disk(ModelInfo* modelInfo)
 {
-	nlohmann::json modelMetaData;
-	modelMetaData["vertex_buffer_size"] = modelInfo->vertexBufferSize;
-	modelMetaData["index_buffer_size"] = modelInfo->indexBufferSize;
-
-	std::vector<float> data;
-	data.resize(7);
-	data[0] = modelInfo->bounds.origin.x;
-	data[1] = modelInfo->bounds.origin.y;
-	data[2] = modelInfo->bounds.origin.z;
-	data[3] = modelInfo->bounds.radius;
-	data[4] = modelInfo->bounds.extents.x;
-	data[5] = modelInfo->bounds.extents.y;
-	data[6] = modelInfo->bounds.extents.z;
-	modelMetaData["bounds"] = data;
-
-	modelMetaData["vertex_format"] = utils::get_str_vertex_format(modelInfo->vertexFormat);
-	modelMetaData["compression_mode"] = utils::get_str_compression_mode(modelInfo->compressionMode);
-	modelMetaData["name"] = modelInfo->name.c_str();
-	data.resize(3);
-	data[0] = modelInfo->translation.x;
-	data[1] = modelInfo->translation.y;
-	data[2] = modelInfo->translation.z;
-	modelMetaData["translation"] = data;
-	data.resize(4);
-	data[0] = modelInfo->rotation.x;
-	data[1] = modelInfo->rotation.y;
-	data[2] = modelInfo->rotation.z;
-	data[3] = modelInfo->rotation.w;
-	modelMetaData["rotation"] = data;
-	data.resize(3);
-	data[0] = modelInfo->scale.x;
-	data[1] = modelInfo->scale.y;
-	data[2] = modelInfo->scale.z;
-	modelMetaData["scale"] = data;
-
-	modelMetaData["type"] = utils::get_str_model_type(modelInfo->type);
-	modelMetaData["isShadowCasted"] = modelInfo->isShadowCasted;
-	modelMetaData["materialNames"] = modelInfo->materialsName;
-	
-	int compressStaging = LZ4_compressBound(modelInfo->vertexBufferSize + modelInfo->indexBufferSize);
-	std::vector<char> binaryBlob;
-	binaryBlob.resize(compressStaging);
-	int compressedSize = LZ4_compress_default(
-		(const char*)modelInfo->modelData,
-		binaryBlob.data(),
-		modelInfo->vertexBufferSize + modelInfo->indexBufferSize,
-		compressStaging);
+	ResourceInfo resourceInfo = utils::pack_model_info(modelInfo);
 	
 	io::URI path = std::string("assets/" + modelInfo->name + ".aares").c_str();		// temporary solution
-
-	BinaryBlob binBlob(compressedSize, binaryBlob.data());
-	write_to_disk(path, modelMetaData, binBlob);
+	
+	write_to_disk(path, resourceInfo);
 }
 
 void resource::ResourceConverter::write_info_to_disk(TextureInfo* textureInfo)
 {
-	nlohmann::json textureMetaData;
-	textureMetaData["texture_size"] = textureInfo->size;
-	textureMetaData["texture_width"] = textureInfo->width;
-	textureMetaData["texture_height"] = textureInfo->height;
-	textureMetaData["compression_mode"] = utils::get_str_compression_mode(textureInfo->compressionMode);
-	textureMetaData["mipmap_mode"] = utils::get_str_mipmap_mode(textureInfo->mipmapMode);
-	textureMetaData["runtime_compression"] = utils::get_str_runtime_compression(textureInfo->runtimeCompressionMode);
-	textureMetaData["tiling_x"] = utils::get_str_tiling_mode(textureInfo->tilingX);
-	textureMetaData["tiling_y"] = utils::get_str_tiling_mode(textureInfo->tilingY);
-	textureMetaData["sRGB"] = textureInfo->sRGB;
-	textureMetaData["brightness"] = textureInfo->brightness;
-	textureMetaData["saturation"] = textureInfo->saturation;
+	ResourceInfo resourceInfo = utils::pack_texture_info(textureInfo);
 	
-	int compressStaging = LZ4_compressBound(textureInfo->size);
-	std::vector<char> binaryBlob;
-	binaryBlob.resize(compressStaging);
-	int compressedSize = LZ4_compress_default(
-		(const char*)textureInfo->data,
-		binaryBlob.data(),
-		textureInfo->size,
-		compressStaging);
-
 	io::URI path = std::string("assets/" + textureInfo->name + ".aares").c_str();		// temporary solution
-
-	BinaryBlob binBlob(compressedSize, binaryBlob.data());
-	write_to_disk(path, textureMetaData, binBlob);
+	
+	write_to_disk(path, resourceInfo);
 }
 
-void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& uri, ModelInfo* modelInfo)
+void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path, ModelInfo* modelInfo)
 {
 	cgltf_options options;
 	memset(&options, 0, sizeof(cgltf_options));
 	cgltf_data* data = nullptr;
-	cgltf_result result = cgltf_parse_file(&options, uri.c_str(), &data);
+	cgltf_result result = cgltf_parse_file(&options, path.c_str(), &data);
 	assert(result == cgltf_result_success && "Failed to parse gltf file");
 
 	size_t materialsCount = data->materials_count;
@@ -156,7 +110,7 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& uri, 
 		modelInfo->materialsName.push_back(materials[i].name);
 	}
 	
-	result = cgltf_load_buffers(&options, data, uri.c_str());
+	result = cgltf_load_buffers(&options, data, path.c_str());
 	assert(result == cgltf_result_success && "Failed to load buffers");
 
 	std::vector<VertexF32> vertexData;
@@ -305,8 +259,6 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& uri, 
 	}
 
 	modelInfo->bounds = utils::calculate_model_bounds(vertexData.data(), vertexData.size());
-	utils::set_up_basic_model_info(modelInfo);
-	modelInfo->name = utils::get_resource_name(uri);
 	
 	uint64_t vertexBufferSize = vertexData.size() * sizeof(VertexF32);
 	uint64_t indexBufferSize = modelIndices.size() * sizeof(uint32_t);
@@ -318,7 +270,7 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& uri, 
 	modelInfo->modelData = modelData;
 }
 
-void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& uri, ModelInfo* modelInfo)
+void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, ModelInfo* modelInfo)
 {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
@@ -327,7 +279,7 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& uri, M
 	std::string warn;
 	std::string err;
 	
-	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, uri.c_str(), nullptr);
+	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str(), nullptr);
 
 	if (!warn.empty())
 	{
@@ -392,8 +344,6 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& uri, M
 	}
 
 	modelInfo->bounds = utils::calculate_model_bounds(vertexData.data(), vertexData.size());
-	modelInfo->name = utils::get_resource_name(uri);
-	utils::set_up_basic_model_info(modelInfo);
 
 	uint64_t vertexBufferSize = vertexData.size() * sizeof(VertexF32);
 	uint64_t indexBufferSize = indices.size() * sizeof(uint32_t);
@@ -405,23 +355,14 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& uri, M
 	modelInfo->modelData = modelData;
 }
 
-void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI& uri, TextureInfo* texInfo)
+void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI& path, TextureInfo* texInfo)
 {
 	int32_t texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load(uri.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 	texInfo->size = texWidth * texHeight * 4;
 	texInfo->width = texWidth;
 	texInfo->height = texHeight;
-	texInfo->compressionMode = CompressionMode::LZ4;
-	texInfo->name = utils::get_resource_name(uri);
-	texInfo->mipmapMode = MipmapMode::BASE_MIPMAPPING;
-	texInfo->runtimeCompressionMode = RuntimeCompressionMode::DXT1;
-	texInfo->tilingX = TilingMode::REPEAT;
-	texInfo->tilingY = TilingMode::REPEAT;
-	texInfo->sRGB = true;
-	texInfo->brightness = 1.0;
-	texInfo->saturation = 1.0;
 
 	uint8_t* data = new uint8_t[texInfo->size];
 	memcpy(data, pixels, texInfo->size);
@@ -429,17 +370,29 @@ void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI
 	stbi_image_free(pixels);
 }
 
-void resource::ResourceConverter::write_to_disk(io::URI& uri, nlohmann::json& json, BinaryBlob& binaryBlob)
+void resource::ResourceConverter::write_to_disk(io::URI& path, ResourceInfo& resourceInfo)
 {
-	std::string strMetaData = json.dump();
-	uint64_t metaDataLength = strMetaData.size();
+	int compressStaging = LZ4_compressBound(resourceInfo.dataSize);
+	std::vector<char> binaryBlob;
+	binaryBlob.resize(compressStaging);
+	int compressedSize = LZ4_compress_default(
+		(const char*)resourceInfo.data,
+		binaryBlob.data(),
+		resourceInfo.dataSize,
+		compressStaging);
 	
-	io::Stream* stream = _fileSystem->open(uri, "wb");
+	uint64_t metaDataLength = resourceInfo.metaData.size();
+	std::string resourceType = utils::get_str_resource_type(resourceInfo.type);
+	uint8_t resourceTypeLength = resourceType.size();
 	
+	io::Stream* stream = _fileSystem->open(path, "wb");
+
+	stream->write(&resourceTypeLength, sizeof(uint8_t), 1);
+	stream->write(resourceType.data(), sizeof(char), resourceTypeLength);
 	stream->write(&metaDataLength, sizeof(uint64_t), 1);
-	stream->write(&binaryBlob.size, sizeof(uint64_t), 1);
-	stream->write(strMetaData.data(), sizeof(char), metaDataLength);
-	stream->write(binaryBlob.binaryBlob, sizeof(uint8_t), binaryBlob.size);
+	stream->write(&compressedSize, sizeof(uint64_t), 1);
+	stream->write(resourceInfo.metaData.data(), sizeof(char), metaDataLength);
+	stream->write(binaryBlob.data(), sizeof(uint8_t), compressedSize);
 	
 	_fileSystem->close(stream);
 }

@@ -36,6 +36,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <thread>
+#include <future>
 #include <unordered_map>
 #include <vector>
 #include "vk_types.h"
@@ -313,12 +314,19 @@ namespace ad_astris
 		_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
 		_shaderCompiler = new rcore::ShaderCompiler(_fileSystem);
 		resource::ResourceConverter resourceConverter(_fileSystem);
+
+		// Tests for resource converter
 		io::URI door = "E:\\gun.gltf";
-		resourceConverter.convert_to_aares_file(door);
-		io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/gun2.obj";
-		resourceConverter.convert_to_aares_file(gunOBJ);
 		io::URI texture = "D:/cyberpunk location/Texture/Gun_2/Gun_2_BaseColor.tga";
-		resourceConverter.convert_to_aares_file(texture);
+		io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/gun2.obj";
+		
+		auto async1 = std::async(std::launch::async, [&]()->void*{ return resourceConverter.convert_to_aares_file(door); });
+		auto async2 = std::async(std::launch::async, [&]()->void*{ return resourceConverter.convert_to_aares_file(texture); });
+		auto async3 = std::async(std::launch::async, [&]()->void*{ return resourceConverter.convert_to_aares_file(gunOBJ); });
+
+		async3.get();
+		async2.get();
+		async1.get();
 
 		_materialSystem.init(this);
 		_renderScene.init();
