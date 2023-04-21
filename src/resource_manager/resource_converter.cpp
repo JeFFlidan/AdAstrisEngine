@@ -11,6 +11,7 @@
 #include <cgltf.h>
 #include <complex>
 #include <lz4.h>
+#include <json.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <filesystem>
@@ -22,16 +23,19 @@ resource::ResourceConverter::ResourceConverter(io::FileSystem* fileSystem) : _fi
 	
 }
 
-void* resource::ResourceConverter::convert_to_aares_file(io::URI& path, void* existedInfo)
+resource::ResourceInfo resource::ResourceConverter::convert_to_aares_file(io::URI& path, ResourceInfo* existedInfo)
 {
 	std::string fileExt(std::filesystem::path(path.c_str()).extension().string().erase(0, 1));
 
+	ResourceInfo resourceInfo{};
+	
 	if (fileExt == "glb" || fileExt == "gltf" || fileExt == "obj")
 	{
 		ModelInfo* modelInfo;
 		if (existedInfo != nullptr)
 		{
-			modelInfo = static_cast<ModelInfo*>(existedInfo);
+			modelInfo = utils::unpack_model_info(existedInfo);
+			resourceInfo.uuid = existedInfo->uuid;
 		}
 		else
 		{
@@ -39,27 +43,30 @@ void* resource::ResourceConverter::convert_to_aares_file(io::URI& path, void* ex
 			utils::set_up_basic_model_info(modelInfo);
 			modelInfo->name = utils::get_resource_name(path);
 			modelInfo->originalFile = path.c_str();
+			resourceInfo.uuid = UUID();
+			modelInfo->uuid = resourceInfo.uuid;
 		}
 		
 		if (fileExt == "glb" || fileExt == "gltf")
 		{
-			convert_to_model_info_from_gltf(path, modelInfo);
-			write_info_to_disk(modelInfo);
+			convert_to_model_info_from_gltf(path, modelInfo, &resourceInfo);
 		}
 		else if (fileExt == "obj")
 		{
-			convert_to_model_info_from_obj(path, modelInfo);
-			write_info_to_disk(modelInfo);
+			convert_to_model_info_from_obj(path, modelInfo, &resourceInfo);
 		}
-		return modelInfo;
+
+		utils::pack_model_info(modelInfo, &resourceInfo);
+
+		delete modelInfo;
 	}
-	
-	if (fileExt == "tga" || fileExt == "png")
+	else if (fileExt == "tga" || fileExt == "png")
 	{
 		TextureInfo* textureInfo;
 		if (existedInfo != nullptr)
 		{
-			textureInfo = static_cast<TextureInfo*>(existedInfo);
+			textureInfo = utils::unpack_texture_info(existedInfo);
+			resourceInfo.uuid = existedInfo->uuid;
 		}
 		else
 		{
@@ -67,35 +74,23 @@ void* resource::ResourceConverter::convert_to_aares_file(io::URI& path, void* ex
 			utils::set_up_basic_texture_info(textureInfo);
 			textureInfo->name = utils::get_resource_name(path);
 			textureInfo->originalFile = path.c_str();
+			resourceInfo.uuid = UUID();
+			textureInfo->uuid = resourceInfo.uuid;
 		}
-		convert_to_texture_info_from_raw_image(path, textureInfo);
-		write_info_to_disk(textureInfo);
-		return textureInfo;
+		convert_to_texture_info_from_raw_image(path, textureInfo, &resourceInfo);
+		utils::pack_texture_info(textureInfo, &resourceInfo);
+
+		delete textureInfo;
 	}
-	
-	LOG_ERROR("Unsupported file format")
-	return nullptr;
+	else
+	{
+		LOG_ERROR("Unsupported file format")
+	}
+
+	return resourceInfo;
 }
 
-void resource::ResourceConverter::write_info_to_disk(ModelInfo* modelInfo)
-{
-	ResourceInfo resourceInfo = utils::pack_model_info(modelInfo);
-	
-	io::URI path = std::string("assets/" + modelInfo->name + ".aares").c_str();		// temporary solution
-	
-	write_to_disk(path, resourceInfo);
-}
-
-void resource::ResourceConverter::write_info_to_disk(TextureInfo* textureInfo)
-{
-	ResourceInfo resourceInfo = utils::pack_texture_info(textureInfo);
-	
-	io::URI path = std::string("assets/" + textureInfo->name + ".aares").c_str();		// temporary solution
-	
-	write_to_disk(path, resourceInfo);
-}
-
-void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path, ModelInfo* modelInfo)
+void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path, ModelInfo* modelInfo, ResourceInfo* resourceInfo)
 {
 	cgltf_options options;
 	memset(&options, 0, sizeof(cgltf_options));
@@ -267,10 +262,10 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 	uint8_t* modelData = new uint8_t[vertexBufferSize + indexBufferSize];
 	memcpy(modelData, vertexData.data(), vertexBufferSize);
 	memcpy(modelData + vertexBufferSize, modelIndices.data(), indexBufferSize);
-	modelInfo->modelData = modelData;
+	resourceInfo->data = modelData;
 }
 
-void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, ModelInfo* modelInfo)
+void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, ModelInfo* modelInfo, ResourceInfo* resourceInfo)
 {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
@@ -335,6 +330,8 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 					index = 0;
 				}
 			}
+
+			indexOffset += fv;
 		}
 	}
 
@@ -345,17 +342,20 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 
 	modelInfo->bounds = utils::calculate_model_bounds(vertexData.data(), vertexData.size());
 
+	LOG_INFO("Vertex data size: {}", vertexData.size())
 	uint64_t vertexBufferSize = vertexData.size() * sizeof(VertexF32);
+	LOG_INFO("Vertex buffer size: {}", vertexBufferSize)
 	uint64_t indexBufferSize = indices.size() * sizeof(uint32_t);
+	LOG_INFO("Index buffer size: {}", indexBufferSize);
 	modelInfo->vertexBufferSize = vertexBufferSize;
 	modelInfo->indexBufferSize = indexBufferSize;
 	uint8_t* modelData = new uint8_t[vertexBufferSize + indexBufferSize];
 	memcpy(modelData, vertexData.data(), vertexBufferSize);
 	memcpy(modelData + vertexBufferSize, indices.data(), indexBufferSize);
-	modelInfo->modelData = modelData;
+	resourceInfo->data = modelData;
 }
 
-void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI& path, TextureInfo* texInfo)
+void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI& path, TextureInfo* texInfo, ResourceInfo* resourceInfo)
 {
 	int32_t texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -366,33 +366,6 @@ void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI
 
 	uint8_t* data = new uint8_t[texInfo->size];
 	memcpy(data, pixels, texInfo->size);
-	texInfo->data = data;
+	resourceInfo->data = data;
 	stbi_image_free(pixels);
-}
-
-void resource::ResourceConverter::write_to_disk(io::URI& path, ResourceInfo& resourceInfo)
-{
-	int compressStaging = LZ4_compressBound(resourceInfo.dataSize);
-	std::vector<char> binaryBlob;
-	binaryBlob.resize(compressStaging);
-	int compressedSize = LZ4_compress_default(
-		(const char*)resourceInfo.data,
-		binaryBlob.data(),
-		resourceInfo.dataSize,
-		compressStaging);
-	
-	uint64_t metaDataLength = resourceInfo.metaData.size();
-	std::string resourceType = utils::get_str_resource_type(resourceInfo.type);
-	uint8_t resourceTypeLength = resourceType.size();
-	
-	io::Stream* stream = _fileSystem->open(path, "wb");
-
-	stream->write(&resourceTypeLength, sizeof(uint8_t), 1);
-	stream->write(resourceType.data(), sizeof(char), resourceTypeLength);
-	stream->write(&metaDataLength, sizeof(uint64_t), 1);
-	stream->write(&compressedSize, sizeof(uint64_t), 1);
-	stream->write(resourceInfo.metaData.data(), sizeof(char), metaDataLength);
-	stream->write(binaryBlob.data(), sizeof(uint8_t), compressedSize);
-	
-	_fileSystem->close(stream);
 }

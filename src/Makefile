@@ -177,6 +177,54 @@ engine_core/camera.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/camera.cpp.s
 .PHONY : engine_core/camera.cpp.s
 
+engine_core/level.obj: engine_core/level.cpp.obj
+.PHONY : engine_core/level.obj
+
+# target to build an object file
+engine_core/level.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/level.cpp.obj
+.PHONY : engine_core/level.cpp.obj
+
+engine_core/level.i: engine_core/level.cpp.i
+.PHONY : engine_core/level.i
+
+# target to preprocess a source file
+engine_core/level.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/level.cpp.i
+.PHONY : engine_core/level.cpp.i
+
+engine_core/level.s: engine_core/level.cpp.s
+.PHONY : engine_core/level.s
+
+# target to generate assembly for a file
+engine_core/level.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/level.cpp.s
+.PHONY : engine_core/level.cpp.s
+
+engine_core/model.obj: engine_core/model.cpp.obj
+.PHONY : engine_core/model.obj
+
+# target to build an object file
+engine_core/model.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model.cpp.obj
+.PHONY : engine_core/model.cpp.obj
+
+engine_core/model.i: engine_core/model.cpp.i
+.PHONY : engine_core/model.i
+
+# target to preprocess a source file
+engine_core/model.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model.cpp.i
+.PHONY : engine_core/model.cpp.i
+
+engine_core/model.s: engine_core/model.cpp.s
+.PHONY : engine_core/model.s
+
+# target to generate assembly for a file
+engine_core/model.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model.cpp.s
+.PHONY : engine_core/model.cpp.s
+
 engine_core/uuid.obj: engine_core/uuid.cpp.obj
 .PHONY : engine_core/uuid.obj
 
@@ -440,6 +488,30 @@ resource_manager/resource_converter.s: resource_manager/resource_converter.cpp.s
 resource_manager/resource_converter.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/resource_manager/resource_converter.cpp.s
 .PHONY : resource_manager/resource_converter.cpp.s
+
+resource_manager/resource_manager.obj: resource_manager/resource_manager.cpp.obj
+.PHONY : resource_manager/resource_manager.obj
+
+# target to build an object file
+resource_manager/resource_manager.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/resource_manager/resource_manager.cpp.obj
+.PHONY : resource_manager/resource_manager.cpp.obj
+
+resource_manager/resource_manager.i: resource_manager/resource_manager.cpp.i
+.PHONY : resource_manager/resource_manager.i
+
+# target to preprocess a source file
+resource_manager/resource_manager.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/resource_manager/resource_manager.cpp.i
+.PHONY : resource_manager/resource_manager.cpp.i
+
+resource_manager/resource_manager.s: resource_manager/resource_manager.cpp.s
+.PHONY : resource_manager/resource_manager.s
+
+# target to generate assembly for a file
+resource_manager/resource_manager.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/resource_manager/resource_manager.cpp.s
+.PHONY : resource_manager/resource_manager.cpp.s
 
 resource_manager/utils.obj: resource_manager/utils.cpp.obj
 .PHONY : resource_manager/utils.obj
@@ -1153,6 +1225,12 @@ help:
 	@echo ... engine_core/camera.obj
 	@echo ... engine_core/camera.i
 	@echo ... engine_core/camera.s
+	@echo ... engine_core/level.obj
+	@echo ... engine_core/level.i
+	@echo ... engine_core/level.s
+	@echo ... engine_core/model.obj
+	@echo ... engine_core/model.i
+	@echo ... engine_core/model.s
 	@echo ... engine_core/uuid.obj
 	@echo ... engine_core/uuid.i
 	@echo ... engine_core/uuid.s
@@ -1186,6 +1264,9 @@ help:
 	@echo ... resource_manager/resource_converter.obj
 	@echo ... resource_manager/resource_converter.i
 	@echo ... resource_manager/resource_converter.s
+	@echo ... resource_manager/resource_manager.obj
+	@echo ... resource_manager/resource_manager.i
+	@echo ... resource_manager/resource_manager.s
 	@echo ... resource_manager/utils.obj
 	@echo ... resource_manager/utils.i
 	@echo ... resource_manager/utils.s

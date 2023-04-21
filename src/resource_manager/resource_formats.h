@@ -1,28 +1,39 @@
 #pragma once
 
+#include "engine_core/uuid.h"
+
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/vec2.hpp>
 #include <stdint.h>
 #include <vector>
 #include <string>
+#include <map>
 
 namespace ad_astris::resource
 {
+	template<typename T>
+	struct ResourceMethods
+	{
+		
+	};
+	
 	enum class ResourceType
 	{
+		UNDEFINED,
 		MODEL,
 		TEXTURE,
-		SCENE,
+		LEVEL,
 		MATERIAL,
 	};
 	
 	struct ResourceInfo
 	{
-		ResourceType type;
+		UUID uuid;
+		ResourceType type{ ResourceType::UNDEFINED };
 		std::string metaData;
-		uint64_t dataSize;
-		uint8_t* data;
+		uint64_t dataSize{ 0 };
+		uint8_t* data{ nullptr };
 	};
 	
 	enum class CompressionMode
@@ -63,15 +74,21 @@ namespace ad_astris::resource
 	struct ModelInfo
 	{
 		// Data for operations under hood
+		UUID uuid;
 		uint64_t vertexBufferSize{ 0 };
 		uint64_t indexBufferSize{ 0 };
 		ModelBounds bounds;
-		uint8_t* modelData{ nullptr };
 		VertexFormat vertexFormat{ VertexFormat::UNKNOWN };
 		CompressionMode compressionMode{ CompressionMode::NONE };
 		std::string originalFile;
+		std::vector<std::string> materialsName;		// Materials name from model file
+		std::string name;
+	};
 
-		// Data to edit in the engine
+	// Instance in engine. Every object in the scene has its own info
+	struct ModelInstanceInfo
+	{
+		UUID parentUUID;
 		std::string name;
 		glm::vec3 translation;
 		glm::vec3 rotationAxis;
@@ -79,8 +96,7 @@ namespace ad_astris::resource
 		glm::vec3 scale;
 		ModelType type;
 		bool isShadowCasted;
-		std::vector<std::string> materialsName;
-
+		std::vector<UUID> engineMaterials;
 	};
 
 	enum class MipmapMode
@@ -106,10 +122,10 @@ namespace ad_astris::resource
 	struct TextureInfo
 	{
 		// Data for operations under hood
+		UUID uuid;
 		uint64_t size{ 0 };
 		uint64_t width{0};
 		uint64_t height{ 0 };
-		uint8_t* data{ nullptr };
 		CompressionMode compressionMode{ CompressionMode::NONE };
 		std::string originalFile;
 
@@ -122,5 +138,19 @@ namespace ad_astris::resource
 		bool sRGB;
 		uint32_t brightness;
 		uint32_t saturation;
+	};
+
+	struct LevelEngineInfo
+	{
+		UUID uuid;
+		std::map<UUID, std::vector<ModelInstanceInfo>> modelInstancesInfo;
+		std::vector<UUID> texturesUUID;
+	};
+
+	struct LevelFileInfo
+	{
+		UUID uuid;
+		std::vector<std::string> modelInstancesInfo;
+		std::vector<std::string> texturesInfo;
 	};
 }

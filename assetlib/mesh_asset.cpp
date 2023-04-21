@@ -15,10 +15,9 @@ namespace assets
 	{
 		if (strcmp(format, "PNCV_F32"))
 			return VertexFormat::PNCV_F32;
-		else if (strcmp(format, "P32N8C8V16"))
+		if (strcmp(format, "P32N8C8V16"))
 			return VertexFormat::P32N8C8V16;
-		else
-			return VertexFormat::Unknown;
+		return VertexFormat::Unknown;
 	}
 
 	AssetFile pack_mesh(MeshInfo* info, char* vertexData, char* indexData)

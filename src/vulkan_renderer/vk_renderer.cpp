@@ -1,5 +1,7 @@
 ﻿#include "vk_renderer.h"
 #include "resource_manager/resource_converter.h"
+#include "engine_core/model.h"
+#include "resource_manager/resource_manager.h"
 #include "vulkan_rhi/vulkan_rhi.h"
 #include "vulkan_rhi/vulkan_pipeline.h"
 #include "vulkan_rhi/vulkan_swap_chain.h"
@@ -313,20 +315,27 @@ namespace ad_astris
 
 		_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
 		_shaderCompiler = new rcore::ShaderCompiler(_fileSystem);
-		resource::ResourceConverter resourceConverter(_fileSystem);
+		//resource::ResourceConverter resourceConverter(_fileSystem);
+
+		LOG_INFO("Before init manager")
+		resource::ResourceManager manager(_fileSystem);
+		LOG_INFO("After init manager")
 
 		// Tests for resource converter
 		io::URI door = "E:\\gun.gltf";
 		io::URI texture = "D:/cyberpunk location/Texture/Gun_2/Gun_2_BaseColor.tga";
-		io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/gun2.obj";
+		io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/wall.obj";
 		
-		auto async1 = std::async(std::launch::async, [&]()->void*{ return resourceConverter.convert_to_aares_file(door); });
-		auto async2 = std::async(std::launch::async, [&]()->void*{ return resourceConverter.convert_to_aares_file(texture); });
-		auto async3 = std::async(std::launch::async, [&]()->void*{ return resourceConverter.convert_to_aares_file(gunOBJ); });
+		auto async1 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::Model>{ return manager.convert_to_aares<ecore::Model>(door); });
+		//auto async2 = std::async(std::launch::async, [&]()->resource::ResourceInfo{ return resourceConverter.convert_to_aares_file(texture); });
+		auto async3 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::Model>{ return manager.convert_to_aares<ecore::Model>(gunOBJ); });
 
 		async3.get();
-		async2.get();
+		//async2.get();
 		async1.get();
+
+		io::URI aaresPath = "assets/gun.aares";
+		manager.load_resource<resource::ModelInfo>(aaresPath);
 
 		_materialSystem.init(this);
 		_renderScene.init();

@@ -36,7 +36,7 @@ namespace ad_astris::io
 				return *this;
 			}
 
-			bool operator==(const URI& uri)
+			bool operator==(const URI& uri) const
 			{
 				return strcmp(data, uri.data) == 0;
 			}

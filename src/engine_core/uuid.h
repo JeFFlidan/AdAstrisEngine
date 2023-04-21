@@ -10,7 +10,11 @@ namespace ad_astris
 			UUID();
 			UUID(uint64_t uuid);
 
-		operator uint64_t() const { return _uuid; }
+			operator uint64_t() const { return _uuid; }
+			bool operator==(const UUID& uuid) const
+			{
+				return _uuid == uuid._uuid;
+			}
 		private:
 			uint64_t _uuid;
 	};

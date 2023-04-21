@@ -10,7 +10,7 @@ static std::uniform_int_distribution<uint64_t> sUniformDistribution;
 
 UUID::UUID() : _uuid(sUniformDistribution(sRandomEngine))
 {
-	LOG_INFO("UUID {}", _uuid)
+
 }
 
 UUID::UUID(uint64_t uuid) : _uuid(uuid)
