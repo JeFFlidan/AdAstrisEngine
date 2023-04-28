@@ -2,10 +2,13 @@
 
 #include <stdint.h>
 #include <map>
+#include <vector>
 #include <string>
 
 namespace ad_astris::ecore
 {
+	void tests();
+	
 	class NameID
 	{
 		public:
@@ -13,11 +16,27 @@ namespace ad_astris::ecore
 			void operator++();
 			void operator--();
 			NameID& operator=(const NameID& other);
+			bool operator==(const NameID& other);
 			operator uint32_t();
 		
 		private:
 			uint32_t _id{ 0 };
 	};
+
+	class NameIDTable
+	{
+		public:
+			NameIDTable();
+
+			NameID get_next_id();
+			void remove_id(NameID nameId);
+			bool is_empty();
+		
+		private:
+			std::vector<NameID> _removedNameIDs;
+			std::vector<NameID> _table;
+	};
+
 
 	/** Name for engine objects. The name consists of a string + the number of instances of the name. \n 
 	 * \n If count = 0, no number will be added to the name.
@@ -27,24 +46,32 @@ namespace ad_astris::ecore
 	class ObjectName
 	{
 		public:
-			ObjectName(std::string newName);
+			ObjectName() = default;
+			ObjectName(const char* newName);
 			~ObjectName();
-
-			void change_name(std::string newName);
+		
+			void change_name(const char* newName);
+			void change_name(ObjectName& otherName);
+			// Destroy the char array of the name. Also, remove the name from the
+			// name table or decrease instance count of the name
 			void destroy_name();
 			std::string get_name();
+			std::string get_name_without_instance();
 
-			static void tests();
-		
-			ObjectName& operator=(const ObjectName& other);
+			// Destroy name table
+			static void cleanup();
+
+			ObjectName& operator=(const ObjectName& otherName);
 			bool operator==(const ObjectName& name) const;
 			bool operator<(const ObjectName& name) const;
 		
 		private:
-			char* _name;
+			char* _name{ nullptr };
 			NameID _nameID;
-			static std::map<ObjectName, NameID> _nameTable;
-
+		
+			static std::map<ObjectName, NameIDTable> _nameTable;
+		
 			void delete_name_from_table();
+			void add_new_name_to_table();
 	};
 }
