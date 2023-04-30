@@ -4,8 +4,6 @@
 #include <cstring>
 #include <algorithm>
 
-#include <utility>
-
 #define MAX_NAME_LENGTH 128
 
 using namespace ad_astris;
@@ -224,7 +222,7 @@ void ecore::ObjectName::add_new_name_to_table()
 	strcpy(keyName, this->_name);
 	ObjectName objectName{};
 	objectName._name = keyName;
-	_nameTable[std::move(objectName)] = NameIDTable();
+	_nameTable[objectName] = NameIDTable();
 	objectName._name = nullptr;
 }
 
