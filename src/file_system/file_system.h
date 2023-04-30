@@ -65,6 +65,7 @@ namespace ad_astris::io
 			virtual bool close(Stream* stream) = 0;
 			virtual void* map_to_read(const URI& uri, size_t& size, const char* mode = "rb") = 0;
 			virtual bool unmap_after_reading(void* data) = 0;
+			virtual URI get_root_path() = 0;
 
 			virtual ~FileSystem() {}
 	};

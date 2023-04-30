@@ -29,7 +29,9 @@ namespace ad_astris::io
 			bool close(Stream* stream) final;
 			void* map_to_read(const URI& uri, size_t& size, const char* mode = "rb") final;
 			bool unmap_after_reading(void* data) final;
+			URI get_root_path() final;
+		
 		private:
-			std::filesystem::path rootPath;
+			std::filesystem::path _rootPath;
 	};
 }

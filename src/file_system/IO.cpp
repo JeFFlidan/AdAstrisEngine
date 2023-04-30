@@ -42,7 +42,7 @@ namespace ad_astris
 
 	io::EngineFileSystem::EngineFileSystem(const char* path)
 	{
-		rootPath = std::filesystem::path(path);
+		_rootPath = std::filesystem::path(path);
 	}
 
 	io::EngineFileSystem::~EngineFileSystem() {}
@@ -51,7 +51,7 @@ namespace ad_astris
 	{
 		std::filesystem::path path = std::filesystem::path(uri.c_str());
 		if (!path.is_absolute())
-			path = rootPath / path;
+			path = _rootPath / path;
 
 		if (!std::filesystem::exists(path) && strcmp(mode, "wb") != 0)
 		{
@@ -112,6 +112,11 @@ namespace ad_astris
 		data = nullptr;
 
 		return true;
+	}
+
+	io::URI io::EngineFileSystem::get_root_path()
+	{
+		return URI(_rootPath.string().c_str());
 	}
 }
 
