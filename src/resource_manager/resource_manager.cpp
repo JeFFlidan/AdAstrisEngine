@@ -1,7 +1,9 @@
 #include "profiler/logger.h"
-#include "engine_core/model.h"
+#include "engine_core/model/static_model.h"
+#include "engine_core/texture/texture2D.h"
 #include "resource_manager.h"
 #include "utils.h"
+#include "file_system/utils.h"
 
 #include <lz4.h>
 
@@ -16,9 +18,10 @@ resource::ResourceDataTable::ResourceDataTable(io::FileSystem* fileSystem) : _fi
 
 resource::ResourceDataTable::~ResourceDataTable()
 {
-	for (auto& res : _resources)
+	for (auto& res : _uuidToResourceData)
 	{
-		res.vtable->destroy(res.data);
+		delete res.second.file;
+		delete res.second.object;
 	}
 }
 
@@ -33,23 +36,32 @@ void resource::ResourceDataTable::load_table()
 	_fileSystem->close(stream);
 
 	nlohmann::json table = nlohmann::json::parse(strTable);
-
+	std::vector<std::string> tableData;
+	tableData.resize(2);
+	
 	for (auto& item : table.items())
 	{
-		UUID uuid(item.value());
+		tableData = table[item.key().c_str()].get<std::vector<std::string>>();
+		UUID uuid((uint64_t)tableData[0].c_str());
 		ResourceData resourceData{};
-		resourceData.pathToResource = io::URI(item.key().c_str());
+		io::IFile* file = new io::ResourceFile(item.key().c_str());
+		resourceData.file = file;
+		//resourceData.type = Utils::get_enum_resource_type(tableData[1]);
 		_uuidToResourceData[uuid] = resourceData;
-		_nameToUUID[utils::get_resource_name(resourceData.pathToResource)] = uuid;
+		_nameToUUID[file->get_file_name()] = uuid;
 	}
 }
 
 void resource::ResourceDataTable::save_table()
 {
 	nlohmann::json table;
+	std::vector<std::string> tableData;
+	tableData.resize(2);
 	for (auto& data : _uuidToResourceData)
 	{
-		table[data.second.pathToResource.c_str()] = (uint64_t)data.first; 
+		tableData[0] = std::to_string(data.first);
+		tableData[1] = data.second.object->get_type();
+		table[data.second.object->get_path().c_str()] = (uint64_t)data.first;
 	}
 
 	io::Stream* stream = _fileSystem->open("configs/resource_table.aarestable", "wb");
@@ -63,14 +75,14 @@ void resource::ResourceDataTable::save_table()
 bool resource::ResourceDataTable::check_resource_in_cache(UUID& uuid)
 {
 	auto it = _uuidToResourceData.find(uuid);
-	if (it != _uuidToResourceData.end() && it->second.resource)
+	if (it != _uuidToResourceData.end() && it->second.object)
 		return true;
 	return false;
 }
 
 bool resource::ResourceDataTable::check_name_in_cache(io::URI& path)
 {
-	std::string name = utils::get_resource_name(path);
+	std::string name = io::Utils::get_file_name(path);
 	auto it = _nameToUUID.find(name);
 	if (it != _nameToUUID.end())
 		return true;
@@ -79,33 +91,24 @@ bool resource::ResourceDataTable::check_name_in_cache(io::URI& path)
 
 UUID resource::ResourceDataTable::get_uuid_by_name(io::URI& path)
 {
-	std::string name = utils::get_resource_name(path);
+	std::string name = io::Utils::get_file_name(path);
 	auto it = _nameToUUID.find(name);
 	return it->second;
 }
 
-void resource::ResourceDataTable::add_resource_and_path(UUID& uuid, io::URI& path, Resource* resource)
+void resource::ResourceDataTable::add_resource(ResourceData* resource)
 {
+	UUID uuid = resource->object->get_uuid();
 	auto it = _uuidToResourceData.find(uuid);
 	if (it != _uuidToResourceData.end() && resource)
 	{
-		_resources.push_back(*resource);
-		it->second.resource = &_resources.back();
-		_nameToUUID[utils::get_resource_name(path)] = it->first;
+		it->second = *resource;
+		io::URI path = resource->file->get_file_path();
+		_nameToUUID[io::Utils::get_file_name(path)] = it->first;
 	}
 	else if (it == _uuidToResourceData.end() && resource)
 	{
-		_resources.push_back(*resource);
-		ResourceData resourceData;
-		resourceData.resource = &_resources.back();
-		resourceData.pathToResource = path;
-		_uuidToResourceData[uuid] = resourceData; 
-	}
-	else if (it == _uuidToResourceData.end() && !resource)
-	{
-		ResourceData resourceData{};
-		resourceData.pathToResource = path;
-		_uuidToResourceData[uuid] = resourceData;
+		_uuidToResourceData[uuid] = *resource; 
 	}
 }
 
@@ -120,141 +123,69 @@ void resource::ResourceDataTable::destroy_resource(UUID& uuid)
 	}
 	
 	ResourceData resourceData = it->second;
-	std::string name = utils::get_resource_name(resourceData.pathToResource);
+	std::string name = io::Utils::get_file_name(resourceData.file->get_file_path());
 	_nameToUUID.erase(_nameToUUID.find(name));
+	delete resourceData.file;
+	delete resourceData.object;
 	_uuidToResourceData.erase(it);
-	
-	if (check_resource_in_cache(uuid))
-	{
-		auto it2 = std::find(_resources.begin(), _resources.end(), *resourceData.resource);
-		if (it2 != _resources.end())
-		{
-			(*it2).vtable->destroy((*it2).data);
-			_resources.erase(it2);
-		}
-	}
 }
 
 // No if statement to check resource state cause it's implemented in ResourceManager where I use func
 // check_resource_in_cache() and make async loading
-resource::Resource* resource::ResourceDataTable::get_resource(UUID& uuid)
+io::IFile* resource::ResourceDataTable::get_resource_file(UUID& uuid)
 {
 	auto it = _uuidToResourceData.find(uuid);
-	return it->second.resource;
+	return it->second.file;
 }
 
-io::URI& resource::ResourceDataTable::get_path(UUID& uuid)
+ecore::Object* resource::ResourceDataTable::get_resource_object(UUID& uuid)
 {
 	auto it = _uuidToResourceData.find(uuid);
-	return it->second.pathToResource;
+	return it->second.object;
+}
+
+io::URI resource::ResourceDataTable::get_path(UUID& uuid)
+{
+	auto it = _uuidToResourceData.find(uuid);
+	return it->second.file->get_file_path();
+}
+
+resource::ResourceType resource::ResourceDataTable::get_resource_type(UUID& uuid)
+{
+	//return _uuidToResourceData[uuid].type;
+	return ResourceType::UNDEFINED;
 }
 
 resource::ResourceManager::ResourceManager(io::FileSystem* fileSystem) : _fileSystem(fileSystem)
 {
 	_resourceConverter = ResourceConverter(_fileSystem);
 	_resourceDataTable = new ResourceDataTable(_fileSystem);
-	
-	ResourceVTable* modelVTable = new ResourceVTable();
-	modelVTable->create = ResourceMethods<ecore::Model>::create;
-	modelVTable->destroy = ResourceMethods<ecore::Model>::destroy;
-	_vtables[ResourceType::MODEL] = modelVTable;
-	
-	ResourceVTable* levelVTable = new ResourceVTable();
-	levelVTable->create = ResourceMethods<ecore::Level>::create;
-	levelVTable->destroy = ResourceMethods<ecore::Level>::destroy;
-	_vtables[ResourceType::LEVEL] = levelVTable;
 }
 
 resource::ResourceManager::~ResourceManager()
 {
 	delete _resourceDataTable;
-	
-	for (auto& vtable : _vtables)
-		delete vtable.second;
 }
 
-void resource::ResourceManager::write_to_disk(ResourceInfo& resourceInfo, io::URI& originalPath)
+void resource::ResourceManager::write_to_disk(io::IFile* file, io::URI& originalPath)
 {
-	io::URI path = std::string("assets/" + utils::get_resource_name(originalPath) + ".aares").c_str();		// temporary solution
-	
-	int compressStaging = LZ4_compressBound(resourceInfo.dataSize);
-	LOG_INFO("Compressing staging: {}", compressStaging)
-	std::vector<char> binaryBlob;
-	binaryBlob.resize(compressStaging);
-	uint64_t compressedSize = LZ4_compress_default(
-		(const char*)resourceInfo.data,
-		binaryBlob.data(),
-		resourceInfo.dataSize,
-		compressStaging);
-	binaryBlob.resize(compressedSize);
+	io::URI path = file->get_file_path();		// temporary solution
 
-	LOG_INFO("Compressed size: {}", compressedSize)
-	
-	uint64_t metaDataLength = resourceInfo.metaData.size();
-	std::string resourceType = utils::get_str_resource_type(resourceInfo.type);
-	uint8_t resourceTypeLength = resourceType.size();
+	uint8_t* data{ nullptr };
+	uint64_t size = 0;
+	file->serialize(data, size);
 	
 	io::Stream* stream = _fileSystem->open(path, "wb");
-
-	stream->write(&resourceTypeLength, sizeof(uint8_t), 1);
-	stream->write(resourceType.data(), sizeof(char), resourceTypeLength);
-	stream->write(&resourceInfo.uuid, sizeof(uint64_t), 1);
-	stream->write(&metaDataLength, sizeof(uint64_t), 1);
-	stream->write(&compressedSize, sizeof(uint64_t), 1);
-	stream->write(&resourceInfo.dataSize, sizeof(uint64_t), 1);
-	stream->write(resourceInfo.metaData.data(), sizeof(char), metaDataLength);
-	stream->write(binaryBlob.data(), sizeof(uint8_t), compressedSize);
-	
+	stream->write(data, sizeof(uint8_t), size);
 	_fileSystem->close(stream);
 }
 
-resource::ResourceInfo resource::ResourceManager::read_from_disk(io::URI& path)
+io::IFile* resource::ResourceManager::read_from_disk(io::URI& path)
 {
-	io::Stream* stream = _fileSystem->open(path, "rb");
-	uint8_t typeLength;
-	stream->read(&typeLength, sizeof(uint8_t), 1);
-	std::string type;
-	type.resize(typeLength);
-	stream->read(type.data(), sizeof(char), typeLength);
-	uint64_t intUUID;
-	stream->read(&intUUID, sizeof(uint64_t), 1);
-	uint64_t metaDataLength;
-	stream->read(&metaDataLength, sizeof(uint64_t), 1);
-	uint64_t compressedBlobSize;
-	stream->read(&compressedBlobSize, sizeof(uint64_t), 1);
-	uint64_t finalBlobSize;
-	stream->read(&finalBlobSize, sizeof(uint64_t), 1);
-	std::string metaData;
-	metaData.resize(metaDataLength);
-	stream->read(metaData.data(), sizeof(char), metaDataLength);
-
-	ResourceInfo resInfo{};
-	
-	if (finalBlobSize)
-	{
-		char* compressedBlob = new char[compressedBlobSize];
-		stream->read(compressedBlob, sizeof(char), compressedBlobSize);
-
-		char* finalBlob = new char[finalBlobSize];
-		LZ4_decompress_safe(compressedBlob, finalBlob, compressedBlobSize, finalBlobSize);
-
-		resInfo.dataSize = finalBlobSize;
-		resInfo.data = reinterpret_cast<uint8_t*>(finalBlob);
-		delete[] compressedBlob;
-	}
-	
-	resInfo.type = utils::get_enum_resource_type(type);
-	resInfo.metaData = metaData;
-	resInfo.uuid = UUID(intUUID);
-	return resInfo;
-}
-
-bool resource::operator==(const Resource& lv, const Resource& rv)
-{
-	return lv.data == rv.data && lv.vtable == rv.vtable;
-}
-
-bool resource::operator==(const ResourceData& lv, const ResourceData& rv)
-{
-	return lv.resource == rv.resource && lv.pathToResource == rv.pathToResource;
+	size_t size = 0;
+	uint8_t* data = static_cast<uint8_t*>(_fileSystem->map_to_read(path, size, "rb"));
+	io::IFile* file = new io::ResourceFile(path);
+	file->deserialize(data, size);
+	_fileSystem->unmap_after_reading(data);
+	return file;
 }

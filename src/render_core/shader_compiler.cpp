@@ -1,4 +1,5 @@
 ﻿#include "shader_compiler.h"
+#include "file_system/utils.h"
 #include "profiler/logger.h"
 #include <string>
 
@@ -190,7 +191,8 @@ shaderc_shader_kind rcore::ShaderCompiler::get_shader_kind(rhi::ShaderType shade
 
 rhi::ShaderType rcore::ShaderCompiler::get_shader_type(io::URI& path)
 {
-	std::string extension(std::filesystem::path(path.c_str()).extension().string().erase(0, 1));
+	//std::string extension(std::filesystem::path(path.c_str()).extension().string().erase(0, 1));
+	std::string extension = io::Utils::get_file_extension(path);
 
 	if (extension == "vert")
 		return rhi::ShaderType::VERTEX;

@@ -1,6 +1,8 @@
 ﻿#include "vk_renderer.h"
 #include "resource_manager/resource_converter.h"
-#include "engine_core/model.h"
+#include "engine_core/object_name.h"
+#include "engine_core/model/static_model.h"
+#include "engine_core/texture/texture2D.h"
 #include "resource_manager/resource_manager.h"
 #include "vulkan_rhi/vulkan_rhi.h"
 #include "vulkan_rhi/vulkan_pipeline.h"
@@ -326,16 +328,20 @@ namespace ad_astris
 		io::URI texture = "D:/cyberpunk location/Texture/Gun_2/Gun_2_BaseColor.tga";
 		io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/wall.obj";
 		
-		auto async1 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::Model>{ return manager.convert_to_aares<ecore::Model>(door); });
-		//auto async2 = std::async(std::launch::async, [&]()->resource::ResourceInfo{ return resourceConverter.convert_to_aares_file(texture); });
-		auto async3 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::Model>{ return manager.convert_to_aares<ecore::Model>(gunOBJ); });
+		auto async1 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::StaticModel>{ return manager.convert_to_aares<ecore::StaticModel>(door); });
+		auto async2 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::Texture2D>{ return manager.convert_to_aares<ecore::Texture2D>(texture); });
+		auto async3 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::StaticModel>{ return manager.convert_to_aares<ecore::StaticModel>(gunOBJ); });
 
-		async3.get();
-		//async2.get();
-		async1.get();
+		ecore::StaticModel* model1 = async3.get().get_resource();
+		ecore::Texture2D* texture1 = async2.get().get_resource();
+		ecore::StaticModel* model2 = async1.get().get_resource();
+		LOG_INFO("Model 1 name: {}", model1->get_name()->get_name())
+		LOG_INFO("Model 2 name: {}", model2->get_name()->get_name())
+		LOG_INFO("Texture 1 name: {}", texture1->get_name()->get_name())
 
 		io::URI aaresPath = "assets/gun.aares";
-		manager.load_resource<resource::ModelInfo>(aaresPath);
+		ecore::tests();
+		//manager.load_resource<resource::ModelInfo>(aaresPath);
 
 		_materialSystem.init(this);
 		_renderScene.init();

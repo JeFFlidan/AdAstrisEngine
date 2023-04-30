@@ -1,0 +1,2 @@
+C:\msys64\mingw64\bin\ar.exe qc libinicpp.a CMakeFiles/inicpp.dir/inicpp/config.cpp.obj CMakeFiles/inicpp.dir/inicpp/option.cpp.obj CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj CMakeFiles/inicpp.dir/inicpp/section.cpp.obj CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj
+C:\msys64\mingw64\bin\ranlib.exe libinicpp.a

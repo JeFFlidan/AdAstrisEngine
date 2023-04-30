@@ -109,7 +109,7 @@ namespace ad_astris
 		std::string baseTemplate;
 		ShaderParameters parameters;
 
-		bool operator==(const MaterialData& othero) const;
+		bool operator==(const MaterialData& other) const;
 	
 		size_t hash() const;
 	};

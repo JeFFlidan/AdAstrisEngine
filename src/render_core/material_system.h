@@ -103,7 +103,6 @@ namespace ad_astris::rcore
 	{
 		public:
 			MaterialSystem(rhi::IEngineRHI* rhi);
-
 			
 		private:
 			rhi::IEngineRHI* _rhi;

@@ -201,29 +201,173 @@ engine_core/level.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/level.cpp.s
 .PHONY : engine_core/level.cpp.s
 
-engine_core/model.obj: engine_core/model.cpp.obj
-.PHONY : engine_core/model.obj
+engine_core/material.obj: engine_core/material.cpp.obj
+.PHONY : engine_core/material.obj
 
 # target to build an object file
-engine_core/model.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model.cpp.obj
-.PHONY : engine_core/model.cpp.obj
+engine_core/material.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/material.cpp.obj
+.PHONY : engine_core/material.cpp.obj
 
-engine_core/model.i: engine_core/model.cpp.i
-.PHONY : engine_core/model.i
+engine_core/material.i: engine_core/material.cpp.i
+.PHONY : engine_core/material.i
 
 # target to preprocess a source file
-engine_core/model.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model.cpp.i
-.PHONY : engine_core/model.cpp.i
+engine_core/material.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/material.cpp.i
+.PHONY : engine_core/material.cpp.i
 
-engine_core/model.s: engine_core/model.cpp.s
-.PHONY : engine_core/model.s
+engine_core/material.s: engine_core/material.cpp.s
+.PHONY : engine_core/material.s
 
 # target to generate assembly for a file
-engine_core/model.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model.cpp.s
-.PHONY : engine_core/model.cpp.s
+engine_core/material.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/material.cpp.s
+.PHONY : engine_core/material.cpp.s
+
+engine_core/model/model_common.obj: engine_core/model/model_common.cpp.obj
+.PHONY : engine_core/model/model_common.obj
+
+# target to build an object file
+engine_core/model/model_common.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model/model_common.cpp.obj
+.PHONY : engine_core/model/model_common.cpp.obj
+
+engine_core/model/model_common.i: engine_core/model/model_common.cpp.i
+.PHONY : engine_core/model/model_common.i
+
+# target to preprocess a source file
+engine_core/model/model_common.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model/model_common.cpp.i
+.PHONY : engine_core/model/model_common.cpp.i
+
+engine_core/model/model_common.s: engine_core/model/model_common.cpp.s
+.PHONY : engine_core/model/model_common.s
+
+# target to generate assembly for a file
+engine_core/model/model_common.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model/model_common.cpp.s
+.PHONY : engine_core/model/model_common.cpp.s
+
+engine_core/model/static_model.obj: engine_core/model/static_model.cpp.obj
+.PHONY : engine_core/model/static_model.obj
+
+# target to build an object file
+engine_core/model/static_model.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model/static_model.cpp.obj
+.PHONY : engine_core/model/static_model.cpp.obj
+
+engine_core/model/static_model.i: engine_core/model/static_model.cpp.i
+.PHONY : engine_core/model/static_model.i
+
+# target to preprocess a source file
+engine_core/model/static_model.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model/static_model.cpp.i
+.PHONY : engine_core/model/static_model.cpp.i
+
+engine_core/model/static_model.s: engine_core/model/static_model.cpp.s
+.PHONY : engine_core/model/static_model.s
+
+# target to generate assembly for a file
+engine_core/model/static_model.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/model/static_model.cpp.s
+.PHONY : engine_core/model/static_model.cpp.s
+
+engine_core/object.obj: engine_core/object.cpp.obj
+.PHONY : engine_core/object.obj
+
+# target to build an object file
+engine_core/object.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/object.cpp.obj
+.PHONY : engine_core/object.cpp.obj
+
+engine_core/object.i: engine_core/object.cpp.i
+.PHONY : engine_core/object.i
+
+# target to preprocess a source file
+engine_core/object.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/object.cpp.i
+.PHONY : engine_core/object.cpp.i
+
+engine_core/object.s: engine_core/object.cpp.s
+.PHONY : engine_core/object.s
+
+# target to generate assembly for a file
+engine_core/object.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/object.cpp.s
+.PHONY : engine_core/object.cpp.s
+
+engine_core/object_name.obj: engine_core/object_name.cpp.obj
+.PHONY : engine_core/object_name.obj
+
+# target to build an object file
+engine_core/object_name.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/object_name.cpp.obj
+.PHONY : engine_core/object_name.cpp.obj
+
+engine_core/object_name.i: engine_core/object_name.cpp.i
+.PHONY : engine_core/object_name.i
+
+# target to preprocess a source file
+engine_core/object_name.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/object_name.cpp.i
+.PHONY : engine_core/object_name.cpp.i
+
+engine_core/object_name.s: engine_core/object_name.cpp.s
+.PHONY : engine_core/object_name.s
+
+# target to generate assembly for a file
+engine_core/object_name.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/object_name.cpp.s
+.PHONY : engine_core/object_name.cpp.s
+
+engine_core/texture/texture2D.obj: engine_core/texture/texture2D.cpp.obj
+.PHONY : engine_core/texture/texture2D.obj
+
+# target to build an object file
+engine_core/texture/texture2D.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/texture/texture2D.cpp.obj
+.PHONY : engine_core/texture/texture2D.cpp.obj
+
+engine_core/texture/texture2D.i: engine_core/texture/texture2D.cpp.i
+.PHONY : engine_core/texture/texture2D.i
+
+# target to preprocess a source file
+engine_core/texture/texture2D.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/texture/texture2D.cpp.i
+.PHONY : engine_core/texture/texture2D.cpp.i
+
+engine_core/texture/texture2D.s: engine_core/texture/texture2D.cpp.s
+.PHONY : engine_core/texture/texture2D.s
+
+# target to generate assembly for a file
+engine_core/texture/texture2D.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/texture/texture2D.cpp.s
+.PHONY : engine_core/texture/texture2D.cpp.s
+
+engine_core/texture/texture_common.obj: engine_core/texture/texture_common.cpp.obj
+.PHONY : engine_core/texture/texture_common.obj
+
+# target to build an object file
+engine_core/texture/texture_common.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/texture/texture_common.cpp.obj
+.PHONY : engine_core/texture/texture_common.cpp.obj
+
+engine_core/texture/texture_common.i: engine_core/texture/texture_common.cpp.i
+.PHONY : engine_core/texture/texture_common.i
+
+# target to preprocess a source file
+engine_core/texture/texture_common.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/texture/texture_common.cpp.i
+.PHONY : engine_core/texture/texture_common.cpp.i
+
+engine_core/texture/texture_common.s: engine_core/texture/texture_common.cpp.s
+.PHONY : engine_core/texture/texture_common.s
+
+# target to generate assembly for a file
+engine_core/texture/texture_common.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/texture/texture_common.cpp.s
+.PHONY : engine_core/texture/texture_common.cpp.s
 
 engine_core/uuid.obj: engine_core/uuid.cpp.obj
 .PHONY : engine_core/uuid.obj
@@ -272,6 +416,54 @@ file_system/IO.s: file_system/IO.cpp.s
 file_system/IO.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/file_system/IO.cpp.s
 .PHONY : file_system/IO.cpp.s
+
+file_system/file.obj: file_system/file.cpp.obj
+.PHONY : file_system/file.obj
+
+# target to build an object file
+file_system/file.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/file_system/file.cpp.obj
+.PHONY : file_system/file.cpp.obj
+
+file_system/file.i: file_system/file.cpp.i
+.PHONY : file_system/file.i
+
+# target to preprocess a source file
+file_system/file.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/file_system/file.cpp.i
+.PHONY : file_system/file.cpp.i
+
+file_system/file.s: file_system/file.cpp.s
+.PHONY : file_system/file.s
+
+# target to generate assembly for a file
+file_system/file.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/file_system/file.cpp.s
+.PHONY : file_system/file.cpp.s
+
+file_system/utils.obj: file_system/utils.cpp.obj
+.PHONY : file_system/utils.obj
+
+# target to build an object file
+file_system/utils.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/file_system/utils.cpp.obj
+.PHONY : file_system/utils.cpp.obj
+
+file_system/utils.i: file_system/utils.cpp.i
+.PHONY : file_system/utils.i
+
+# target to preprocess a source file
+file_system/utils.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/file_system/utils.cpp.i
+.PHONY : file_system/utils.cpp.i
+
+file_system/utils.s: file_system/utils.cpp.s
+.PHONY : file_system/utils.s
+
+# target to generate assembly for a file
+file_system/utils.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/file_system/utils.cpp.s
+.PHONY : file_system/utils.cpp.s
 
 main.obj: main.cpp.obj
 .PHONY : main.obj
@@ -1228,15 +1420,39 @@ help:
 	@echo ... engine_core/level.obj
 	@echo ... engine_core/level.i
 	@echo ... engine_core/level.s
-	@echo ... engine_core/model.obj
-	@echo ... engine_core/model.i
-	@echo ... engine_core/model.s
+	@echo ... engine_core/material.obj
+	@echo ... engine_core/material.i
+	@echo ... engine_core/material.s
+	@echo ... engine_core/model/model_common.obj
+	@echo ... engine_core/model/model_common.i
+	@echo ... engine_core/model/model_common.s
+	@echo ... engine_core/model/static_model.obj
+	@echo ... engine_core/model/static_model.i
+	@echo ... engine_core/model/static_model.s
+	@echo ... engine_core/object.obj
+	@echo ... engine_core/object.i
+	@echo ... engine_core/object.s
+	@echo ... engine_core/object_name.obj
+	@echo ... engine_core/object_name.i
+	@echo ... engine_core/object_name.s
+	@echo ... engine_core/texture/texture2D.obj
+	@echo ... engine_core/texture/texture2D.i
+	@echo ... engine_core/texture/texture2D.s
+	@echo ... engine_core/texture/texture_common.obj
+	@echo ... engine_core/texture/texture_common.i
+	@echo ... engine_core/texture/texture_common.s
 	@echo ... engine_core/uuid.obj
 	@echo ... engine_core/uuid.i
 	@echo ... engine_core/uuid.s
 	@echo ... file_system/IO.obj
 	@echo ... file_system/IO.i
 	@echo ... file_system/IO.s
+	@echo ... file_system/file.obj
+	@echo ... file_system/file.i
+	@echo ... file_system/file.s
+	@echo ... file_system/utils.obj
+	@echo ... file_system/utils.i
+	@echo ... file_system/utils.s
 	@echo ... main.obj
 	@echo ... main.i
 	@echo ... main.s

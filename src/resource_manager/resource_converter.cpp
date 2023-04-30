@@ -1,4 +1,5 @@
 #include "resource_converter.h"
+#include "file_system/utils.h"
 #include "profiler/logger.h"
 #include "utils.h"
 
@@ -10,7 +11,6 @@
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
 #include <complex>
-#include <lz4.h>
 #include <json.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -23,74 +23,66 @@ resource::ResourceConverter::ResourceConverter(io::FileSystem* fileSystem) : _fi
 	
 }
 
-resource::ResourceInfo resource::ResourceConverter::convert_to_aares_file(io::URI& path, ResourceInfo* existedInfo)
+template <typename T>
+void resource::ResourceConverter::convert_to_aares_file(
+	io::URI& path,
+	io::ConversionContext<T>* conversionContext,
+	ecore::Object* existedObject)
 {
-	std::string fileExt(std::filesystem::path(path.c_str()).extension().string().erase(0, 1));
+	// TODO 
+}
 
-	ResourceInfo resourceInfo{};
-	
-	if (fileExt == "glb" || fileExt == "gltf" || fileExt == "obj")
+template<>
+void resource::ResourceConverter::convert_to_aares_file(
+	io::URI& path,
+	io::ConversionContext<ecore::StaticModel>* conversionContext,
+	ecore::Object* existedObject)
+{
+	if (existedObject)
 	{
-		ModelInfo* modelInfo;
-		if (existedInfo != nullptr)
-		{
-			modelInfo = utils::unpack_model_info(existedInfo);
-			resourceInfo.uuid = existedInfo->uuid;
-		}
-		else
-		{
-			modelInfo = new ModelInfo();
-			utils::set_up_basic_model_info(modelInfo);
-			modelInfo->name = utils::get_resource_name(path);
-			modelInfo->originalFile = path.c_str();
-			resourceInfo.uuid = UUID();
-			modelInfo->uuid = resourceInfo.uuid;
-		}
-		
-		if (fileExt == "glb" || fileExt == "gltf")
-		{
-			convert_to_model_info_from_gltf(path, modelInfo, &resourceInfo);
-		}
-		else if (fileExt == "obj")
-		{
-			convert_to_model_info_from_obj(path, modelInfo, &resourceInfo);
-		}
-
-		utils::pack_model_info(modelInfo, &resourceInfo);
-
-		delete modelInfo;
-	}
-	else if (fileExt == "tga" || fileExt == "png")
-	{
-		TextureInfo* textureInfo;
-		if (existedInfo != nullptr)
-		{
-			textureInfo = utils::unpack_texture_info(existedInfo);
-			resourceInfo.uuid = existedInfo->uuid;
-		}
-		else
-		{
-			textureInfo = new TextureInfo();
-			utils::set_up_basic_texture_info(textureInfo);
-			textureInfo->name = utils::get_resource_name(path);
-			textureInfo->originalFile = path.c_str();
-			resourceInfo.uuid = UUID();
-			textureInfo->uuid = resourceInfo.uuid;
-		}
-		convert_to_texture_info_from_raw_image(path, textureInfo, &resourceInfo);
-		utils::pack_texture_info(textureInfo, &resourceInfo);
-
-		delete textureInfo;
+		conversionContext->uuid = existedObject->get_uuid();
 	}
 	else
 	{
-		LOG_ERROR("Unsupported file format")
+		conversionContext->uuid = UUID();
 	}
+	conversionContext->originalFile = path.c_str();
 
-	return resourceInfo;
+	std::string fileExt = io::Utils::get_file_extension(path);
+
+	if (fileExt == "glb" || fileExt == "gltf")
+	{
+		convert_to_model_info_from_gltf(path, conversionContext);
+	}
+	else if (fileExt == "obj")
+	{
+		convert_to_model_info_from_obj(path, conversionContext);
+	}
 }
 
-void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path, ModelInfo* modelInfo, ResourceInfo* resourceInfo)
+template<>
+void resource::ResourceConverter::convert_to_aares_file(
+	io::URI& path,
+	io::ConversionContext<ecore::Texture2D>* conversionContext,
+	ecore::Object* existedObject)
+{
+	if (existedObject)
+	{
+		ecore::Texture2D* texture2D = dynamic_cast<ecore::Texture2D*>(existedObject);
+		ecore::texture::Texture2DInfo* info = new ecore::texture::Texture2DInfo();
+		*info = texture2D->get_info();
+		conversionContext->oldInfo = info;
+	}
+	else
+	{
+		conversionContext->uuid = UUID();
+	}
+	conversionContext->originalFile = path.c_str();
+
+	convert_to_texture_info_from_raw_image(path, conversionContext);
+}
+
+void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path, io::ConversionContext<ecore::StaticModel>* context)
 {
 	cgltf_options options;
 	memset(&options, 0, sizeof(cgltf_options));
@@ -102,13 +94,13 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 	cgltf_material* materials = data->materials;
 	for (size_t i = 0; i != materialsCount; ++i)
 	{
-		modelInfo->materialsName.push_back(materials[i].name);
+		context->materialsName.push_back(materials[i].name);
 	}
 	
 	result = cgltf_load_buffers(&options, data, path.c_str());
 	assert(result == cgltf_result_success && "Failed to load buffers");
 
-	std::vector<VertexF32> vertexData;
+	std::vector<ecore::model::VertexF32> vertexData;
 	std::vector<uint32_t> modelIndices;
 	
 	cgltf_mesh* meshes = data->meshes;
@@ -185,11 +177,11 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 				}
 			}
 
-			VertexF32 threeVertices[3];
+			ecore::model::VertexF32 threeVertices[3];
 			size_t index = 0;
 			for (size_t g = 0; g != count; ++g)
 			{
-				VertexF32 vertex;
+				ecore::model::VertexF32 vertex;
 				vertex.position.x = position[g].x;
 				vertex.normal.x = normal[g].x;
 				if (isBlender)
@@ -212,7 +204,7 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 				++index;
 				if (index == 3)
 				{
-					utils::calculate_tangent(threeVertices);
+					ecore::model::Utils::calculate_tangent(threeVertices);
 					vertexData.push_back(threeVertices[0]);
 					vertexData.push_back(threeVertices[1]);
 					vertexData.push_back(threeVertices[2]);
@@ -253,19 +245,18 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 		}
 	}
 
-	modelInfo->bounds = utils::calculate_model_bounds(vertexData.data(), vertexData.size());
+	context->modelBounds = ecore::model::Utils::calculate_model_bounds(vertexData.data(), vertexData.size());
 	
-	uint64_t vertexBufferSize = vertexData.size() * sizeof(VertexF32);
+	uint64_t vertexBufferSize = vertexData.size() * sizeof(ecore::model::VertexF32);
 	uint64_t indexBufferSize = modelIndices.size() * sizeof(uint32_t);
-	modelInfo->vertexBufferSize = vertexBufferSize;
-	modelInfo->indexBufferSize = indexBufferSize;
-	uint8_t* modelData = new uint8_t[vertexBufferSize + indexBufferSize];
-	memcpy(modelData, vertexData.data(), vertexBufferSize);
-	memcpy(modelData + vertexBufferSize, modelIndices.data(), indexBufferSize);
-	resourceInfo->data = modelData;
+	context->vertexBufferSize = vertexBufferSize;
+	context->indexBufferSize = indexBufferSize;
+	context->buffer = new uint8_t[vertexBufferSize + indexBufferSize];
+	memcpy(context->buffer, vertexData.data(), vertexBufferSize);
+	memcpy(context->buffer + vertexBufferSize, modelIndices.data(), indexBufferSize);
 }
 
-void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, ModelInfo* modelInfo, ResourceInfo* resourceInfo)
+void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, io::ConversionContext<ecore::StaticModel>* context)
 {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
@@ -275,12 +266,7 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 	std::string err;
 	
 	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str(), nullptr);
-
-	if (!warn.empty())
-	{
-		LOG_WARNING("Warning when loading material from obj file {}", warn)
-	}
-
+	
 	if (!err.empty())
 	{
 		LOG_ERROR("ResourceConverter::convert_to_model_info_from_obj: {}", err.c_str())
@@ -288,9 +274,9 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 	}
 
 	// Can't use vector because of the strange behavior of LZ4 compression
-	VertexF32 threeVertices[3];
+	ecore::model::VertexF32 threeVertices[3];
 	size_t index = 0;
-	std::vector<VertexF32> vertexData;
+	std::vector<ecore::model::VertexF32> vertexData;
 	std::vector<uint32_t> indices;
 
 	for (size_t i = 0; i != shapes.size(); ++i)
@@ -303,7 +289,7 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 			{
 				tinyobj::index_t idx = shapes[i].mesh.indices[indexOffset + q];
 
-				VertexF32 vertex;
+				ecore::model::VertexF32 vertex;
 
 				vertex.position.x = attrib.vertices[3 * idx.vertex_index + 0];
 				vertex.position.y = attrib.vertices[3 * idx.vertex_index + 1];
@@ -320,7 +306,7 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 				++index;
 				if (index == 3)
 				{
-					utils::calculate_tangent(threeVertices);
+					ecore::model::Utils::calculate_tangent(threeVertices);
 					indices.push_back(vertexData.size());
 					vertexData.push_back(threeVertices[0]);
 					indices.push_back(vertexData.size());
@@ -337,35 +323,30 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 
 	for (auto& material : materials)
 	{
-		modelInfo->materialsName.push_back(material.name);
+		context->materialsName.push_back(material.name);
 	}
 
-	modelInfo->bounds = utils::calculate_model_bounds(vertexData.data(), vertexData.size());
-
-	LOG_INFO("Vertex data size: {}", vertexData.size())
-	uint64_t vertexBufferSize = vertexData.size() * sizeof(VertexF32);
-	LOG_INFO("Vertex buffer size: {}", vertexBufferSize)
+	context->modelBounds = ecore::model::Utils::calculate_model_bounds(vertexData.data(), vertexData.size());
+	
+	uint64_t vertexBufferSize = vertexData.size() * sizeof(ecore::model::VertexF32);
 	uint64_t indexBufferSize = indices.size() * sizeof(uint32_t);
-	LOG_INFO("Index buffer size: {}", indexBufferSize);
-	modelInfo->vertexBufferSize = vertexBufferSize;
-	modelInfo->indexBufferSize = indexBufferSize;
-	uint8_t* modelData = new uint8_t[vertexBufferSize + indexBufferSize];
-	memcpy(modelData, vertexData.data(), vertexBufferSize);
-	memcpy(modelData + vertexBufferSize, indices.data(), indexBufferSize);
-	resourceInfo->data = modelData;
+	context->vertexBufferSize = vertexBufferSize;
+	context->indexBufferSize = indexBufferSize;
+	context->buffer = new uint8_t[vertexBufferSize + indexBufferSize];
+	memcpy(context->buffer, vertexData.data(), vertexBufferSize);
+	memcpy(context->buffer + vertexBufferSize, indices.data(), indexBufferSize);
 }
 
-void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI& path, TextureInfo* texInfo, ResourceInfo* resourceInfo)
+void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI& path, io::ConversionContext<ecore::Texture2D>* context)
 {
 	int32_t texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
-	texInfo->size = texWidth * texHeight * 4;
-	texInfo->width = texWidth;
-	texInfo->height = texHeight;
+	context->size = texWidth * texHeight * 4;
+	context->width = texWidth;
+	context->height = texHeight;
 
-	uint8_t* data = new uint8_t[texInfo->size];
-	memcpy(data, pixels, texInfo->size);
-	resourceInfo->data = data;
+	context->pixels = new uint8_t[context->size];
+	memcpy(context->pixels, pixels, context->size);
 	stbi_image_free(pixels);
 }

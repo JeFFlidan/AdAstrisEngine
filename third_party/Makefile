@@ -186,6 +186,20 @@ spirv_reflect/fast:
 .PHONY : spirv_reflect/fast
 
 # Convenience name for target.
+third_party/CMakeFiles/inicpp.dir/rule:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/inicpp.dir/rule
+.PHONY : third_party/CMakeFiles/inicpp.dir/rule
+
+# Convenience name for target.
+inicpp: third_party/CMakeFiles/inicpp.dir/rule
+.PHONY : inicpp
+
+# fast build rule for target.
+inicpp/fast:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/build
+.PHONY : inicpp/fast
+
+# Convenience name for target.
 third_party/CMakeFiles/imgui.dir/rule:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/imgui.dir/rule
 .PHONY : third_party/CMakeFiles/imgui.dir/rule
@@ -415,6 +429,198 @@ imgui/imgui_widgets.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.s
 .PHONY : imgui/imgui_widgets.cpp.s
 
+inicpp/config.obj: inicpp/config.cpp.obj
+.PHONY : inicpp/config.obj
+
+# target to build an object file
+inicpp/config.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj
+.PHONY : inicpp/config.cpp.obj
+
+inicpp/config.i: inicpp/config.cpp.i
+.PHONY : inicpp/config.i
+
+# target to preprocess a source file
+inicpp/config.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.i
+.PHONY : inicpp/config.cpp.i
+
+inicpp/config.s: inicpp/config.cpp.s
+.PHONY : inicpp/config.s
+
+# target to generate assembly for a file
+inicpp/config.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.s
+.PHONY : inicpp/config.cpp.s
+
+inicpp/option.obj: inicpp/option.cpp.obj
+.PHONY : inicpp/option.obj
+
+# target to build an object file
+inicpp/option.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj
+.PHONY : inicpp/option.cpp.obj
+
+inicpp/option.i: inicpp/option.cpp.i
+.PHONY : inicpp/option.i
+
+# target to preprocess a source file
+inicpp/option.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.i
+.PHONY : inicpp/option.cpp.i
+
+inicpp/option.s: inicpp/option.cpp.s
+.PHONY : inicpp/option.s
+
+# target to generate assembly for a file
+inicpp/option.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.s
+.PHONY : inicpp/option.cpp.s
+
+inicpp/option_schema.obj: inicpp/option_schema.cpp.obj
+.PHONY : inicpp/option_schema.obj
+
+# target to build an object file
+inicpp/option_schema.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj
+.PHONY : inicpp/option_schema.cpp.obj
+
+inicpp/option_schema.i: inicpp/option_schema.cpp.i
+.PHONY : inicpp/option_schema.i
+
+# target to preprocess a source file
+inicpp/option_schema.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.i
+.PHONY : inicpp/option_schema.cpp.i
+
+inicpp/option_schema.s: inicpp/option_schema.cpp.s
+.PHONY : inicpp/option_schema.s
+
+# target to generate assembly for a file
+inicpp/option_schema.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.s
+.PHONY : inicpp/option_schema.cpp.s
+
+inicpp/parser.obj: inicpp/parser.cpp.obj
+.PHONY : inicpp/parser.obj
+
+# target to build an object file
+inicpp/parser.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj
+.PHONY : inicpp/parser.cpp.obj
+
+inicpp/parser.i: inicpp/parser.cpp.i
+.PHONY : inicpp/parser.i
+
+# target to preprocess a source file
+inicpp/parser.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.i
+.PHONY : inicpp/parser.cpp.i
+
+inicpp/parser.s: inicpp/parser.cpp.s
+.PHONY : inicpp/parser.s
+
+# target to generate assembly for a file
+inicpp/parser.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.s
+.PHONY : inicpp/parser.cpp.s
+
+inicpp/schema.obj: inicpp/schema.cpp.obj
+.PHONY : inicpp/schema.obj
+
+# target to build an object file
+inicpp/schema.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj
+.PHONY : inicpp/schema.cpp.obj
+
+inicpp/schema.i: inicpp/schema.cpp.i
+.PHONY : inicpp/schema.i
+
+# target to preprocess a source file
+inicpp/schema.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.i
+.PHONY : inicpp/schema.cpp.i
+
+inicpp/schema.s: inicpp/schema.cpp.s
+.PHONY : inicpp/schema.s
+
+# target to generate assembly for a file
+inicpp/schema.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.s
+.PHONY : inicpp/schema.cpp.s
+
+inicpp/section.obj: inicpp/section.cpp.obj
+.PHONY : inicpp/section.obj
+
+# target to build an object file
+inicpp/section.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj
+.PHONY : inicpp/section.cpp.obj
+
+inicpp/section.i: inicpp/section.cpp.i
+.PHONY : inicpp/section.i
+
+# target to preprocess a source file
+inicpp/section.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.i
+.PHONY : inicpp/section.cpp.i
+
+inicpp/section.s: inicpp/section.cpp.s
+.PHONY : inicpp/section.s
+
+# target to generate assembly for a file
+inicpp/section.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.s
+.PHONY : inicpp/section.cpp.s
+
+inicpp/section_schema.obj: inicpp/section_schema.cpp.obj
+.PHONY : inicpp/section_schema.obj
+
+# target to build an object file
+inicpp/section_schema.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj
+.PHONY : inicpp/section_schema.cpp.obj
+
+inicpp/section_schema.i: inicpp/section_schema.cpp.i
+.PHONY : inicpp/section_schema.i
+
+# target to preprocess a source file
+inicpp/section_schema.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.i
+.PHONY : inicpp/section_schema.cpp.i
+
+inicpp/section_schema.s: inicpp/section_schema.cpp.s
+.PHONY : inicpp/section_schema.s
+
+# target to generate assembly for a file
+inicpp/section_schema.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.s
+.PHONY : inicpp/section_schema.cpp.s
+
+inicpp/string_utils.obj: inicpp/string_utils.cpp.obj
+.PHONY : inicpp/string_utils.obj
+
+# target to build an object file
+inicpp/string_utils.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj
+.PHONY : inicpp/string_utils.cpp.obj
+
+inicpp/string_utils.i: inicpp/string_utils.cpp.i
+.PHONY : inicpp/string_utils.i
+
+# target to preprocess a source file
+inicpp/string_utils.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.i
+.PHONY : inicpp/string_utils.cpp.i
+
+inicpp/string_utils.s: inicpp/string_utils.cpp.s
+.PHONY : inicpp/string_utils.s
+
+# target to generate assembly for a file
+inicpp/string_utils.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.s
+.PHONY : inicpp/string_utils.cpp.s
+
 lz4/lz4.obj: lz4/lz4.c.obj
 .PHONY : lz4/lz4.obj
 
@@ -521,6 +727,7 @@ help:
 	@echo ... rebuild_cache
 	@echo ... fmt_lib
 	@echo ... imgui
+	@echo ... inicpp
 	@echo ... lz4
 	@echo ... spirv_reflect
 	@echo ... tinyobjloader
@@ -552,6 +759,30 @@ help:
 	@echo ... imgui/imgui_widgets.obj
 	@echo ... imgui/imgui_widgets.i
 	@echo ... imgui/imgui_widgets.s
+	@echo ... inicpp/config.obj
+	@echo ... inicpp/config.i
+	@echo ... inicpp/config.s
+	@echo ... inicpp/option.obj
+	@echo ... inicpp/option.i
+	@echo ... inicpp/option.s
+	@echo ... inicpp/option_schema.obj
+	@echo ... inicpp/option_schema.i
+	@echo ... inicpp/option_schema.s
+	@echo ... inicpp/parser.obj
+	@echo ... inicpp/parser.i
+	@echo ... inicpp/parser.s
+	@echo ... inicpp/schema.obj
+	@echo ... inicpp/schema.i
+	@echo ... inicpp/schema.s
+	@echo ... inicpp/section.obj
+	@echo ... inicpp/section.i
+	@echo ... inicpp/section.s
+	@echo ... inicpp/section_schema.obj
+	@echo ... inicpp/section_schema.i
+	@echo ... inicpp/section_schema.s
+	@echo ... inicpp/string_utils.obj
+	@echo ... inicpp/string_utils.i
+	@echo ... inicpp/string_utils.s
 	@echo ... lz4/lz4.obj
 	@echo ... lz4/lz4.i
 	@echo ... lz4/lz4.s

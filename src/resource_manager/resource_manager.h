@@ -1,8 +1,12 @@
 #pragma once
 
 #include "engine_core/uuid.h"
+#include "engine_core/object.h"
 #include "file_system/file_system.h"
+#include "file_system/file.h"
+#include "file_system/utils.h"
 #include "resource_converter.h"
+#include "resource_formats.h"
 #include "profiler/logger.h"
 #include "engine_core/level.h"
 
@@ -39,31 +43,11 @@ namespace ad_astris::resource
 			}
 	};
 
-	// Took the idea from: https://github.com/aviktorov/scapes/blob/master/include/scapes/foundation/resources/ResourceManager.h
-	struct ResourceVTable
-	{
-		using CreateFuncPtr = void* (*)(void* data);
-		using DestroyFuncPtr = void (*)(void* resource);
-
-		CreateFuncPtr create{ nullptr };
-		DestroyFuncPtr destroy{nullptr};
-	};
-	
-	struct Resource
-	{
-		void* data;
-		ResourceInfo resourceInfo;
-		ResourceVTable* vtable;
-	};
-	
 	struct ResourceData
 	{
-		Resource* resource{ nullptr };
-		io::URI pathToResource;
+		io::IFile* file{ nullptr };
+		ecore::Object* object{ nullptr };
 	};
-
-	bool operator==(const Resource& lv, const Resource& rv);
-	bool operator==(const ResourceData& lv, const ResourceData& rv);
 	
 	class ResourceDataTable
 	{
@@ -83,19 +67,20 @@ namespace ad_astris::resource
 			bool check_name_in_cache(io::URI& path);
 			UUID get_uuid_by_name(io::URI& path);
 
-			void add_resource_and_path(UUID& uuid, io::URI& path, Resource* resource = nullptr);
+			void add_resource(ResourceData* resource);
 
 			// After destroying resource, its path won't be in aarestable file. 
 			void destroy_resource(UUID& uuid);
 		
-			Resource* get_resource(UUID& uuid);
-			io::URI& get_path(UUID& uuid);
+			io::IFile* get_resource_file(UUID& uuid);
+			ecore::Object* get_resource_object(UUID& uuid);
+			io::URI get_path(UUID& uuid);
+			ResourceType get_resource_type(UUID& uuid);
 		
 		private:
 			io::FileSystem* _fileSystem{ nullptr };
 			std::map<std::string, UUID> _nameToUUID;
 			std::map<UUID, ResourceData> _uuidToResourceData;
-			std::vector<Resource> _resources;
 	};
 	
 	// This class should delete all resource info while shutting down engine
@@ -108,77 +93,95 @@ namespace ad_astris::resource
 			template<typename T>
 			ResourceAccessor<T> convert_to_aares(io::URI& path)
 			{
-				LOG_INFO("Start converting")
-				Resource* existedResource = nullptr;
-				LOG_INFO("Before checking")
+				io::IFile* existedFile = nullptr;
+				ecore::Object* existedObject = nullptr;
 				if (_resourceDataTable->check_name_in_cache(path))
 				{
 					UUID uuid = _resourceDataTable->get_uuid_by_name(path);
-					existedResource = _resourceDataTable->get_resource(uuid);
+
+					// Have to think is it a good idea to delete existing object and file before reloading
+					existedObject = _resourceDataTable->get_resource_object(uuid);
+					existedFile = _resourceDataTable->get_resource_file(uuid);
 				}
-				LOG_INFO("After checking")
-				ResourceInfo resourceInfo;
-				if (existedResource)
+
+				io::ConversionContext<T> conversionContext;
+				if (existedObject)
 				{
-					resourceInfo = _resourceConverter.convert_to_aares_file(path, &existedResource->resourceInfo);
-				}
-				else
-				{
-					resourceInfo = _resourceConverter.convert_to_aares_file(path);
-				}
-				write_to_disk(resourceInfo, path);
-				ResourceVTable* vtable = _vtables[resourceInfo.type];
-				Resource newResource;
-				newResource.data = vtable->create(&resourceInfo);
-				newResource.vtable = vtable;
-				newResource.resourceInfo = resourceInfo;
-				if (existedResource)
-				{
-					*existedResource = newResource; 
+					_resourceConverter.convert_to_aares_file(path, &conversionContext, existedObject);
 				}
 				else
 				{
-					_resourceDataTable->add_resource_and_path(resourceInfo.uuid, path, &newResource);
+					_resourceConverter.convert_to_aares_file(path, &conversionContext);
 				}
 				
-				return ResourceAccessor<T>(newResource.data);
+				io::URI relPath = std::string("assets\\" + io::Utils::get_file_name(path) + ".aares").c_str();
+				io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem, relPath);
+				conversionContext.filePath = absolutePath.c_str();
+				io::URI path1 = conversionContext.filePath.c_str();
+				
+				ResourceData resourceData;
+				io::IFile* file = new io::ResourceFile(conversionContext);
+				T* typedObject = new T();
+				typedObject->deserialize(file);
+				resourceData.file = file;
+				resourceData.object = typedObject;
+				
+				write_to_disk(resourceData.file, path);
+				
+				_resourceDataTable->add_resource(&resourceData);
+
+				if (existedObject && existedFile)
+				{
+					delete existedObject;
+					delete existedFile;
+				}
+				
+				return ResourceAccessor<T>(resourceData.object);
 			}
 		
 			ResourceAccessor<ecore::Level> load_level(io::URI& path)
 			{
 				// TODO
-				ResourceInfo resourceInfo = read_from_disk(path);
+				//ResourceInfo resourceInfo = read_from_disk(path);
 			}
 		
 			template<typename T>
-			ResourceAccessor<T> load_resource(io::URI& path)
+			ResourceAccessor<T> load_resource(UUID& uuid)
 			{
 				// TODO rewrite ResourceInfo struct. Also, I should remake info structs for resources
-				ResourceInfo resourceInfo = read_from_disk(path);
-				ResourceVTable* vtable = _vtables[resourceInfo.type];
-				Resource resource;
-				resource.data = vtable->create(&resourceInfo);
-				resource.vtable = vtable;
-				resource.resourceInfo = resourceInfo;
-				_resourceDataTable->add_resource_and_path(resourceInfo.uuid, path, &resource);
+				io::URI path = _resourceDataTable->get_path(uuid);
+				io::IFile* file = read_from_disk(path);
+				ResourceData resource;
+				T* typedObject = new T();
+				typedObject->deserialize(file);
+				resource.file = file;
+				resource.object = typedObject;
+				_resourceDataTable->add_resource(&resource);
 				
-				return ResourceAccessor<T>(resource.data);
+				return ResourceAccessor<T>(resource.object);
 			}
-
+		
+			/** If the resource has been loaded, the method returns the resource data. Otherwise, the resource will be loaded from disc
+			 * @param uuid should be valid uuid. 
+			 */
 			template<typename T>
 			ResourceAccessor<T> get_resource(UUID uuid)
 			{
 				// TODO Check and async loading
-				return _resourceDataTable->get_resource(uuid)->data;
+				return _resourceDataTable->get_resource_object(uuid);
+			}
+
+			void save_resources()
+			{
+				// TODO
 			}
 		
 		private:
 			io::FileSystem* _fileSystem;
 			ResourceDataTable* _resourceDataTable;
 			ResourceConverter _resourceConverter;
-			std::map<ResourceType, ResourceVTable*> _vtables;
 
-			void write_to_disk(ResourceInfo& resourceInfo, io::URI& originalPath);
-			ResourceInfo read_from_disk(io::URI& path);
+			void write_to_disk(io::IFile* file, io::URI& originalPath);
+			io::IFile* read_from_disk(io::URI& path);
 	};
 }

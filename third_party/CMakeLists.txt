@@ -12,7 +12,7 @@ add_library(tinyobjloader STATIC)
 add_library(lz4 STATIC)
 add_library(fmt_lib STATIC)
 add_library(spirv_reflect STATIC)
-#add_library(shaderc INTERFACE)
+add_library(inicpp STATIC)
 
 target_include_directories(vkbootstrap PUBLIC vkbootstrap)
 file(GLOB VKBOOTSTRAP_FILES "vkbootstrap/*")
@@ -73,7 +73,6 @@ target_sources(spirv_reflect PRIVATE
 	spirv_reflect/spirv_reflect.c
 	)
 
-#target_include_directories(shaderc INTERFACE shaderc)
-#file(GLOB SHADERC_FILES "shaderc/shaderc/*")
-#target_sources(shaderc PRIVATE ${SHADERC_FILES})
-#link_directories("shaderc/lib")
+target_include_directories(inicpp PUBLIC inicpp)
+file(GLOB INICPP_FILES "inicpp/*")
+target_sources(inicpp PRIVATE ${INICPP_FILES})
