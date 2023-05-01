@@ -6,8 +6,11 @@
 #include "file_system/utils.h"
 
 #include <lz4.h>
+#include <inicpp.h>
 
 #include <algorithm>
+
+#include "glm/gtc/reciprocal.hpp"
 
 using namespace ad_astris;
 
@@ -27,49 +30,35 @@ resource::ResourceDataTable::~ResourceDataTable()
 
 void resource::ResourceDataTable::load_table()
 {
-	io::Stream* stream = _fileSystem->open("configs/resource_table.aarestable", "rb");
-	uint64_t strSize;
-	stream->read(&strSize, sizeof(uint64_t), 1);
-	std::string strTable;
-	strTable.resize(strSize);
-	stream->read(&strTable, sizeof(char), strSize);
-	_fileSystem->close(stream);
-
-	nlohmann::json table = nlohmann::json::parse(strTable);
-	std::vector<std::string> tableData;
-	tableData.resize(2);
-	
-	for (auto& item : table.items())
+	io::URI path = io::Utils::get_absolute_path_to_file(_fileSystem, "configs/resource_table.ini");
+	inicpp::config tableConfig = inicpp::parser::load_file(path.c_str());
+	for (auto& section : tableConfig)
 	{
-		tableData = table[item.key().c_str()].get<std::vector<std::string>>();
-		UUID uuid((uint64_t)tableData[0].c_str());
-		ResourceData resourceData{};
-		io::IFile* file = new io::ResourceFile(item.key().c_str());
-		resourceData.file = file;
-		//resourceData.type = Utils::get_enum_resource_type(tableData[1]);
-		_uuidToResourceData[uuid] = resourceData;
-		_nameToUUID[file->get_file_name()] = uuid;
+		for (auto& opt : section)
+		{
+			ResourceData resourceData{};
+			resourceData.path = opt.get_name().c_str();
+			_uuidToResourceData[opt.get<inicpp::unsigned_ini_t>()] = resourceData;
+		}
 	}
 }
 
 void resource::ResourceDataTable::save_table()
 {
-	nlohmann::json table;
-	std::vector<std::string> tableData;
-	tableData.resize(2);
+	inicpp::section uuidTableSection("UUID_Table");
 	for (auto& data : _uuidToResourceData)
 	{
-		tableData[0] = std::to_string(data.first);
-		tableData[1] = data.second.object->get_type();
-		table[data.second.object->get_path().c_str()] = (uint64_t)data.first;
+		io::URI path = data.second.path;
+		io::Utils::replace_back_slash_to_forward(path);
+		inicpp::option option(path.c_str());
+		option = data.first;
+		uuidTableSection.add_option(option);
 	}
 
-	io::Stream* stream = _fileSystem->open("configs/resource_table.aarestable", "wb");
-	std::string strTable = table.dump();
-	uint64_t size = strTable.size();
-	stream->write(&size, sizeof(uint64_t), 1);
-	stream->write(strTable.data(), sizeof(char), size);
-	_fileSystem->close(stream);
+	inicpp::config config{ };
+	config.add_section(uuidTableSection);
+	io::URI path = io::Utils::get_absolute_path_to_file(_fileSystem, "configs/resource_table.ini");
+	inicpp::parser::save(config, path.c_str());
 }
 
 bool resource::ResourceDataTable::check_resource_in_cache(UUID& uuid)
@@ -147,24 +136,29 @@ ecore::Object* resource::ResourceDataTable::get_resource_object(UUID& uuid)
 io::URI resource::ResourceDataTable::get_path(UUID& uuid)
 {
 	auto it = _uuidToResourceData.find(uuid);
-	return it->second.file->get_file_path();
-}
-
-resource::ResourceType resource::ResourceDataTable::get_resource_type(UUID& uuid)
-{
-	//return _uuidToResourceData[uuid].type;
-	return ResourceType::UNDEFINED;
+	return it->second.path;
 }
 
 resource::ResourceManager::ResourceManager(io::FileSystem* fileSystem) : _fileSystem(fileSystem)
 {
 	_resourceConverter = ResourceConverter(_fileSystem);
 	_resourceDataTable = new ResourceDataTable(_fileSystem);
+	_resourceDataTable->load_table();
 }
 
 resource::ResourceManager::~ResourceManager()
 {
 	delete _resourceDataTable;
+}
+
+resource::ResourceAccessor<ecore::Level> resource::ResourceManager::load_level(io::URI& path)
+{
+	// TODO
+}
+
+void resource::ResourceManager::save_resources()
+{
+	_resourceDataTable->save_table();
 }
 
 void resource::ResourceManager::write_to_disk(io::IFile* file, io::URI& originalPath)

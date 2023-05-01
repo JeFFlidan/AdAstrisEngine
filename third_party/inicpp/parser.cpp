@@ -164,9 +164,9 @@ namespace inicpp
 	void parser::validate_identifier(const std::string &str, size_t line_number)
 	{
 		std::regex reg_expr("^[a-zA-Z.$:][-a-zA-Z0-9_~.:$ ]*$");
-		if (!std::regex_match(str, reg_expr)) {
-			throw parser_exception("Identifier contains forbidden characters on line " + std::to_string(line_number));
-		}
+		// if (!std::regex_match(str, reg_expr)) {
+		// 	throw parser_exception("Identifier contains forbidden characters on line " + std::to_string(line_number));
+		// }
 	}
 
 	config parser::internal_load(std::istream &str)

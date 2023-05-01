@@ -177,29 +177,29 @@ engine_core/camera.cpp.s:
 	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/camera.cpp.s
 .PHONY : engine_core/camera.cpp.s
 
-engine_core/level.obj: engine_core/level.cpp.obj
-.PHONY : engine_core/level.obj
+engine_core/level/level.obj: engine_core/level/level.cpp.obj
+.PHONY : engine_core/level/level.obj
 
 # target to build an object file
-engine_core/level.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/level.cpp.obj
-.PHONY : engine_core/level.cpp.obj
+engine_core/level/level.cpp.obj:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/level/level.cpp.obj
+.PHONY : engine_core/level/level.cpp.obj
 
-engine_core/level.i: engine_core/level.cpp.i
-.PHONY : engine_core/level.i
+engine_core/level/level.i: engine_core/level/level.cpp.i
+.PHONY : engine_core/level/level.i
 
 # target to preprocess a source file
-engine_core/level.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/level.cpp.i
-.PHONY : engine_core/level.cpp.i
+engine_core/level/level.cpp.i:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/level/level.cpp.i
+.PHONY : engine_core/level/level.cpp.i
 
-engine_core/level.s: engine_core/level.cpp.s
-.PHONY : engine_core/level.s
+engine_core/level/level.s: engine_core/level/level.cpp.s
+.PHONY : engine_core/level/level.s
 
 # target to generate assembly for a file
-engine_core/level.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/level.cpp.s
-.PHONY : engine_core/level.cpp.s
+engine_core/level/level.cpp.s:
+	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f src\CMakeFiles\AdAstrisEngine.dir\build.make src/CMakeFiles/AdAstrisEngine.dir/engine_core/level/level.cpp.s
+.PHONY : engine_core/level/level.cpp.s
 
 engine_core/material.obj: engine_core/material.cpp.obj
 .PHONY : engine_core/material.obj
@@ -1417,9 +1417,9 @@ help:
 	@echo ... engine_core/camera.obj
 	@echo ... engine_core/camera.i
 	@echo ... engine_core/camera.s
-	@echo ... engine_core/level.obj
-	@echo ... engine_core/level.i
-	@echo ... engine_core/level.s
+	@echo ... engine_core/level/level.obj
+	@echo ... engine_core/level/level.i
+	@echo ... engine_core/level/level.s
 	@echo ... engine_core/material.obj
 	@echo ... engine_core/material.i
 	@echo ... engine_core/material.s

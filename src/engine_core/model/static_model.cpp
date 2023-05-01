@@ -29,6 +29,7 @@ void ecore::StaticModel::deserialize(io::IFile* file)
 	_indexBuffer = buffer + _modelInfo.vertexBufferSize;
 	_modelInfo = model::Utils::unpack_static_model_info(strMetadata);
 	_name = ObjectName(file->get_file_name().c_str());
+	_path = file->get_file_path();
 }
 
 uint64_t ecore::StaticModel::get_size()

@@ -52,17 +52,18 @@ void io::ResourceFile::serialize(uint8_t*& data, uint64_t& size)
 	compressedBinBlob.resize(compressedSize);
 	
 	uint64_t metadataSize = _metaData.size();
-	size = sizeof(uint64_t) * 3 + compressedBinBlob.size() + metadataSize;
+	size_t uint64Size = sizeof(uint64_t) * 3;
+	size = uint64Size + compressedBinBlob.size() + metadataSize;
 	data = new uint8_t[size];
 	uint64_t sizes[3] = { metadataSize, compressedSize, _binBlobSize };
-	memcpy(data, sizes, sizeof(uint64_t) * 3);
-	memcpy(data, _metaData.data(), _metaData.size());
-	memcpy(data + _metaData.size(), compressedBinBlob.data(), compressedBinBlob.size());
+
+	memcpy(data, sizes, uint64Size);
+	memcpy(data + uint64Size, _metaData.data(), _metaData.size());
+	memcpy(data + uint64Size + _metaData.size(), compressedBinBlob.data(), compressedBinBlob.size());
 }
 
 void io::ResourceFile::deserialize(uint8_t* data, uint64_t size)
 {
-	uint8_t* beginOfDataBlob = data;
 	uint64_t metaDataSize;
 	memcpy(&metaDataSize, data, sizeof(uint64_t));
 	data += sizeof(uint64_t);
@@ -79,7 +80,6 @@ void io::ResourceFile::deserialize(uint8_t* data, uint64_t size)
 	memcpy(compressedBlob, data, compressedBlobSize);
 	LZ4_decompress_safe((char*)compressedBlob, (char*)_binBlob, compressedBlobSize, _binBlobSize);
 	delete[] compressedBlob;
-	data = beginOfDataBlob;
 }
 
 bool io::ResourceFile::is_valid()

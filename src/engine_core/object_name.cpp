@@ -158,7 +158,7 @@ void ecore::ObjectName::destroy_name()
 	_name = nullptr;
 }
 
-std::string ecore::ObjectName::get_name()
+std::string ecore::ObjectName::get_string()
 {
 	std::string name(_name);
 	if (_nameID.get_id() > 0)
@@ -231,21 +231,21 @@ void ecore::tests()
 	ObjectName name1("Wall");
 	ObjectName name2(name1.get_name_without_instance().c_str());
 	ObjectName name3("Gun1");
-	LOG_INFO("Name1 before editing: {}", name1.get_name().c_str())
-	LOG_INFO("Name2 before editing: {}", name2.get_name().c_str())
-	LOG_INFO("Name3 before editing: {}", name3.get_name().c_str())
+	LOG_INFO("Name1 before editing: {}", name1.get_string().c_str())
+	LOG_INFO("Name2 before editing: {}", name2.get_string().c_str())
+	LOG_INFO("Name3 before editing: {}", name3.get_string().c_str())
 	
 	name1.change_name(name3);
-	LOG_INFO("Name1 after the first editing: {}", name1.get_name().c_str())
+	LOG_INFO("Name1 after the first editing: {}", name1.get_string().c_str())
 	name2.change_name("Gun1");
-	LOG_INFO("Name2 after the first editing: {}", name2.get_name().c_str())
+	LOG_INFO("Name2 after the first editing: {}", name2.get_string().c_str())
 	name1.change_name("Wall");
-	LOG_INFO("Name 1 after the second editind: {}", name1.get_name())
+	LOG_INFO("Name 1 after the second editind: {}", name1.get_string())
 	name2.change_name("Wall");
-	LOG_INFO("Name2 after the second editing: {}", name2.get_name().c_str())
+	LOG_INFO("Name2 after the second editing: {}", name2.get_string().c_str())
 	name3.change_name(name2);
-	LOG_INFO("Name3 after the first editing: {}", name3.get_name().c_str())
+	LOG_INFO("Name3 after the first editing: {}", name3.get_string().c_str())
 	ObjectName tempName;
 	tempName = name3;
-	LOG_INFO("Temp name: {}", tempName.get_name())
+	LOG_INFO("Temp name: {}", tempName.get_string())
 }

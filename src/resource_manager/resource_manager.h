@@ -8,7 +8,7 @@
 #include "resource_converter.h"
 #include "resource_formats.h"
 #include "profiler/logger.h"
-#include "engine_core/level.h"
+#include "engine_core/level/level.h"
 
 #include <map>
 #include <string>
@@ -47,6 +47,7 @@ namespace ad_astris::resource
 	{
 		io::IFile* file{ nullptr };
 		ecore::Object* object{ nullptr };
+		io::URI path;
 	};
 	
 	class ResourceDataTable
@@ -75,7 +76,6 @@ namespace ad_astris::resource
 			io::IFile* get_resource_file(UUID& uuid);
 			ecore::Object* get_resource_object(UUID& uuid);
 			io::URI get_path(UUID& uuid);
-			ResourceType get_resource_type(UUID& uuid);
 		
 		private:
 			io::FileSystem* _fileSystem{ nullptr };
@@ -83,16 +83,28 @@ namespace ad_astris::resource
 			std::map<UUID, ResourceData> _uuidToResourceData;
 	};
 	
-	// This class should delete all resource info while shutting down engine
+	// ResourceManager is responsible for loading levels and managing resources 
+	// (destroy, save, update, etc.) 
+	// Also, ResourceManager is used to convert files from DCC tools to a custom '.aares' file.
 	class ResourceManager
 	{
 		public:
 			ResourceManager(io::FileSystem* fileSystem);
 			~ResourceManager();
-		
-			template<typename T>
+
+			/** Convert file from DCC tools to a custom '.aares' file. \n
+			 * Supported file formats for 3D-models: gltf, obj
+			 * Supported file formats for textures: tga, png, jpg, tiff
+			 * @param path should be a valid path. Otherwise, nullptr will be returned
+			 */
+			template <typename T>
 			ResourceAccessor<T> convert_to_aares(io::URI& path)
 			{
+				if (!io::Utils::exists(_fileSystem, path))
+				{
+					LOG_ERROR("ResourceManager::convert_to_aares(): Invalid path {}", path.c_str())
+					return nullptr;
+				}
 				io::IFile* existedFile = nullptr;
 				ecore::Object* existedObject = nullptr;
 				if (_resourceDataTable->check_name_in_cache(path))
@@ -117,7 +129,6 @@ namespace ad_astris::resource
 				io::URI relPath = std::string("assets\\" + io::Utils::get_file_name(path) + ".aares").c_str();
 				io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem, relPath);
 				conversionContext.filePath = absolutePath.c_str();
-				io::URI path1 = conversionContext.filePath.c_str();
 				
 				ResourceData resourceData;
 				io::IFile* file = new io::ResourceFile(conversionContext);
@@ -125,6 +136,7 @@ namespace ad_astris::resource
 				typedObject->deserialize(file);
 				resourceData.file = file;
 				resourceData.object = typedObject;
+				resourceData.path = absolutePath;
 				
 				write_to_disk(resourceData.file, path);
 				
@@ -139,27 +151,7 @@ namespace ad_astris::resource
 				return ResourceAccessor<T>(resourceData.object);
 			}
 		
-			ResourceAccessor<ecore::Level> load_level(io::URI& path)
-			{
-				// TODO
-				//ResourceInfo resourceInfo = read_from_disk(path);
-			}
-		
-			template<typename T>
-			ResourceAccessor<T> load_resource(UUID& uuid)
-			{
-				// TODO rewrite ResourceInfo struct. Also, I should remake info structs for resources
-				io::URI path = _resourceDataTable->get_path(uuid);
-				io::IFile* file = read_from_disk(path);
-				ResourceData resource;
-				T* typedObject = new T();
-				typedObject->deserialize(file);
-				resource.file = file;
-				resource.object = typedObject;
-				_resourceDataTable->add_resource(&resource);
-				
-				return ResourceAccessor<T>(resource.object);
-			}
+			ResourceAccessor<ecore::Level> load_level(io::URI& path);
 		
 			/** If the resource has been loaded, the method returns the resource data. Otherwise, the resource will be loaded from disc
 			 * @param uuid should be valid uuid. 
@@ -167,14 +159,19 @@ namespace ad_astris::resource
 			template<typename T>
 			ResourceAccessor<T> get_resource(UUID uuid)
 			{
-				// TODO Check and async loading
-				return _resourceDataTable->get_resource_object(uuid);
+				// TODO async loading
+				io::URI path = _resourceDataTable->get_path(uuid);
+
+				if (_resourceDataTable->check_resource_in_cache(uuid))
+				{
+					LOG_INFO("Get resource object")
+					return _resourceDataTable->get_resource_object(uuid);
+				}
+				
+				return load_resource<T>(path);
 			}
 
-			void save_resources()
-			{
-				// TODO
-			}
+			void save_resources();
 		
 		private:
 			io::FileSystem* _fileSystem;
@@ -183,5 +180,20 @@ namespace ad_astris::resource
 
 			void write_to_disk(io::IFile* file, io::URI& originalPath);
 			io::IFile* read_from_disk(io::URI& path);
+		
+			template<typename T>
+			ResourceAccessor<T> load_resource(io::URI path)
+			{
+				io::IFile* file = read_from_disk(path);
+				ResourceData resource;
+				T* typedObject = new T();
+				typedObject->deserialize(file);
+				resource.file = file;
+				resource.object = typedObject;
+				resource.path = path;
+				_resourceDataTable->add_resource(&resource);
+					
+				return ResourceAccessor<T>(resource.object);
+			}
 	};
 }

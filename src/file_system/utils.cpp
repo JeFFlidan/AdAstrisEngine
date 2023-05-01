@@ -1,8 +1,16 @@
 #include "utils.h"
 
+#include "algorithm"
 #include <filesystem>
 
 using namespace ad_astris;
+
+void io::Utils::replace_back_slash_to_forward(URI& path)
+{
+	std::string strPath = path.c_str();
+	std::replace(strPath.begin(), strPath.end(), '\\', '/');
+	path = strPath.c_str();
+}
 
 std::string io::Utils::get_file_name(const URI& path)
 {
@@ -34,4 +42,13 @@ bool io::Utils::is_absolute(const URI& path)
 bool io::Utils::is_relative(const URI& path)
 {
 	return std::filesystem::path(path.c_str()).is_relative();
+}
+
+bool io::Utils::exists(FileSystem* fileSystem, const URI& path)
+{
+	if (is_absolute(path))
+		return std::filesystem::exists(std::filesystem::path(path.c_str()));
+
+	URI newPath = get_absolute_path_to_file(fileSystem, path);
+	return std::filesystem::exists(std::filesystem::path(newPath.c_str()));
 }

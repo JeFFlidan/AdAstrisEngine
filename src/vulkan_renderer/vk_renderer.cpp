@@ -318,29 +318,33 @@ namespace ad_astris
 		_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
 		_shaderCompiler = new rcore::ShaderCompiler(_fileSystem);
 		//resource::ResourceConverter resourceConverter(_fileSystem);
-
-		LOG_INFO("Before init manager")
-		resource::ResourceManager manager(_fileSystem);
-		LOG_INFO("After init manager")
-
-		// Tests for resource converter
-		io::URI door = "E:\\gun.gltf";
-		io::URI texture = "D:/cyberpunk location/Texture/Gun_2/Gun_2_BaseColor.tga";
-		io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/wall.obj";
 		
-		auto async1 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::StaticModel>{ return manager.convert_to_aares<ecore::StaticModel>(door); });
-		auto async2 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::Texture2D>{ return manager.convert_to_aares<ecore::Texture2D>(texture); });
-		auto async3 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::StaticModel>{ return manager.convert_to_aares<ecore::StaticModel>(gunOBJ); });
+		resource::ResourceManager manager(_fileSystem);
 
-		ecore::StaticModel* model1 = async3.get().get_resource();
-		ecore::Texture2D* texture1 = async2.get().get_resource();
-		ecore::StaticModel* model2 = async1.get().get_resource();
-		LOG_INFO("Model 1 name: {}", model1->get_name()->get_name())
-		LOG_INFO("Model 2 name: {}", model2->get_name()->get_name())
-		LOG_INFO("Texture 1 name: {}", texture1->get_name()->get_name())
+		//Tests for resource converter
+		// io::URI door = "E:\\gun.gltf";
+		// io::URI texture = "D:/cyberpunk location/Texture/Gun_2/Gun_2_BaseColor.tga";
+		// io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/wall.obj";
+		//
+		// auto async1 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::StaticModel>{ return manager.convert_to_aares<ecore::StaticModel>(door); });
+		// auto async2 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::Texture2D>{ return manager.convert_to_aares<ecore::Texture2D>(texture); });
+		// auto async3 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::StaticModel>{ return manager.convert_to_aares<ecore::StaticModel>(gunOBJ); });
+		//
+		// ecore::StaticModel* model1 = async3.get().get_resource();
+		// ecore::Texture2D* texture1 = async2.get().get_resource();
+		// ecore::StaticModel* model2 = async1.get().get_resource();
+		// LOG_INFO("Model 1 name: {}", model1->get_name()->get_string())
+		// LOG_INFO("Model 2 name: {}", model2->get_name()->get_string())
+		// LOG_INFO("Texture 1 name: {}", texture1->get_name()->get_string())
+
 
 		io::URI aaresPath = "assets/gun.aares";
+		auto accessor = manager.get_resource<ecore::StaticModel>(13467709291805750125);
+		ecore::StaticModel* model = accessor.get_resource();
+		LOG_INFO("Model name: {}", model->get_name()->get_string())
+		LOG_INFO("Model path: {}", model->get_path().c_str())
 		ecore::tests();
+		manager.save_resources();
 		//manager.load_resource<resource::ModelInfo>(aaresPath);
 
 		_materialSystem.init(this);
