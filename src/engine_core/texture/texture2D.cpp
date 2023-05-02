@@ -9,12 +9,19 @@ void ecore::Texture2D::serialize(io::IFile* file)
 	file->set_metadata(strMetadata);
 }
 
-void ecore::Texture2D::deserialize(io::IFile* file)
+void ecore::Texture2D::deserialize(io::IFile* file, ObjectName* newName)
 {
 	_data = file->get_binary_blob();
 	_textureInfo = texture::Utils::unpack_texture2D_info(file->get_metadata());
 	_path = file->get_file_path();
-	_name = ObjectName(file->get_file_name().c_str());
+	if (!newName)
+	{
+		_name = ObjectName(file->get_file_name().c_str());
+	}
+	else
+	{
+		_name = *newName;
+	}
 }
 
 uint64_t ecore::Texture2D::get_size()
@@ -47,7 +54,7 @@ std::string ecore::Texture2D::get_type()
 	return "texture";
 }
 
-void io::ConversionContext<ecore::Texture2D>::get_data(std::string& metadata, uint8_t*& binBlob, uint64_t& binBlobSize, URI& path)
+void io::ConversionContext<ecore::Texture2D>::get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize,URI& path)
 {
 	ecore::texture::Texture2DInfo info;
 	info.uuid = uuid;

@@ -1,16 +1,10 @@
 #include "profiler/logger.h"
-#include "engine_core/model/static_model.h"
-#include "engine_core/texture/texture2D.h"
 #include "resource_manager.h"
 #include "utils.h"
 #include "file_system/utils.h"
 
 #include <lz4.h>
 #include <inicpp.h>
-
-#include <algorithm>
-
-#include "glm/gtc/reciprocal.hpp"
 
 using namespace ad_astris;
 
@@ -34,34 +28,80 @@ void resource::ResourceDataTable::load_table()
 	inicpp::config tableConfig = inicpp::parser::load_file(path.c_str());
 	for (auto& section : tableConfig)
 	{
+		ResourceData resData{};
+		resData.metadata.path = section.get_name().c_str();
+		UUID uuid;
+		uint32_t nameID;
+		std::string name;
 		for (auto& opt : section)
 		{
-			ResourceData resourceData{};
-			resourceData.path = opt.get_name().c_str();
-			_uuidToResourceData[opt.get<inicpp::unsigned_ini_t>()] = resourceData;
+			if (opt.get_name() == "UUID")
+			{
+				uuid = opt.get<inicpp::unsigned_ini_t>();
+			}
+			else if (opt.get_name() == "Name")
+			{
+				name = opt.get<inicpp::string_ini_t>();
+			}
+			else if (opt.get_name() == "NameID")
+			{
+				nameID = opt.get<inicpp::unsigned_ini_t>();
+			}
+			else if (opt.get_name() == "Type")
+			{
+				resData.metadata.type = Utils::get_enum_resource_type(opt.get<inicpp::string_ini_t>());
+			}
 		}
+
+		resData.metadata.objectName = new ecore::ObjectName(name.c_str(), ecore::NameID(nameID));
+		_uuidToResourceData[uuid] = resData;
+		_nameToUUID[resData.metadata.objectName->get_string()] = uuid;
 	}
 }
 
 void resource::ResourceDataTable::save_table()
 {
-	inicpp::section uuidTableSection("UUID_Table");
+	inicpp::config config{ };
 	for (auto& data : _uuidToResourceData)
 	{
-		io::URI path = data.second.path;
+		ResourceData& resData = data.second;
+		io::URI path = resData.metadata.path;
 		io::Utils::replace_back_slash_to_forward(path);
-		inicpp::option option(path.c_str());
-		option = data.first;
-		uuidTableSection.add_option(option);
+		inicpp::section newSection(path.c_str());
+		
+		inicpp::option uuidOption("UUID");
+		uuidOption = data.first;	
+		inicpp::option typeOption("Type");
+		inicpp::option nameOption("Name");
+		inicpp::option nameIdOption("NameID");
+
+		if (!resData.object)
+		{
+			typeOption = Utils::get_str_resource_type(resData.metadata.type);
+			nameOption = resData.metadata.objectName->get_name_without_id();
+			nameIdOption = (inicpp::unsigned_ini_t)resData.metadata.objectName->get_name_id();
+		}
+		else
+		{
+			typeOption = resData.object->get_type();
+			ecore::ObjectName* name = resData.object->get_name();
+			nameOption = name->get_name_without_id();
+			nameIdOption =  (inicpp::unsigned_ini_t)name->get_name_id();
+		}
+		
+		newSection.add_option(uuidOption);
+		newSection.add_option(typeOption);
+		newSection.add_option(nameOption);
+		newSection.add_option(nameIdOption);
+		
+		config.add_section(newSection);
 	}
 
-	inicpp::config config{ };
-	config.add_section(uuidTableSection);
 	io::URI path = io::Utils::get_absolute_path_to_file(_fileSystem, "configs/resource_table.ini");
 	inicpp::parser::save(config, path.c_str());
 }
 
-bool resource::ResourceDataTable::check_resource_in_cache(UUID& uuid)
+bool resource::ResourceDataTable::check_resource_in_table(UUID& uuid)
 {
 	auto it = _uuidToResourceData.find(uuid);
 	if (it != _uuidToResourceData.end() && it->second.object)
@@ -69,11 +109,27 @@ bool resource::ResourceDataTable::check_resource_in_cache(UUID& uuid)
 	return false;
 }
 
-bool resource::ResourceDataTable::check_name_in_cache(io::URI& path)
+bool resource::ResourceDataTable::check_name_in_table(io::URI& path)
 {
 	std::string name = io::Utils::get_file_name(path);
 	auto it = _nameToUUID.find(name);
 	if (it != _nameToUUID.end())
+		return true;
+	return false;
+}
+
+bool resource::ResourceDataTable::check_name_in_table(ecore::ObjectName& name)
+{
+	auto it = _nameToUUID.find(name.get_string());
+	if (it != _nameToUUID.end())
+		return true;
+	return false;
+}
+
+bool resource::ResourceDataTable::check_uuid_in_table(UUID& uuid)
+{
+	auto it = _uuidToResourceData.find(uuid);
+	if (it != _uuidToResourceData.end())
 		return true;
 	return false;
 }
@@ -85,12 +141,23 @@ UUID resource::ResourceDataTable::get_uuid_by_name(io::URI& path)
 	return it->second;
 }
 
+UUID resource::ResourceDataTable::get_uuid_by_name(ecore::ObjectName& name)
+{
+	auto it = _nameToUUID.find(name.get_string());
+	return it->second;
+}
+
 void resource::ResourceDataTable::add_resource(ResourceData* resource)
 {
 	UUID uuid = resource->object->get_uuid();
 	auto it = _uuidToResourceData.find(uuid);
 	if (it != _uuidToResourceData.end() && resource)
 	{
+		if (it->second.object)
+			delete it->second.object;
+		if (it->second.file)
+			delete it->second.file;
+		
 		it->second = *resource;
 		io::URI path = resource->file->get_file_path();
 		_nameToUUID[io::Utils::get_file_name(path)] = it->first;
@@ -133,10 +200,15 @@ ecore::Object* resource::ResourceDataTable::get_resource_object(UUID& uuid)
 	return it->second.object;
 }
 
+resource::ResourceData* resource::ResourceDataTable::get_resource_data(UUID& uuid)
+{
+	return &_uuidToResourceData.find(uuid)->second;
+}
+
 io::URI resource::ResourceDataTable::get_path(UUID& uuid)
 {
 	auto it = _uuidToResourceData.find(uuid);
-	return it->second.path;
+	return it->second.metadata.path;
 }
 
 resource::ResourceManager::ResourceManager(io::FileSystem* fileSystem) : _fileSystem(fileSystem)
@@ -159,6 +231,29 @@ resource::ResourceAccessor<ecore::Level> resource::ResourceManager::load_level(i
 void resource::ResourceManager::save_resources()
 {
 	_resourceDataTable->save_table();
+}
+
+resource::ResourceType resource::ResourceManager::get_resource_type(ecore::ObjectName& objectName)
+{
+	if (!_resourceDataTable->check_name_in_table(objectName))
+	{
+		LOG_ERROR("ResourceManager::get_resource_type(): Invalid name {}", objectName.get_string());
+		return ResourceType::UNDEFINED;
+	}
+	UUID uuid = _resourceDataTable->get_uuid_by_name(objectName);
+	ResourceData* resData = _resourceDataTable->get_resource_data(uuid);
+	return resData->metadata.type;
+}
+
+resource::ResourceType resource::ResourceManager::get_resource_type(UUID uuid)
+{
+	if (!_resourceDataTable->check_uuid_in_table(uuid))
+	{
+		LOG_ERROR("ResourceManager::get_resource_type(): Invalid UUID {}", uuid)
+		return ResourceType::UNDEFINED;
+	}
+	ResourceData* resData = _resourceDataTable->get_resource_data(uuid);
+	return resData->metadata.type;
 }
 
 void resource::ResourceManager::write_to_disk(io::IFile* file, io::URI& originalPath)

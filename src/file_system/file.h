@@ -12,6 +12,12 @@ namespace ad_astris::io
 	{
 		
 	};
+
+	struct Name
+	{
+		std::string name{};
+		uint32_t nameID{ 0 };
+	};
 	
 	class IFile
 	{

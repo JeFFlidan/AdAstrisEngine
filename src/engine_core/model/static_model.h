@@ -21,12 +21,16 @@ namespace ad_astris::ecore
 			StaticModel() = default;
 
 			StaticModelData get_model_data();
+			model::ModelBounds get_model_bounds();
+			model::VertexFormat get_vertex_format();
+			std::string get_original_file();
+			std::vector<std::string> get_materials_name();
 		
 		public:
 			// ========== Begin Object interface ==========
 			
 			virtual void serialize(io::IFile* file) override;
-			virtual void deserialize(io::IFile* file) override;
+			virtual void deserialize(io::IFile* file, ObjectName* newName = nullptr) override;
 			virtual uint64_t get_size() override;
 			virtual bool is_resource() override;
 			virtual UUID get_uuid() override;
@@ -63,6 +67,6 @@ namespace ad_astris::io
 		ecore::model::ModelBounds modelBounds;
 		std::vector<std::string> materialsName;
 		
-		void get_data(std::string& metadata, uint8_t*& binBlob, uint64_t& binBlobSize, URI& path);
+		void get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize, URI& path);
 	};
 }

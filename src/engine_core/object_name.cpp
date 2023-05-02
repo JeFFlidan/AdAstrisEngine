@@ -8,6 +8,11 @@
 
 using namespace ad_astris;
 
+ecore::NameID::NameID(uint32_t newId) : _id(newId)
+{
+	
+}
+
 uint32_t ecore::NameID::get_id()
 {
 	return _id;
@@ -45,6 +50,35 @@ ecore::NameIDTable::NameIDTable()
 	_table.push_back(NameID());
 }
 
+ecore::NameIDTable::NameIDTable(NameID nameId)
+{
+	_table.push_back(nameId);
+	if (_table.size() > 1)
+	{
+		std::sort(_table.begin(), _table.end());
+	}
+	if (nameId != 0)
+	{
+		auto it = std::find(_table.begin(), _table.end(), nameId);
+		if (_table.size() > 1 && it != _table.begin())
+		{
+			auto firstIt = it - 1;
+			NameID tempId = *firstIt;
+			for (; tempId != nameId; ++tempId)
+			{
+				_removedNameIDs.push_back(tempId);
+			}
+		}
+		else if ((_table.size() > 1 && it == _table.begin()) || _table.empty())
+		{
+			for (uint32_t i = 0; i != nameId + 1; ++i)
+			{
+				_removedNameIDs.emplace_back(i);
+			}
+		}
+	}
+}
+
 ecore::NameID ecore::NameIDTable::get_next_id()
 {
 	if (_removedNameIDs.empty())
@@ -60,6 +94,49 @@ ecore::NameID ecore::NameIDTable::get_next_id()
 	_removedNameIDs.erase(_removedNameIDs.begin());
 	std::sort(_table.begin(), _table.end());
 	return id;
+}
+
+void ecore::NameIDTable::add_id(NameID nameId)
+{
+	auto tempIt = std::find(_table.begin(), _table.end(), nameId);
+	if (tempIt != _table.end())
+	{
+		LOG_ERROR("NameIDTable::add_id(): NameID {} isn't unique", nameId.get_id())
+		return;
+	}
+
+	auto it = std::find(_removedNameIDs.begin(), _removedNameIDs.end(), nameId);
+	if (it != _removedNameIDs.end())
+	{
+		_table.push_back(*it);
+		_removedNameIDs.erase(it);
+		std::sort(_table.begin(), _table.end());
+	}
+	else
+	{
+		_table.push_back(nameId);
+		std::sort(_table.begin(), _table.end());
+		auto it2 = std::find(_table.begin(), _table.end(), nameId);
+		if (it2 == _table.begin() && nameId != 0)
+		{
+			for (uint32_t i = 0; i != nameId; ++i)
+			{
+				NameID id(i);
+				if (std::find(_removedNameIDs.begin(), _removedNameIDs.end(), id) == _removedNameIDs.end())
+					_removedNameIDs.emplace_back(i);
+			}
+		}
+		else if (_table.size() > 1)
+		{
+			NameID secondId = *(it2 + 1);
+			for (uint32_t i = nameId; i != secondId; ++i)
+			{
+				NameID id(i);
+				if (std::find(_removedNameIDs.begin(), _removedNameIDs.end(), id) == _removedNameIDs.end())
+					_removedNameIDs.emplace_back(i);
+			}
+		}
+	}
 }
 
 void ecore::NameIDTable::remove_id(NameID nameId)
@@ -78,6 +155,7 @@ std::map<ecore::ObjectName, ecore::NameIDTable> ecore::ObjectName::_nameTable;
 
 ecore::ObjectName::ObjectName(const char* newName)
 {
+	LOG_WARNING("FIRST CONSTRUCTOR OF OBJECTNAME")
 	_name = new char[MAX_NAME_LENGTH];
 	if (strlen(newName) > MAX_NAME_LENGTH)
 	{
@@ -96,6 +174,37 @@ ecore::ObjectName::ObjectName(const char* newName)
 	{
 		add_new_name_to_table();
 		_nameID = NameID();
+	}
+}
+
+ecore::ObjectName::ObjectName(const char* newName, NameID nameId)
+{
+	if (!newName)
+	{
+		LOG_ERROR("ObjectName::ObjectName(): Invalid new name")
+		return;
+	}
+
+	_name = new char[MAX_NAME_LENGTH];
+	if (strlen(newName) > MAX_NAME_LENGTH)
+	{
+		LOG_ERROR("ObjectName::ObjectName(): New name is too long")
+		strcpy(_name, "NoName");
+		return;
+	}
+
+	strcpy(_name, newName);
+	_nameID = nameId;
+	
+	auto it = _nameTable.find(*this);
+
+	if (it == _nameTable.end())
+	{
+		add_new_name_to_table(_nameID);
+	}
+	else
+	{
+		it->second.add_id(_nameID);
 	}
 }
 
@@ -166,9 +275,14 @@ std::string ecore::ObjectName::get_string()
 	return name;
 }
 
-std::string ecore::ObjectName::get_name_without_instance()
+std::string ecore::ObjectName::get_name_without_id()
 {
 	return std::string{_name};
+}
+
+ecore::NameID ecore::ObjectName::get_name_id()
+{
+	return _nameID;
 }
 
 void ecore::ObjectName::cleanup()
@@ -216,20 +330,20 @@ void ecore::ObjectName::delete_name_from_table()
 	}
 }
 
-void ecore::ObjectName::add_new_name_to_table()
+void ecore::ObjectName::add_new_name_to_table(NameID nameID)
 {
 	char* keyName = new char[strlen(_name)];
 	strcpy(keyName, this->_name);
 	ObjectName objectName{};
 	objectName._name = keyName;
-	_nameTable[objectName] = NameIDTable();
+	_nameTable[objectName] = NameIDTable(nameID);
 	objectName._name = nullptr;
 }
 
 void ecore::tests()
 {
 	ObjectName name1("Wall");
-	ObjectName name2(name1.get_name_without_instance().c_str());
+	ObjectName name2(name1.get_name_without_id().c_str());
 	ObjectName name3("Gun1");
 	LOG_INFO("Name1 before editing: {}", name1.get_string().c_str())
 	LOG_INFO("Name2 before editing: {}", name2.get_string().c_str())

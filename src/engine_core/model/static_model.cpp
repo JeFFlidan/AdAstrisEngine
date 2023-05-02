@@ -15,20 +15,47 @@ ecore::StaticModelData ecore::StaticModel::get_model_data()
 	return data;
 }
 
+ecore::model::ModelBounds ecore::StaticModel::get_model_bounds()
+{
+	return _modelInfo.bounds;
+}
+
+ecore::model::VertexFormat ecore::StaticModel::get_vertex_format()
+{
+	return _modelInfo.vertexFormat;
+}
+
+std::string ecore::StaticModel::get_original_file()
+{
+	return _modelInfo.originalFile;
+}
+
+std::vector<std::string> ecore::StaticModel::get_materials_name()
+{
+	return _modelInfo.materialsName;
+}
+
 void ecore::StaticModel::serialize(io::IFile* file)
 {
 	std::string newMetadata = model::Utils::pack_static_model_info(&_modelInfo);
 	file->set_metadata(newMetadata);
 }
 
-void ecore::StaticModel::deserialize(io::IFile* file)
+void ecore::StaticModel::deserialize(io::IFile* file, ObjectName* newName)
 {
 	std::string strMetadata = file->get_metadata();
 	uint8_t* buffer = file->get_binary_blob();
 	_vertexBuffer = buffer;
 	_indexBuffer = buffer + _modelInfo.vertexBufferSize;
 	_modelInfo = model::Utils::unpack_static_model_info(strMetadata);
-	_name = ObjectName(file->get_file_name().c_str());
+	if (!newName)
+	{
+		_name = ObjectName(file->get_file_name().c_str());
+	}
+	else
+	{
+		_name = *newName;
+	}
 	_path = file->get_file_path();
 }
 
@@ -63,7 +90,7 @@ std::string ecore::StaticModel::get_type()
 	return "model";
 }
 
-void io::ConversionContext<ecore::StaticModel>::get_data(std::string& metadata, uint8_t*& binBlob, uint64_t& binBlobSize, URI& path)
+void io::ConversionContext<ecore::StaticModel>::get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize,URI& path)
 {
 	ecore::model::StaticModelInfo info;
 	info.uuid = uuid;

@@ -22,7 +22,7 @@ namespace ad_astris::ecore
 			// ========== Begin Object interface ==========
 		
 			virtual void serialize(io::IFile* file) override;
-			virtual void deserialize(io::IFile* file) override;
+			virtual void deserialize(io::IFile* file, ObjectName* newName = nullptr) override;
 			virtual uint64_t get_size() override;
 			virtual bool is_resource() override;
 			virtual UUID get_uuid() override;
@@ -54,6 +54,6 @@ namespace ad_astris::io
 		std::string filePath;
 		ecore::texture::Texture2DInfo* oldInfo{ nullptr };
 		
-		void get_data(std::string& metadata, uint8_t*& binBlob, uint64_t& binBlobSize, URI& path);
+		void get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize,URI& path);
 	};
 }

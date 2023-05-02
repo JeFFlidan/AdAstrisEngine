@@ -7,7 +7,7 @@ void ecore::Level::serialize(io::IFile* file)
 	// TODO
 }
 
-void ecore::Level::deserialize(io::IFile* file)
+void ecore::Level::deserialize(io::IFile* file, ObjectName* newName)
 {
 	// TODO
 }

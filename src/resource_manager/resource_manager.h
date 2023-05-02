@@ -7,6 +7,7 @@
 #include "file_system/utils.h"
 #include "resource_converter.h"
 #include "resource_formats.h"
+#include "utils.h"
 #include "profiler/logger.h"
 #include "engine_core/level/level.h"
 
@@ -43,11 +44,20 @@ namespace ad_astris::resource
 			}
 	};
 
+	// Metadata from resource table. When resource table is saved, this metadata is used to write
+	// info about the resource if it wasn't loaded into memory
+	struct ResourceMetadata
+	{
+		io::URI path;
+		ResourceType type{ ResourceType::UNDEFINED };
+		ecore::ObjectName* objectName{ nullptr };
+	};
+
 	struct ResourceData
 	{
 		io::IFile* file{ nullptr };
 		ecore::Object* object{ nullptr };
-		io::URI path;
+		ResourceMetadata metadata;
 	};
 	
 	class ResourceDataTable
@@ -62,19 +72,26 @@ namespace ad_astris::resource
 			// Upload aarestable file
 			void save_table();
 
-			bool check_resource_in_cache(UUID& uuid);
+			// Checks if a resource was loaded
+			bool check_resource_in_table(UUID& uuid);
 
 			// Need this method to understand should I reload existed resource or load new
-			bool check_name_in_cache(io::URI& path);
-			UUID get_uuid_by_name(io::URI& path);
+			bool check_name_in_table(io::URI& path);
+			bool check_name_in_table(ecore::ObjectName& name);
+		
+			// Checks if a UUID is in a table. If not, the the resource doesn't exist and UUID is wrong 
+			bool check_uuid_in_table(UUID& uuid);
 
 			void add_resource(ResourceData* resource);
 
 			// After destroying resource, its path won't be in aarestable file. 
 			void destroy_resource(UUID& uuid);
 		
+			UUID get_uuid_by_name(io::URI& path);
+			UUID get_uuid_by_name(ecore::ObjectName& name);
 			io::IFile* get_resource_file(UUID& uuid);
 			ecore::Object* get_resource_object(UUID& uuid);
+			ResourceData* get_resource_data(UUID& uuid);
 			io::URI get_path(UUID& uuid);
 		
 		private:
@@ -105,15 +122,14 @@ namespace ad_astris::resource
 					LOG_ERROR("ResourceManager::convert_to_aares(): Invalid path {}", path.c_str())
 					return nullptr;
 				}
-				io::IFile* existedFile = nullptr;
+
 				ecore::Object* existedObject = nullptr;
-				if (_resourceDataTable->check_name_in_cache(path))
+				if (_resourceDataTable->check_name_in_table(path))
 				{
 					UUID uuid = _resourceDataTable->get_uuid_by_name(path);
 
 					// Have to think is it a good idea to delete existing object and file before reloading
 					existedObject = _resourceDataTable->get_resource_object(uuid);
-					existedFile = _resourceDataTable->get_resource_file(uuid);
 				}
 
 				io::ConversionContext<T> conversionContext;
@@ -136,17 +152,12 @@ namespace ad_astris::resource
 				typedObject->deserialize(file);
 				resourceData.file = file;
 				resourceData.object = typedObject;
-				resourceData.path = absolutePath;
+				resourceData.metadata.path = absolutePath;
+				resourceData.metadata.type = Utils::get_enum_resource_type(typedObject->get_type());
 				
 				write_to_disk(resourceData.file, path);
 				
 				_resourceDataTable->add_resource(&resourceData);
-
-				if (existedObject && existedFile)
-				{
-					delete existedObject;
-					delete existedFile;
-				}
 				
 				return ResourceAccessor<T>(resourceData.object);
 			}
@@ -159,19 +170,24 @@ namespace ad_astris::resource
 			template<typename T>
 			ResourceAccessor<T> get_resource(UUID uuid)
 			{
-				// TODO async loading
-				io::URI path = _resourceDataTable->get_path(uuid);
-
-				if (_resourceDataTable->check_resource_in_cache(uuid))
+				if (!_resourceDataTable->check_uuid_in_table(uuid))
+				{
+					LOG_ERROR("ResourceManager:get_resource(): Invalid UUID {}", uuid)
+					return nullptr;
+				}
+				if (_resourceDataTable->check_resource_in_table(uuid))
 				{
 					LOG_INFO("Get resource object")
 					return _resourceDataTable->get_resource_object(uuid);
 				}
 				
-				return load_resource<T>(path);
+				return load_resource<T>(uuid);
 			}
 
 			void save_resources();
+		
+			ResourceType get_resource_type(ecore::ObjectName& objectName);
+			ResourceType get_resource_type(UUID uuid);
 		
 		private:
 			io::FileSystem* _fileSystem;
@@ -182,18 +198,18 @@ namespace ad_astris::resource
 			io::IFile* read_from_disk(io::URI& path);
 		
 			template<typename T>
-			ResourceAccessor<T> load_resource(io::URI path)
+			ResourceAccessor<T> load_resource(UUID& uuid)
 			{
+				io::URI path = _resourceDataTable->get_path(uuid);
 				io::IFile* file = read_from_disk(path);
-				ResourceData resource;
+
+				ResourceData* resource = _resourceDataTable->get_resource_data(uuid);
 				T* typedObject = new T();
-				typedObject->deserialize(file);
-				resource.file = file;
-				resource.object = typedObject;
-				resource.path = path;
-				_resourceDataTable->add_resource(&resource);
+				typedObject->deserialize(file, resource->metadata.objectName);
+				resource->file = file;
+				resource->object = typedObject;
 					
-				return ResourceAccessor<T>(resource.object);
+				return ResourceAccessor<T>(resource->object);
 			}
 	};
 }
