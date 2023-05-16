@@ -20,6 +20,8 @@ src/CMakeFiles
 /shaders/*.*~
 /shaders/*.*.*~
 /assets/*.aares
+/engine/plugins/ecs/build
+/engine/plugins/ecs/libecs.dll
 /*/#*.*#
 /*/.#*.*
 <<<<<<< HEAD
