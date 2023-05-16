@@ -3889,10 +3889,10 @@ template <typename T> auto ptr(T p) -> const void* {
   return detail::bit_cast<const void*>(p);
 }
 template <typename T> auto ptr(const std::unique_ptr<T>& p) -> const void* {
-  return p.generate_id();
+  return p.get();
 }
 template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
-  return p.generate_id();
+  return p.get();
 }
 
 /**

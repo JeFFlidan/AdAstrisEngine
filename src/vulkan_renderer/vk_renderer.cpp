@@ -68,8 +68,6 @@
 #include <chrono>
 #include <filesystem>
 
-#include <entity_system.h>
-
 #define VK_CHECK(x)													 \
 	do																 \
 	{																 \
@@ -320,66 +318,39 @@ namespace ad_astris
 		_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
 		_shaderCompiler = new rcore::ShaderCompiler(_fileSystem);
 		//resource::ResourceConverter resourceConverter(_fileSystem);
-
-		LOG_INFO("Before manager")
+		
 		resource::ResourceManager manager(_fileSystem);
-		LOG_INFO("After manager")
 
 		//Tests for resource converter
-		 // io::URI door = "E:\\gun.gltf";
-		 // io::URI texture = "D:/cyberpunk location/Texture/Gun_2/Gun_2_BaseColor.tga";
-		 // io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/wall.obj";
-		 //
-		 // auto async1 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::StaticModel>{ return manager.convert_to_aares<ecore::StaticModel>(door); });
-		 // auto async2 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::Texture2D>{ return manager.convert_to_aares<ecore::Texture2D>(texture); });
-		 // auto async3 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::StaticModel>{ return manager.convert_to_aares<ecore::StaticModel>(gunOBJ); });
-		 //
-		 // ecore::StaticModel* model1 = async3.get().get_resource();
-		 // ecore::Texture2D* texture1 = async2.get().get_resource();
-		 // ecore::StaticModel* model2 = async1.get().get_resource();
-		 // LOG_INFO("Model 1 name: {}", model1->get_name()->get_string())
-		 // LOG_INFO("Model 2 name: {}", model2->get_name()->get_string())
-		 // LOG_INFO("Texture 1 name: {}", texture1->get_name()->get_string())
+		// io::URI door = "E:\\gun.gltf";
+		// io::URI texture = "D:/cyberpunk location/Texture/Gun_2/Gun_2_BaseColor.tga";
+		// io::URI gunOBJ = "E:/MyEngine/MyEngine/VulkanEngine/assets/wall.obj";
+		//
+		// auto async1 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::StaticModel>{ return manager.convert_to_aares<ecore::StaticModel>(door); });
+		// auto async2 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::Texture2D>{ return manager.convert_to_aares<ecore::Texture2D>(texture); });
+		// auto async3 = std::async(std::launch::async, [&]()->resource::ResourceAccessor<ecore::StaticModel>{ return manager.convert_to_aares<ecore::StaticModel>(gunOBJ); });
+		//
+		// ecore::StaticModel* model1 = async3.get().get_resource();
+		// ecore::Texture2D* texture1 = async2.get().get_resource();
+		// ecore::StaticModel* model2 = async1.get().get_resource();
+		// LOG_INFO("Model 1 name: {}", model1->get_name()->get_string())
+		// LOG_INFO("Model 2 name: {}", model2->get_name()->get_string())
+		// LOG_INFO("Texture 1 name: {}", texture1->get_name()->get_string())
 
 
 		io::URI aaresPath = "assets/gun.aares";
-		LOG_INFO("Before getting resource")
-		auto accessor = manager.get_resource<ecore::StaticModel>(10841365285477739537);
-		LOG_INFO("After getting resource")
+		auto accessor = manager.get_resource<ecore::StaticModel>(13467709291805750125);
 		ecore::StaticModel* model = accessor.get_resource();
 		LOG_INFO("Model name: {}", model->get_name()->get_string())
 		LOG_INFO("Model path: {}", model->get_path().c_str())
-		// ecore::tests();
-
-		io::URI newTexture = "D:\\cyberpunk location\\Tile material\\metal surface\\Metal_surface_basecolor.tga";
-		//ecore::Texture2D* tempTexture = manager.convert_to_aares<ecore::Texture2D>(newTexture).get_resource();
-		ecore::Texture2D* accessor2 = manager.get_resource<ecore::Texture2D>(14124523727936834206).get_resource();
-
-		LOG_INFO("Texture 2 name: {}", accessor2->get_name()->get_string())
-		LOG_INFO("Texture 2 path: {}", accessor2->get_path().c_str())
-		LOG_INFO("Texture 2 size: {}", accessor2->get_size())
-
-		ecore::Texture2D* accessor3 = manager.get_resource<ecore::Texture2D>(10492210984281833974).get_resource();
-		LOG_INFO("Texture 3 name: {}", accessor3->get_name()->get_string())
-		LOG_INFO("Texture 3 path: {}", accessor3->get_path().c_str())
-		LOG_INFO("Texture 3 size: {}", accessor3->get_size())
-		
-		LOG_INFO("Before saving")
+		ecore::tests();
 		manager.save_resources();
-		LOG_INFO("After saving")
 		//manager.load_resource<resource::ModelInfo>(aaresPath);
 
 		_materialSystem.init(this);
 		_renderScene.init();
 		_temporalFilter.init(this);
 		_composite.init(this);
-
-		ecs::EntitySystem system;
-		ecs::ArchetypeCreationContext creationContext;
-		creationContext.add_components_id<uint32_t, uint64_t>();
-		ecs::ArchetypeHandle handle = system.create_archetype(creationContext);
-		ecs::Entity entity = system.create_entity(handle);
-		LOG_INFO("Entity: {}", (uint64_t)entity)
 	}
 
 	void VkRenderer::init_swapchain()

@@ -40,7 +40,7 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("E:/MyEngine/MyEngine/VulkanEngine/third_party/cmake_install.cmake")
-  include("E:/MyEngine/MyEngine/VulkanEngine/engine/src/cmake_install.cmake")
+  include("E:/MyEngine/MyEngine/VulkanEngine/src/cmake_install.cmake")
   include("E:/MyEngine/MyEngine/VulkanEngine/assetlib/cmake_install.cmake")
   include("E:/MyEngine/MyEngine/VulkanEngine/asset_baker/cmake_install.cmake")
 
