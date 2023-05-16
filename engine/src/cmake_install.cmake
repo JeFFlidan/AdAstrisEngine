@@ -1,4 +1,4 @@
-# Install script for directory: E:/MyEngine/MyEngine/VulkanEngine/src
+# Install script for directory: E:/MyEngine/MyEngine/VulkanEngine/engine/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

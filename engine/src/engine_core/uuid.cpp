@@ -1,5 +1,4 @@
 #include "uuid.h"
-#include "profiler/logger.h"
 #include <random>
 
 using namespace ad_astris;
