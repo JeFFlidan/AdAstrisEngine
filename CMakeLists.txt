@@ -6,6 +6,7 @@ cmake_minimum_required (VERSION 3.8)
 set(CMAKE_CXX_COMPILER C:/msys64/mingw64/bin/g++.exe)
 set(DIR_THIRD_PARTY ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 set(DIR_PLUGINS ${CMAKE_CURRENT_SOURCE_DIR}/engine/plugins)
+set(DIR_BIN ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 project ("AdAstrisEngine")
 

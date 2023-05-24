@@ -16,7 +16,7 @@ add_library(shaderc STATIC IMPORTED)
 set_target_properties(shaderc PROPERTIES IMPORTED_LOCATION ${DIR_THIRD_PARTY}/shaderc/lib/libshaderc_combined.a)
 
 add_library(ecs SHARED IMPORTED)
-set_target_properties(ecs PROPERTIES IMPORTED_IMPLIB ${DIR_PLUGINS}/ecs/libecs.dll)
+set_target_properties(ecs PROPERTIES IMPORTED_IMPLIB ${DIR_BIN}/libecs.dll)
 set_target_properties(ecs PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${DIR_PLUGINS}/ecs/public)
 
 set_property(TARGET AdAstrisEngine PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:AdAstrisEngine>")

@@ -5,13 +5,16 @@ project ("ecs")
 set (CMAKE_CXX_STANDARD 17)
 add_compile_definitions(ECS_EXPORT)
 
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}")
 set (LIBRARY_NAME ecs)
 set (ENGINE_SRC_PATH ${CMAKE_SOURCE_DIR})
 set (THIRD_PARTY_PATH ${CMAKE_SOURCE_DIR})
+set (BIN_PATH ${CMAKE_SOURCE_DIR})
 
 string(REPLACE "/plugins/ecs" "/src" ENGINE_SRC_PATH ${ENGINE_SRC_PATH})
 string(REPLACE "/engine/plugins/ecs" "/third_party" THIRD_PARTY_PATH ${THIRD_PARTY_PATH})
+string(REPLACE "/engine/plugins/ecs" "/bin" BIN_PATH ${BIN_PATH})
+
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${BIN_PATH}")
 
 file(GLOB ECS_FILES
 	"${CMAKE_SOURCE_DIR}/private/*.cpp"

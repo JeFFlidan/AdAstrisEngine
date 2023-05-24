@@ -1,5 +1,6 @@
 /build
 /bin
+/src/
 /src/*.*~
 /src/.#vk_engine.cpp
 /src/.cache
