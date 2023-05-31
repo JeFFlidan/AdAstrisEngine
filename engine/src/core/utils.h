@@ -11,8 +11,9 @@ namespace ad_astris
 			static size_t hash_numeric_vector(std::vector<T>& vec)
 			{
 				size_t seed = vec.size();
-				for (auto& x : vec)
+				for (int i = 0; i != vec.size(); ++i)
 				{
+					T x = vec[i];
 					x = ((x >> 16) ^ x) * 0x45d9f3b;
 					x = ((x >> 16) ^ x) * 0x45d9f3b;
 					x = (x >> 16) ^ x;

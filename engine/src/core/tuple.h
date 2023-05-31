@@ -9,13 +9,19 @@ namespace ad_astris
 	{
 		public:
 			Tuple() = default;
-			Tuple(ARGS&&... args) : _tuple(std::forward<ARGS>(args)...)
+
+			Tuple(ARGS... args) : _tuple(args...)
 			{
 				
 			}
+		
+			// Tuple(ARGS&&... args) : _tuple(std::forward<ARGS>(args)...)
+			// {
+			// 	
+			// }
 
 			template<typename T>
-			T& get() const
+			T& get()
 			{
 				return std::get<T>(_tuple);
 			}
