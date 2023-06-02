@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tuple.h"
 #include <vector>
 
 namespace ad_astris
@@ -20,6 +21,19 @@ namespace ad_astris
 					seed ^= x + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 				}
 				return seed;
+			}
+
+			// Counts the number of arguments in the parameter pack Args.
+			template <typename... Args>
+			static constexpr std::size_t count_args() 
+			{
+				return sizeof...(Args);
+			}
+
+			template<std::size_t N, class S>
+			static auto custom_data_type_to_tuple(S&& s) 
+			{
+				return tuple_spec::CustomDataTypeToTuple<N>{}(std::forward<S>(s));
 			}
 	};
 }
