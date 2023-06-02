@@ -27,3 +27,4 @@ find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin ${DIR
 link_directories("third_party/shaderc/lib")
 link_directories("engine/plugins/ecs")
 include_directories("third_party/shaderc/include")
+include_directories("engine/plugins/ecs/public")

@@ -57,7 +57,6 @@ void ecs::ArchetypeChunk::remove_instance()
 	remove_several_instances(1);
 }
 
-
 uint32_t ecs::ArchetypeChunk::get_elements_count()
 {
 	return _elementsCount;
@@ -71,7 +70,8 @@ uint8_t* ecs::ArchetypeChunk::get_chunk()
 void ecs::ArchetypeChunk::set_component(uint32_t column, IComponent* component)
 {
 	uint8_t* componentPtr = get_entity_component(column, component->get_type_id());
-	componentPtr = static_cast<uint8_t*>(component->get_raw_memory());
+	uint8_t* tempPtr = static_cast<uint8_t*>(component->get_raw_memory());
+	memcpy(componentPtr, tempPtr, component->get_structure_size());
 }
 
 ecs::Subchunk ecs::ArchetypeChunk::get_subchunk(uint32_t componentTypeId)
@@ -94,8 +94,8 @@ ecs::Archetype::Archetype(ArchetypeCreationContext& context)
 {
 	_sizeOfOneColumn = context._allComponentsSize;
 	_numEntitiesPerChunk = get_chunk_size() / context._allComponentsSize;
-	_chunkStructure.componentIdToSize = std::move(context._idToSize);
 	_chunkStructure.componentIds = std::move(context._ids);
+	_chunkStructure.componentIdToSize = std::move(context._idToSize);
 }
 
 uint32_t ecs::Archetype::add_entity(Entity& entity)
@@ -121,15 +121,29 @@ uint32_t ecs::Archetype::add_entity(Entity& entity)
 			chunkIndex = _chunks.size() - 1;
 	}
 
-	uint32_t rowIndex = requiredChunk->get_elements_count();
+	uint32_t rowIndex;
+	if (!_freeColumns.empty())
+	{
+		rowIndex = _freeColumns.back();
+		_freeColumns.pop_back();
+	}
+	else
+	{
+		rowIndex = requiredChunk->get_elements_count();
+	}
+	
 	requiredChunk->add_instance();
 	_entityToChunk[entity] = chunkIndex;
 	return rowIndex;
 }
 
-void ecs::Archetype::destroy_entity(uint32_t rowIndex)
+void ecs::Archetype::destroy_entity(Entity& entity, uint32_t rowIndex)
 {
-	// TODO
+	auto entityIterator = _entityToChunk.find(entity);
+	if (entityIterator == _entityToChunk.end())
+		return;
+	_entityToChunk.erase(entityIterator);
+	_freeColumns.push_back(rowIndex);
 }
 
 uint32_t ecs::Archetype::get_chunk_size()
@@ -139,7 +153,8 @@ uint32_t ecs::Archetype::get_chunk_size()
 
 void ecs::Archetype::set_component(Entity& entity, uint32_t columnIndex, IComponent* tempComponent)
 {
-	
+	ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
+	chunk.set_component(columnIndex, tempComponent);
 }
 
 void ecs::Archetype::set_components(Entity& entity, uint32_t columnIndex, EntityCreationContext& creationContext)
@@ -149,4 +164,16 @@ void ecs::Archetype::set_components(Entity& entity, uint32_t columnIndex, Entity
 	{
 		chunk.set_component(columnIndex, component.second);
 	}
+}
+
+void ecs::Archetype::get_component_by_component_type_id(
+	Entity& entity,
+	uint32_t columnIndex,
+	uint32_t typeId,
+	uint8_t* tempComponentsArray)
+{
+	ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
+	uint32_t componentSize = _chunkStructure.componentIdToSize[typeId];
+	void* component = chunk.get_entity_component(columnIndex, typeId);
+	memcpy(tempComponentsArray, component, componentSize);
 }

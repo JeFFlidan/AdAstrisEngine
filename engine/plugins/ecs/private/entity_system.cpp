@@ -10,7 +10,7 @@ ArchetypeHandle EntitySystem::create_archetype(ArchetypeCreationContext& context
 		LOG_ERROR("EntitySystem::create_archetype(): No component IDs to create archetype")
 		return ArchetypeHandle(-1);
 	}
-	
+
 	size_t idsHash = CoreUtils::hash_numeric_vector(context._ids);
 	
 	auto inArchIt = _componentsHashToArchetypeId.find(idsHash);
@@ -65,9 +65,14 @@ ArchetypeHandle EntitySystem::create_archetype(ArchetypeExtensionContext& contex
 	return ArchetypeHandle(newArchetypeId);
 }
 
+ArchetypeHandle EntitySystem::create_archetype(ArchetypeReductionContext context)
+{
+	// TODO
+}
+
 ArchetypeHandle EntitySystem::get_entity_archetype(Entity& entity)
 {
-	return { _entityToArchetypeInfo[entity].archetypeId };
+	return { _entityToItsInfoInArchetype[entity].archetypeId };
 }
 
 Entity EntitySystem::create_entity()
@@ -80,42 +85,94 @@ Entity EntitySystem::create_entity(ArchetypeHandle& archetypeHandle)
 	Entity entity{ UUID() };
 	Archetype& archetype = _archetypes[archetypeHandle.get_id()];
 	uint32_t columnIndex = archetype.add_entity(entity);
-	EntityInArchetype entityInArchetype;
+	EntityInArchetypeInfo entityInArchetype;
 	entityInArchetype.column = columnIndex;
 	entityInArchetype.archetypeId = archetypeHandle.get_id();
-	_entityToArchetypeInfo[entity] = entityInArchetype;
+	_entityToItsInfoInArchetype[entity] = entityInArchetype;
 	return entity;
 }
 
-Entity EntitySystem::create_entity(EntityCreationContext& entityContext)
+Entity EntitySystem::create_entity(EntityCreationContext& entityContext, UUID uuid)
 {
-	std::vector<uint32_t>& componentIdsRef = entityContext._componetsId;
+	std::vector<uint32_t>& componentIdsRef = entityContext._componentsId;
 	
 	if (!std::is_sorted(componentIdsRef.begin(), componentIdsRef.end()))
 		std::sort(componentIdsRef.begin(), componentIdsRef.end());
 	std::vector<uint32_t> componentIdsToMove(componentIdsRef.size());
 	memcpy(componentIdsToMove.data(), componentIdsRef.data(), componentIdsRef.size() * sizeof(uint32_t));
-	
+
+	// TODO Think how to pass data from entity context to this context more careful
 	ArchetypeCreationContext archetypeContext;
 	archetypeContext.add_components_id(componentIdsToMove);
+	archetypeContext._idToSize = entityContext._typeIdToSize;
+	archetypeContext._allComponentsSize = entityContext._allComponentsSize;
+	
 	ArchetypeHandle archHandle = create_archetype(archetypeContext);
 
-	Entity entity{ UUID() };
+	UUID newUUID = uuid ? uuid : UUID();
+	Entity entity{ newUUID };
+	
 	Archetype& archetype = _archetypes[archHandle.get_id()];
 	uint32_t entityColumn = archetype.add_entity(entity);
-	EntityInArchetype entityInArchetype;
+	EntityInArchetypeInfo entityInArchetype;
 	entityInArchetype.column = entityColumn;
 	entityInArchetype.archetypeId = archHandle.get_id();
-	_entityToArchetypeInfo[entity] = entityInArchetype;
+	_entityToItsInfoInArchetype[entity] = entityInArchetype;
 
 	archetype.set_components(entity, entityColumn, entityContext);
 
 	return entity;
 }
 
-void EntitySystem::set_up_component_common(Entity& entity, IComponent* component)
+Entity EntitySystem::build_entity_from_json(UUID& uuid, std::string& json)
 {
-	EntityInArchetype& entityInArchetype = _entityToArchetypeInfo[entity];
+	nlohmann::json componentsData = nlohmann::json::parse(json);
+	EntityCreationContext creationContext;
+	
+	for (auto& componentInfo : componentsData.items())
+	{
+		std::string componentName = componentInfo.key();
+		uint32_t typeId = get_type_id_table()->get_type_id(componentName);
+		factories::BaseFactory* factory = factories::get_table()->get_factory(typeId);
+		factory->build(creationContext, typeId, componentName, componentsData);
+	}
+
+	Entity entity = create_entity(creationContext, uuid);
+	return entity;
+}
+
+void EntitySystem::build_components_json_from_entity(Entity& entity, nlohmann::json& levelJson)
+{
+	EntityInArchetypeInfo entityInArchetype = _entityToItsInfoInArchetype[entity];
 	Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
-	archetype.set_component(entity, entityInArchetype.column, component);
+	uint32_t column = entityInArchetype.column;
+	uint32_t componentsNumberInArchetype = archetype._chunkStructure.componentIds.size();
+	uint8_t* componentsArray = new uint8_t[constants::MAX_COMPONENT_COUNT * componentsNumberInArchetype];
+	uint8_t* componentsArrayStartPtr = componentsArray;
+	nlohmann::json componentsJson;
+	
+	for (int i = 0; i != componentsNumberInArchetype; ++i)
+	{
+		componentsArray += i * constants::MAX_COMPONENT_SIZE;
+		uint32_t typeId = archetype._chunkStructure.componentIds[i];
+		archetype.get_component_by_component_type_id(entity, column, typeId, componentsArray);
+		serializers::BaseSerializer* serializer = serializers::get_table()->get_serializer(typeId);
+		serializer->serialize(componentsArray, componentsJson);
+	}
+	
+	levelJson[std::to_string(entity.get_uuid())] = componentsJson.dump();
+	
+	delete[] componentsArrayStartPtr;
+}
+
+void EntitySystem::destroy_entity(Entity& entity)
+{
+	auto entityIterator = _entityToItsInfoInArchetype.find(entity);
+	if (entityIterator == _entityToItsInfoInArchetype.end())
+		return;
+
+	EntityInArchetypeInfo entityInArchetype = entityIterator->second;
+	Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
+	archetype.destroy_entity(entity, entityInArchetype.column);
+	_entityToItsInfoInArchetype.erase(entityIterator);
 }

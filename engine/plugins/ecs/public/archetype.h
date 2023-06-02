@@ -14,6 +14,34 @@ namespace ad_astris::ecs
 		constexpr uint32_t ARCHETYPE_CHUNK_SIZE = 128 * 1024;
 		constexpr uint32_t MAX_ENTITIES_IN_CNUNK = 1024;
 	}
+
+	class ECS_API Subchunk
+	{
+		public:
+			Subchunk() = default;
+			Subchunk(uint8_t* startPtr, uint32_t subchunkSize, uint16_t structureSize)
+				: _startPtr(startPtr), _subchunkSize(subchunkSize), _structureSize(structureSize) { }
+
+			uint8_t* get_ptr() const
+			{
+				return _startPtr;
+			}
+
+			uint32_t get_subchunk_size() const
+			{
+				return _subchunkSize;
+			}
+
+			uint16_t get_structure_size() const
+			{
+				return _structureSize;
+			}
+		
+		private:
+			uint8_t* _startPtr{ nullptr };
+			uint32_t _subchunkSize{ 0 };
+			uint16_t _structureSize{ 0 };
+	};
 	
 	struct ECS_API ChunkStructure
 	{
@@ -57,7 +85,7 @@ namespace ad_astris::ecs
 			 * 
 			 * @return entity row index in the archetype*/
 			uint32_t add_entity(Entity& entity);
-			void destroy_entity(uint32_t rowIndex);
+			void destroy_entity(Entity& entity, uint32_t rowIndex);
 
 			void set_component(Entity& entity, uint32_t columnIndex, IComponent* tempComponent);
 			void set_components(Entity& entity, uint32_t columnIndex, EntityCreationContext& creationContext);
@@ -71,25 +99,31 @@ namespace ad_astris::ecs
 				std::vector<Subchunk> subchunks;
 				for (auto& chunk : _chunks)
 				{
-					((subchunks.push_back(chunk.get_subchunk(Component<TYPES>::_typeId))), ...);
+					((subchunks.push_back(chunk.get_subchunk(get_type_id_table()->get_type_id<TYPES>()))), ...);
 				}
 
-				return std::move(subchunks);
+				return subchunks;
 			}
 
 			template<typename T>
 			T* get_entity_component(Entity& entity, uint32_t columnIndex)
 			{
 				ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
-				return chunk.get_entity_component(columnIndex, Component<T>::_typeId);
+				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, get_type_id_table()->get_type_id<T>()));
 			}
 
 			template<typename ...ARGS>
 			Tuple<ARGS*...> get_entity_components(Entity& entity, uint32_t columnIndex)
 			{
 				ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
-				Tuple<ARGS*...> tuple{ ((get_converted_component<ARGS>(chunk, columnIndex)), ...) };
-				return std::move(tuple);
+				Tuple<ARGS*...> tuple{ get_converted_component<ARGS>(chunk, columnIndex)... };
+				return tuple;
+			}
+
+			template<typename ...ARGS>
+			std::vector<Tuple<ARGS...>> get_component_arrays()
+			{
+				// TODO
 			}
 		
 			uint32_t get_chunk_size();
@@ -97,16 +131,24 @@ namespace ad_astris::ecs
 		private:
 			std::unordered_map<Entity, uint16_t> _entityToChunk;
 			std::vector<ArchetypeChunk> _chunks;
+			std::vector<uint32_t> _freeColumns;
 
 			ChunkStructure _chunkStructure;
 		
 			uint32_t _numEntitiesPerChunk{ 0 };
 			uint32_t _sizeOfOneColumn{ 0 };
 
+			// I use this method for serialization
+			void get_component_by_component_type_id(
+				Entity& entity,
+				uint32_t columnIndex,
+				uint32_t typeId,
+				uint8_t* tempComponentsArray);
+		
 			template<typename T>
 			T* get_converted_component(ArchetypeChunk& chunk, uint32_t columnIndex)
 			{
-				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, Component<T>::_typeId));
+				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, get_type_id_table()->get_type_id<T>()));
 			}
 	};
 }

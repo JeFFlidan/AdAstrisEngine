@@ -3,35 +3,10 @@
 using namespace ad_astris::ecs;
 using namespace ad_astris;
 
-template <typename T>
-Component<T>::Component(void* memory) : _memory(memory)
-{
-	_structureSize = sizeof(T);
-}
-
-template <typename T>
-uint32_t Component<T>::get_type_id()
-{
-	return _typeId;
-}
-
-template <typename T>
-uint32_t Component<T>::get_structure_size()
-{
-	return _structureSize;
-}
-
-template <typename T>
-void* Component<T>::get_raw_memory()
-{
-	return _memory;
-}
-
-template <typename T>
-T* Component<T>::get_memory()
-{
-	return static_cast<T*>(_memory);
-}
+// ComponentTypeIDTable* get_type_id_table()
+// {
+// 	return ComponentTypeIDTable::get_instance();
+// }
 
 Entity::Entity()
 {
@@ -62,3 +37,8 @@ Entity::operator uint64_t() const
 {
 	return _uuid;
 }
+
+ComponentTypeIDTable* ComponentTypeIDTable::_instance{ nullptr };
+std::mutex ComponentTypeIDTable::_mutex;
+uint32_t ComponentTypeIDTable::_idGenerator{ 0 };
+std::unordered_map<std::string, ComponentTypeIDTable::ComponentInfo> ComponentTypeIDTable::_table;

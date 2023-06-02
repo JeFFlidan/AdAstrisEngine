@@ -10,34 +10,6 @@ namespace ad_astris::ecs
 {
 	class EntitySystem;
 	class Archetype;
-
-	class ECS_API Subchunk
-	{
-		public:
-			Subchunk() = default;
-			Subchunk(uint8_t* startPtr, uint32_t subchunkSize, uint16_t structureSize)
-				: _startPtr(startPtr), _subchunkSize(subchunkSize), _structureSize(structureSize) { }
-
-			uint8_t* get_ptr() const
-			{
-				return _startPtr;
-			}
-
-			uint32_t get_subchunk_size() const
-			{
-				return _subchunkSize;
-			}
-
-			uint16_t get_structure_size() const
-			{
-				return _structureSize;
-			}
-		
-		private:
-			uint8_t* _startPtr{ nullptr };
-			uint32_t _subchunkSize{ 0 };
-			uint16_t _structureSize{ 0 };
-	};
 	
 	class ECS_API ArchetypeHandle
 	{
@@ -65,7 +37,7 @@ namespace ad_astris::ecs
 			template<typename ...TYPES>
 			void add_components_id()
 			{
-				((set_up(Component<TYPES>::_typeId, sizeof(TYPES))), ...);
+				((set_up<TYPES>()), ...);
 				std::sort(_ids.begin(), _ids.end());
 			}
 
@@ -75,18 +47,26 @@ namespace ad_astris::ecs
 				_ids = std::move(ids);
 			}
 
+		
 		protected:
-			std::vector<uint32_t> _ids;
 			std::unordered_map<uint32_t, uint16_t> _idToSize;
 			uint32_t _allComponentsSize{ 0 };
+			std::vector<uint32_t> _ids;
 
-			void set_up(uint32_t id, uint64_t size)
+			template<typename T>
+			void set_up()
 			{
+				// if (!get_type_id_table()->check_in_table<T>())
+				// {
+				// 	get_type_id_table()->set_component_info<T>();
+				// }
+				uint32_t id = get_type_id_table()->get_type_id<T>();
+				uint32_t size = get_type_id_table()->get_type_size<T>();
 				_allComponentsSize += size;
 				_idToSize[id] = size;
 				_ids.push_back(id);
+				LOG_INFO("Context. Id back: {}", _ids.back())
 			}
-
 	};
 
 	class ECS_API ArchetypeExtensionContext : public ArchetypeCreationContext
@@ -99,7 +79,16 @@ namespace ad_astris::ecs
 				
 			}
 
-		private:
+		protected:
 			ArchetypeHandle _srcArchetype;
+	};
+
+	class ECS_API ArchetypeReductionContext : public ArchetypeExtensionContext
+	{
+		public:
+			ArchetypeReductionContext(ArchetypeHandle srcArchetype) : ArchetypeExtensionContext(srcArchetype)
+			{
+				
+			}
 	};
 }

@@ -23,12 +23,30 @@
 #include <string>
 #include <vulkan/vulkan_core.h>
 #include "application_core/sdl_window.h"
+#include <ecs.h>
 
 //#define VK_RELEASE 1
 #define NODE_COUNT 6
 
 namespace ad_astris
 {
+	struct FirstComponent
+	{
+		uint32_t data1;
+		float data2;
+	};
+
+	COMPONENT(FirstComponent, uint32_t, float)
+
+	struct SecondComponent
+	{
+		uint32_t data1;
+		uint32_t data2;
+		uint32_t data3;
+	};
+
+	COMPONENT(SecondComponent, uint32_t, uint32_t, uint32_t)
+	
 	struct DeletionQueue
 	{
 		std::deque<std::function<void()>> deletors;

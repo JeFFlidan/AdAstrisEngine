@@ -256,6 +256,9 @@ resource::ResourceType resource::ResourceManager::get_resource_type(UUID uuid)
 	return resData->metadata.type;
 }
 
+/** @warning MEMORY LEAK, uint8_t* data, should be tested if everything works correct after delete[]
+ * 
+ */
 void resource::ResourceManager::write_to_disk(io::IFile* file, io::URI& originalPath)
 {
 	io::URI path = file->get_file_path();		// temporary solution
@@ -267,6 +270,7 @@ void resource::ResourceManager::write_to_disk(io::IFile* file, io::URI& original
 	io::Stream* stream = _fileSystem->open(path, "wb");
 	stream->write(data, sizeof(uint8_t), size);
 	_fileSystem->close(stream);
+	delete[] data;
 }
 
 io::IFile* resource::ResourceManager::read_from_disk(io::URI& path)

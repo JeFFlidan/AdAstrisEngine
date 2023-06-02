@@ -90,7 +90,7 @@ std::string ecore::StaticModel::get_type()
 	return "model";
 }
 
-void io::ConversionContext<ecore::StaticModel>::get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize,URI& path)
+void io::ConversionContext<ecore::StaticModel>::get_data(std::string& metadata, uint8_t*& binBlob, uint64_t& binBlobSize, URI& path)
 {
 	ecore::model::StaticModelInfo info;
 	info.uuid = uuid;

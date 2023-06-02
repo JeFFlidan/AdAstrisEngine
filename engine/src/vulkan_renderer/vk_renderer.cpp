@@ -68,7 +68,8 @@
 #include <chrono>
 #include <filesystem>
 
-#include <entity_system.h>
+#include <ecs.h>
+#include <core/reflection.h>
 
 #define VK_CHECK(x)													 \
 	do																 \
@@ -374,12 +375,55 @@ namespace ad_astris
 		_temporalFilter.init(this);
 		_composite.init(this);
 
+		std::string typeName = get_type_name<FirstComponent>();
+		LOG_INFO("Type name: {}", typeName)
+		
 		ecs::EntitySystem system;
 		ecs::ArchetypeCreationContext creationContext;
-		creationContext.add_components_id<uint32_t, uint64_t>();
-		ecs::ArchetypeHandle handle = system.create_archetype(creationContext);
-		ecs::Entity entity = system.create_entity(handle);
-		LOG_INFO("Entity: {}", (uint64_t)entity)
+		ecs::Component<FirstComponent> component11; 
+		
+		io::URI path1 = "E:\\MyEngine\\MyEngine\\VulkanEngine\\bin\\level_file.txt";
+
+		// nlohmann::json mainJson;
+		// LOG_INFO("Before building")
+		// system.build_components_json_from_entity(entity, mainJson);
+		// LOG_INFO("After building")
+		// std::string mainJsonString = mainJson.dump();
+		// LOG_INFO("Main json string: {}", mainJsonString)
+		// LOG_INFO("Main json string length: {}", mainJsonString.length())
+		// nlohmann::json tempJson = nlohmann::json::parse(mainJsonString);
+		//
+		// io::Stream* stream = _fileSystem->open(path1, "wb");
+		// uint32_t sizeOfString = mainJsonString.size();
+		// uint8_t* data = new uint8_t[mainJsonString.size() + sizeof(uint32_t)];
+		// memcpy(data, &sizeOfString, sizeof(uint32_t));
+		// memcpy(data + sizeof(uint32_t), mainJsonString.data(), mainJsonString.size());
+		// stream->write(data, sizeof(uint8_t), sizeof(uint32_t) + mainJsonString.size());
+		// _fileSystem->close(stream);
+		// delete[] data;
+
+		size_t size = 0;
+		uint8_t* readData = static_cast<uint8_t*>(_fileSystem->map_to_read(path1, size));
+		uint32_t jsonSize;
+		memcpy(&jsonSize, readData, sizeof(uint32_t));
+		std::string mainJsonString;
+		mainJsonString.resize(jsonSize);
+		memcpy(mainJsonString.data(), readData + sizeof(uint32_t), jsonSize);
+		nlohmann::json mainJson = nlohmann::json::parse(mainJsonString);
+		ecs::Entity entity1;
+		for (auto& data : mainJson.items())
+		{
+			UUID uuid(std::stoull(data.key()));
+			std::string subJson = data.value();
+			LOG_INFO("SubJson: {}", subJson)
+			entity1 = system.build_entity_from_json(uuid, subJson);
+		}
+		
+		_fileSystem->unmap_after_reading(readData);
+		FirstComponent* comp1 = system.get_entity_component<FirstComponent>(entity1); 
+		SecondComponent* comp2 = system.get_entity_component<SecondComponent>(entity1);
+		LOG_INFO("Component1 info: {} {}", comp1->data1, comp1->data2)
+		LOG_INFO("Component2 info: {} {} {}", comp2->data1, comp2->data2, comp2->data3)
 	}
 
 	void VkRenderer::init_swapchain()

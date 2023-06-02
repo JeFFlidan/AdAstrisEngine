@@ -29,11 +29,13 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES OUTPUT_NAME ${LIBRARY_NAME})
 
 add_library(logger INTERFACE)
 add_library(tuple INTERFACE)
+add_library(reflection INTERFACE)
+add_library(json INTERFACE)
 add_library(uuid STATIC)
 add_library(fmt_lib STATIC)
 
 target_include_directories(logger INTERFACE ${ENGINE_SRC_PATH}/profiler)
-target_include_directories(tuple INTERFACE ${ENGINE_SRC_PATH}/core)
+target_include_directories(json INTERFACE ${THIRD_PARTY_PATH}/json)
 
 target_include_directories(uuid PUBLIC ${ENGINE_SRC_PATH}/engine_core)
 target_sources(uuid PRIVATE ${ENGINE_SRC_PATH}/engine_core/uuid.h ${ENGINE_SRC_PATH}/engine_core/uuid.cpp)
@@ -42,7 +44,7 @@ target_include_directories(fmt_lib PUBLIC ${THIRD_PARTY_PATH}/fmt_lib)
 file(GLOB FMT_FILES "${THIRD_PARTY_PATH}/fmt_lib/fmt/*")
 target_sources(fmt_lib PRIVATE ${FMT_FILES})
 
-target_link_libraries(ecs uuid logger tuple fmt_lib)
+target_link_libraries(ecs uuid logger tuple fmt_lib reflection json)
 
 include_directories(${CMAKE_SOURCE_DIR}/private)
 include_directories(${CMAKE_SOURCE_DIR}/public)
