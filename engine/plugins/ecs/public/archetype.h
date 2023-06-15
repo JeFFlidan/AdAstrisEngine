@@ -7,7 +7,7 @@
 
 namespace ad_astris::ecs
 {
-	class EntitySystem;
+	class EntityManager;
 	
 	namespace constants
 	{
@@ -47,6 +47,7 @@ namespace ad_astris::ecs
 	{
 		std::vector<uint32_t> componentIds;
 		std::unordered_map<uint32_t, uint16_t> componentIdToSize;	// should be sorted
+		std::vector<uint32_t> tagIDs; 
 	};
 	
 	class ECS_API ArchetypeChunk
@@ -77,7 +78,7 @@ namespace ad_astris::ecs
 
 	class ECS_API Archetype
 	{
-		friend EntitySystem;
+		friend EntityManager;
 		public:
 			Archetype(ArchetypeCreationContext& context);
 

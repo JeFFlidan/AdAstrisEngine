@@ -28,8 +28,6 @@ add_library(${LIBRARY_NAME} SHARED ${ECS_FILES})
 set_target_properties(${LIBRARY_NAME} PROPERTIES OUTPUT_NAME ${LIBRARY_NAME})
 
 add_library(logger INTERFACE)
-add_library(tuple INTERFACE)
-add_library(reflection INTERFACE)
 add_library(json INTERFACE)
 add_library(uuid STATIC)
 add_library(fmt_lib STATIC)
@@ -44,7 +42,7 @@ target_include_directories(fmt_lib PUBLIC ${THIRD_PARTY_PATH}/fmt_lib)
 file(GLOB FMT_FILES "${THIRD_PARTY_PATH}/fmt_lib/fmt/*")
 target_sources(fmt_lib PRIVATE ${FMT_FILES})
 
-target_link_libraries(ecs uuid logger tuple fmt_lib reflection json)
+target_link_libraries(ecs uuid logger fmt_lib json)
 
 include_directories(${CMAKE_SOURCE_DIR}/private)
 include_directories(${CMAKE_SOURCE_DIR}/public)

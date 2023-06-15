@@ -94,8 +94,9 @@ ecs::Archetype::Archetype(ArchetypeCreationContext& context)
 {
 	_sizeOfOneColumn = context._allComponentsSize;
 	_numEntitiesPerChunk = get_chunk_size() / context._allComponentsSize;
-	_chunkStructure.componentIds = std::move(context._ids);
+	_chunkStructure.componentIds = std::move(context._componentIDs);
 	_chunkStructure.componentIdToSize = std::move(context._idToSize);
+	_chunkStructure.tagIDs = std::move(context._tagIDs);
 }
 
 uint32_t ecs::Archetype::add_entity(Entity& entity)

@@ -37,8 +37,3 @@ Entity::operator uint64_t() const
 {
 	return _uuid;
 }
-
-ComponentTypeIDTable* ComponentTypeIDTable::_instance{ nullptr };
-std::mutex ComponentTypeIDTable::_mutex;
-uint32_t ComponentTypeIDTable::_idGenerator{ 0 };
-std::unordered_map<std::string, ComponentTypeIDTable::ComponentInfo> ComponentTypeIDTable::_table;

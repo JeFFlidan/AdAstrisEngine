@@ -1,14 +1,17 @@
-/** This file consists classes which are used in the dll and the main programme, 
- * however they can't be implemented in the dll source files because of its limitations
- * Maybe, I will remove this file and return all classes into dll source.
- */
+/* ====================================================
+	This file must be included in the main program if
+	you want to use the Entity-Component-System module.
+	It consists of some classes that can't be implemented
+	in the dll source files because of its limitations.
+	Also, this file contains macro related to Entity-Component-System.
+   ======================================================*/
 
 #pragma once
 
 #include "public/api.h"
 #include "public/archetype_types.h"
 #include "public/archetype.h"
-#include "public/entity_system.h"
+#include "public/entity_manager.h"
 #include "public/entity_types.h"
 #include "public/factories.h"
 #include "public/serializers.h"
@@ -36,7 +39,25 @@ namespace ad_astris::ecs
 	};
 }
 
-#define COMPONENT(Type, ...)																				\
+/**
+ * @brief COMPONENT Macro
+ *
+ * This macro creates a factory named TypeFactory
+ * (where Type is the specified component type) and a serializer class
+ * TypeSerializer responsible for handling serialization and
+ * deserialization operations. Both classes inherit from base classes.
+ * Additionally, the macro adds the newly created factory and serializer
+ * objects to their respective collections.
+ * 
+ * WITHOUT THIS MACRO, A COMPONENT CANNOT BE ADDED TO AN ENTITY, SERIALIZED AND DESERIALIZED.
+ * 
+ * Usage example:
+ * COMPONENT(Velocity, float, float, glm::vec3)
+ * 
+ * @param Type The name of the component type.
+ * @param Fields The data types of the component fields.
+ */
+#define ECS_COMPONENT(Type, ...)																			\
 	namespace ecs																							\
 	{																										\
 		namespace factories																					\
@@ -112,3 +133,14 @@ namespace ad_astris::ecs
 			}();																							\
 		}																									\
 	}
+
+
+#define ECS_TAG(Type)										\
+namespace ecs {												\
+namespace tags {											\
+	static bool Type##Register = []()						\
+	{														\
+		::ad_astris::ecs::TagTypeIdTable::add_tag<Type>();	\
+		return true;										\
+	}();													\
+}}

@@ -8,12 +8,12 @@
 
 namespace ad_astris::ecs
 {
-	class EntitySystem;
+	class EntityManager;
 	class Archetype;
 	
 	class ECS_API ArchetypeHandle
 	{
-		ECS_API friend class EntitySystem;
+		ECS_API friend class EntityManager;
 		
 		public:
 			ArchetypeHandle() = default;
@@ -27,51 +27,54 @@ namespace ad_astris::ecs
 			uint32_t _id;
 	};
 
-	// Can be passed into EntitySystem only once because all data will be moved 
+	// Can be passed into EntityManager only once because all data will be moved 
 	class ECS_API ArchetypeCreationContext
 	{
 		ECS_API friend Archetype;
-		ECS_API friend EntitySystem;
+		ECS_API friend EntityManager;
 		
 		public:
 			template<typename ...TYPES>
 			void add_components_id()
 			{
-				((set_up<TYPES>()), ...);
-				std::sort(_ids.begin(), _ids.end());
+				((set_up_components<TYPES>()), ...);
+				std::sort(_componentIDs.begin(), _componentIDs.end());
 			}
 
-			void add_components_id(std::vector<uint32_t>& ids)
+			template<typename ...TYPES>
+			void add_tags()
 			{
-				// TODO Should improve
-				_ids = std::move(ids);
+				((set_up_tag<TYPES>(), ...));
+				std::sort(_tagIDs.begin(), _tagIDs.end());
 			}
-
-		
+			
 		protected:
 			std::unordered_map<uint32_t, uint16_t> _idToSize;
 			uint32_t _allComponentsSize{ 0 };
-			std::vector<uint32_t> _ids;
+			std::vector<uint32_t> _componentIDs;
+			std::vector<uint32_t> _tagIDs;
 
 			template<typename T>
-			void set_up()
+			void set_up_components()
 			{
-				// if (!get_type_id_table()->check_in_table<T>())
-				// {
-				// 	get_type_id_table()->set_component_info<T>();
-				// }
 				uint32_t id = get_type_id_table()->get_type_id<T>();
 				uint32_t size = get_type_id_table()->get_type_size<T>();
 				_allComponentsSize += size;
 				_idToSize[id] = size;
-				_ids.push_back(id);
-				LOG_INFO("Context. Id back: {}", _ids.back())
+				_componentIDs.push_back(id);
+			}
+
+			template<typename T>
+			void set_up_tag()
+			{
+				uint32_t id = TagTypeIdTable::get_type_id<T>();
+				_tagIDs.push_back(id);
 			}
 	};
 
 	class ECS_API ArchetypeExtensionContext : public ArchetypeCreationContext
 	{
-		friend EntitySystem;
+		friend EntityManager;
 		
 		public:
 			ArchetypeExtensionContext(ArchetypeHandle srcArchetype) : _srcArchetype(srcArchetype)

@@ -12,7 +12,7 @@
 
 namespace ad_astris::ecs
 {
-	class ECS_API EntitySystem
+	class ECS_API EntityManager
 	{
 		public:
 			/**
@@ -72,6 +72,7 @@ namespace ad_astris::ecs
 			template<typename ...ARGS>
 			void add_components_to_entity(Entity& entity)
 			{
+				// TODO should improve extension context
 				EntityInArchetypeInfo oldEntityInArchetype = _entityToItsInfoInArchetype[entity];
 				ArchetypeExtensionContext extensionContext(oldEntityInArchetype.archetypeId);
 				extensionContext.add_components_id<ARGS...>();
@@ -90,12 +91,19 @@ namespace ad_astris::ecs
 				_entityToItsInfoInArchetype[entity] = newEntityInArchetype;
 			}
 
+			template<typename ...ARGS>
+			void add_tags_to_entity(Entity& entity)
+			{
+				
+			}
+
 			/**
 			 * 
 			 */
 			template<typename ...ARGS>
 			void remove_components_from_entity(Entity& entity)
 			{
+				// TODO Should improve reduction context
 				EntityInArchetypeInfo oldEntityInArchetype = _entityToItsInfoInArchetype[entity];
 				ArchetypeReductionContext reductionContext(oldEntityInArchetype.archetypeId);
 				reductionContext.add_components_id<ARGS...>();
@@ -133,43 +141,18 @@ namespace ad_astris::ecs
 				set_up_component_common(entity, &value);
 			}
 
-			/**
+			/** Only for debug
 			 * 
 			 */
 			template<typename T>
-			T* get_entity_component(Entity& entity)
+			T get_entity_component(Entity& entity)
 			{
 				EntityInArchetypeInfo entityInArchetype = _entityToItsInfoInArchetype[entity];
 				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
 				T* component = archetype.get_entity_component<T>(entity, entityInArchetype.column);
-				return component;
+				return *component;
 			}
-
-			template<typename ...ARGS>
-			Tuple<ARGS*...> get_entity_components(Entity& entity)
-			{
-				EntityInArchetypeInfo entityInArchetype = _entityToItsInfoInArchetype[entity];
-				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
-				Tuple<ARGS*...> components = archetype.get_entity_components<ARGS...>(entity, entityInArchetype.column);
-				return components;
-			}
-
-			template<typename ...ARGS>
-			std::vector<Tuple<ARGS*...>> get_component_arrays()
-			{
-				// TODO
-			}
-
-			// Should be used to build component from Level file. After building component, the best
-			// solution is add this component to the Entity.
-			template<typename ...ARGS>
-			UntypedComponent build_component(std::string& typeName, ARGS&... args)
-			{
-				uint32_t typeId = get_type_id_table()->get_type_id(typeName);
-				//void* value = FactoriesTable::get_instance()->get_factory(typeId)->build();
-				
-			}
-
+		
 		private:
 			struct EntityInArchetypeInfo
 			{
@@ -189,5 +172,15 @@ namespace ad_astris::ecs
 				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
 				archetype.set_component(entity, entityInArchetype.column, &component);
 			}
+
+			// Returns new vector hash
+			size_t merge_type_ids_vectors(
+				std::vector<uint32_t>& dstTypeIDs,
+				std::vector<uint32_t>& srcTypeIDs,
+				std::vector<uint32_t>& contextTypeIDs);
+
+			void copy_vector(
+				std::vector<uint32_t>& srcTypeIDs,
+				std::vector<uint32_t>& dstTypeIDs);
 	};
 }

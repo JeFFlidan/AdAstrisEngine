@@ -3,7 +3,7 @@
 #include "api.h"
 #include "engine_core/uuid.h"
 #include "profiler/logger.h"
-#include "core/reflection.h"
+#include "type_id_tables.h"
 
 #include <unordered_map>
 #include <vector>
@@ -13,7 +13,7 @@
 namespace ad_astris::ecs
 {
 	class Archetype;
-	class EntitySystem;
+	class EntityManager;
 	class ArchetypeCreationContext;
 	class ArchetypeExtensionContext;
 	class EntityCreationContext;
@@ -40,103 +40,6 @@ namespace ad_astris::ecs
 			UUID _uuid;
 	};
 
-	class ECS_API ComponentTypeIDTable
-	{
-		public:
-			static ComponentTypeIDTable* get_instance()
-			{
-				std::lock_guard<std::mutex> lock(_mutex);
-				if (!_instance)
-					_instance = new ComponentTypeIDTable();
-				return _instance;
-			}
-		
-			template<typename T>
-			bool check_in_table()
-			{
-				std::string typeName = get_type_name<T>();
-				if (_table.find(typeName) != _table.end())
-					return true;
-				return false;
-			}
-
-			template<typename T>
-			uint32_t get_type_id()
-			{
-				std::string typeName = get_type_name<T>();
-				auto it = _table.find(typeName);
-				if (it == _table.end())
-					return -1;
-
-				return it->second.id;
-			}
-
-			uint32_t get_type_id(std::string& typeName)
-			{
-				auto it = _table.find(typeName);
-				if (it == _table.end())
-					return -1;
-
-				return it->second.id;
-			}
-
-			template<typename T>
-			uint32_t get_type_size()
-			{
-				std::string typeName = get_type_name<T>();
-				auto it = _table.find(typeName);
-				if (it == _table.end())
-					return -1;
-
-				return it->second.structureSize;
-			}
-
-			uint32_t get_type_size(std::string& typeName)
-			{
-				auto it = _table.find(typeName);
-				if (it == _table.end())
-					return -1;
-
-				return it->second.structureSize;
-			}
-
-			template<typename T>
-			void add_component_info()
-			{
-				std::lock_guard<std::mutex> lock(_mutex);
-				std::string typeName = get_type_name<T>();
-				if (_table.find(typeName) != _table.end())
-					return;
-
-				ComponentInfo info;
-				info.id = ++_idGenerator;
-				info.structureSize = sizeof(T);
-				_table[typeName] = info;
-			}
-		
-		private:
-			ComponentTypeIDTable() {}
-			~ComponentTypeIDTable() {}
-		
-			struct ComponentInfo
-			{
-				uint32_t structureSize;
-				uint32_t id;
-			};
-
-			static ComponentTypeIDTable* _instance;
-			static std::mutex _mutex;
-
-			static std::unordered_map<std::string, ComponentInfo> _table;
-			static uint32_t _idGenerator;
-	};
-
-	// Returns the instance of the singleton ComponentTypeIDTable.
-	inline ComponentTypeIDTable* get_type_id_table()
-	{
-		return ComponentTypeIDTable::get_instance();
-	}
-	
 	class ECS_API IComponent
 	{
 		public:
@@ -150,7 +53,7 @@ namespace ad_astris::ecs
 	class ECS_API UntypedComponent : public IComponent
 	{
 		friend Archetype;
-		friend EntitySystem;
+		friend EntityManager;
 		friend ArchetypeCreationContext;
 		friend ArchetypeExtensionContext;
 		friend EntityCreationContext;
@@ -196,12 +99,12 @@ namespace ad_astris::ecs
 	class ECS_API EntityCreationContext
 	{
 		friend Archetype;
-		friend EntitySystem;
+		friend EntityManager;
 		
 		public:
 			EntityCreationContext()
 			{
-				_componentsId.reserve(constants::MAX_COMPONENT_COUNT);
+				_componentIDs.reserve(constants::MAX_COMPONENT_COUNT);
 			}
 		
 			~EntityCreationContext()
@@ -212,13 +115,23 @@ namespace ad_astris::ecs
 				for (auto& it : _componentsMap)
 					delete it.second;
 			}
+
+			template<typename T>
+			void add_tag()
+			{
+				uint32_t id = TagTypeIdTable::get_type_id<T>();
+				if (!check_tag(id))
+					return;
+
+				_tagIDs.push_back(id);
+			}
 		
 			template<typename T>
 			void add_component(T& value)
 			{
 				uint32_t typeId = get_type_id_table()->get_type_id<T>();
 				
-				if (!check(typeId, sizeof(T)))
+				if (!check_component(typeId, sizeof(T)))
 					return;
 				
 				if (!_componentsData)
@@ -235,7 +148,7 @@ namespace ad_astris::ecs
 				IComponent* tempComponent = new UntypedComponent(dataPtr, size, typeId);
 				_componentsMap[typeId] = tempComponent;
 				_typeIdToSize[typeId] = size;
-				_componentsId.push_back(typeId);
+				_componentIDs.push_back(typeId);
 			}
 
 			template<typename T, typename ...ARGS>
@@ -243,7 +156,7 @@ namespace ad_astris::ecs
 			{
 				uint32_t typeId = get_type_id_table()->get_type_id<T>();
 				
-				if (!check(typeId, sizeof(T)))
+				if (!check_component(typeId, sizeof(T)))
 					return;
 				
 				if (!_componentsData)
@@ -260,7 +173,7 @@ namespace ad_astris::ecs
 				IComponent* tempComponent = new UntypedComponent(dataPtr, size, typeId);
 				
 				_componentsMap[typeId] = tempComponent;
-				_componentsId.push_back(typeId);
+				_componentIDs.push_back(typeId);
 				_typeIdToSize[typeId] = size;
 			}
 
@@ -268,7 +181,7 @@ namespace ad_astris::ecs
 			{
 				uint32_t typeId = component->get_type_id();
 				uint32_t componentSize = component->get_structure_size();
-				if (!check(typeId, componentSize))
+				if (!check_component(typeId, componentSize))
 					return;
 				
 				if (!_componentsData)
@@ -282,7 +195,7 @@ namespace ad_astris::ecs
 				memcpy(dataPtr, component->get_raw_memory(), componentSize);
 				IComponent* newComponent = new UntypedComponent(dataPtr, componentSize, component->get_type_id());
 				_componentsMap[typeId] = newComponent;
-				_componentsId.push_back(typeId);
+				_componentIDs.push_back(typeId);
 				_typeIdToSize[typeId] = componentSize;
 			}
 
@@ -297,7 +210,7 @@ namespace ad_astris::ecs
 			{
 				uint32_t id = get_type_id_table()->get_type_id<T>();
 				
-				if (!check(id, sizeof(T)))
+				if (!check_component(id, sizeof(T)))
 					return;
 
 				IComponent* component = _componentsMap.find(id)->second; 
@@ -309,7 +222,7 @@ namespace ad_astris::ecs
 			{
 				uint32_t id = get_type_id_table()->get_type_id<T>();
 				
-				if (!check(id, sizeof(T)))
+				if (!check_component(id, sizeof(T)))
 					return;
 
 				//Component<T>* component = dynamic_cast<Component<T*>>(_componentsMap.find(id))->second;
@@ -334,7 +247,7 @@ namespace ad_astris::ecs
 				}
 			
 				auto it = _componentsMap.find(typeID);
-				_componentsId.erase(std::find(_componentsId.begin(), _componentsId.end(), typeID));
+				_componentIDs.erase(std::find(_componentIDs.begin(), _componentIDs.end(), typeID));
 				_removedData.push_back(static_cast<uint8_t*>(it->second->get_raw_memory()));
 				_componentsMap.erase(it);
 				delete it->second;
@@ -356,14 +269,15 @@ namespace ad_astris::ecs
 
 		private:
 			uint32_t _allComponentsSize{ 0 };
-			std::vector<uint32_t> _componentsId;
+			std::vector<uint32_t> _componentIDs;
 			std::unordered_map<uint32_t, IComponent*> _componentsMap;
 			std::unordered_map<uint32_t, uint16_t> _typeIdToSize;
+			std::vector<uint32_t> _tagIDs;
 		
 			uint8_t* _componentsData{ nullptr };
 			std::vector<uint8_t*> _removedData;
 
-			bool check(uint32_t id, uint32_t size)
+			bool check_component(uint32_t id, uint32_t size)
 			{
 				if (_componentsMap.find(id) != _componentsMap.end())
 				{
@@ -373,6 +287,17 @@ namespace ad_astris::ecs
 
 				if (size > constants::MAX_COMPONENT_SIZE)
 					return false;
+
+				return true;
+			}
+
+			bool check_tag(uint32_t id)
+			{
+				if (std::find(_tagIDs.begin(), _tagIDs.end(), id) != _tagIDs.end())
+				{
+					LOG_ERROR("EntityCreationContext::add_tag():: Tag of this type was added")
+					return false;
+				}
 
 				return true;
 			}
