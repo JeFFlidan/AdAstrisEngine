@@ -70,6 +70,7 @@
 
 #include <ecs.h>
 #include <core/reflection.h>
+#include <engine_core/world.h>
 
 #define VK_CHECK(x)													 \
 	do																 \
@@ -326,6 +327,26 @@ namespace ad_astris
 		resource::ResourceManager manager(_fileSystem);
 		LOG_INFO("After manager")
 
+		_materialSystem.init(this);
+		_renderScene.init();
+		_temporalFilter.init(this);
+		_composite.init(this);
+		
+		ecore::World* world = new ecore::World();
+		
+		io::URI levelPath = "E:/MyEngine/MyEngine/VulkanEngine/bin/my_level.aalevel";
+		LOG_INFO("Before creating level")
+		resource::ResourceAccessor<ecore::Level> level = manager.create_level(levelPath);
+		LOG_INFO("Before adding level")
+		world->add_level(level.get_resource());
+		LOG_INFO("Before test function")
+		world->test_function();
+		LOG_INFO("Before saving resources")
+		manager.save_resources();
+		LOG_INFO("After all manipulation with world")
+		
+		delete world;
+
 		//Tests for resource converter
 		 // io::URI door = "E:\\gun.gltf";
 		 // io::URI texture = "D:/cyberpunk location/Texture/Gun_2/Gun_2_BaseColor.tga";
@@ -343,87 +364,42 @@ namespace ad_astris
 		 // LOG_INFO("Texture 1 name: {}", texture1->get_name()->get_string())
 
 
-		io::URI aaresPath = "assets/gun.aares";
-		LOG_INFO("Before getting resource")
-		auto accessor = manager.get_resource<ecore::StaticModel>(10841365285477739537);
-		LOG_INFO("After getting resource")
-		ecore::StaticModel* model = accessor.get_resource();
-		LOG_INFO("Model name: {}", model->get_name()->get_string())
-		LOG_INFO("Model path: {}", model->get_path().c_str())
-		// ecore::tests();
-
-		io::URI newTexture = "D:\\cyberpunk location\\Tile material\\metal surface\\Metal_surface_basecolor.tga";
-		//ecore::Texture2D* tempTexture = manager.convert_to_aares<ecore::Texture2D>(newTexture).get_resource();
-		ecore::Texture2D* accessor2 = manager.get_resource<ecore::Texture2D>(14124523727936834206).get_resource();
-
-		LOG_INFO("Texture 2 name: {}", accessor2->get_name()->get_string())
-		LOG_INFO("Texture 2 path: {}", accessor2->get_path().c_str())
-		LOG_INFO("Texture 2 size: {}", accessor2->get_size())
-
-		ecore::Texture2D* accessor3 = manager.get_resource<ecore::Texture2D>(10492210984281833974).get_resource();
-		LOG_INFO("Texture 3 name: {}", accessor3->get_name()->get_string())
-		LOG_INFO("Texture 3 path: {}", accessor3->get_path().c_str())
-		LOG_INFO("Texture 3 size: {}", accessor3->get_size())
-		
-		LOG_INFO("Before saving")
-		manager.save_resources();
-		LOG_INFO("After saving")
-		//manager.load_resource<resource::ModelInfo>(aaresPath);
-
-		_materialSystem.init(this);
-		_renderScene.init();
-		_temporalFilter.init(this);
-		_composite.init(this);
-
+		// io::URI aaresPath = "assets/gun.aares";
+		// LOG_INFO("Before getting resource")
+		// auto accessor = manager.get_resource<ecore::StaticModel>(10841365285477739537);
+		// LOG_INFO("After getting resource")
+		// ecore::StaticModel* model = accessor.get_resource();
+		// LOG_INFO("Model name: {}", model->get_name()->get_string())
+		// LOG_INFO("Model path: {}", model->get_path().c_str())
+		// // ecore::tests();
+		//
+		// io::URI newTexture = "D:\\cyberpunk location\\Tile material\\metal surface\\Metal_surface_basecolor.tga";
+		// //ecore::Texture2D* tempTexture = manager.convert_to_aares<ecore::Texture2D>(newTexture).get_resource();
+		// ecore::Texture2D* accessor2 = manager.get_resource<ecore::Texture2D>(14124523727936834206).get_resource();
+		//
+		// LOG_INFO("Texture 2 name: {}", accessor2->get_name()->get_string())
+		// LOG_INFO("Texture 2 path: {}", accessor2->get_path().c_str())
+		// LOG_INFO("Texture 2 size: {}", accessor2->get_size())
+		//
+		// ecore::Texture2D* accessor3 = manager.get_resource<ecore::Texture2D>(10492210984281833974).get_resource();
+		// LOG_INFO("Texture 3 name: {}", accessor3->get_name()->get_string())
+		// LOG_INFO("Texture 3 path: {}", accessor3->get_path().c_str())
+		// LOG_INFO("Texture 3 size: {}", accessor3->get_size())
+		//
+		// LOG_INFO("Before saving")
+		// manager.save_resources();
+		// LOG_INFO("After saving")
+		// //manager.load_resource<resource::ModelInfo>(aaresPath);
+		//
+		//
 		std::string typeName = get_type_name<FirstComponent>();
 		LOG_INFO("Type name: {}", typeName)
-		
-		ecs::EntitySystem system;
-		ecs::ArchetypeCreationContext creationContext;
-		ecs::Component<FirstComponent> component11; 
-		
-		io::URI path1 = "E:\\MyEngine\\MyEngine\\VulkanEngine\\bin\\level_file.txt";
-
-		// nlohmann::json mainJson;
-		// LOG_INFO("Before building")
-		// system.build_components_json_from_entity(entity, mainJson);
-		// LOG_INFO("After building")
-		// std::string mainJsonString = mainJson.dump();
-		// LOG_INFO("Main json string: {}", mainJsonString)
-		// LOG_INFO("Main json string length: {}", mainJsonString.length())
-		// nlohmann::json tempJson = nlohmann::json::parse(mainJsonString);
 		//
-		// io::Stream* stream = _fileSystem->open(path1, "wb");
-		// uint32_t sizeOfString = mainJsonString.size();
-		// uint8_t* data = new uint8_t[mainJsonString.size() + sizeof(uint32_t)];
-		// memcpy(data, &sizeOfString, sizeof(uint32_t));
-		// memcpy(data + sizeof(uint32_t), mainJsonString.data(), mainJsonString.size());
-		// stream->write(data, sizeof(uint8_t), sizeof(uint32_t) + mainJsonString.size());
-		// _fileSystem->close(stream);
-		// delete[] data;
-
-		size_t size = 0;
-		uint8_t* readData = static_cast<uint8_t*>(_fileSystem->map_to_read(path1, size));
-		uint32_t jsonSize;
-		memcpy(&jsonSize, readData, sizeof(uint32_t));
-		std::string mainJsonString;
-		mainJsonString.resize(jsonSize);
-		memcpy(mainJsonString.data(), readData + sizeof(uint32_t), jsonSize);
-		nlohmann::json mainJson = nlohmann::json::parse(mainJsonString);
-		ecs::Entity entity1;
-		for (auto& data : mainJson.items())
-		{
-			UUID uuid(std::stoull(data.key()));
-			std::string subJson = data.value();
-			LOG_INFO("SubJson: {}", subJson)
-			entity1 = system.build_entity_from_json(uuid, subJson);
-		}
-		
-		_fileSystem->unmap_after_reading(readData);
-		FirstComponent* comp1 = system.get_entity_component<FirstComponent>(entity1); 
-		SecondComponent* comp2 = system.get_entity_component<SecondComponent>(entity1);
-		LOG_INFO("Component1 info: {} {}", comp1->data1, comp1->data2)
-		LOG_INFO("Component2 info: {} {} {}", comp2->data1, comp2->data2, comp2->data3)
+		// ecs::EntityManager system;
+		// ecs::ArchetypeCreationContext creationContext;
+		// ecs::Component<FirstComponent> component11; 
+		//
+		// io::URI path1 = "E:\\MyEngine\\MyEngine\\VulkanEngine\\bin\\level_file.txt";
 	}
 
 	void VkRenderer::init_swapchain()
@@ -1046,6 +1022,7 @@ namespace ad_astris
 		//const size_t sceneParamBufferSize = FRAME_OVERLAP * pad_uniform_buffer_size(sizeof(GPUSceneData));
 		//_sceneParameterBuffer = create_buffer(sceneParamBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
+		LOG_INFO("Before first loop")
 		for (int i = 0; i != FRAME_OVERLAP; ++i)
 		{
 			_frames[i]._cameraBuffer = create_buffer(sizeof(GPUCameraData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -1063,7 +1040,7 @@ namespace ad_astris
 			offscrColorImgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			offscrColorImgInfo.imageView = _mainOpaqueColorAttach.imageView;
 		}
-
+		LOG_INFO("Before second loop")
 		for (int i = 0; i != FRAME_OVERLAP; ++i)
 		{
 			_mainDeletionQueue.push_function([=](){
@@ -1079,7 +1056,7 @@ namespace ad_astris
 
 		AllocatedBufferT<GeometryInfo> stagingBuffer(this, sizeof(GeometryInfo), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 		stagingBuffer.copy_from(this, &geometryInfo, sizeof(GeometryInfo));
-
+		LOG_INFO("Before transparency geometry info")
 		_transparencyData.geometryInfo.create_buffer(
 			this,
 			sizeof(GeometryInfo),
@@ -1091,7 +1068,7 @@ namespace ad_astris
 		});
 
 		stagingBuffer.destroy_buffer(this);
-
+		LOG_INFO("Before transparency nodes buffer")
 		_transparencyData.nodes.create_buffer(
 			this,
 			sizeof(Node) * geometryInfo.maxNodeCount,
@@ -1106,6 +1083,7 @@ namespace ad_astris
 		//
 		// tempBuffer.copy_from(this, &_temporalFilter.jittering, sizeof(TemporalFilter::Jittering));
 		//
+		LOG_INFO("Before jittering buffer")
 		_temporalFilter.jitteringBuffer.create_buffer(
 			this,
 			sizeof(TemporalFilter::Jittering),
@@ -1125,8 +1103,9 @@ namespace ad_astris
 			vmaDestroyBuffer(_allocator, _transparencyData.nodes._buffer, _transparencyData.nodes._allocation);
 			vmaDestroyBuffer(_allocator, _temporalFilter.jitteringBuffer._buffer, _temporalFilter.jitteringBuffer._allocation);
 		});
-	
+		LOG_INFO("Before setting up pipeline build of transparency data")
 		_transparencyData.setup_pipeline_builder(this);
+		LOG_INFO("Before setting up transparency data shader pass")
 		_transparencyData.create_shader_pass(this);
 	}
 

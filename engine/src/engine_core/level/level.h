@@ -1,20 +1,30 @@
 #pragma once
 
 #include "engine_core/object.h"
+#include "level_common.h"
+#include <ecs.h>
+
 #include <vector>
 
 namespace ad_astris::ecore
 {
-	class GameObject;
-	
-	class Level : Object
+	class Level : public Object
 	{
+		friend class level::Utils;
+		
 		// TODO
 		public:
 			Level() = default;
+			//Constructor to create level with default settings
+			Level(io::URI& path);
+
+			ecs::EntityManager* get_entity_manager();
+			void add_entity(ecs::Entity& entity);
 
 		private:
-			//std::vector<GameObject> _gameObjects;
+			std::vector<ecs::Entity> _entities;
+			level::LevelInfo _levelInfo;
+			ecs::EntityManager _world;
 		
 		public:
 			// ========== Begin Object interface ==========

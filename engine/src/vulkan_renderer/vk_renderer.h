@@ -28,6 +28,12 @@
 //#define VK_RELEASE 1
 #define NODE_COUNT 6
 
+struct MainCharacter
+{
+	
+};
+
+
 namespace ad_astris
 {
 	struct FirstComponent
@@ -36,7 +42,8 @@ namespace ad_astris
 		float data2;
 	};
 
-	COMPONENT(FirstComponent, uint32_t, float)
+	ECS_COMPONENT(FirstComponent, uint32_t, float)
+	ECS_TAG(MainCharacter)
 
 	struct SecondComponent
 	{
@@ -45,7 +52,7 @@ namespace ad_astris
 		uint32_t data3;
 	};
 
-	COMPONENT(SecondComponent, uint32_t, uint32_t, uint32_t)
+	ECS_COMPONENT(SecondComponent, uint32_t, uint32_t, uint32_t)
 	
 	struct DeletionQueue
 	{

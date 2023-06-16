@@ -1,12 +1,9 @@
 #pragma once
 
-#include "engine_core/uuid.h"
-#include "engine_core/object.h"
-#include "file_system/file_system.h"
+#include "resource_converter.h"
+#include "resource_data_table.h"
 #include "file_system/file.h"
 #include "file_system/utils.h"
-#include "resource_converter.h"
-#include "resource_formats.h"
 #include "utils.h"
 #include "profiler/logger.h"
 #include "engine_core/level/level.h"
@@ -42,62 +39,6 @@ namespace ad_astris::resource
 					return false;
 				return true;
 			}
-	};
-
-	// Metadata from resource table. When resource table is saved, this metadata is used to write
-	// info about the resource if it wasn't loaded into memory
-	struct ResourceMetadata
-	{
-		io::URI path;
-		ResourceType type{ ResourceType::UNDEFINED };
-		ecore::ObjectName* objectName{ nullptr };
-	};
-
-	struct ResourceData
-	{
-		io::IFile* file{ nullptr };
-		ecore::Object* object{ nullptr };
-		ResourceMetadata metadata;
-	};
-	
-	class ResourceDataTable
-	{
-		public:
-			ResourceDataTable(io::FileSystem* fileSystem);
-			~ResourceDataTable();
-		
-			// Load uuids and paths from aarestable file
-			void load_table();
-
-			// Upload aarestable file
-			void save_table();
-
-			// Checks if a resource was loaded
-			bool check_resource_in_table(UUID& uuid);
-
-			// Need this method to understand should I reload existed resource or load new
-			bool check_name_in_table(io::URI& path);
-			bool check_name_in_table(ecore::ObjectName& name);
-		
-			// Checks if a UUID is in a table. If not, the the resource doesn't exist and UUID is wrong 
-			bool check_uuid_in_table(UUID& uuid);
-
-			void add_resource(ResourceData* resource);
-
-			// After destroying resource, its path won't be in aarestable file. 
-			void destroy_resource(UUID& uuid);
-		
-			UUID get_uuid_by_name(io::URI& path);
-			UUID get_uuid_by_name(ecore::ObjectName& name);
-			io::IFile* get_resource_file(UUID& uuid);
-			ecore::Object* get_resource_object(UUID& uuid);
-			ResourceData* get_resource_data(UUID& uuid);
-			io::URI get_path(UUID& uuid);
-		
-		private:
-			io::FileSystem* _fileSystem{ nullptr };
-			std::map<std::string, UUID> _nameToUUID;
-			std::map<UUID, ResourceData> _uuidToResourceData;
 	};
 	
 	// ResourceManager is responsible for loading levels and managing resources 
@@ -145,7 +86,9 @@ namespace ad_astris::resource
 				io::URI relPath = std::string("assets\\" + io::Utils::get_file_name(path) + ".aares").c_str();
 				io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem, relPath);
 				conversionContext.filePath = absolutePath.c_str();
-				
+
+				/** TODO have to fix resource name in deserialize. If object is existed, name should be taken
+				 from this existed object and passed to deserialize method*/
 				ResourceData resourceData;
 				io::IFile* file = new io::ResourceFile(conversionContext);
 				T* typedObject = new T();
@@ -154,6 +97,7 @@ namespace ad_astris::resource
 				resourceData.object = typedObject;
 				resourceData.metadata.path = absolutePath;
 				resourceData.metadata.type = Utils::get_enum_resource_type(typedObject->get_type());
+				//resourceData.metadata.objectName = *typedObject->get_name(); Don't know if I need it
 				
 				write_to_disk(resourceData.file, path);
 				
@@ -161,7 +105,15 @@ namespace ad_astris::resource
 				
 				return ResourceAccessor<T>(resourceData.object);
 			}
-		
+
+			/**
+			 * 
+			 */
+			ResourceAccessor<ecore::Level> create_level(io::URI& path);
+
+			/**
+			 * 
+			 */
 			ResourceAccessor<ecore::Level> load_level(io::URI& path);
 		
 			/** If the resource has been loaded, the method returns the resource data. Otherwise, the resource will be loaded from disc
@@ -185,9 +137,6 @@ namespace ad_astris::resource
 			}
 
 			void save_resources();
-		
-			ResourceType get_resource_type(ecore::ObjectName& objectName);
-			ResourceType get_resource_type(UUID uuid);
 		
 		private:
 			io::FileSystem* _fileSystem;

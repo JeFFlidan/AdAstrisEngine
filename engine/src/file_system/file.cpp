@@ -9,6 +9,26 @@
 
 using namespace ad_astris;
 
+void io::IFile::set_metadata(std::string& newMetaData)
+{
+	_metaData = newMetaData;
+}
+
+std::string& io::IFile::get_metadata()
+{
+	return _metaData;
+}
+
+io::URI io::IFile::get_file_path()
+{
+	return _path;
+}
+
+std::string io::IFile::get_file_name()
+{
+	return Utils::get_file_name(_path);
+}
+
 template<typename T>
 io::ResourceFile::ResourceFile(ConversionContext<T>& context)
 {
@@ -27,9 +47,9 @@ io::ResourceFile::ResourceFile(ConversionContext<ecore::Texture2D>& context)
 	context.get_data(_metaData, _binBlob, _binBlobSize, _path);
 }
 
-io::ResourceFile::ResourceFile(const URI& uri) : _path(uri)
+io::ResourceFile::ResourceFile(const URI& uri)
 {
-	
+	_path = uri;
 }
 
 io::ResourceFile::~ResourceFile()
@@ -87,15 +107,6 @@ bool io::ResourceFile::is_valid()
 	return _binBlob && !_metaData.empty();
 }
 
-io::URI io::ResourceFile::get_file_path()
-{
-	return _path;
-}
-
-std::string io::ResourceFile::get_file_name()
-{
-	return Utils::get_file_name(_path);
-}
 
 uint8_t* io::ResourceFile::get_binary_blob()
 {
@@ -107,12 +118,46 @@ uint64_t io::ResourceFile::get_binary_blob_size()
 	return _binBlobSize;
 }
 
-void io::ResourceFile::set_metadata(std::string& newMetaData)
+io::LevelFile::LevelFile(const URI& uri)
 {
-	_metaData = newMetaData;
+	_path = uri;
+}
+			
+io::LevelFile::~LevelFile()
+{
+	
 }
 
-std::string& io::ResourceFile::get_metadata()
+void io::LevelFile::serialize(uint8_t*& data, uint64_t& size)
 {
-	return _metaData;
+	data = new uint8_t[_metaData.size() + sizeof(uint64_t)];
+	LOG_INFO("Meta data in file serialize: {}", _metaData)
+	LOG_INFO("Array size: {}", _metaData.size() + sizeof(uint64_t))
+	uint64_t metadataSize = _metaData.size();
+	memcpy(data, &metadataSize, sizeof(uint64_t));
+	memcpy(data + sizeof(uint64_t), _metaData.data(), metadataSize);
+	size = sizeof(uint64_t) + _metaData.size();
+}
+
+void io::LevelFile::deserialize(uint8_t* data, uint64_t size)
+{
+	uint64_t metadataSize;
+	memcpy(&metadataSize, data, sizeof(uint64_t));
+	_metaData.resize(metadataSize);
+	memcpy(_metaData.data(), data + sizeof(uint64_t), metadataSize);
+}
+
+bool io::LevelFile::is_valid()
+{
+	return !_metaData.empty();
+}
+
+uint8_t* io::LevelFile::get_binary_blob()
+{
+	return nullptr;
+}
+
+uint64_t io::LevelFile::get_binary_blob_size()
+{
+	return 0;
 }

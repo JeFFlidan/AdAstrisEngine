@@ -126,7 +126,7 @@ void ecore::NameIDTable::add_id(NameID nameId)
 					_removedNameIDs.emplace_back(i);
 			}
 		}
-		else if (_table.size() > 1)
+		else if (_table.size() > 1)		// TODO HAVE TO THINK ABOUT IT, MAYBE SHOULD REMOVE
 		{
 			NameID secondId = *(it2 + 1);
 			for (uint32_t i = nameId; i != secondId; ++i)

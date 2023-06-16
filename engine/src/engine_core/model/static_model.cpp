@@ -44,10 +44,11 @@ void ecore::StaticModel::serialize(io::IFile* file)
 void ecore::StaticModel::deserialize(io::IFile* file, ObjectName* newName)
 {
 	std::string strMetadata = file->get_metadata();
+	_modelInfo = model::Utils::unpack_static_model_info(strMetadata);
+	
 	uint8_t* buffer = file->get_binary_blob();
 	_vertexBuffer = buffer;
 	_indexBuffer = buffer + _modelInfo.vertexBufferSize;
-	_modelInfo = model::Utils::unpack_static_model_info(strMetadata);
 	if (!newName)
 	{
 		_name = ObjectName(file->get_file_name().c_str());
