@@ -12,17 +12,21 @@ ArchetypeHandle EntityManager::create_archetype(ArchetypeCreationContext& contex
 	}
 
 	size_t idsHash = CoreUtils::hash_numeric_vector(context._componentIDs);
+	size_t tagsHash = CoreUtils::hash_numeric_vector(context._tagIDs);
+	size_t mainHash = idsHash ^ tagsHash;
 	
-	auto inArchIt = _componentsHashToArchetypeId.find(idsHash);
-	if (inArchIt != _componentsHashToArchetypeId.end())
+	//auto inArchIt = _componentsHashToArchetypeId.find(mainHash);  Have a crush hear without any reason. In the future maybe I will investigate it.
+	
+	if (_componentsHashToArchetypeId.find(mainHash) != _componentsHashToArchetypeId.end())
 	{
-		return ArchetypeHandle(inArchIt->second);
+		return ArchetypeHandle(_componentsHashToArchetypeId.find(mainHash)->second);
 	}
-
+	
 	Archetype archetype(context);
 	uint32_t archetypeId = _archetypes.size();
 	_archetypes.push_back(archetype);
-	_componentsHashToArchetypeId[idsHash] = archetypeId;
+	_lastCreatedArchetypes.push_back(archetypeId);
+	_componentsHashToArchetypeId[mainHash] = archetypeId;
 
 	return ArchetypeHandle(archetypeId);
 }
@@ -60,7 +64,7 @@ ArchetypeHandle EntityManager::create_archetype(ArchetypeExtensionContext& conte
 	{
 		newAllComponentsSize += idToSize.second;
 	}
-
+	
 	ArchetypeCreationContext creationContext;
 	creationContext._componentIDs = std::move(newComponentTypeIDs);
 	creationContext._idToSize = std::move(newComponentIdToSize);
@@ -70,6 +74,7 @@ ArchetypeHandle EntityManager::create_archetype(ArchetypeExtensionContext& conte
 	Archetype newArchetype{ creationContext };
 	uint32_t newArchetypeId = _archetypes.size();
 	_archetypes.push_back(newArchetype);
+	_lastCreatedArchetypes.push_back(newArchetypeId);
 	_componentsHashToArchetypeId[newHash] = newArchetypeId;
 
 	return ArchetypeHandle(newArchetypeId);
@@ -112,10 +117,10 @@ Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID u
 	
 	ArchetypeCreationContext archetypeContext;
 	archetypeContext._componentIDs = std::move(componentIdsToMove);
-	archetypeContext._idToSize = std::move(entityContext._typeIdToSize);
+	archetypeContext._idToSize = entityContext._typeIdToSize;
 	archetypeContext._allComponentsSize = entityContext._allComponentsSize;
 	archetypeContext._tagIDs = std::move(tagIDsToMove);
-	
+
 	ArchetypeHandle archHandle = create_archetype(archetypeContext);
 
 	UUID newUUID = uuid ? uuid : UUID();
@@ -127,9 +132,9 @@ Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID u
 	entityInArchetype.column = entityColumn;
 	entityInArchetype.archetypeId = archHandle.get_id();
 	_entityToItsInfoInArchetype[entity] = entityInArchetype;
-
+	
 	archetype.set_components(entity, entityColumn, entityContext);
-
+	
 	return entity;
 }
 
@@ -144,14 +149,14 @@ Entity EntityManager::build_entity_from_json(UUID& uuid, std::string& json)
 	for (auto& componentInfo : componentsData.items())
 	{
 		std::string componentName = componentInfo.key();
-		uint32_t typeId = get_type_id_table()->get_type_id(componentName);
+		uint32_t typeId = ComponentTypeIDTable::get_type_id(componentName);
 		factories::BaseFactory* factory = factories::get_table()->get_factory(typeId);
 		factory->build(creationContext, typeId, componentName, componentsData);
 	}
 
 	for (auto& tagName : tagNames)
 	{
-		creationContext._tagIDs.push_back(TagTypeIdTable::get_type_id(tagName));
+		creationContext._tagIDs.push_back(TagTypeIDTable::get_type_id(tagName));
 	}
 
 	Entity entity = create_entity(creationContext, uuid);
@@ -186,7 +191,7 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 	tagNames.reserve(tagIDs.size());
 	for (auto& tagID : tagIDs)
 	{
-		tagNames.push_back(TagTypeIdTable::get_tag_name(tagID));
+		tagNames.push_back(TagTypeIDTable::get_tag_name(tagID));
 	}
 
 	entityJson["tags"] = tagNames;
@@ -206,7 +211,6 @@ void EntityManager::destroy_entity(Entity& entity)
 	archetype.destroy_entity(entity, entityInArchetype.column);
 	_entityToItsInfoInArchetype.erase(entityIterator);
 }
-
 
 size_t EntityManager::merge_type_ids_vectors(
 	std::vector<uint32_t>& dstTypeIDs,

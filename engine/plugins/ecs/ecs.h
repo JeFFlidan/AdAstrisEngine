@@ -15,6 +15,7 @@
 #include "public/entity_types.h"
 #include "public/factories.h"
 #include "public/serializers.h"
+#include "public/system_manager.h"
 #include "core/utils.h"
 
 namespace ad_astris::ecs
@@ -28,8 +29,8 @@ namespace ad_astris::ecs
  			Component(T* componentValue)
  			{
  				_memory = componentValue;
- 				_size = get_type_id_table()->get_type_size<T>();
- 				_id = get_type_id_table()->get_type_id<T>();
+ 				_size = ComponentTypeIDTable::get_type_size<T>();
+ 				_id = ComponentTypeIDTable::get_type_id<T>();
  			}
  		
 			T* get_memory()
@@ -88,7 +89,7 @@ namespace ad_astris::ecs
 																											\
 			static bool Type##Register = []()																\
 			{																								\
-				get_type_id_table()->add_component_info<Type>();											\
+				ComponentTypeIDTable::add_component_info<Type>();											\
 				return true;																				\
 			}();																							\
 		}																									\
@@ -140,7 +141,18 @@ namespace ecs {												\
 namespace tags {											\
 	static bool Type##Register = []()						\
 	{														\
-		::ad_astris::ecs::TagTypeIdTable::add_tag<Type>();	\
+		::ad_astris::ecs::TagTypeIDTable::add_tag<Type>();	\
 		return true;										\
 	}();													\
 }}
+
+#define ECS_SYSTEM(Type) \
+	namespace ecs {\
+	namespace systems {\
+		static bool Type##Register = []()\
+		{\
+			SystemTypeIDTable::add_system<Type>();\
+			SystemManager::register_system<Type>();\
+			return true; \
+		}();\
+	}}

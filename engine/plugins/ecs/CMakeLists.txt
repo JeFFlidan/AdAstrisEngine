@@ -31,6 +31,7 @@ add_library(logger INTERFACE)
 add_library(json INTERFACE)
 add_library(uuid STATIC)
 add_library(fmt_lib STATIC)
+add_library(dag STATIC)
 
 target_include_directories(logger INTERFACE ${ENGINE_SRC_PATH}/profiler)
 target_include_directories(json INTERFACE ${THIRD_PARTY_PATH}/json)
@@ -42,7 +43,10 @@ target_include_directories(fmt_lib PUBLIC ${THIRD_PARTY_PATH}/fmt_lib)
 file(GLOB FMT_FILES "${THIRD_PARTY_PATH}/fmt_lib/fmt/*")
 target_sources(fmt_lib PRIVATE ${FMT_FILES})
 
-target_link_libraries(ecs uuid logger fmt_lib json)
+target_include_directories(dag PUBLIC ${ENGINE_SRC_PATH}/core)
+target_sources(dag PRIVATE ${ENGINE_SRC_PATH}/core/dag.h ${ENGINE_SRC_PATH}/core/dag.cpp)
+
+target_link_libraries(ecs uuid logger fmt_lib json dag)
 
 include_directories(${CMAKE_SOURCE_DIR}/private)
 include_directories(${CMAKE_SOURCE_DIR}/public)

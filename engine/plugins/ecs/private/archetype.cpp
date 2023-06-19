@@ -152,6 +152,54 @@ uint32_t ecs::Archetype::get_chunk_size()
 	return constants::MAX_ENTITIES_IN_CNUNK * _sizeOfOneColumn;
 }
 
+uint32_t ecs::Archetype::get_chunks_count()
+{
+	return _chunks.size();
+}
+
+uint32_t ecs::Archetype::get_entities_count_per_chunk(uint32_t chunkIndex)
+{
+	return _chunks[chunkIndex].get_elements_count();
+}
+
+bool ecs::Archetype::check_requirements_match(
+	std::vector<uint32_t>& requiredComponentIDs,
+	std::vector<uint32_t>& requiredTagIDs)
+{
+	bool isMatched = false;
+	if (!requiredComponentIDs.empty())
+	{
+		if (!std::is_sorted(requiredComponentIDs.begin(), requiredComponentIDs.end()))
+		{
+			std::sort(requiredComponentIDs.begin(), requiredComponentIDs.end());
+		}
+
+		std::vector<uint32_t>& archetypeComponents = _chunkStructure.componentIds;
+		isMatched = std::includes(
+			archetypeComponents.begin(),
+			archetypeComponents.end(),
+			requiredComponentIDs.begin(),
+			requiredComponentIDs.end());
+	}
+
+	if (!requiredTagIDs.empty())
+	{
+		if (!std::is_sorted(requiredTagIDs.begin(), requiredTagIDs.end()))
+		{
+			std::sort(requiredTagIDs.begin(), requiredTagIDs.end());
+		}
+
+		std::vector<uint32_t>& archetypeTags = _chunkStructure.tagIDs;
+		isMatched &= std::includes(
+			archetypeTags.begin(),
+			archetypeTags.end(),
+			requiredTagIDs.begin(),
+			requiredTagIDs.end());
+	}
+
+	return isMatched;
+}
+
 void ecs::Archetype::set_component(Entity& entity, uint32_t columnIndex, IComponent* tempComponent)
 {
 	ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];

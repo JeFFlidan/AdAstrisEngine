@@ -48,7 +48,7 @@ namespace ad_astris::ecs
 				template<typename COMPONENT_TYPE>
 				void add_factory(BaseFactory* factory)
 				{
-					uint32_t id = get_type_id_table()->get_type_id<COMPONENT_TYPE>();
+					uint32_t id = ComponentTypeIDTable::get_type_id<COMPONENT_TYPE>();
 					std::lock_guard<std::mutex> lock(_mutex);
 					_typeIdToFactory[id] = factory;
 				}

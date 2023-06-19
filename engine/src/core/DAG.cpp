@@ -1,4 +1,5 @@
 #include "DAG.h"
+#include <algorithm>
 
 using namespace ad_astris;
 
@@ -9,7 +10,9 @@ DAG::DAG(uint32_t vertexNumber) : _vertexNumber(vertexNumber)
 
 void DAG::add_edge(uint32_t from, uint32_t to)
 {
-	_adjacencyListsArray[from].push_back(to);
+	std::list<uint32_t>& list = _adjacencyListsArray[from];
+	if (std::find(list.begin(), list.end(), to) == list.end())
+		list.push_back(to);
 }
 
 void DAG::topological_sort(std::vector<uint32_t>& sortedGraph)

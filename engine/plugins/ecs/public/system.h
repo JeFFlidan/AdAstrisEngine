@@ -1,8 +1,11 @@
 #pragma once
 
 #include "api.h"
+#include "entity_query.h"
+#include "core/reflection.h"
 
 #include <vector>
+#include <string>
 
 namespace ad_astris::ecs
 {
@@ -16,18 +19,18 @@ namespace ad_astris::ecs
 			template<typename T>
 			void add_to_execute_before()
 			{
-				
+				_executeBefore.push_back(get_type_name<T>());
 			}
 
 			template<typename T>
 			void add_to_execute_after()
 			{
-				
+				_executeAfter.push_back(get_type_name<T>());
 			}
 
 		private:
-			std::vector<uint32_t> _executeBefore;
-			std::vector<uint32_t> _executeAfter;
+			std::vector<std::string> _executeBefore;
+			std::vector<std::string> _executeAfter;
 	};
 
 	struct ECS_API SystemRequirements
@@ -35,15 +38,17 @@ namespace ad_astris::ecs
 		
 	};
 	
-	class ECS_API ISystem
+	class ECS_API System
 	{
 		friend SystemManager;
 
 		public:
-			virtual void update() = 0;
+			virtual void execute() = 0;
+			virtual void configure_query() = 0;
 
 		protected:
 			SystemExecutionOrder _executionOrder;
 			SystemRequirements _requirements;
+			EntityQuery _entityQuery;
 	};
 }

@@ -14,6 +14,8 @@ namespace ad_astris::ecs
 {
 	class ECS_API EntityManager
 	{
+		friend class SystemManager;
+		
 		public:
 			/**
 			 * 
@@ -161,13 +163,14 @@ namespace ad_astris::ecs
 			};
 		
 			std::vector<Archetype> _archetypes;
+			std::vector<uint32_t> _lastCreatedArchetypes;
 			std::unordered_map<size_t, uint32_t> _componentsHashToArchetypeId;
 			std::unordered_map<Entity, EntityInArchetypeInfo> _entityToItsInfoInArchetype;
 
 			template<typename T>
 			void set_up_component_common(Entity& entity, T* componentValue)
 			{
-				UntypedComponent component(componentValue, get_type_id_table()->get_type_size<T>(), get_type_id_table()->get_type_id<T>());
+				UntypedComponent component(componentValue, ComponentTypeIDTable::get_type_size<T>(), ComponentTypeIDTable::get_type_id<T>());
 				EntityInArchetypeInfo& entityInArchetype = _entityToItsInfoInArchetype[entity];
 				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
 				archetype.set_component(entity, entityInArchetype.column, &component);

@@ -79,6 +79,7 @@ namespace ad_astris::ecs
 	class ECS_API Archetype
 	{
 		friend EntityManager;
+		
 		public:
 			Archetype(ArchetypeCreationContext& context);
 
@@ -100,7 +101,19 @@ namespace ad_astris::ecs
 				std::vector<Subchunk> subchunks;
 				for (auto& chunk : _chunks)
 				{
-					((subchunks.push_back(chunk.get_subchunk(get_type_id_table()->get_type_id<TYPES>()))), ...);
+					((subchunks.push_back(chunk.get_subchunk(ComponentTypeIDTable::get_type_id<TYPES>()))), ...);
+				}
+
+				return subchunks;
+			}
+
+			template<typename T>
+			std::vector<Subchunk> get_subchunks_of_one_type()
+			{
+				std::vector<Subchunk> subchunks;
+				for (auto& chunk : _chunks)
+				{
+					subchunks.push_back(chunk.get_subchunk(ComponentTypeIDTable::get_type_id<T>()));
 				}
 
 				return subchunks;
@@ -110,7 +123,7 @@ namespace ad_astris::ecs
 			T* get_entity_component(Entity& entity, uint32_t columnIndex)
 			{
 				ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
-				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, get_type_id_table()->get_type_id<T>()));
+				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, ComponentTypeIDTable::get_type_id<T>()));
 			}
 
 			template<typename ...ARGS>
@@ -128,6 +141,13 @@ namespace ad_astris::ecs
 			}
 		
 			uint32_t get_chunk_size();
+			uint32_t get_chunks_count();
+
+			uint32_t get_entities_count_per_chunk(uint32_t chunkIndex);
+
+			bool check_requirements_match(
+				std::vector<uint32_t>& requiredComponentIDs,
+				std::vector<uint32_t>& requiredTagIDs);
 		
 		private:
 			std::unordered_map<Entity, uint16_t> _entityToChunk;
@@ -149,7 +169,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			T* get_converted_component(ArchetypeChunk& chunk, uint32_t columnIndex)
 			{
-				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, get_type_id_table()->get_type_id<T>()));
+				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, ComponentTypeIDTable::get_type_id<T>()));
 			}
 	};
 }
