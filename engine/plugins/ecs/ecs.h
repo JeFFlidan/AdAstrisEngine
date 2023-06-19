@@ -146,13 +146,8 @@ namespace tags {											\
 	}();													\
 }}
 
-#define ECS_SYSTEM(Type) \
-	namespace ecs {\
-	namespace systems {\
-		static bool Type##Register = []()\
-		{\
-			SystemTypeIDTable::add_system<Type>();\
-			SystemManager::register_system<Type>();\
-			return true; \
-		}();\
+#define ECS_SYSTEM(Type)																		\
+	namespace ecs {																				\
+	namespace systems {																			\
+		static bool Type##Result = SystemStorage::SystemRegistrar<Type>::register_system();		\
 	}}

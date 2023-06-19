@@ -4,16 +4,35 @@
 #include "profiler/logger.h"
 
 #include <iostream>
+#include <cassert>
 
 using namespace ad_astris::ecs;
 
-std::vector<EntityManager*> SystemManager::_entityManagers;
-std::unordered_map<uint32_t, System*> SystemManager::_idToSystem;
-std::vector<uint32_t> SystemManager::_executionOrder; 
+bool SystemManager::_isInitialized = false;
+
+SystemManager::SystemManager()
+{
+	assert(!_isInitialized);
+	_isInitialized = true;
+}
+
+SystemManager::~SystemManager()
+{
+	_isInitialized = false;
+}
 
 void SystemManager::init()
 {
+	std::unordered_map<uint32_t, System*>& addedSystems = systems::SystemStorage::systems;
+
+	for (auto& data : addedSystems)
+	{
+		data.second->configure_query();
+	}
 	
+	_idToSystem.insert(addedSystems.begin(), addedSystems.end());
+	
+	systems::SystemStorage::systems.clear();
 }
 
 void SystemManager::cleanup()

@@ -17,13 +17,18 @@ namespace ad_astris::ecs
 		friend class SystemManager;
 		
 		public:
-			/**
-			 * 
+			/** Creates a new archetype based on the ArchetypeCreationContext. If the archetype exists with the same
+			 * components and tags, this method will return ArchetypeHandle for that existing archetype.
+			 * @param context must be valid context with configuration of required components or tags.
+			 * If you don't configure components and tags, context will be invalid.
 			 */
 			ArchetypeHandle create_archetype(ArchetypeCreationContext& context);
 
-			/**
-			 * 
+			/**  Creates a new archetype based on the ArchetypeCreationContext. If the archetype exists with the same
+			 * components and tags, this method will return ArchetypeHandle for that existing archetype.
+			 * @param context must be a valid extension context that is based on the existing archetype and
+			 * components or tags that you want to add. If context consists of invalid ArchetypeHandle, it will
+			 * cause an error.
 			 */
 			ArchetypeHandle create_archetype(ArchetypeExtensionContext& context);
 
@@ -32,8 +37,8 @@ namespace ad_astris::ecs
 			 */
 			ArchetypeHandle create_archetype(ArchetypeReductionContext context);
 		
-			/**
-			 * 
+			/** Returns archetype that stores all components of the selected entity.
+			 * @param entity must be a valid entity
 			 */
 			ArchetypeHandle get_entity_archetype(Entity& entity);
 		
@@ -42,22 +47,25 @@ namespace ad_astris::ecs
 			 * @return new entity without archetype and related components*/ 
 			Entity create_entity();
 		
-			/** 
-			 * 
+			/** Creates a new entity and dedicate free space in the chosen Archetype.
+			 * @param archetype must be a valid archetype handle. You can get it after creating a new archetype
+			 * or calling get_entity_archetype method
 			 */
 			Entity create_entity(ArchetypeHandle& archetype);
 
-			/**
-			 * 
+			/** Creates a new entity and configures all required components and tags.
+			 * @param entityContext must contain all necessary components and there values. Also, you can define
+			 * tags
 			 */
 			Entity create_entity(EntityCreationContext& entityContext, UUID uuid = 0);
 
-			/** UUID and json with all entity components are taken from the level file.
-			 * 
+			/** Builds one entity with all components and tags based on the info from .aalevel file
+			 * @param uuid must be a valid uuid that was taken from .aalevel file
+			 * @param json fully describes one entity. Must be taken from .aalevel file
 			 */
 			Entity build_entity_from_json(UUID& uuid, std::string& json);
 
-			/**
+			/** Serializes all entity components and tags to json.
 			 * @param entity should have a valid UUID
 			 * @param levelJson is a main level json consisting entities and value of there components
 			 */
