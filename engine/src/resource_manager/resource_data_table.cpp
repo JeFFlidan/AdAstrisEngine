@@ -3,7 +3,6 @@
 #include "utils.h"
 
 #include <lz4.h>
-#include <inicpp.h>
 
 #include <algorithm>
 #include <execution>
@@ -29,83 +28,56 @@ resource::ResourceDataTable::~ResourceDataTable()
 void resource::ResourceDataTable::load_table()
 {
 	io::URI path = io::Utils::get_absolute_path_to_file(_fileSystem, "configs/resource_table.ini");
-	inicpp::config tableConfig = inicpp::parser::load_file(path.c_str());
-	for (auto& section : tableConfig)
+	_config.load_from_file(path);
+
+	for (auto section : _config)
 	{
+		UUID uuid = section.get_option_value<uint64_t>("UUID");
+		uint32_t nameID = section.get_option_value<uint64_t>("NameID");
+		std::string name = section.get_option_value<std::string>("Name");
 		ResourceData resData{};
 		resData.metadata.path = section.get_name().c_str();
-		UUID uuid;
-		uint32_t nameID;
-		std::string name;
-		for (auto& opt : section)
-		{
-			if (opt.get_name() == "UUID")
-			{
-				uuid = opt.get<inicpp::unsigned_ini_t>();
-			}
-			else if (opt.get_name() == "Name")
-			{
-				name = opt.get<inicpp::string_ini_t>();
-			}
-			else if (opt.get_name() == "NameID")
-			{
-				nameID = opt.get<inicpp::unsigned_ini_t>();
-			}
-			else if (opt.get_name() == "Type")
-			{
-				resData.metadata.type = Utils::get_enum_resource_type(opt.get<inicpp::string_ini_t>());
-			}
-		}
+		resData.metadata.type = Utils::get_enum_resource_type(section.get_option_value<std::string>("Type"));
+		resData.metadata.objectName = new ecore::ObjectName(name.c_str(), nameID);
 
-		resData.metadata.objectName = new ecore::ObjectName(name.c_str(), ecore::NameID(nameID));
 		_uuidToResourceData[uuid] = resData;
-		_nameToUUID[resData.metadata.objectName->get_string()] = uuid;
 	}
+
+	_config.unload();
 }
 
 void resource::ResourceDataTable::save_table()
 {
-	inicpp::config config{ };
 	for (auto& data : _uuidToResourceData)
 	{
 		ResourceData& resData = data.second;
 		io::URI path = resData.metadata.path;
 		io::Utils::replace_back_slash_to_forward(path);
-		inicpp::section newSection(path.c_str());
-		
-		inicpp::option uuidOption("UUID");
-		uuidOption = data.first;	
-		inicpp::option typeOption("Type");
-		inicpp::option nameOption("Name");
-		inicpp::option nameIdOption("NameID");
+
+		Section newSection(path.c_str());
+		newSection.set_option("UUID", data.first);
 
 		if (!resData.object)
 		{
-			typeOption = Utils::get_str_resource_type(resData.metadata.type);
-			nameOption = resData.metadata.objectName->get_name_without_id();
-			nameIdOption = (inicpp::unsigned_ini_t)resData.metadata.objectName->get_name_id();
+			newSection.set_option("Type", Utils::get_str_resource_type(resData.metadata.type));
+			newSection.set_option("Name", resData.metadata.objectName->get_name_without_id());
+			newSection.set_option("NameID", (uint64_t)resData.metadata.objectName->get_name_id());
 		}
 		else
 		{
-			typeOption = resData.object->get_type();
+			newSection.set_option("Type", resData.object->get_type());
 			ecore::ObjectName* name = resData.object->get_name();
-			nameOption = name->get_name_without_id();
-			nameIdOption =  (inicpp::unsigned_ini_t)name->get_name_id();
+			newSection.set_option("Name", name->get_name_without_id());
+			newSection.set_option("NameID", (uint64_t)name->get_name_id());
 		}
 		
-		newSection.add_option(uuidOption);
-		newSection.add_option(typeOption);
-		newSection.add_option(nameOption);
-		newSection.add_option(nameIdOption);
-		
-		config.add_section(newSection);
+		_config.set_section(newSection);
 	}
-
-	io::URI path = io::Utils::get_absolute_path_to_file(_fileSystem, "configs/resource_table.ini");
-	inicpp::parser::save(config, path.c_str());
+	
+	_config.save(_fileSystem);
 }
 
-
+// TODO CHECK IF OBJECT IS NULLPTR TO CONTINUE ON THE NEXT ITERATION
 void resource::ResourceDataTable::save_resources()
 {
 	for (auto& pair : _uuidToResourceData)

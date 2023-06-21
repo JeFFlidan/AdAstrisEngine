@@ -7,12 +7,12 @@
 namespace ad_astris
 {
 	using Option = inicpp::option;
+	using InternalSectionIterator = inicpp::section_iterator<Option>;
+	using InternalConfigIterator = inicpp::config_iterator<inicpp::section>;
 	
 	class Section
 	{
-		friend class ConfigBase;
-
-		using SectionIterator = inicpp::section_iterator<Option>;
+		friend class Config;
 		
 		public:
 			Section(const std::string& sectionName);
@@ -21,15 +21,63 @@ namespace ad_astris
 			bool check_option(const std::string& optionName);
 			
 			void set_option(Option option);
+		
+			template<typename T>
+			void set_option(const std::string& optionName, T optionValue)
+			{
+				Option option(optionName);
+				option = optionValue;
+				set_option(option);
+			}
+		
 			void remove_option(const std::string& optionName);
 
 			std::string get_name();
 			uint32_t get_option_count();
+
+			template<typename T>
+			T get_option_value(const std::string& optionName)
+			{
+				return _section[optionName].get<T>();
+			}
 		
 			Option operator[](const std::string& optionName)
 			{
 				return _section[optionName];
 			}
+		
+			class SectionIterator
+			{
+				public:
+					SectionIterator(InternalSectionIterator internalIter) : _internalIter(internalIter)
+					{
+						
+					}
+
+					SectionIterator& operator++()
+					{
+						++_internalIter;
+						return *this;
+					}
+
+					Option operator* ()
+					{
+						return Option(*_internalIter);
+					}
+
+					bool operator==(const SectionIterator& other)
+					{
+						return _internalIter == other._internalIter;
+					}
+
+					bool operator!=(const SectionIterator other)
+					{
+						return _internalIter != other._internalIter; 
+					}
+				
+				private:
+					InternalSectionIterator _internalIter;
+			};
 		
 			SectionIterator begin();
 			SectionIterator end();
@@ -37,14 +85,14 @@ namespace ad_astris
 		private:
 			inicpp::section _section;
 	};
+
 	
-	class ConfigBase
+	class Config
 	{
 		public:
-			bool load_config(const io::URI& configPath);
-			void unload_config();
-			void save_config(io::FileSystem* fileSystem);
-			//bool is_config_loaded();
+			bool load_from_file(const io::URI& configPath);
+			void unload();
+			void save(io::FileSystem* fileSystem);
 
 			bool check_section(const std::string& sectionName);
 			bool check_option(const std::string& sectionName, const std::string& optionName);
@@ -53,17 +101,55 @@ namespace ad_astris
 			inicpp::option get_option(const std::string& sectionName, const std::string& optionName);
 
 			void set_section(Section& section);
-	
+
+			class ConfigIterator
+			{
+				public:
+					ConfigIterator(InternalConfigIterator internalIter) : _internalIter(internalIter)
+					{
+							
+					}
+
+					ConfigIterator& operator++()
+					{
+						++_internalIter;
+						return *this;
+					}
+
+					Section operator* ()
+					{
+						return Section(*_internalIter);
+					}
+
+					bool operator==(const ConfigIterator& other)
+					{
+						return _internalIter == other._internalIter;
+					}
+
+					bool operator!=(const ConfigIterator other)
+					{
+						return _internalIter != other._internalIter; 
+					}
+				
+				private:
+					InternalConfigIterator _internalIter;
+			};
+		
+			ConfigIterator begin();
+			ConfigIterator end();
+		
 		protected:
-			inicpp::config _config;
 			std::string _configPath;
+
+		private:
+			inicpp::config _config;
 	};
 
 	inline void config_test(io::FileSystem* fileSystem, io::URI path)
 	{
-		ConfigBase config;
+		Config config;
 		LOG_INFO("Before loading config")
-		config.load_config(path);
+		config.load_from_file(path);
 		LOG_INFO("After loading config")
 		Section section = config.get_section("E:/MyEngine/MyEngine/AdAstrisEngine/bin/my_level.aalevel");
 		LOG_INFO("UUID: {}", section["UUID"].get<uint64_t>())
@@ -78,7 +164,7 @@ namespace ad_astris
 		LOG_INFO("After set option")
 		config.set_section(section2);
 		LOG_INFO("After set section")
-		config.save_config(fileSystem);
+		config.save(fileSystem);
 		LOG_INFO("After save config")
 	}
 

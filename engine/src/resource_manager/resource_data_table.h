@@ -4,6 +4,8 @@
 #include "engine_core/object.h"
 #include "resource_formats.h"
 
+#include "core/config_base.h"
+
 #include <unordered_map>
 
 namespace ad_astris::resource
@@ -65,5 +67,6 @@ namespace ad_astris::resource
 			io::FileSystem* _fileSystem{ nullptr };
 			std::map<std::string, UUID> _nameToUUID;
 			std::map<UUID, ResourceData> _uuidToResourceData;
+			Config _config;
 	};
 }

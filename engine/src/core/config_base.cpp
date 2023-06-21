@@ -47,18 +47,19 @@ uint32_t Section::get_option_count()
 	return _section.size();
 }
 
-inicpp::section_iterator<Option> Section::begin()
+Section::SectionIterator Section::begin()
 {
-	return _section.begin();
+	return SectionIterator(_section.end());
 }
 
-inicpp::section_iterator<Option> Section::end()
+Section::SectionIterator Section::end()
 {
-	return _section.end();
+	return SectionIterator(_section.begin());
 }
 
-bool ConfigBase::load_config(const io::URI& configPath)
+bool Config::load_from_file(const io::URI& configPath)
 {
+	_configPath = configPath.c_str();
 	if (io::Utils::get_file_extension(configPath) != "ini")
 	{
 		LOG_ERROR("ConfigBase::load_config(): You can't load config if it's not an .ini file")
@@ -70,28 +71,27 @@ bool ConfigBase::load_config(const io::URI& configPath)
 		return false;
 	}
 	_config = inicpp::parser::load_file(configPath.c_str());
-	_configPath = configPath.c_str();
 	return true;
 }
 
-void ConfigBase::unload_config()
+void Config::unload()
 {
 	_config.clear_config();
 }
 
-void ConfigBase::save_config(io::FileSystem* fileSystem)
+void Config::save(io::FileSystem* fileSystem)
 {
 	io::Stream* stream = fileSystem->open(_configPath.c_str(), "w");
 	fileSystem->close(stream);
 	inicpp::parser::save(_config, _configPath);
 }
 
-bool ConfigBase::check_section(const std::string& sectionName)
+bool Config::check_section(const std::string& sectionName)
 {
 	return _config.contains(sectionName);		// ??
 }
 
-bool ConfigBase::check_option(const std::string& sectionName, const std::string& optionName)
+bool Config::check_option(const std::string& sectionName, const std::string& optionName)
 {
 	if (check_section(sectionName))
 	{
@@ -99,7 +99,7 @@ bool ConfigBase::check_option(const std::string& sectionName, const std::string&
 	}
 }
 
-Section ConfigBase::get_section(const std::string& sectionName)
+Section Config::get_section(const std::string& sectionName)
 {
 	if (!check_section(sectionName))
 	{
@@ -111,7 +111,7 @@ Section ConfigBase::get_section(const std::string& sectionName)
 	return section;
 }
 
-Option ConfigBase::get_option(const std::string& sectionName, const std::string& optionName)
+Option Config::get_option(const std::string& sectionName, const std::string& optionName)
 {
 	if (!check_section(sectionName))
 	{
@@ -128,7 +128,7 @@ Option ConfigBase::get_option(const std::string& sectionName, const std::string&
 	return _config[sectionName][optionName];
 }
 
-void ConfigBase::set_section(Section& section)
+void Config::set_section(Section& section)
 {
 	if (check_section(section.get_name()))
 	{
@@ -137,4 +137,14 @@ void ConfigBase::set_section(Section& section)
 	}
 
 	_config.add_section(section._section);
+}
+
+Config::ConfigIterator Config::begin()
+{
+	return ConfigIterator(_config.begin());
+}
+
+Config::ConfigIterator Config::end()
+{
+	return ConfigIterator(_config.end());
 }
