@@ -2,6 +2,7 @@
 
 #include "vulkan_command_manager.h"
 #include "rhi/resources.h"
+#include "engine/vulkan_rhi_module.h"
 #include <vulkan/vulkan.h>
 
 namespace ad_astris::vulkan
@@ -13,7 +14,7 @@ namespace ad_astris::vulkan
 		rhi::QueueType queueType;
 	};
 
-	class VulkanQueue
+	class VK_RHI_API VulkanQueue : public IVulkanQueue
 	{
 		public:
 			VulkanQueue(QueueData queueData);
@@ -25,6 +26,7 @@ namespace ad_astris::vulkan
 			uint32_t get_family() { return _family; }
 			rhi::QueueType get_queue_type() { return _queueType; }
 			uint32_t get_submission_counter() { return _submissionCounter; }
+		
 		private:
 			VkQueue _queue;
 			uint32_t _family;

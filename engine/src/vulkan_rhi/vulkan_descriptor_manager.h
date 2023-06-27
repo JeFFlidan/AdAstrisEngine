@@ -1,10 +1,11 @@
 #pragma once
 
+#include "api.h"
 #include "vulkan_device.h"
 
 namespace ad_astris::vulkan
 {
-	class VulkanDescriptorManager
+	class VK_RHI_API VulkanDescriptorManager
 	{
 		public:
 			VulkanDescriptorManager(VulkanDevice* device);

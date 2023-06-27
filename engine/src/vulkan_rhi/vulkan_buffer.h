@@ -1,11 +1,12 @@
 ﻿#pragma once
 
+#include "api.h"
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
 
 namespace ad_astris::vulkan
 {
-	class VulkanBuffer
+	class VK_RHI_API VulkanBuffer
 	{
 		public:
 			VulkanBuffer() = default;

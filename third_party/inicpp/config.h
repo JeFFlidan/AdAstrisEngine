@@ -67,6 +67,8 @@ namespace inicpp
 		 */
 		config &operator=(config &&source);
 
+		void clear_config();
+
 		/**
 		 * Add section to this ini configuration.
 		 * @param sect section which will be added

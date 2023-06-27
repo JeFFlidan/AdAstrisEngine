@@ -56,10 +56,10 @@ RM = "C:\Program Files\CMake\bin\cmake.exe" -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = E:\MyEngine\MyEngine\VulkanEngine
+CMAKE_SOURCE_DIR = E:\MyEngine\MyEngine\AdAstrisEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = E:\MyEngine\MyEngine\VulkanEngine
+CMAKE_BINARY_DIR = E:\MyEngine\MyEngine\AdAstrisEngine
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -86,14 +86,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(CMAKE_COMMAND) -E cmake_progress_start E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles E:\MyEngine\MyEngine\VulkanEngine\third_party\\CMakeFiles\progress.marks
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/all
-	$(CMAKE_COMMAND) -E cmake_progress_start E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles 0
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(CMAKE_COMMAND) -E cmake_progress_start E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles E:\MyEngine\MyEngine\AdAstrisEngine\third_party\\CMakeFiles\progress.marks
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/all
+	$(CMAKE_COMMAND) -E cmake_progress_start E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/clean
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/clean
 .PHONY : clean
 
 # The main clean target
@@ -102,22 +102,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/preinstall
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/preinstall
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 third_party/CMakeFiles/vkbootstrap.dir/rule:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/vkbootstrap.dir/rule
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/vkbootstrap.dir/rule
 .PHONY : third_party/CMakeFiles/vkbootstrap.dir/rule
 
 # Convenience name for target.
@@ -126,12 +126,12 @@ vkbootstrap: third_party/CMakeFiles/vkbootstrap.dir/rule
 
 # fast build rule for target.
 vkbootstrap/fast:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\vkbootstrap.dir\build.make third_party/CMakeFiles/vkbootstrap.dir/build
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\vkbootstrap.dir\build.make third_party/CMakeFiles/vkbootstrap.dir/build
 .PHONY : vkbootstrap/fast
 
 # Convenience name for target.
 third_party/CMakeFiles/tinyobjloader.dir/rule:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/tinyobjloader.dir/rule
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/tinyobjloader.dir/rule
 .PHONY : third_party/CMakeFiles/tinyobjloader.dir/rule
 
 # Convenience name for target.
@@ -140,12 +140,12 @@ tinyobjloader: third_party/CMakeFiles/tinyobjloader.dir/rule
 
 # fast build rule for target.
 tinyobjloader/fast:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\tinyobjloader.dir\build.make third_party/CMakeFiles/tinyobjloader.dir/build
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\tinyobjloader.dir\build.make third_party/CMakeFiles/tinyobjloader.dir/build
 .PHONY : tinyobjloader/fast
 
 # Convenience name for target.
 third_party/CMakeFiles/lz4.dir/rule:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/lz4.dir/rule
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/lz4.dir/rule
 .PHONY : third_party/CMakeFiles/lz4.dir/rule
 
 # Convenience name for target.
@@ -154,12 +154,12 @@ lz4: third_party/CMakeFiles/lz4.dir/rule
 
 # fast build rule for target.
 lz4/fast:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\lz4.dir\build.make third_party/CMakeFiles/lz4.dir/build
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\lz4.dir\build.make third_party/CMakeFiles/lz4.dir/build
 .PHONY : lz4/fast
 
 # Convenience name for target.
 third_party/CMakeFiles/fmt_lib.dir/rule:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/fmt_lib.dir/rule
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/fmt_lib.dir/rule
 .PHONY : third_party/CMakeFiles/fmt_lib.dir/rule
 
 # Convenience name for target.
@@ -168,12 +168,12 @@ fmt_lib: third_party/CMakeFiles/fmt_lib.dir/rule
 
 # fast build rule for target.
 fmt_lib/fast:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/build
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/build
 .PHONY : fmt_lib/fast
 
 # Convenience name for target.
 third_party/CMakeFiles/spirv_reflect.dir/rule:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/spirv_reflect.dir/rule
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/spirv_reflect.dir/rule
 .PHONY : third_party/CMakeFiles/spirv_reflect.dir/rule
 
 # Convenience name for target.
@@ -182,12 +182,12 @@ spirv_reflect: third_party/CMakeFiles/spirv_reflect.dir/rule
 
 # fast build rule for target.
 spirv_reflect/fast:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\spirv_reflect.dir\build.make third_party/CMakeFiles/spirv_reflect.dir/build
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\spirv_reflect.dir\build.make third_party/CMakeFiles/spirv_reflect.dir/build
 .PHONY : spirv_reflect/fast
 
 # Convenience name for target.
 third_party/CMakeFiles/inicpp.dir/rule:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/inicpp.dir/rule
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/inicpp.dir/rule
 .PHONY : third_party/CMakeFiles/inicpp.dir/rule
 
 # Convenience name for target.
@@ -196,12 +196,12 @@ inicpp: third_party/CMakeFiles/inicpp.dir/rule
 
 # fast build rule for target.
 inicpp/fast:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/build
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/build
 .PHONY : inicpp/fast
 
 # Convenience name for target.
 third_party/CMakeFiles/imgui.dir/rule:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/imgui.dir/rule
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 third_party/CMakeFiles/imgui.dir/rule
 .PHONY : third_party/CMakeFiles/imgui.dir/rule
 
 # Convenience name for target.
@@ -210,7 +210,7 @@ imgui: third_party/CMakeFiles/imgui.dir/rule
 
 # fast build rule for target.
 imgui/fast:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/build
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/build
 .PHONY : imgui/fast
 
 fmt_lib/fmt/format.obj: fmt_lib/fmt/format.cc.obj
@@ -218,7 +218,7 @@ fmt_lib/fmt/format.obj: fmt_lib/fmt/format.cc.obj
 
 # target to build an object file
 fmt_lib/fmt/format.cc.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.obj
 .PHONY : fmt_lib/fmt/format.cc.obj
 
 fmt_lib/fmt/format.i: fmt_lib/fmt/format.cc.i
@@ -226,7 +226,7 @@ fmt_lib/fmt/format.i: fmt_lib/fmt/format.cc.i
 
 # target to preprocess a source file
 fmt_lib/fmt/format.cc.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.i
 .PHONY : fmt_lib/fmt/format.cc.i
 
 fmt_lib/fmt/format.s: fmt_lib/fmt/format.cc.s
@@ -234,7 +234,7 @@ fmt_lib/fmt/format.s: fmt_lib/fmt/format.cc.s
 
 # target to generate assembly for a file
 fmt_lib/fmt/format.cc.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.s
 .PHONY : fmt_lib/fmt/format.cc.s
 
 fmt_lib/fmt/os.obj: fmt_lib/fmt/os.cc.obj
@@ -242,7 +242,7 @@ fmt_lib/fmt/os.obj: fmt_lib/fmt/os.cc.obj
 
 # target to build an object file
 fmt_lib/fmt/os.cc.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.obj
 .PHONY : fmt_lib/fmt/os.cc.obj
 
 fmt_lib/fmt/os.i: fmt_lib/fmt/os.cc.i
@@ -250,7 +250,7 @@ fmt_lib/fmt/os.i: fmt_lib/fmt/os.cc.i
 
 # target to preprocess a source file
 fmt_lib/fmt/os.cc.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.i
 .PHONY : fmt_lib/fmt/os.cc.i
 
 fmt_lib/fmt/os.s: fmt_lib/fmt/os.cc.s
@@ -258,7 +258,7 @@ fmt_lib/fmt/os.s: fmt_lib/fmt/os.cc.s
 
 # target to generate assembly for a file
 fmt_lib/fmt/os.cc.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\fmt_lib.dir\build.make third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.s
 .PHONY : fmt_lib/fmt/os.cc.s
 
 imgui/imgui.obj: imgui/imgui.cpp.obj
@@ -266,7 +266,7 @@ imgui/imgui.obj: imgui/imgui.cpp.obj
 
 # target to build an object file
 imgui/imgui.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.obj
 .PHONY : imgui/imgui.cpp.obj
 
 imgui/imgui.i: imgui/imgui.cpp.i
@@ -274,7 +274,7 @@ imgui/imgui.i: imgui/imgui.cpp.i
 
 # target to preprocess a source file
 imgui/imgui.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.i
 .PHONY : imgui/imgui.cpp.i
 
 imgui/imgui.s: imgui/imgui.cpp.s
@@ -282,7 +282,7 @@ imgui/imgui.s: imgui/imgui.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui.cpp.s
 .PHONY : imgui/imgui.cpp.s
 
 imgui/imgui_demo.obj: imgui/imgui_demo.cpp.obj
@@ -290,7 +290,7 @@ imgui/imgui_demo.obj: imgui/imgui_demo.cpp.obj
 
 # target to build an object file
 imgui/imgui_demo.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.obj
 .PHONY : imgui/imgui_demo.cpp.obj
 
 imgui/imgui_demo.i: imgui/imgui_demo.cpp.i
@@ -298,7 +298,7 @@ imgui/imgui_demo.i: imgui/imgui_demo.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_demo.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.i
 .PHONY : imgui/imgui_demo.cpp.i
 
 imgui/imgui_demo.s: imgui/imgui_demo.cpp.s
@@ -306,7 +306,7 @@ imgui/imgui_demo.s: imgui/imgui_demo.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_demo.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_demo.cpp.s
 .PHONY : imgui/imgui_demo.cpp.s
 
 imgui/imgui_draw.obj: imgui/imgui_draw.cpp.obj
@@ -314,7 +314,7 @@ imgui/imgui_draw.obj: imgui/imgui_draw.cpp.obj
 
 # target to build an object file
 imgui/imgui_draw.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.obj
 .PHONY : imgui/imgui_draw.cpp.obj
 
 imgui/imgui_draw.i: imgui/imgui_draw.cpp.i
@@ -322,7 +322,7 @@ imgui/imgui_draw.i: imgui/imgui_draw.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_draw.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.i
 .PHONY : imgui/imgui_draw.cpp.i
 
 imgui/imgui_draw.s: imgui/imgui_draw.cpp.s
@@ -330,7 +330,7 @@ imgui/imgui_draw.s: imgui/imgui_draw.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_draw.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_draw.cpp.s
 .PHONY : imgui/imgui_draw.cpp.s
 
 imgui/imgui_impl_sdl2.obj: imgui/imgui_impl_sdl2.cpp.obj
@@ -338,7 +338,7 @@ imgui/imgui_impl_sdl2.obj: imgui/imgui_impl_sdl2.cpp.obj
 
 # target to build an object file
 imgui/imgui_impl_sdl2.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.obj
 .PHONY : imgui/imgui_impl_sdl2.cpp.obj
 
 imgui/imgui_impl_sdl2.i: imgui/imgui_impl_sdl2.cpp.i
@@ -346,7 +346,7 @@ imgui/imgui_impl_sdl2.i: imgui/imgui_impl_sdl2.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_impl_sdl2.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.i
 .PHONY : imgui/imgui_impl_sdl2.cpp.i
 
 imgui/imgui_impl_sdl2.s: imgui/imgui_impl_sdl2.cpp.s
@@ -354,7 +354,7 @@ imgui/imgui_impl_sdl2.s: imgui/imgui_impl_sdl2.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_impl_sdl2.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_sdl2.cpp.s
 .PHONY : imgui/imgui_impl_sdl2.cpp.s
 
 imgui/imgui_impl_vulkan.obj: imgui/imgui_impl_vulkan.cpp.obj
@@ -362,7 +362,7 @@ imgui/imgui_impl_vulkan.obj: imgui/imgui_impl_vulkan.cpp.obj
 
 # target to build an object file
 imgui/imgui_impl_vulkan.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.obj
 .PHONY : imgui/imgui_impl_vulkan.cpp.obj
 
 imgui/imgui_impl_vulkan.i: imgui/imgui_impl_vulkan.cpp.i
@@ -370,7 +370,7 @@ imgui/imgui_impl_vulkan.i: imgui/imgui_impl_vulkan.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_impl_vulkan.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.i
 .PHONY : imgui/imgui_impl_vulkan.cpp.i
 
 imgui/imgui_impl_vulkan.s: imgui/imgui_impl_vulkan.cpp.s
@@ -378,7 +378,7 @@ imgui/imgui_impl_vulkan.s: imgui/imgui_impl_vulkan.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_impl_vulkan.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_impl_vulkan.cpp.s
 .PHONY : imgui/imgui_impl_vulkan.cpp.s
 
 imgui/imgui_tables.obj: imgui/imgui_tables.cpp.obj
@@ -386,7 +386,7 @@ imgui/imgui_tables.obj: imgui/imgui_tables.cpp.obj
 
 # target to build an object file
 imgui/imgui_tables.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.obj
 .PHONY : imgui/imgui_tables.cpp.obj
 
 imgui/imgui_tables.i: imgui/imgui_tables.cpp.i
@@ -394,7 +394,7 @@ imgui/imgui_tables.i: imgui/imgui_tables.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_tables.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.i
 .PHONY : imgui/imgui_tables.cpp.i
 
 imgui/imgui_tables.s: imgui/imgui_tables.cpp.s
@@ -402,7 +402,7 @@ imgui/imgui_tables.s: imgui/imgui_tables.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_tables.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_tables.cpp.s
 .PHONY : imgui/imgui_tables.cpp.s
 
 imgui/imgui_widgets.obj: imgui/imgui_widgets.cpp.obj
@@ -410,7 +410,7 @@ imgui/imgui_widgets.obj: imgui/imgui_widgets.cpp.obj
 
 # target to build an object file
 imgui/imgui_widgets.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.obj
 .PHONY : imgui/imgui_widgets.cpp.obj
 
 imgui/imgui_widgets.i: imgui/imgui_widgets.cpp.i
@@ -418,7 +418,7 @@ imgui/imgui_widgets.i: imgui/imgui_widgets.cpp.i
 
 # target to preprocess a source file
 imgui/imgui_widgets.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.i
 .PHONY : imgui/imgui_widgets.cpp.i
 
 imgui/imgui_widgets.s: imgui/imgui_widgets.cpp.s
@@ -426,7 +426,7 @@ imgui/imgui_widgets.s: imgui/imgui_widgets.cpp.s
 
 # target to generate assembly for a file
 imgui/imgui_widgets.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\imgui.dir\build.make third_party/CMakeFiles/imgui.dir/imgui/imgui_widgets.cpp.s
 .PHONY : imgui/imgui_widgets.cpp.s
 
 inicpp/config.obj: inicpp/config.cpp.obj
@@ -434,7 +434,7 @@ inicpp/config.obj: inicpp/config.cpp.obj
 
 # target to build an object file
 inicpp/config.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj
 .PHONY : inicpp/config.cpp.obj
 
 inicpp/config.i: inicpp/config.cpp.i
@@ -442,7 +442,7 @@ inicpp/config.i: inicpp/config.cpp.i
 
 # target to preprocess a source file
 inicpp/config.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.i
 .PHONY : inicpp/config.cpp.i
 
 inicpp/config.s: inicpp/config.cpp.s
@@ -450,7 +450,7 @@ inicpp/config.s: inicpp/config.cpp.s
 
 # target to generate assembly for a file
 inicpp/config.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.s
 .PHONY : inicpp/config.cpp.s
 
 inicpp/option.obj: inicpp/option.cpp.obj
@@ -458,7 +458,7 @@ inicpp/option.obj: inicpp/option.cpp.obj
 
 # target to build an object file
 inicpp/option.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj
 .PHONY : inicpp/option.cpp.obj
 
 inicpp/option.i: inicpp/option.cpp.i
@@ -466,7 +466,7 @@ inicpp/option.i: inicpp/option.cpp.i
 
 # target to preprocess a source file
 inicpp/option.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.i
 .PHONY : inicpp/option.cpp.i
 
 inicpp/option.s: inicpp/option.cpp.s
@@ -474,7 +474,7 @@ inicpp/option.s: inicpp/option.cpp.s
 
 # target to generate assembly for a file
 inicpp/option.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.s
 .PHONY : inicpp/option.cpp.s
 
 inicpp/option_schema.obj: inicpp/option_schema.cpp.obj
@@ -482,7 +482,7 @@ inicpp/option_schema.obj: inicpp/option_schema.cpp.obj
 
 # target to build an object file
 inicpp/option_schema.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj
 .PHONY : inicpp/option_schema.cpp.obj
 
 inicpp/option_schema.i: inicpp/option_schema.cpp.i
@@ -490,7 +490,7 @@ inicpp/option_schema.i: inicpp/option_schema.cpp.i
 
 # target to preprocess a source file
 inicpp/option_schema.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.i
 .PHONY : inicpp/option_schema.cpp.i
 
 inicpp/option_schema.s: inicpp/option_schema.cpp.s
@@ -498,7 +498,7 @@ inicpp/option_schema.s: inicpp/option_schema.cpp.s
 
 # target to generate assembly for a file
 inicpp/option_schema.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.s
 .PHONY : inicpp/option_schema.cpp.s
 
 inicpp/parser.obj: inicpp/parser.cpp.obj
@@ -506,7 +506,7 @@ inicpp/parser.obj: inicpp/parser.cpp.obj
 
 # target to build an object file
 inicpp/parser.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj
 .PHONY : inicpp/parser.cpp.obj
 
 inicpp/parser.i: inicpp/parser.cpp.i
@@ -514,7 +514,7 @@ inicpp/parser.i: inicpp/parser.cpp.i
 
 # target to preprocess a source file
 inicpp/parser.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.i
 .PHONY : inicpp/parser.cpp.i
 
 inicpp/parser.s: inicpp/parser.cpp.s
@@ -522,7 +522,7 @@ inicpp/parser.s: inicpp/parser.cpp.s
 
 # target to generate assembly for a file
 inicpp/parser.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.s
 .PHONY : inicpp/parser.cpp.s
 
 inicpp/schema.obj: inicpp/schema.cpp.obj
@@ -530,7 +530,7 @@ inicpp/schema.obj: inicpp/schema.cpp.obj
 
 # target to build an object file
 inicpp/schema.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj
 .PHONY : inicpp/schema.cpp.obj
 
 inicpp/schema.i: inicpp/schema.cpp.i
@@ -538,7 +538,7 @@ inicpp/schema.i: inicpp/schema.cpp.i
 
 # target to preprocess a source file
 inicpp/schema.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.i
 .PHONY : inicpp/schema.cpp.i
 
 inicpp/schema.s: inicpp/schema.cpp.s
@@ -546,7 +546,7 @@ inicpp/schema.s: inicpp/schema.cpp.s
 
 # target to generate assembly for a file
 inicpp/schema.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.s
 .PHONY : inicpp/schema.cpp.s
 
 inicpp/section.obj: inicpp/section.cpp.obj
@@ -554,7 +554,7 @@ inicpp/section.obj: inicpp/section.cpp.obj
 
 # target to build an object file
 inicpp/section.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj
 .PHONY : inicpp/section.cpp.obj
 
 inicpp/section.i: inicpp/section.cpp.i
@@ -562,7 +562,7 @@ inicpp/section.i: inicpp/section.cpp.i
 
 # target to preprocess a source file
 inicpp/section.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.i
 .PHONY : inicpp/section.cpp.i
 
 inicpp/section.s: inicpp/section.cpp.s
@@ -570,7 +570,7 @@ inicpp/section.s: inicpp/section.cpp.s
 
 # target to generate assembly for a file
 inicpp/section.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.s
 .PHONY : inicpp/section.cpp.s
 
 inicpp/section_schema.obj: inicpp/section_schema.cpp.obj
@@ -578,7 +578,7 @@ inicpp/section_schema.obj: inicpp/section_schema.cpp.obj
 
 # target to build an object file
 inicpp/section_schema.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj
 .PHONY : inicpp/section_schema.cpp.obj
 
 inicpp/section_schema.i: inicpp/section_schema.cpp.i
@@ -586,7 +586,7 @@ inicpp/section_schema.i: inicpp/section_schema.cpp.i
 
 # target to preprocess a source file
 inicpp/section_schema.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.i
 .PHONY : inicpp/section_schema.cpp.i
 
 inicpp/section_schema.s: inicpp/section_schema.cpp.s
@@ -594,7 +594,7 @@ inicpp/section_schema.s: inicpp/section_schema.cpp.s
 
 # target to generate assembly for a file
 inicpp/section_schema.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.s
 .PHONY : inicpp/section_schema.cpp.s
 
 inicpp/string_utils.obj: inicpp/string_utils.cpp.obj
@@ -602,7 +602,7 @@ inicpp/string_utils.obj: inicpp/string_utils.cpp.obj
 
 # target to build an object file
 inicpp/string_utils.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj
 .PHONY : inicpp/string_utils.cpp.obj
 
 inicpp/string_utils.i: inicpp/string_utils.cpp.i
@@ -610,7 +610,7 @@ inicpp/string_utils.i: inicpp/string_utils.cpp.i
 
 # target to preprocess a source file
 inicpp/string_utils.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.i
 .PHONY : inicpp/string_utils.cpp.i
 
 inicpp/string_utils.s: inicpp/string_utils.cpp.s
@@ -618,7 +618,7 @@ inicpp/string_utils.s: inicpp/string_utils.cpp.s
 
 # target to generate assembly for a file
 inicpp/string_utils.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\inicpp.dir\build.make third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.s
 .PHONY : inicpp/string_utils.cpp.s
 
 lz4/lz4.obj: lz4/lz4.c.obj
@@ -626,7 +626,7 @@ lz4/lz4.obj: lz4/lz4.c.obj
 
 # target to build an object file
 lz4/lz4.c.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\lz4.dir\build.make third_party/CMakeFiles/lz4.dir/lz4/lz4.c.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\lz4.dir\build.make third_party/CMakeFiles/lz4.dir/lz4/lz4.c.obj
 .PHONY : lz4/lz4.c.obj
 
 lz4/lz4.i: lz4/lz4.c.i
@@ -634,7 +634,7 @@ lz4/lz4.i: lz4/lz4.c.i
 
 # target to preprocess a source file
 lz4/lz4.c.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\lz4.dir\build.make third_party/CMakeFiles/lz4.dir/lz4/lz4.c.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\lz4.dir\build.make third_party/CMakeFiles/lz4.dir/lz4/lz4.c.i
 .PHONY : lz4/lz4.c.i
 
 lz4/lz4.s: lz4/lz4.c.s
@@ -642,7 +642,7 @@ lz4/lz4.s: lz4/lz4.c.s
 
 # target to generate assembly for a file
 lz4/lz4.c.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\lz4.dir\build.make third_party/CMakeFiles/lz4.dir/lz4/lz4.c.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\lz4.dir\build.make third_party/CMakeFiles/lz4.dir/lz4/lz4.c.s
 .PHONY : lz4/lz4.c.s
 
 spirv_reflect/spirv_reflect.obj: spirv_reflect/spirv_reflect.c.obj
@@ -650,7 +650,7 @@ spirv_reflect/spirv_reflect.obj: spirv_reflect/spirv_reflect.c.obj
 
 # target to build an object file
 spirv_reflect/spirv_reflect.c.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\spirv_reflect.dir\build.make third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\spirv_reflect.dir\build.make third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj
 .PHONY : spirv_reflect/spirv_reflect.c.obj
 
 spirv_reflect/spirv_reflect.i: spirv_reflect/spirv_reflect.c.i
@@ -658,7 +658,7 @@ spirv_reflect/spirv_reflect.i: spirv_reflect/spirv_reflect.c.i
 
 # target to preprocess a source file
 spirv_reflect/spirv_reflect.c.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\spirv_reflect.dir\build.make third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\spirv_reflect.dir\build.make third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.i
 .PHONY : spirv_reflect/spirv_reflect.c.i
 
 spirv_reflect/spirv_reflect.s: spirv_reflect/spirv_reflect.c.s
@@ -666,7 +666,7 @@ spirv_reflect/spirv_reflect.s: spirv_reflect/spirv_reflect.c.s
 
 # target to generate assembly for a file
 spirv_reflect/spirv_reflect.c.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\spirv_reflect.dir\build.make third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\spirv_reflect.dir\build.make third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.s
 .PHONY : spirv_reflect/spirv_reflect.c.s
 
 tinyobjloader/tiny_obj_loader.obj: tinyobjloader/tiny_obj_loader.cc.obj
@@ -674,7 +674,7 @@ tinyobjloader/tiny_obj_loader.obj: tinyobjloader/tiny_obj_loader.cc.obj
 
 # target to build an object file
 tinyobjloader/tiny_obj_loader.cc.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\tinyobjloader.dir\build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\tinyobjloader.dir\build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.obj
 .PHONY : tinyobjloader/tiny_obj_loader.cc.obj
 
 tinyobjloader/tiny_obj_loader.i: tinyobjloader/tiny_obj_loader.cc.i
@@ -682,7 +682,7 @@ tinyobjloader/tiny_obj_loader.i: tinyobjloader/tiny_obj_loader.cc.i
 
 # target to preprocess a source file
 tinyobjloader/tiny_obj_loader.cc.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\tinyobjloader.dir\build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\tinyobjloader.dir\build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.i
 .PHONY : tinyobjloader/tiny_obj_loader.cc.i
 
 tinyobjloader/tiny_obj_loader.s: tinyobjloader/tiny_obj_loader.cc.s
@@ -690,7 +690,7 @@ tinyobjloader/tiny_obj_loader.s: tinyobjloader/tiny_obj_loader.cc.s
 
 # target to generate assembly for a file
 tinyobjloader/tiny_obj_loader.cc.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\tinyobjloader.dir\build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\tinyobjloader.dir\build.make third_party/CMakeFiles/tinyobjloader.dir/tinyobjloader/tiny_obj_loader.cc.s
 .PHONY : tinyobjloader/tiny_obj_loader.cc.s
 
 vkbootstrap/VkBootstrap.obj: vkbootstrap/VkBootstrap.cpp.obj
@@ -698,7 +698,7 @@ vkbootstrap/VkBootstrap.obj: vkbootstrap/VkBootstrap.cpp.obj
 
 # target to build an object file
 vkbootstrap/VkBootstrap.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\vkbootstrap.dir\build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\vkbootstrap.dir\build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.obj
 .PHONY : vkbootstrap/VkBootstrap.cpp.obj
 
 vkbootstrap/VkBootstrap.i: vkbootstrap/VkBootstrap.cpp.i
@@ -706,7 +706,7 @@ vkbootstrap/VkBootstrap.i: vkbootstrap/VkBootstrap.cpp.i
 
 # target to preprocess a source file
 vkbootstrap/VkBootstrap.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\vkbootstrap.dir\build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\vkbootstrap.dir\build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.i
 .PHONY : vkbootstrap/VkBootstrap.cpp.i
 
 vkbootstrap/VkBootstrap.s: vkbootstrap/VkBootstrap.cpp.s
@@ -714,7 +714,7 @@ vkbootstrap/VkBootstrap.s: vkbootstrap/VkBootstrap.cpp.s
 
 # target to generate assembly for a file
 vkbootstrap/VkBootstrap.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\vkbootstrap.dir\build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f third_party\CMakeFiles\vkbootstrap.dir\build.make third_party/CMakeFiles/vkbootstrap.dir/vkbootstrap/VkBootstrap.cpp.s
 .PHONY : vkbootstrap/VkBootstrap.cpp.s
 
 # Help Target
@@ -806,6 +806,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

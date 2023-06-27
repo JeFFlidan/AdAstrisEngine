@@ -3,6 +3,13 @@
 #include "resources.h"
 #include <vector>
 #include <array>
+#include <vulkan/vulkan.h>
+#include "vk_mem_alloc.h"
+
+namespace ad_astris::vulkan
+{
+	class VulkanDevice;
+}
 
 namespace ad_astris::rhi
 {
@@ -78,5 +85,12 @@ namespace ad_astris::rhi
 			virtual void dispatch(CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
 			virtual void fill_buffer(CommandBuffer* cmd, Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data) = 0;
 			virtual void add_pipeline_barriers(CommandBuffer* cmd, std::vector<PipelineBarrier>& barriers) = 0;
+
+
+			// ONLY FOR TESTS
+			virtual VkInstance get_instance() = 0;
+			virtual vulkan::VulkanDevice* get_device() = 0;
+			virtual VmaAllocator get_allocator() = 0;
+			virtual VkDebugUtilsMessengerEXT get_messenger() = 0;
 	};
 }

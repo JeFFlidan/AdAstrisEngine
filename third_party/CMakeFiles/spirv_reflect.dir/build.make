@@ -52,10 +52,10 @@ RM = "C:\Program Files\CMake\bin\cmake.exe" -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = E:\MyEngine\MyEngine\VulkanEngine
+CMAKE_SOURCE_DIR = E:\MyEngine\MyEngine\AdAstrisEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = E:\MyEngine\MyEngine\VulkanEngine
+CMAKE_BINARY_DIR = E:\MyEngine\MyEngine\AdAstrisEngine
 
 # Include any dependencies generated for this target.
 include third_party/CMakeFiles/spirv_reflect.dir/depend.make
@@ -72,16 +72,16 @@ third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj: thir
 third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj: third_party/CMakeFiles/spirv_reflect.dir/includes_C.rsp
 third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj: third_party/spirv_reflect/spirv_reflect.c
 third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj: third_party/CMakeFiles/spirv_reflect.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj -MF CMakeFiles\spirv_reflect.dir\spirv_reflect\spirv_reflect.c.obj.d -o CMakeFiles\spirv_reflect.dir\spirv_reflect\spirv_reflect.c.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\spirv_reflect\spirv_reflect.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj -MF CMakeFiles\spirv_reflect.dir\spirv_reflect\spirv_reflect.c.obj.d -o CMakeFiles\spirv_reflect.dir\spirv_reflect\spirv_reflect.c.obj -c E:\MyEngine\MyEngine\AdAstrisEngine\third_party\spirv_reflect\spirv_reflect.c
 
 third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\spirv_reflect\spirv_reflect.c > CMakeFiles\spirv_reflect.dir\spirv_reflect\spirv_reflect.c.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E E:\MyEngine\MyEngine\AdAstrisEngine\third_party\spirv_reflect\spirv_reflect.c > CMakeFiles\spirv_reflect.dir\spirv_reflect\spirv_reflect.c.i
 
 third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\spirv_reflect\spirv_reflect.c -o CMakeFiles\spirv_reflect.dir\spirv_reflect\spirv_reflect.c.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S E:\MyEngine\MyEngine\AdAstrisEngine\third_party\spirv_reflect\spirv_reflect.c -o CMakeFiles\spirv_reflect.dir\spirv_reflect\spirv_reflect.c.s
 
 # Object files for target spirv_reflect
 spirv_reflect_OBJECTS = \
@@ -93,19 +93,19 @@ spirv_reflect_EXTERNAL_OBJECTS =
 third_party/libspirv_reflect.a: third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj
 third_party/libspirv_reflect.a: third_party/CMakeFiles/spirv_reflect.dir/build.make
 third_party/libspirv_reflect.a: third_party/CMakeFiles/spirv_reflect.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C static library libspirv_reflect.a"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && $(CMAKE_COMMAND) -P CMakeFiles\spirv_reflect.dir\cmake_clean_target.cmake
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\spirv_reflect.dir\link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C static library libspirv_reflect.a"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && $(CMAKE_COMMAND) -P CMakeFiles\spirv_reflect.dir\cmake_clean_target.cmake
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\spirv_reflect.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 third_party/CMakeFiles/spirv_reflect.dir/build: third_party/libspirv_reflect.a
 .PHONY : third_party/CMakeFiles/spirv_reflect.dir/build
 
 third_party/CMakeFiles/spirv_reflect.dir/clean:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && $(CMAKE_COMMAND) -P CMakeFiles\spirv_reflect.dir\cmake_clean.cmake
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && $(CMAKE_COMMAND) -P CMakeFiles\spirv_reflect.dir\cmake_clean.cmake
 .PHONY : third_party/CMakeFiles/spirv_reflect.dir/clean
 
 third_party/CMakeFiles/spirv_reflect.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" E:\MyEngine\MyEngine\VulkanEngine E:\MyEngine\MyEngine\VulkanEngine\third_party E:\MyEngine\MyEngine\VulkanEngine E:\MyEngine\MyEngine\VulkanEngine\third_party E:\MyEngine\MyEngine\VulkanEngine\third_party\CMakeFiles\spirv_reflect.dir\DependInfo.cmake --color=$(COLOR)
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" E:\MyEngine\MyEngine\AdAstrisEngine E:\MyEngine\MyEngine\AdAstrisEngine\third_party E:\MyEngine\MyEngine\AdAstrisEngine E:\MyEngine\MyEngine\AdAstrisEngine\third_party E:\MyEngine\MyEngine\AdAstrisEngine\third_party\CMakeFiles\spirv_reflect.dir\DependInfo.cmake --color=$(COLOR)
 .PHONY : third_party/CMakeFiles/spirv_reflect.dir/depend
 

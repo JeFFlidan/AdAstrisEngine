@@ -11,6 +11,11 @@
 #include "profiler/logger.h"
 #include <VkBootstrap.h>
 
+#ifndef VMA_IMPLEMENTATION
+	#define VMA_IMPLEMENTATION
+#endif
+#include "vk_mem_alloc.h"
+
 using namespace ad_astris;
 
 void vulkan::VulkanRHI::init(void* window)
@@ -388,6 +393,7 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 	renderPass->handle = new VulkanRenderPass(_vulkanDevice, passInfo);
 }
 
+// TODO Queue type for command buffer
 void vulkan::VulkanRHI::begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType)
 {
 	cmd->handle = _cmdManager->get_command_buffer();
@@ -422,9 +428,9 @@ void vulkan::VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuf
 		LOG_INFO("VulkanRHI::copy_buffer(): Destination buffer doesn't have TRANSFER_DST usage")
 		return;
 	}
-	
-	//VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
-	VkCommandBuffer vkCmd = *static_cast<VkCommandBuffer*>(cmd->handle);
+	// TODO Maybe here is a bug with command buffer, I have to test this method
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	//VkCommandBuffer vkCmd = *static_cast<VkCommandBuffer*>(cmd->handle);
 	VulkanBuffer* vkSrcBuffer = get_vk_obj(srcBuffer);
 	VulkanBuffer* vkDstBuffer = get_vk_obj(dstBuffer);
 
@@ -440,7 +446,7 @@ void vulkan::VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuf
 		copy.size = size;
 	}
 
-	vkCmdCopyBuffer(vkCmd, *vkSrcBuffer->get_handle(), *vkDstBuffer->get_handle(), 1, &copy);
+	vkCmdCopyBuffer(vkCmd->get_handle(), *vkSrcBuffer->get_handle(), *vkDstBuffer->get_handle(), 1, &copy);
 }
 
 void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcTexture, rhi::Texture* dstTexture, std::array<int32_t, 3>& srcOffset, std::array<int32_t, 3>& dstOffset, uint32_t srcMipLevel, uint32_t dstMipLevel, uint32_t srcBaseLayer, uint32_t dstBaseLayer)

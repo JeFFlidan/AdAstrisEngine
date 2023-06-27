@@ -25,7 +25,7 @@ vulkan::VulkanCommandBuffer::~VulkanCommandBuffer()
 	vkDestroySemaphore(_device->get_device(), _signalSemaphore, nullptr);
 }
 
-vulkan::VulkanCommandPool::VulkanCommandPool(VulkanDevice* device, VulkanQueue* queue) : _device(device)
+vulkan::VulkanCommandPool::VulkanCommandPool(VulkanDevice* device, IVulkanQueue* queue) : _device(device)
 {
 	VkCommandPoolCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -100,9 +100,9 @@ void vulkan::VulkanCommandPool::flush_submitted_cmd_buffers()
 
 vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanSwapChain* swapChain) : _device(device)
 {
-	VulkanQueue* graphicsQueue = _device->get_graphics_queue();
-	VulkanQueue* computeQueue = _device->get_compute_queue();
-	VulkanQueue* transferQueue = _device->get_transfer_queue();
+	IVulkanQueue* graphicsQueue = _device->get_graphics_queue();
+	IVulkanQueue* computeQueue = _device->get_compute_queue();
+	IVulkanQueue* transferQueue = _device->get_transfer_queue();
 
 	size_t buffersCount = swapChain->get_texture_views().size();
 	size_t poolsPerQueue = RENDER_THREAD_COUNT * buffersCount;
@@ -235,6 +235,7 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 		}
 	}
 
+	// TODO VkPipelineStageFlags. Maybe I have to remove it because the same flag is set up in get_cmd_buffer method of VulkanCommandPool
 	cmdBuffer->_waitSemaphores.push_back(_acquireSemaphores[_imageIndex]);
 	VkPipelineStageFlags flag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	cmdBuffer->_waitFlags.push_back(flag);

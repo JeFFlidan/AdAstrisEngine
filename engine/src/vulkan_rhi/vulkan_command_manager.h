@@ -1,5 +1,6 @@
 #pragma once
 
+#include "api.h"
 #include "rhi/resources.h"
 #include "vulkan_device.h"
 #include "vulkan_swap_chain.h"
@@ -16,7 +17,7 @@ namespace ad_astris::vulkan
 	class VulkanCommandManager;
 	class VulkanQueue;
 	
-	class VulkanCommandBuffer
+	class VK_RHI_API VulkanCommandBuffer
 	{
 		friend VulkanCommandPool;
 		friend VulkanCommandManager;
@@ -40,13 +41,13 @@ namespace ad_astris::vulkan
 	};
 
 	// One VulkanCommandPool per queue per thread per frame
-	class VulkanCommandPool
+	class VK_RHI_API VulkanCommandPool
 	{
 		friend VulkanCommandManager;
 		friend VulkanQueue;
 		
 		public:
-			VulkanCommandPool(VulkanDevice* device, VulkanQueue* queue);
+			VulkanCommandPool(VulkanDevice* device, IVulkanQueue* queue);
 			~VulkanCommandPool();
 
 			VulkanCommandBuffer* get_cmd_buffer();
@@ -64,11 +65,11 @@ namespace ad_astris::vulkan
 			std::vector<VulkanCommandBuffer*> _submittedCmdBuffers;
 	};
 	
-	void clear_after_submission(
+	void VK_RHI_API clear_after_submission(
 		std::vector<VulkanCommandPool*>& freePools,
 		std::vector<VulkanCommandPool*>& lockedPools);
 	
-	class VulkanCommandManager
+	class VK_RHI_API VulkanCommandManager
 	{
 		friend VulkanQueue;
 		

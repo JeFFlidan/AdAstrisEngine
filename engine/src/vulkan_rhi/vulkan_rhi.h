@@ -14,9 +14,10 @@
 
 namespace ad_astris::vulkan
 {
-	class VulkanRHI : public rhi::IEngineRHI
+	class VK_RHI_API VulkanRHI : public rhi::IEngineRHI
 	{
 		public:
+			// TODO Create custom destructor
 			~VulkanRHI() final override = default;
 
 			virtual void init(void* window) final override;

@@ -6,7 +6,7 @@
 
 namespace ad_astris::vulkan
 {
-	class VulkanPipeline
+	class VK_RHI_API VulkanPipeline : public IVulkanPipeline
 	{
 		public:
 			VulkanPipeline(VulkanDevice* device, rhi::GraphicsPipelineInfo* info);

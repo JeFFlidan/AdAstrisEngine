@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include "api.h"
 #include "profiler/logger.h"
+#include "engine/vulkan_rhi_module.h"
 #include <vulkan/vulkan.h>
 #include <VkBootstrap.h>
 #include <vector>
@@ -15,7 +17,7 @@ namespace ad_astris::vulkan
 
 	class VulkanQueue;
 
-	class VulkanDevice
+	class VK_RHI_API VulkanDevice : public IVulkanDevice
 	{
 		public:
 			VulkanDevice(vkb::Instance& instance, void* window);
@@ -28,10 +30,10 @@ namespace ad_astris::vulkan
 
 			uint32_t get_max_multiview_view_count() { return _maxMultiviewView; }
 
-			VulkanQueue* get_graphics_queue() { return _graphicsQueue; }
-			VulkanQueue* get_present_queue() { return _presentQueue; }
-			VulkanQueue* get_compute_queue() { return _computeQueue; }
-			VulkanQueue* get_transfer_queue() { return _transferQueue; }
+			IVulkanQueue* get_graphics_queue();
+			IVulkanQueue* get_present_queue();
+			IVulkanQueue* get_compute_queue();
+			IVulkanQueue* get_transfer_queue();
 		
 		private:
 			VkSurfaceKHR _surface{ VK_NULL_HANDLE };

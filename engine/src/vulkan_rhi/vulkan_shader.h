@@ -1,10 +1,12 @@
 #pragma once
+
+#include "api.h"
 #include "rhi/resources.h"
 #include <vulkan/vulkan.h>
 
 namespace ad_astris::vulkan
 {
-	class VulkanShader
+	class VK_RHI_API VulkanShader
 	{
 		public:
 			struct Binding

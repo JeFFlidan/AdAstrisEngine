@@ -52,10 +52,10 @@ RM = "C:\Program Files\CMake\bin\cmake.exe" -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = E:\MyEngine\MyEngine\VulkanEngine
+CMAKE_SOURCE_DIR = E:\MyEngine\MyEngine\AdAstrisEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = E:\MyEngine\MyEngine\VulkanEngine
+CMAKE_BINARY_DIR = E:\MyEngine\MyEngine\AdAstrisEngine
 
 # Include any dependencies generated for this target.
 include third_party/CMakeFiles/inicpp.dir/depend.make
@@ -72,121 +72,121 @@ third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj: third_party/CMakeFiles/
 third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj: third_party/CMakeFiles/inicpp.dir/includes_CXX.rsp
 third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj: third_party/inicpp/config.cpp
 third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj: third_party/CMakeFiles/inicpp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\config.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\config.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\config.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\config.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\config.cpp.obj -c E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\config.cpp
 
 third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/inicpp.dir/inicpp/config.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\config.cpp > CMakeFiles\inicpp.dir\inicpp\config.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\config.cpp > CMakeFiles\inicpp.dir\inicpp\config.cpp.i
 
 third_party/CMakeFiles/inicpp.dir/inicpp/config.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/inicpp.dir/inicpp/config.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\config.cpp -o CMakeFiles\inicpp.dir\inicpp\config.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\config.cpp -o CMakeFiles\inicpp.dir\inicpp\config.cpp.s
 
 third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj: third_party/CMakeFiles/inicpp.dir/flags.make
 third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj: third_party/CMakeFiles/inicpp.dir/includes_CXX.rsp
 third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj: third_party/inicpp/option.cpp
 third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj: third_party/CMakeFiles/inicpp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\option.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\option.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\option.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\option.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\option.cpp.obj -c E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\option.cpp
 
 third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/inicpp.dir/inicpp/option.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\option.cpp > CMakeFiles\inicpp.dir\inicpp\option.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\option.cpp > CMakeFiles\inicpp.dir\inicpp\option.cpp.i
 
 third_party/CMakeFiles/inicpp.dir/inicpp/option.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/inicpp.dir/inicpp/option.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\option.cpp -o CMakeFiles\inicpp.dir\inicpp\option.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\option.cpp -o CMakeFiles\inicpp.dir\inicpp\option.cpp.s
 
 third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj: third_party/CMakeFiles/inicpp.dir/flags.make
 third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj: third_party/CMakeFiles/inicpp.dir/includes_CXX.rsp
 third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj: third_party/inicpp/option_schema.cpp
 third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj: third_party/CMakeFiles/inicpp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\option_schema.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\option_schema.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\option_schema.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\option_schema.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\option_schema.cpp.obj -c E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\option_schema.cpp
 
 third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\option_schema.cpp > CMakeFiles\inicpp.dir\inicpp\option_schema.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\option_schema.cpp > CMakeFiles\inicpp.dir\inicpp\option_schema.cpp.i
 
 third_party/CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/inicpp.dir/inicpp/option_schema.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\option_schema.cpp -o CMakeFiles\inicpp.dir\inicpp\option_schema.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\option_schema.cpp -o CMakeFiles\inicpp.dir\inicpp\option_schema.cpp.s
 
 third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj: third_party/CMakeFiles/inicpp.dir/flags.make
 third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj: third_party/CMakeFiles/inicpp.dir/includes_CXX.rsp
 third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj: third_party/inicpp/parser.cpp
 third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj: third_party/CMakeFiles/inicpp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\parser.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\parser.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\parser.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\parser.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\parser.cpp.obj -c E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\parser.cpp
 
 third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/inicpp.dir/inicpp/parser.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\parser.cpp > CMakeFiles\inicpp.dir\inicpp\parser.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\parser.cpp > CMakeFiles\inicpp.dir\inicpp\parser.cpp.i
 
 third_party/CMakeFiles/inicpp.dir/inicpp/parser.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/inicpp.dir/inicpp/parser.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\parser.cpp -o CMakeFiles\inicpp.dir\inicpp\parser.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\parser.cpp -o CMakeFiles\inicpp.dir\inicpp\parser.cpp.s
 
 third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj: third_party/CMakeFiles/inicpp.dir/flags.make
 third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj: third_party/CMakeFiles/inicpp.dir/includes_CXX.rsp
 third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj: third_party/inicpp/schema.cpp
 third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj: third_party/CMakeFiles/inicpp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\schema.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\schema.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\schema.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\schema.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\schema.cpp.obj -c E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\schema.cpp
 
 third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/inicpp.dir/inicpp/schema.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\schema.cpp > CMakeFiles\inicpp.dir\inicpp\schema.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\schema.cpp > CMakeFiles\inicpp.dir\inicpp\schema.cpp.i
 
 third_party/CMakeFiles/inicpp.dir/inicpp/schema.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/inicpp.dir/inicpp/schema.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\schema.cpp -o CMakeFiles\inicpp.dir\inicpp\schema.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\schema.cpp -o CMakeFiles\inicpp.dir\inicpp\schema.cpp.s
 
 third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj: third_party/CMakeFiles/inicpp.dir/flags.make
 third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj: third_party/CMakeFiles/inicpp.dir/includes_CXX.rsp
 third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj: third_party/inicpp/section.cpp
 third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj: third_party/CMakeFiles/inicpp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\section.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\section.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\section.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\section.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\section.cpp.obj -c E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\section.cpp
 
 third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/inicpp.dir/inicpp/section.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\section.cpp > CMakeFiles\inicpp.dir\inicpp\section.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\section.cpp > CMakeFiles\inicpp.dir\inicpp\section.cpp.i
 
 third_party/CMakeFiles/inicpp.dir/inicpp/section.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/inicpp.dir/inicpp/section.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\section.cpp -o CMakeFiles\inicpp.dir\inicpp\section.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\section.cpp -o CMakeFiles\inicpp.dir\inicpp\section.cpp.s
 
 third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj: third_party/CMakeFiles/inicpp.dir/flags.make
 third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj: third_party/CMakeFiles/inicpp.dir/includes_CXX.rsp
 third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj: third_party/inicpp/section_schema.cpp
 third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj: third_party/CMakeFiles/inicpp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\section_schema.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\section_schema.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\section_schema.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\section_schema.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\section_schema.cpp.obj -c E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\section_schema.cpp
 
 third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\section_schema.cpp > CMakeFiles\inicpp.dir\inicpp\section_schema.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\section_schema.cpp > CMakeFiles\inicpp.dir\inicpp\section_schema.cpp.i
 
 third_party/CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/inicpp.dir/inicpp/section_schema.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\section_schema.cpp -o CMakeFiles\inicpp.dir\inicpp\section_schema.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\section_schema.cpp -o CMakeFiles\inicpp.dir\inicpp\section_schema.cpp.s
 
 third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj: third_party/CMakeFiles/inicpp.dir/flags.make
 third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj: third_party/CMakeFiles/inicpp.dir/includes_CXX.rsp
 third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj: third_party/inicpp/string_utils.cpp
 third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj: third_party/CMakeFiles/inicpp.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\string_utils.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\string_utils.cpp.obj -c E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\string_utils.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj -MF CMakeFiles\inicpp.dir\inicpp\string_utils.cpp.obj.d -o CMakeFiles\inicpp.dir\inicpp\string_utils.cpp.obj -c E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\string_utils.cpp
 
 third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.i"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\string_utils.cpp > CMakeFiles\inicpp.dir\inicpp\string_utils.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\string_utils.cpp > CMakeFiles\inicpp.dir\inicpp\string_utils.cpp.i
 
 third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.s"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\VulkanEngine\third_party\inicpp\string_utils.cpp -o CMakeFiles\inicpp.dir\inicpp\string_utils.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S E:\MyEngine\MyEngine\AdAstrisEngine\third_party\inicpp\string_utils.cpp -o CMakeFiles\inicpp.dir\inicpp\string_utils.cpp.s
 
 # Object files for target inicpp
 inicpp_OBJECTS = \
@@ -212,19 +212,19 @@ third_party/libinicpp.a: third_party/CMakeFiles/inicpp.dir/inicpp/section_schema
 third_party/libinicpp.a: third_party/CMakeFiles/inicpp.dir/inicpp/string_utils.cpp.obj
 third_party/libinicpp.a: third_party/CMakeFiles/inicpp.dir/build.make
 third_party/libinicpp.a: third_party/CMakeFiles/inicpp.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX static library libinicpp.a"
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && $(CMAKE_COMMAND) -P CMakeFiles\inicpp.dir\cmake_clean_target.cmake
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\inicpp.dir\link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX static library libinicpp.a"
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && $(CMAKE_COMMAND) -P CMakeFiles\inicpp.dir\cmake_clean_target.cmake
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\inicpp.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 third_party/CMakeFiles/inicpp.dir/build: third_party/libinicpp.a
 .PHONY : third_party/CMakeFiles/inicpp.dir/build
 
 third_party/CMakeFiles/inicpp.dir/clean:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine\third_party && $(CMAKE_COMMAND) -P CMakeFiles\inicpp.dir\cmake_clean.cmake
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine\third_party && $(CMAKE_COMMAND) -P CMakeFiles\inicpp.dir\cmake_clean.cmake
 .PHONY : third_party/CMakeFiles/inicpp.dir/clean
 
 third_party/CMakeFiles/inicpp.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" E:\MyEngine\MyEngine\VulkanEngine E:\MyEngine\MyEngine\VulkanEngine\third_party E:\MyEngine\MyEngine\VulkanEngine E:\MyEngine\MyEngine\VulkanEngine\third_party E:\MyEngine\MyEngine\VulkanEngine\third_party\CMakeFiles\inicpp.dir\DependInfo.cmake --color=$(COLOR)
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" E:\MyEngine\MyEngine\AdAstrisEngine E:\MyEngine\MyEngine\AdAstrisEngine\third_party E:\MyEngine\MyEngine\AdAstrisEngine E:\MyEngine\MyEngine\AdAstrisEngine\third_party E:\MyEngine\MyEngine\AdAstrisEngine\third_party\CMakeFiles\inicpp.dir\DependInfo.cmake --color=$(COLOR)
 .PHONY : third_party/CMakeFiles/inicpp.dir/depend
 

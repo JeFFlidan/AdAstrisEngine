@@ -1,0 +1,3 @@
+"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\vulkan_rhi.dir/objects.a
+C:\msys64\mingw64\bin\ar.exe qc CMakeFiles\vulkan_rhi.dir/objects.a @CMakeFiles\vulkan_rhi.dir\objects1.rsp
+C:\mingw64\bin\g++.exe -shared -o E:\MyEngine\MyEngine\AdAstrisEngine\bin\libvulkan_rhi.dll -Wl,--out-implib,libvulkan_rhi.dll.a -Wl,--major-image-version,0,--minor-image-version,0 -Wl,--whole-archive CMakeFiles\vulkan_rhi.dir/objects.a -Wl,--no-whole-archive @CMakeFiles\vulkan_rhi.dir\linklibs.rsp

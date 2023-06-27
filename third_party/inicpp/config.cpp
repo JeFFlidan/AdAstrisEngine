@@ -41,6 +41,12 @@ namespace inicpp
 		return *this;
 	}
 
+	void config::clear_config()
+	{
+		sections_.clear();
+		sections_map_.clear();
+	}
+
 	void config::add_section(const section &sect)
 	{
 		auto add_it = sections_map_.find(sect.get_name());

@@ -6,7 +6,7 @@
 
 namespace ad_astris::vulkan
 {
-	class VulkanRenderPass
+	class VK_RHI_API VulkanRenderPass
 	{
 		public:
 			VulkanRenderPass(VulkanDevice* device, rhi::RenderPassInfo* passInfo);

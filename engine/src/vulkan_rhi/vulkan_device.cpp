@@ -45,6 +45,11 @@ vulkan::VulkanDevice::VulkanDevice(vkb::Instance& instance, void* window)
 	LOG_INFO("Finished initing Device class (Vulkan)")
 }
 
+IVulkanQueue* vulkan::VulkanDevice::get_graphics_queue() { return _graphicsQueue; }
+IVulkanQueue* vulkan::VulkanDevice::get_present_queue() { return _presentQueue; }
+IVulkanQueue* vulkan::VulkanDevice::get_compute_queue() { return _computeQueue; }
+IVulkanQueue* vulkan::VulkanDevice::get_transfer_queue() { return _transferQueue; }
+
 vulkan::VulkanDevice::~VulkanDevice()
 {
 	delete _graphicsQueue;

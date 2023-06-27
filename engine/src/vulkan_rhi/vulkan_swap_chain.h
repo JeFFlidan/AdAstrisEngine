@@ -7,7 +7,7 @@
 
 namespace ad_astris::vulkan
 {
-	class VulkanSwapChain
+	class VK_RHI_API VulkanSwapChain : public IVulkanSwapChain
 	{
 		public:
 			VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDevice* device);
