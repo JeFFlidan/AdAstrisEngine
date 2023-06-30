@@ -22,7 +22,7 @@ LevelInfo Utils::unpack_level_info(std::string& strMetadata)
 
 void Utils::build_entities_from_json(std::string& entitiesInfo, Level* level)
 {
-	ecs::EntityManager& world = level->_world;
+	ecs::EntityManager* entityManager = level->_entityManager;
 	std::vector<ecs::Entity>& entities = level->_entities;
 
 	nlohmann::json entitiesInfoJson = nlohmann::json::parse(entitiesInfo);
@@ -32,18 +32,18 @@ void Utils::build_entities_from_json(std::string& entitiesInfo, Level* level)
 	{
 		UUID uuid(std::stoull(info.key()));
 		std::string componentsJson = info.value();
-		ecs::Entity entity = world.build_entity_from_json(uuid, componentsJson);
+		ecs::Entity entity = entityManager->build_entity_from_json(uuid, componentsJson);
 		entities.push_back(entity);
 	}
 }
 
 void Utils::build_json_from_entities(nlohmann::json& jsonForEntities, Level* level)
 {
-	ecs::EntityManager& world = level->_world;
+	ecs::EntityManager* entityManager = level->_entityManager;
 	std::vector<ecs::Entity>& entities = level->_entities;
 
 	for (auto& entity : entities)
 	{
-		world.build_components_json_from_entity(entity, jsonForEntities);
+		entityManager->build_components_json_from_entity(entity, jsonForEntities);
 	}
 }

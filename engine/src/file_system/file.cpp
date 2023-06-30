@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "engine_core/model/static_model.h"
 #include "engine_core/texture/texture2D.h"
+#include "profiler/logger.h"
 
 #include <lz4.h>
 

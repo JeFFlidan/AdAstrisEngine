@@ -2,6 +2,7 @@
 
 #include "core/module.h"
 #include "rhi/resources.h"
+#include "rhi/engine_rhi.h"
 
 // FOR TESTS
 #include <vulkan/vulkan.h>
@@ -19,9 +20,10 @@ namespace ad_astris
 	class IVulkanRHIModule : public IModule
 	{
 		public:
-			virtual vulkan::VulkanRHI* create_vulkan_rhi() = 0;
+			virtual rhi::IEngineRHI* create_vulkan_rhi() = 0;
 	};
 
+	// FOR TESTS
 	class IVulkanQueue
 	{
 		public:
@@ -42,7 +44,6 @@ namespace ad_astris
 			virtual rhi::PipelineType get_type() = 0;
 	};
 	
-	// FOR TESTS
 	class IVulkanDevice
 	{
 		public:

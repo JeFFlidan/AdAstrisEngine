@@ -4,8 +4,10 @@
 #include <string>
 
 using namespace ad_astris;
+using namespace rcore;
+using namespace impl;
 
-shaderc_include_result* rcore::include_resolver(
+shaderc_include_result* RENDER_CORE_API include_resolver(
 	void* userData,
 	const char* requested_source,
 	int type,
@@ -59,7 +61,7 @@ shaderc_include_result* rcore::include_resolver(
 	return includeResult;
 }
 
-void rcore::include_releaser(void* userData, shaderc_include_result* result)
+void RENDER_CORE_API include_releaser(void* userData, shaderc_include_result* result)
 {
 	io::FileSystem* fileSystem = static_cast<io::FileSystem*>(userData);
 	assert(fileSystem && "Invalid file system");
@@ -70,8 +72,9 @@ void rcore::include_releaser(void* userData, shaderc_include_result* result)
 	delete result;
 }
 
-rcore::ShaderCompiler::ShaderCompiler(io::FileSystem* fileSystem) : _fileSystem(fileSystem)
+void ShaderCompiler::init(io::FileSystem* fileSystem)
 {
+	_fileSystem = fileSystem;
 	_compiler = shaderc_compiler_initialize();
 	_options = shaderc_compile_options_initialize();
 
@@ -81,7 +84,7 @@ rcore::ShaderCompiler::ShaderCompiler(io::FileSystem* fileSystem) : _fileSystem(
 	shaderc_compile_options_set_include_callbacks(_options, include_resolver, include_releaser, _fileSystem);
 }
 
-void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info)
+void ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info)
 {
 	rhi::ShaderType shaderType = get_shader_type(uri);
 	info->shaderType = shaderType;
@@ -112,12 +115,11 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 		shaderc_result_release(preprocessResult);
 		return;
 	}
-
+	
 	size_t codeLength = shaderc_result_get_length(preprocessResult);
 	const char* codeBin = shaderc_result_get_bytes(preprocessResult);
 
 	// I have to implement shader cache in the future
-
 	shaderc_compilation_result_t finalResult = nullptr;
 	finalResult = shaderc_compile_into_spv(
 		_compiler,
@@ -145,7 +147,6 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 	memcpy(newCode, codeNoConst, info->size);
 	
 	info->data = newCode;
-	
 	_shaderCache.add_to_cache(info, data, count);
 	
 	_fileSystem->unmap_after_reading(data);
@@ -154,7 +155,7 @@ void rcore::ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info
 
 // private methods
 
-shaderc_shader_kind rcore::ShaderCompiler::get_shader_kind(rhi::ShaderType shaderType)
+shaderc_shader_kind ShaderCompiler::get_shader_kind(rhi::ShaderType shaderType)
 {
 	switch (shaderType)
 	{
@@ -189,7 +190,7 @@ shaderc_shader_kind rcore::ShaderCompiler::get_shader_kind(rhi::ShaderType shade
 	}
 }
 
-rhi::ShaderType rcore::ShaderCompiler::get_shader_type(io::URI& path)
+rhi::ShaderType ShaderCompiler::get_shader_type(io::URI& path)
 {
 	//std::string extension(std::filesystem::path(path.c_str()).extension().string().erase(0, 1));
 	std::string extension = io::Utils::get_file_extension(path);

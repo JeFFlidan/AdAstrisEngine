@@ -7,12 +7,20 @@ namespace ad_astris::vulkan
 	class VulkanRHIModule : public IVulkanRHIModule
 	{
 		public:
-			VulkanRHI* create_vulkan_rhi() override;
+			rhi::IEngineRHI* create_vulkan_rhi() override;
+
+		private:
+			VulkanRHI* _vulkanRHI{ nullptr };
 	};
 
-	VulkanRHI* VulkanRHIModule::create_vulkan_rhi()
+	rhi::IEngineRHI* VulkanRHIModule::create_vulkan_rhi()
 	{
-		return new VulkanRHI();
+		if (!_vulkanRHI)
+		{
+			_vulkanRHI = new VulkanRHI();
+		}
+		
+		return _vulkanRHI;
 	}
 
 	extern "C" VK_RHI_API IVulkanRHIModule* register_module()

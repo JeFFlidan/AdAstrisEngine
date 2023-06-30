@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "flags_operations.h"
+#include "core/flags_operations.h"
 #include <cstdint>
 #include <vector>
 
@@ -242,31 +242,33 @@ namespace ad_astris::rhi
 
 	enum class ShaderType
 	{
-		UNDEFINED,
+		UNDEFINED = 0,
 		
-		VERTEX,
-		FRAGMENT,
-		TESSELLATION_CONTROL,
-		TESSELLATION_EVALUATION,
-		GEOMETRY,
+		VERTEX = 1 << 0,
+		FRAGMENT = 1 << 1,
+		TESSELLATION_CONTROL = 1 << 2,
+		TESSELLATION_EVALUATION = 1 << 3,
+		GEOMETRY = 1 << 4,
 
-		COMPUTE,
+		COMPUTE = 1 << 5,
 
-		MESH,
-		TASK,
+		MESH = 1 << 6,
+		TASK = 1 << 7,
 
-		RAY_GENERATION,
-		RAY_INTERSECTION,
-		RAY_ANY_HIT,
-		RAY_CLOSEST_HIT,
-		RAY_MISS,
-		RAY_CALLABLE
+		RAY_GENERATION = 1 << 8,
+		RAY_INTERSECTION = 1 << 9,
+		RAY_ANY_HIT = 1 << 10,
+		RAY_CLOSEST_HIT = 1 << 11,
+		RAY_MISS = 1 << 12,
+		RAY_CALLABLE = 1 << 13
 	};
 	
 	struct TextureInfo
 	{
 		uint32_t width{ 0 };
 		uint32_t height{ 0 };
+		// Only for 3D textures
+		uint32_t depth{ 0 };
 		uint32_t mipLevels{ 1 };
 		uint32_t layersCount{ 1 };
 		Format format{ Format::UNDEFINED };
@@ -277,6 +279,7 @@ namespace ad_astris::rhi
 		ResourceFlags resourceFlags;	// not necessary
 	};
 
+	// Think about Format field
 	struct BufferInfo
 	{
 		ResourceUsage bufferUsage{ ResourceUsage::UNDEFINED };
@@ -736,6 +739,12 @@ struct EnableBitMaskOperator<ad_astris::rhi::ResourceFlags>
 
 template<>
 struct EnableBitMaskOperator<ad_astris::rhi::ResourceLayout>
+{
+	static const bool enable = true;
+};
+
+template<>
+struct EnableBitMaskOperator<ad_astris::rhi::ShaderType>
 {
 	static const bool enable = true;
 };

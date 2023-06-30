@@ -2,6 +2,7 @@
 
 #include "rhi/engine_rhi.h"
 #include "rhi/resources.h"
+#include "api.h"
 #include "glm/vec4.hpp"
 #include <vector>
 #include <map>

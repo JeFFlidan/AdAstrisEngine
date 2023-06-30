@@ -35,6 +35,7 @@ def compile_commmon(rootPath, buildPath):
     os.chdir(rootPath)
 
 
+## TODO remove - before name to avoid error
 def compile_plugin(name):
     print("Compile one plugin")
     rootPath = os.getcwd()
@@ -58,6 +59,29 @@ def compile_plugins(flags):
 
     if '-ecs' in flags:
         compile_plugin('ecs')
+
+
+def compile_module(name):
+    rootPath = os.getcwd()
+    buildPath = rootPath + '\\engine\\src\\' + name + '\\build'
+    os.chdir(rootPath + '\\engine\\src\\' + name)
+    compile_commmon(rootPath, buildPath)
+
+
+def compile_modules(flags):
+    if (len(flags) == 2 or (len(flags) == 3 and '-engine' in flags)):
+        moduleNames = ["vulkan_rhi", "render_core"]
+
+        for name in moduleNames:
+            compile_module(name)
+
+        return
+
+    if '-vulkan_rhi' in flags:
+        compile_module('vulkan_rhi')
+
+    if '-render_core' in flags:
+        compile_module('render_core')
 
 
 def compile_engine():
@@ -86,6 +110,9 @@ def compile():
         print("Compile plugins")
         print(f"Flags length = {len(flags)}")
         compile_plugins(flags)
+
+    if '-modules' in flags:
+        compile_modules(flags)
 
 
 if __name__ == '__main__':

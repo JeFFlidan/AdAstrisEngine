@@ -9,11 +9,11 @@ namespace ad_astris::io
 	{
 		public:
 			EngineFileStream(FILE* file);
-			~EngineFileStream() final;
+			virtual ~EngineFileStream() final;
 
-			size_t read(void* data, size_t size, size_t count) final;
-			size_t write(const void* data, size_t size, size_t count) final;
-			uint64_t size() const final;
+			virtual size_t read(void* data, size_t size, size_t count) final;
+			virtual size_t write(const void* data, size_t size, size_t count) final;
+			virtual uint64_t size() const final;
 
 		private:
 			FILE* file;
@@ -23,13 +23,13 @@ namespace ad_astris::io
 	{
 		public:
 			EngineFileSystem(const char* path);
-			~EngineFileSystem() final;
+			virtual ~EngineFileSystem() final;
 
-			EngineFileStream* open(const URI& path, const char* mode) final;
-			bool close(Stream* stream) final;
-			void* map_to_read(const URI& uri, size_t& size, const char* mode = "rb") final;
-			bool unmap_after_reading(void* data) final;
-			URI get_root_path() final;
+			virtual EngineFileStream* open(const URI& path, const char* mode) final;
+			virtual bool close(Stream* stream) final;
+			virtual void* map_to_read(const URI& uri, size_t& size, const char* mode = "rb") final;
+			virtual bool unmap_after_reading(void* data) final;
+			virtual URI get_root_path() final;
 		
 		private:
 			std::filesystem::path _rootPath;

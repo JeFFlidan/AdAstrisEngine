@@ -1,9 +1,11 @@
+#pragma once
 #include "rhi/resources.h"
+#include "api.h"
 #include <unordered_map>
 
-namespace ad_astris::rcore
+namespace ad_astris::rcore::impl
 {
-	class ShaderCache
+	class RENDER_CORE_API ShaderCache
 	{
 		public:
 			~ShaderCache();

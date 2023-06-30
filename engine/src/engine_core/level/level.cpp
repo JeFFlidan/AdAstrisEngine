@@ -1,9 +1,11 @@
 #include "level.h"
+#include "engine_core/world.h"
 #include "file_system/utils.h"
 
 using namespace ad_astris;
+using namespace ad_astris::ecore;
 
-ecore::Level::Level(io::URI& path)
+Level::Level(io::URI& path)
 {
 	_levelInfo.uuid = UUID();
 	std::string levelName = io::Utils::get_file_name(path);
@@ -11,37 +13,37 @@ ecore::Level::Level(io::URI& path)
 	_path = path;
 }
 
-ecs::EntityManager* ecore::Level::get_entity_manager()
+Level::Level(void* entityManager)
 {
-	return &_world;
+	_entityManager = static_cast<ecs::EntityManager*>(entityManager);
 }
 
-void ecore::Level::add_entity(ecs::Entity& entity)
+ecs::EntityManager* Level::get_entity_manager()
+{
+	return _entityManager;
+}
+
+void Level::add_entity(ecs::Entity& entity)
 {
 	_entities.push_back(entity);
 }
 
-void ecore::Level::serialize(io::IFile* file)
+void Level::serialize(io::IFile* file)
 {
 	nlohmann::json levelMainJson;
 
 	std::string levelMetadata = level::Utils::pack_level_info(&_levelInfo);
-	LOG_INFO("Level metadata: {}", levelMetadata)
 	levelMainJson["level_metadata"] = levelMetadata;
 
 	nlohmann::json jsonForEntities;
 	level::Utils::build_json_from_entities(jsonForEntities, this);
-	LOG_INFO("Json for entities: {}", jsonForEntities.dump())
 	levelMainJson["entities"] = jsonForEntities.dump();
 
-	LOG_INFO("Before dumping")
 	std::string newMetadata = levelMainJson.dump();
-	LOG_INFO("Length of new metadata: {}", newMetadata)
-	LOG_INFO("New metadata: {}", newMetadata)
 	file->set_metadata(newMetadata);
 }
 
-void ecore::Level::deserialize(io::IFile* file, ObjectName* newName)
+void Level::deserialize(io::IFile* file, ObjectName* newName)
 {
 	if (!newName)
 	{
@@ -61,32 +63,32 @@ void ecore::Level::deserialize(io::IFile* file, ObjectName* newName)
 	level::Utils::build_entities_from_json(entitiesInfo, this);
 }
 
-uint64_t ecore::Level::get_size()
+uint64_t Level::get_size()
 {
 	// TODO
 }
 
-bool ecore::Level::is_resource()
+bool Level::is_resource()
 {
 	return false;
 }
 
-UUID ecore::Level::get_uuid()
+UUID Level::get_uuid()
 {
 	return _levelInfo.uuid;
 }
 
-std::string ecore::Level::get_description()
+std::string Level::get_description()
 {
 	// TODO
 }
 
-std::string ecore::Level::get_type()
+std::string Level::get_type()
 {
 	return "level";
 }
 
-void ecore::Level::rename_in_engine(ObjectName& newName)
+void Level::rename_in_engine(ObjectName& newName)
 {
 	
 }

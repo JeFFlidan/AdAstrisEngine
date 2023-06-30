@@ -1,2 +1,0 @@
-C:\msys64\mingw64\bin\ar.exe qc libspirv_reflect.a CMakeFiles/spirv_reflect.dir/E_/MyEngine/MyEngine/AdAstrisEngine/third_party/spirv_reflect/spirv_reflect.c.obj
-C:\msys64\mingw64\bin\ranlib.exe libspirv_reflect.a

@@ -31,6 +31,7 @@ IModule* ModuleManager::load_module(const std::string& moduleName)
 	}
 	
 	moduleInfo.module = moduleInfo.registerPluginFunc();
+	moduleInfo.module->startup_module(this);
 
 	if (!moduleInfo.module)
 		LOG_WARNING("MODULE IS INVALID")

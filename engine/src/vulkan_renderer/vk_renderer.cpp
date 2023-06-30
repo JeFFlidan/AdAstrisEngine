@@ -1,4 +1,5 @@
-﻿#include "vk_renderer.h"
+﻿#include "core/module_manager.h"
+#include "vk_renderer.h"
 #include "resource_manager/resource_converter.h"
 #include "engine_core/object_name.h"
 #include "engine_core/model/static_model.h"
@@ -6,17 +7,11 @@
 #include "resource_manager/resource_manager.h"
 #include "vulkan_rhi/vulkan_rhi.h"
 #include "vulkan_rhi/vulkan_pipeline.h"
-#include "vulkan_rhi/vulkan_swap_chain.h"
-#include "vulkan_rhi/vulkan_queue.h"
 #include "engine_core/uuid.h"
 #include "rhi/engine_rhi.h"
 #include "material_asset.h"
 #include "file_system/IO.h"
-#include "SDL_events.h"
-#include "SDL_mouse.h"
 #include "SDL_stdinc.h"
-#include "SDL_surface.h"
-#include "SDL_video.h"
 #include "asset_loader.h"
 #include "glm/common.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
@@ -32,9 +27,6 @@
 #include "vk_mesh.h"
 #include "vk_renderpass.h"
 #include "profiler/logger.h"
-
-#include <SDL.h>
-#include <SDL_vulkan.h>
 
 #include <limits>
 #include <stdint.h>
@@ -71,6 +63,10 @@
 #include <ecs.h>
 #include <core/reflection.h>
 #include <engine_core/world.h>
+#include "core/config_base.h"
+
+#include "engine/vulkan_rhi_module.h"
+#include "render_core/render_graph_common.h"
 
 #define VK_CHECK(x)													 \
 	do																 \
@@ -226,17 +222,20 @@ namespace ad_astris
 		LOG_INFO("Start")
 
 		// RHI tests
-		_eRhi = new vulkan::VulkanRHI();
+		_moduleManager = new ModuleManager();
+		LOG_INFO("Loading module")
+		IVulkanRHIModule* rhiModule = _moduleManager->load_module<IVulkanRHIModule>("libvulkan_rhi.dll");
+		LOG_INFO("After loading module")
+		_eRhi = rhiModule->create_vulkan_rhi();
 		_eRhi->init(_sdlWindow.get_window());
-		vulkan::VulkanRHI* rhi = reinterpret_cast<vulkan::VulkanRHI*>(_eRhi);
-		auto vulkanDevice = rhi->get_device();
+		IVulkanDevice* vulkanDevice = _eRhi->get_device();
 		_device = vulkanDevice->get_device();
-		_debug_messenger = rhi->get_messenger();
+		_debug_messenger = _eRhi->get_messenger();
 		_surface = vulkanDevice->get_surface();
 		_chosenGPU = vulkanDevice->get_physical_device();
-		_instance = rhi->get_instance();
-		_allocator = rhi->get_allocator();
-		auto queue = vulkanDevice->get_graphics_queue();
+		_instance = _eRhi->get_instance();
+		_allocator = _eRhi->get_allocator();
+		IVulkanQueue* queue = vulkanDevice->get_graphics_queue();
 		_graphicsQueue = queue->get_queue();
 		_graphicsQueueFamily = queue->get_family();
 
@@ -295,6 +294,27 @@ namespace ad_astris
 		_linearSampler = *vkSampler;
 
 		UUID uuid;
+
+		auto renderCoreModule = _moduleManager->load_module<rcore::IRenderCoreModule>("librender_core.dll");
+		LOG_INFO("Before getting shader compiler")
+		_shaderCompiler = renderCoreModule->get_shader_compiler();
+		LOG_INFO("Before getting render graph")
+		rcore::IRenderGraph* graph = renderCoreModule->get_render_graph();
+		LOG_INFO("Before creating pass")
+		rcore::IRenderPass* pass = graph->add_new_pass("test_pass", rcore::RenderGraphQueue::GRAPHICS);
+		LOG_INFO("After creating pass")
+		
+		rhi::TextureInfo colorOutput;
+		colorOutput.format = rhi::Format::R8G8B8A8_UNORM;
+		colorOutput.samplesCount = rhi::SampleCount::BIT_1;
+		colorOutput.width = 1920;
+		colorOutput.height = 1080;
+		colorOutput.memoryUsage = rhi::MemoryUsage::GPU;
+		colorOutput.textureDimension = rhi::TextureDimension::TEXTURE2D;
+		LOG_INFO("Before adding color output")
+		pass->add_color_output("test_color_output", &colorOutput);
+
+		graph->log();
 	}
 
 	/** Used to init material, render scene and other systems.
@@ -320,32 +340,45 @@ namespace ad_astris
 		}
 
 		_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
-		_shaderCompiler = new rcore::ShaderCompiler(_fileSystem);
+		//_shaderCompiler = new rcore::ShaderCompiler(_fileSystem);
 		//resource::ResourceConverter resourceConverter(_fileSystem);
 
 		LOG_INFO("Before manager")
 		resource::ResourceManager manager(_fileSystem);
+		//manager.save_resources();
 		LOG_INFO("After manager")
+		_shaderCompiler->init(_fileSystem);
 
 		_materialSystem.init(this);
 		_renderScene.init();
 		_temporalFilter.init(this);
 		_composite.init(this);
 		
-		ecore::World* world = new ecore::World();
-		
-		io::URI levelPath = "E:/MyEngine/MyEngine/VulkanEngine/bin/my_level.aalevel";
-		LOG_INFO("Before creating level")
-		resource::ResourceAccessor<ecore::Level> level = manager.create_level(levelPath);
-		LOG_INFO("Before adding level")
-		world->add_level(level.get_resource());
-		LOG_INFO("Before test function")
-		world->test_function();
-		LOG_INFO("Before saving resources")
-		manager.save_resources();
-		LOG_INFO("After all manipulation with world")
-		
-		delete world;
+		// ecore::World* world = new ecore::World();
+		//
+		// io::URI levelPath = "E:/MyEngine/MyEngine/AdAstrisEngine/bin/my_level.aalevel";
+		// LOG_INFO("Before creating level")
+		// resource::ResourceAccessor<ecore::Level> level = manager.create_level(levelPath);
+		// LOG_INFO("Before adding level")
+		// world->add_level(level.get_resource());
+		// LOG_INFO("Before test function")
+		// world->test_function();
+		// LOG_INFO("Before saving resources")
+		// manager.save_resources();
+		// LOG_INFO("After all manipulation with world")
+		//
+		// LOG_INFO("Before getting system manager")
+		// ecs::SystemManager* systemManager = new ecs::SystemManager();
+		// systemManager->init();
+		// systemManager->add_entity_manager(world->get_entity_manager());
+		// LOG_INFO("Before generating execution order")
+		// systemManager->generate_execution_order();
+		// LOG_INFO("Before execution")
+		// systemManager->execute();
+		// LOG_INFO("After execution")
+		//
+		// delete world;
+		//delete systemManager;
 
 		//Tests for resource converter
 		 // io::URI door = "E:\\gun.gltf";
@@ -431,7 +464,7 @@ namespace ad_astris
 		rhi::SwapChain swapChain;
 		// Memory leak. Only for test. In the future renderer will be completely rewritten using rhi
 		_eRhi->create_swap_chain(&swapChain, &swapChainInfo);
-		vulkan::VulkanSwapChain* vulkanSwapChain = static_cast<vulkan::VulkanSwapChain*>(swapChain.handle);
+		IVulkanSwapChain* vulkanSwapChain = static_cast<IVulkanSwapChain*>(swapChain.handle);
 		_swapchain = vulkanSwapChain->get_swap_chain();
 		_swapchainImages = vulkanSwapChain->get_images();
 		_swapchainImageViews = vulkanSwapChain->get_image_views();
@@ -1125,7 +1158,7 @@ namespace ad_astris
 		_eRhi->create_compute_pipeline(&pipeline, &pipeInfo);
 		LOG_INFO("Compiled shader {} into spv", depthReduceURI.c_str())
 
-		vulkan::VulkanPipeline* vkPipeline = static_cast<vulkan::VulkanPipeline*>(pipeline.handle);
+		IVulkanPipeline* vkPipeline = static_cast<IVulkanPipeline*>(pipeline.handle);
 		_depthReducePipeline = vkPipeline->get_handle();
 		_depthReduceLayout = vkPipeline->get_layout();
 		

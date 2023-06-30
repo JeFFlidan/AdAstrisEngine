@@ -1,4 +1,7 @@
 /build
+/engine/src/render_core/build
+/engine/src/vulkan_rhi/build
+/engine/src/CMakeFiles
 /bin
 /src/
 /src/*.*~

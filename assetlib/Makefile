@@ -56,10 +56,10 @@ RM = "C:\Program Files\CMake\bin\cmake.exe" -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = E:\MyEngine\MyEngine\VulkanEngine
+CMAKE_SOURCE_DIR = E:\MyEngine\MyEngine\AdAstrisEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = E:\MyEngine\MyEngine\VulkanEngine
+CMAKE_BINARY_DIR = E:\MyEngine\MyEngine\AdAstrisEngine
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -86,14 +86,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(CMAKE_COMMAND) -E cmake_progress_start E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles E:\MyEngine\MyEngine\VulkanEngine\assetlib\\CMakeFiles\progress.marks
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 assetlib/all
-	$(CMAKE_COMMAND) -E cmake_progress_start E:\MyEngine\MyEngine\VulkanEngine\CMakeFiles 0
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(CMAKE_COMMAND) -E cmake_progress_start E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles E:\MyEngine\MyEngine\AdAstrisEngine\assetlib\\CMakeFiles\progress.marks
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 assetlib/all
+	$(CMAKE_COMMAND) -E cmake_progress_start E:\MyEngine\MyEngine\AdAstrisEngine\CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 assetlib/clean
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 assetlib/clean
 .PHONY : clean
 
 # The main clean target
@@ -102,22 +102,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 assetlib/preinstall
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 assetlib/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 assetlib/preinstall
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 assetlib/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 assetlib/CMakeFiles/assetlib.dir/rule:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 assetlib/CMakeFiles/assetlib.dir/rule
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 assetlib/CMakeFiles/assetlib.dir/rule
 .PHONY : assetlib/CMakeFiles/assetlib.dir/rule
 
 # Convenience name for target.
@@ -126,7 +126,7 @@ assetlib: assetlib/CMakeFiles/assetlib.dir/rule
 
 # fast build rule for target.
 assetlib/fast:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/build
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/build
 .PHONY : assetlib/fast
 
 asset_loader.obj: asset_loader.cpp.obj
@@ -134,7 +134,7 @@ asset_loader.obj: asset_loader.cpp.obj
 
 # target to build an object file
 asset_loader.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/asset_loader.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/asset_loader.cpp.obj
 .PHONY : asset_loader.cpp.obj
 
 asset_loader.i: asset_loader.cpp.i
@@ -142,7 +142,7 @@ asset_loader.i: asset_loader.cpp.i
 
 # target to preprocess a source file
 asset_loader.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/asset_loader.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/asset_loader.cpp.i
 .PHONY : asset_loader.cpp.i
 
 asset_loader.s: asset_loader.cpp.s
@@ -150,7 +150,7 @@ asset_loader.s: asset_loader.cpp.s
 
 # target to generate assembly for a file
 asset_loader.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/asset_loader.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/asset_loader.cpp.s
 .PHONY : asset_loader.cpp.s
 
 material_asset.obj: material_asset.cpp.obj
@@ -158,7 +158,7 @@ material_asset.obj: material_asset.cpp.obj
 
 # target to build an object file
 material_asset.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/material_asset.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/material_asset.cpp.obj
 .PHONY : material_asset.cpp.obj
 
 material_asset.i: material_asset.cpp.i
@@ -166,7 +166,7 @@ material_asset.i: material_asset.cpp.i
 
 # target to preprocess a source file
 material_asset.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/material_asset.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/material_asset.cpp.i
 .PHONY : material_asset.cpp.i
 
 material_asset.s: material_asset.cpp.s
@@ -174,7 +174,7 @@ material_asset.s: material_asset.cpp.s
 
 # target to generate assembly for a file
 material_asset.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/material_asset.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/material_asset.cpp.s
 .PHONY : material_asset.cpp.s
 
 mesh_asset.obj: mesh_asset.cpp.obj
@@ -182,7 +182,7 @@ mesh_asset.obj: mesh_asset.cpp.obj
 
 # target to build an object file
 mesh_asset.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/mesh_asset.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/mesh_asset.cpp.obj
 .PHONY : mesh_asset.cpp.obj
 
 mesh_asset.i: mesh_asset.cpp.i
@@ -190,7 +190,7 @@ mesh_asset.i: mesh_asset.cpp.i
 
 # target to preprocess a source file
 mesh_asset.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/mesh_asset.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/mesh_asset.cpp.i
 .PHONY : mesh_asset.cpp.i
 
 mesh_asset.s: mesh_asset.cpp.s
@@ -198,7 +198,7 @@ mesh_asset.s: mesh_asset.cpp.s
 
 # target to generate assembly for a file
 mesh_asset.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/mesh_asset.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/mesh_asset.cpp.s
 .PHONY : mesh_asset.cpp.s
 
 prefab_asset.obj: prefab_asset.cpp.obj
@@ -206,7 +206,7 @@ prefab_asset.obj: prefab_asset.cpp.obj
 
 # target to build an object file
 prefab_asset.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/prefab_asset.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/prefab_asset.cpp.obj
 .PHONY : prefab_asset.cpp.obj
 
 prefab_asset.i: prefab_asset.cpp.i
@@ -214,7 +214,7 @@ prefab_asset.i: prefab_asset.cpp.i
 
 # target to preprocess a source file
 prefab_asset.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/prefab_asset.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/prefab_asset.cpp.i
 .PHONY : prefab_asset.cpp.i
 
 prefab_asset.s: prefab_asset.cpp.s
@@ -222,7 +222,7 @@ prefab_asset.s: prefab_asset.cpp.s
 
 # target to generate assembly for a file
 prefab_asset.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/prefab_asset.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/prefab_asset.cpp.s
 .PHONY : prefab_asset.cpp.s
 
 texture_asset.obj: texture_asset.cpp.obj
@@ -230,7 +230,7 @@ texture_asset.obj: texture_asset.cpp.obj
 
 # target to build an object file
 texture_asset.cpp.obj:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/texture_asset.cpp.obj
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/texture_asset.cpp.obj
 .PHONY : texture_asset.cpp.obj
 
 texture_asset.i: texture_asset.cpp.i
@@ -238,7 +238,7 @@ texture_asset.i: texture_asset.cpp.i
 
 # target to preprocess a source file
 texture_asset.cpp.i:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/texture_asset.cpp.i
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/texture_asset.cpp.i
 .PHONY : texture_asset.cpp.i
 
 texture_asset.s: texture_asset.cpp.s
@@ -246,7 +246,7 @@ texture_asset.s: texture_asset.cpp.s
 
 # target to generate assembly for a file
 texture_asset.cpp.s:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/texture_asset.cpp.s
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(MAKE) $(MAKESILENT) -f assetlib\CMakeFiles\assetlib.dir\build.make assetlib/CMakeFiles/assetlib.dir/texture_asset.cpp.s
 .PHONY : texture_asset.cpp.s
 
 # Help Target
@@ -284,6 +284,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /d E:\MyEngine\MyEngine\VulkanEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
+	cd /d E:\MyEngine\MyEngine\AdAstrisEngine && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

@@ -2,33 +2,43 @@
 
 #include "engine_core/object.h"
 #include "level_common.h"
-#include <ecs.h>
+#include "ecs.h"
 
 #include <vector>
 
 namespace ad_astris::ecore
 {
+	class World;
+	
 	class Level : public Object
 	{
 		friend class level::Utils;
+		friend class World;
 		
 		// TODO
 		public:
 			Level() = default;
-			//Constructor to create level with default settings
+			
+			// Constructor to create level with default settings
 			Level(io::URI& path);
-
+			
+			// Constructor to use while loading and existing level 
+			Level(void* entityManager);
+			
 			ecs::EntityManager* get_entity_manager();
 			void add_entity(ecs::Entity& entity);
 
 		private:
+			World* _owningWorld{ nullptr }; // ?
+			
+			ecs::EntityManager* _entityManager{ nullptr };
 			std::vector<ecs::Entity> _entities;
+			
 			level::LevelInfo _levelInfo;
-			ecs::EntityManager _world;
 		
 		public:
 			// ========== Begin Object interface ==========
-			
+				
 			virtual void serialize(io::IFile* file) override;
 			virtual void deserialize(io::IFile* file, ObjectName* newName = nullptr) override;
 			virtual uint64_t get_size() override;
@@ -36,7 +46,7 @@ namespace ad_astris::ecore
 			virtual UUID get_uuid() override;
 			virtual std::string get_description() override;
 			virtual std::string get_type() override;
-		
+			
 		protected:
 			virtual void rename_in_engine(ObjectName& newName) override;
 

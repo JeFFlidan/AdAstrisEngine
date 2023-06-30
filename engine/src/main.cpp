@@ -3,7 +3,7 @@
 #include <iostream>
 #include <profiler/logger.h>
 
-int main(int argc, char* argv[])
+int main(int argc, char** argv)
 {
 	ad_astris::VkRenderer engine;
 
@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
 	auto diff = end - start;
 	LOG_INFO("Init engine took {} {}", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / 1000000.0, "ms");
 	
-	engine.run();	
+	engine.run();
 
 	engine.cleanup();
 

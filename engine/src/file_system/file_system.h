@@ -5,7 +5,6 @@
 #include <cstring>
 #include <cassert>
 #include <stdint.h>
-#include "profiler/logger.h"
 
 namespace ad_astris::io
 {

@@ -3,8 +3,10 @@
 #include <functional>
 
 using namespace ad_astris;
+using namespace rcore;
+using namespace impl;
 
-rcore::ShaderCache::~ShaderCache()
+ShaderCache::~ShaderCache()
 {
 	LOG_INFO("Shader cache destructor")
 	for (auto& it : _cache)
@@ -18,7 +20,7 @@ rcore::ShaderCache::~ShaderCache()
 	}
 }
 
-bool rcore::ShaderCache::check_in_cache(rhi::ShaderInfo* shaderInfo, void* data, uint64_t size)
+bool ShaderCache::check_in_cache(rhi::ShaderInfo* shaderInfo, void* data, uint64_t size)
 {
 	DataFromFile dataFromFile(static_cast<uint8_t*>(data), size);
 	auto it = _cache.find(dataFromFile);
@@ -33,7 +35,7 @@ bool rcore::ShaderCache::check_in_cache(rhi::ShaderInfo* shaderInfo, void* data,
 	return false;
 }
 
-void rcore::ShaderCache::add_to_cache(rhi::ShaderInfo* shaderInfo, void* dataFromFile, uint64_t dataSize)
+void ShaderCache::add_to_cache(rhi::ShaderInfo* shaderInfo, void* dataFromFile, uint64_t dataSize)
 {
 	DataFromFile key(static_cast<uint8_t*>(dataFromFile), dataSize);
 	rhi::ShaderInfo newInfo;
@@ -45,7 +47,7 @@ void rcore::ShaderCache::add_to_cache(rhi::ShaderInfo* shaderInfo, void* dataFro
 
 //private methods
 
-rcore::ShaderCache::DataFromFile::DataFromFile(uint8_t* data, uint64_t size) : size(size)
+ShaderCache::DataFromFile::DataFromFile(uint8_t* data, uint64_t size) : size(size)
 {
 	uint8_t devider = 2;
 	for (int i = 0; i != 8; ++i)
@@ -55,7 +57,7 @@ rcore::ShaderCache::DataFromFile::DataFromFile(uint8_t* data, uint64_t size) : s
 	}
 }
 
-bool rcore::ShaderCache::DataFromFile::operator==(const DataFromFile& other) const
+bool ShaderCache::DataFromFile::operator==(const DataFromFile& other) const
 {
 	if (other.size != size)
 	{
@@ -73,7 +75,7 @@ bool rcore::ShaderCache::DataFromFile::operator==(const DataFromFile& other) con
 	return true;
 }
 
-size_t rcore::ShaderCache::DataFromFile::hash() const
+size_t ShaderCache::DataFromFile::hash() const
 {
 	size_t result = std::hash<size_t>()(size);
 	size_t codeHash = bytes[0] | bytes[1] | bytes[2] | bytes[3] | bytes[4] | bytes[5] | bytes[6] | bytes[7];

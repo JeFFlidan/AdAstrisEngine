@@ -1,6 +1,7 @@
 #pragma once
 
 #include "file_system/file_system.h"
+#include "profiler/logger.h"
 
 #include <inicpp.h>
 

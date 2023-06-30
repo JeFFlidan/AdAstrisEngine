@@ -3,6 +3,8 @@
 #include "vk_types.h"
 #include "rhi/engine_rhi.h"
 #include "render_core/shader_compiler.h"
+#include "core/module_manager.h"
+#include "engine/render_core_module.h"
 #include "vk_mesh.h"
 #include "material_system/material_system.h"
 #include "vk_pipeline.h"
@@ -375,7 +377,7 @@ namespace ad_astris
 			MaterialSystem _materialSystem;
 			RenderScene _renderScene;
 			UserInterface _userInterface;
-			rcore::ShaderCompiler* _shaderCompiler;
+			rcore::IShaderCompiler* _shaderCompiler;
 			io::FileSystem* _fileSystem;
 
 			Attachment _mainOpaqueDepthAttach;
@@ -485,6 +487,8 @@ namespace ad_astris
 				VkImageUsageFlags usageFlags, 
 				VkImageAspectFlags aspectFlags,
 				uint32_t layerCount = 1);
+
+			ModuleManager* _moduleManager;
 
 		private:
 			void init_vulkan();

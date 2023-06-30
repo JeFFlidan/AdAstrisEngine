@@ -1,8 +1,8 @@
-# Install script for directory: E:/MyEngine/MyEngine/VulkanEngine
+# Install script for directory: E:/MyEngine/MyEngine/AdAstrisEngine
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/vulkan_guide")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/AdAstrisEngine")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -39,10 +39,10 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("E:/MyEngine/MyEngine/VulkanEngine/third_party/cmake_install.cmake")
-  include("E:/MyEngine/MyEngine/VulkanEngine/engine/src/cmake_install.cmake")
-  include("E:/MyEngine/MyEngine/VulkanEngine/assetlib/cmake_install.cmake")
-  include("E:/MyEngine/MyEngine/VulkanEngine/asset_baker/cmake_install.cmake")
+  include("E:/MyEngine/MyEngine/AdAstrisEngine/third_party/cmake_install.cmake")
+  include("E:/MyEngine/MyEngine/AdAstrisEngine/engine/src/cmake_install.cmake")
+  include("E:/MyEngine/MyEngine/AdAstrisEngine/assetlib/cmake_install.cmake")
+  include("E:/MyEngine/MyEngine/AdAstrisEngine/asset_baker/cmake_install.cmake")
 
 endif()
 
@@ -54,5 +54,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "E:/MyEngine/MyEngine/VulkanEngine/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "E:/MyEngine/MyEngine/AdAstrisEngine/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -1,35 +1,35 @@
 ﻿#pragma once
 
 #include "rhi/resources.h"
-#include "file_system/IO.h"
+#include "engine/render_core_module.h"
+#include "file_system/file_system.h"
 #include "shader_cache.h"
 #include <shaderc/shaderc.h>
 
-namespace ad_astris::rcore
+namespace ad_astris::rcore::impl
 {
 	const uint32_t magicNumber = 0x07230203;
 	
-	shaderc_include_result* include_resolver(
-		void* userData,
-		const char* requested_source,
-		int type,
-		const char* requesting_source,
-		size_t includeDepth);
-
-	void include_releaser(void* userData, shaderc_include_result* result);
+	// shaderc_include_result* RENDER_CORE_API include_resolver(
+	// 	void* userData,
+	// 	const char* requested_source,
+	// 	int type,
+	// 	const char* requesting_source,
+	// 	size_t includeDepth);
+	//
+	// void RENDER_CORE_API include_releaser(void* userData, shaderc_include_result* result);
 	
-	class ShaderCompiler
+	class RENDER_CORE_API ShaderCompiler : public IShaderCompiler
 	{
 		public:
-			ShaderCache _shaderCache;
-		
 			ShaderCompiler() = default;
-			ShaderCompiler(io::FileSystem* fileSystem);
 
-			void compile_into_spv(io::URI& path, rhi::ShaderInfo* info);
+			virtual void init(io::FileSystem* fileSystem) override;
+			virtual void compile_into_spv(io::URI& path, rhi::ShaderInfo* info) override;
 		
 		private:
 			io::FileSystem* _fileSystem;
+			ShaderCache _shaderCache;
 			shaderc_compiler_t _compiler { nullptr };
 			shaderc_compile_options_t _options { nullptr };
 		
