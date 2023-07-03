@@ -12,6 +12,11 @@
 #include <string>
 #include <json.hpp>
 
+namespace ad_astris::ecore
+{
+	struct ShaderUUIDContext;
+}
+
 namespace ad_astris::resource
 {
 	template<typename T>
@@ -30,16 +35,19 @@ namespace ad_astris::resource
 				return nullptr;
 			}
 
-		private:
-			void* _resource{ nullptr };
-
 			bool is_valid()
 			{
 				if (_resource == nullptr)
 					return false;
 				return true;
 			}
+		
+		private:
+			void* _resource{ nullptr };
 	};
+
+	template<typename T>
+	struct FirstCreationContext{};
 	
 	// ResourceManager is responsible for loading levels and managing resources 
 	// (destroy, save, update, etc.) 
@@ -136,6 +144,12 @@ namespace ad_astris::resource
 				return load_resource<T>(uuid);
 			}
 
+			template<typename T>
+			ResourceAccessor<T> create_new_resource(FirstCreationContext<T> creationContext)
+			{
+				
+			}
+
 			void save_resources();
 		
 		private:
@@ -160,5 +174,7 @@ namespace ad_astris::resource
 					
 				return ResourceAccessor<T>(resource->object);
 			}
+
+			UUID get_shader_uuid(io::URI& shaderPath, ecore::ShaderUUIDContext& shaderContext);
 	};
 }

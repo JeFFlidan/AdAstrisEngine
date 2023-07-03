@@ -46,7 +46,7 @@ namespace ad_astris::resource
 
 			// Need this method to understand should I reload existed resource or load new
 			bool check_name_in_table(io::URI& path);
-			bool check_name_in_table(ecore::ObjectName& name);
+			bool check_name_in_table(const std::string& name);
 			
 			// Checks if a UUID is in a table. If not, the the resource doesn't exist and UUID is wrong 
 			bool check_uuid_in_table(UUID& uuid);
@@ -57,7 +57,8 @@ namespace ad_astris::resource
 			void destroy_resource(UUID& uuid);
 			
 			UUID get_uuid_by_name(io::URI& path);
-			UUID get_uuid_by_name(ecore::ObjectName& name);
+			UUID get_uuid_by_name(const std::string& name);
+		
 			io::IFile* get_resource_file(UUID& uuid);
 			ecore::Object* get_resource_object(UUID& uuid);
 			ResourceData* get_resource_data(UUID& uuid);

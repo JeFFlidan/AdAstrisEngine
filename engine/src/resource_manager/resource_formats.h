@@ -14,6 +14,8 @@ namespace ad_astris::resource
 		TEXTURE,
 		LEVEL,
 		MATERIAL,
+		MATERIAL_TEMPLATE,
+		SHADER
 	};
 	
 	struct LevelEngineInfo

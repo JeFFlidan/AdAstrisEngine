@@ -12,7 +12,7 @@ namespace ad_astris::io
 	{
 		
 	};
-
+	
 	struct Name
 	{
 		std::string name{};

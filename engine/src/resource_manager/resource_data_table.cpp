@@ -124,10 +124,10 @@ bool resource::ResourceDataTable::check_name_in_table(io::URI& path)
 	return false;
 }
 
-bool resource::ResourceDataTable::check_name_in_table(ecore::ObjectName& name)
+bool resource::ResourceDataTable::check_name_in_table(const std::string& name)
 {
 	// TODO maybe I should change name.get_string() to name.get_string_without_id()
-	auto it = _nameToUUID.find(name.get_string());
+	auto it = _nameToUUID.find(name);
 	if (it != _nameToUUID.end())
 		return true;
 	return false;
@@ -148,9 +148,9 @@ UUID resource::ResourceDataTable::get_uuid_by_name(io::URI& path)
 	return it->second;
 }
 
-UUID resource::ResourceDataTable::get_uuid_by_name(ecore::ObjectName& name)
+UUID resource::ResourceDataTable::get_uuid_by_name(const std::string& name)
 {
-	auto it = _nameToUUID.find(name.get_string());
+	auto it = _nameToUUID.find(name);
 	return it->second;
 }
 

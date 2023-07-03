@@ -9,11 +9,15 @@ std::string Utils::get_str_resource_type(ResourceType type)
 		case ResourceType::MODEL:
 			return "model";
 		case ResourceType::LEVEL:
-			return "scene";
+			return "level";
 		case ResourceType::TEXTURE:
 			return "texture";
 		case ResourceType::MATERIAL:
 			return "material";
+		case ResourceType::MATERIAL_TEMPLATE:
+			return "material_template";
+		case ResourceType::SHADER:
+			return "shader";
 	}
 }
 
@@ -27,4 +31,8 @@ ResourceType Utils::get_enum_resource_type(std::string type)
 		return ResourceType::LEVEL;
 	if (type == "material")
 		return ResourceType::MATERIAL;
+	if (type == "material_template")
+		return ResourceType::MATERIAL_TEMPLATE;
+	if (type == "shader")
+		return ResourceType::SHADER;
 }

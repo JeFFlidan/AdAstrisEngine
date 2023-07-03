@@ -96,11 +96,15 @@ void io::ResourceFile::deserialize(uint8_t* data, uint64_t size)
 	_metaData.resize(metaDataSize);
 	memcpy(_metaData.data(), data, metaDataSize);
 	data += metaDataSize;
-	uint8_t* compressedBlob = new uint8_t[compressedBlobSize];
-	_binBlob = new uint8_t[_binBlobSize];
-	memcpy(compressedBlob, data, compressedBlobSize);
-	LZ4_decompress_safe((char*)compressedBlob, (char*)_binBlob, compressedBlobSize, _binBlobSize);
-	delete[] compressedBlob;
+	
+	if (_binBlobSize != 0)
+	{
+		uint8_t* compressedBlob = new uint8_t[compressedBlobSize];
+		_binBlob = new uint8_t[_binBlobSize];
+		memcpy(compressedBlob, data, compressedBlobSize);
+		LZ4_decompress_safe((char*)compressedBlob, (char*)_binBlob, compressedBlobSize, _binBlobSize);
+		delete[] compressedBlob;
+	}
 }
 
 bool io::ResourceFile::is_valid()
