@@ -9,7 +9,7 @@ io::URI ecore::Object::get_path()
 
 ecore::ObjectName* ecore::Object::get_name()
 {
-	return &_name;
+	return _name;
 }
 
 bool ecore::Object::rename(io::FileSystem* fileSystem, std::string newName)

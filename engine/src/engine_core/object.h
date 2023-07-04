@@ -14,7 +14,7 @@ namespace ad_astris::ecore
 			virtual ~Object() { }
 		
 			virtual void serialize(io::IFile* file) { }
-			virtual void deserialize(io::IFile* file, ObjectName* newName = nullptr) { }
+			virtual void deserialize(io::IFile* file, ObjectName* objectName) { }
 
 			// Begin method for resources
 			virtual Object* clone()
@@ -58,7 +58,7 @@ namespace ad_astris::ecore
 			bool rename(io::FileSystem* fileSystem, std::string newName);
 
 		protected:
-			ObjectName _name;
+			ObjectName* _name{ nullptr };
 			io::URI _path;
 		
 			void rename_file_on_disc(io::URI& oldPath, io::URI& newPath);

@@ -60,7 +60,7 @@ namespace ad_astris::ecore
 			// Destroy the char array of the name. Also, remove the name from the
 			// name table or decrease instance count of the name
 			void destroy_name();
-			std::string get_string();
+			std::string get_full_name();
 			std::string get_name_without_id();
 			NameID get_name_id();
 

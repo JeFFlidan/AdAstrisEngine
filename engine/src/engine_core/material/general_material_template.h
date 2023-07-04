@@ -11,7 +11,7 @@ namespace ad_astris::ecore
 		public:
 			GeneralMaterialTemplate() = default;
 			// Need this constructor to create new material template.
-			GeneralMaterialTemplate(material::ShaderUUIDContext& shaderUUIDContext, const std::string& templateName);
+			GeneralMaterialTemplate(material::ShaderUUIDContext& shaderUUIDContext, ObjectName* objectName);
 
 			material::ShaderHandleContext& get_shader_handle_context()
 			{
@@ -32,7 +32,7 @@ namespace ad_astris::ecore
 			// ========== Begin Object interface ==========
 				
 			virtual void serialize(io::IFile* file) override;
-			virtual void deserialize(io::IFile* file, ObjectName* newName = nullptr) override;
+			virtual void deserialize(io::IFile* file, ObjectName* templateName) override;
 		
 			virtual bool is_resource() override
 			{

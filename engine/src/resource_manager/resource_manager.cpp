@@ -30,8 +30,10 @@ ResourceManager::~ResourceManager()
 
 ResourceAccessor<ecore::Level> ResourceManager::create_level(io::URI& path)
 {
+	std::string strLevelName = io::Utils::get_file_name(path);
+	ecore::ObjectName* levelName = new ecore::ObjectName(strLevelName.c_str());
 	io::IFile* levelFile = new io::LevelFile(path);
-	ecore::Level* level = new ecore::Level(path);
+	ecore::Level* level = new ecore::Level(path, levelName);
 	level->serialize(levelFile);
 
 	ResourceData resourceData;
@@ -39,7 +41,7 @@ ResourceAccessor<ecore::Level> ResourceManager::create_level(io::URI& path)
 	resourceData.object = level;
 	resourceData.metadata.path = path;
 	resourceData.metadata.type = ResourceType::LEVEL;
-	// TODO Have to think about ObjectName in metadata. Maybe I need it only when I load resources
+	resourceData.metadata.objectName = levelName;
 
 	_resourceDataTable.add_resource(&resourceData);
 
@@ -60,12 +62,12 @@ ResourceAccessor<ecore::Level> ResourceManager::load_level(io::URI& path)
 	_fileSystem->unmap_after_reading(data);
 	
 	ecore::Level* newLevel = new ecore::Level();
-	newLevel->deserialize(newFile);
+	newLevel->deserialize(newFile, resourceData->metadata.objectName);
 
 	resourceData->file = newFile;
 	resourceData->object = newLevel;
-	// TODO think about refreshing metadata name
 
+	// TODO Think if I need this deletion
 	delete oldFile;
 	delete oldLevel;
 	
@@ -78,14 +80,14 @@ void ResourceManager::load_builtin_resources()
 	for (auto& uuid : _builtinResourcesContext.materialTemplateNames)
 	{
 		ecore::GeneralMaterialTemplate* materialTemplate = get_resource<ecore::GeneralMaterialTemplate>(uuid).get_resource();
-		LOG_INFO("Template name: {}", materialTemplate->get_name()->get_string())
+		LOG_INFO("Template name: {}", materialTemplate->get_name()->get_full_name())
 		ecore::material::ShaderUUIDContext& uuidContext = materialTemplate->get_shader_uuid_context();
 		ecore::material::ShaderHandleContext& handleContext = materialTemplate->get_shader_handle_context();
 		for (auto& shaderUUID : uuidContext.shaderUUIDs)
 		{
 			load_shader(shaderUUID, handleContext);
 		}
-		LOG_INFO("Load material template: {}", materialTemplate->get_name()->get_string())
+		LOG_INFO("Load material template: {}", materialTemplate->get_name()->get_full_name())
 	}
 
 	_builtinResourcesContext.clear();
@@ -123,15 +125,15 @@ ResourceAccessor<ecore::GeneralMaterialTemplate> ResourceManager::create_new_res
 	add_shader_uuid_to_context(creationContext.rayMiss, uuidContext);
 	add_shader_uuid_to_context(creationContext.rayCallable, uuidContext);
 	
-	ResourceData resData{};
-	resData.object = new ecore::GeneralMaterialTemplate(uuidContext, creationContext.materialTemplateName);
 	std::string relativePath = "assets/" + creationContext.materialTemplateName + ".aares";
 	io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem, relativePath.c_str());
-	io::IFile* newFile = new io::ResourceFile(absolutePath);
-	resData.file = newFile;
+	
+	ResourceData resData{};
 	resData.metadata.path = absolutePath;
 	resData.metadata.type = ResourceType::MATERIAL_TEMPLATE;
-	// TODO Do I need name in metadata?
+	resData.metadata.objectName = new ecore::ObjectName(creationContext.materialTemplateName.c_str());
+	resData.object = new ecore::GeneralMaterialTemplate(uuidContext, resData.metadata.objectName);
+	resData.file = new io::ResourceFile(absolutePath);
 
 	_resourceDataTable.add_resource(&resData);
 
@@ -210,7 +212,8 @@ void ResourceManager::add_shader_uuid_to_context(io::URI& shaderPath, ecore::mat
 	ResourceData resData;
 	resData.metadata.type = ResourceType::SHADER;
 	resData.metadata.path = absolutePath;
-	resData.object = new ecore::Shader(shaderPath.c_str());
+	resData.metadata.objectName = new ecore::ObjectName(shaderPath.c_str());
+	resData.object = new ecore::Shader(resData.metadata.objectName);
 
 	_resourceDataTable.add_resource(&resData);
 	shaderContext.shaderUUIDs.push_back(resData.object->get_uuid());

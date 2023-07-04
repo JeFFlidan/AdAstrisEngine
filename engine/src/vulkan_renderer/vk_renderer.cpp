@@ -95,7 +95,7 @@ std::vector<std::string> get_supported_vulkan_instance_extension()
 	vkEnumerateInstanceExtensionProperties(nullptr, &count, extensions.data());
 	std::vector<std::string> result;
 	for (auto& extension : extensions)
-	{	    
+	{
 		result.push_back(extension.extensionName);
 	}
 	
@@ -367,7 +367,7 @@ namespace ad_astris
 		LOG_INFO("Before second creation")
 		manager.create_new_resource(materialContext);
 		LOG_INFO("After second creation")
-		//manager.save_resources();
+		manager.save_resources();
 		
 		// ecore::World* world = new ecore::World();
 		//
@@ -407,9 +407,9 @@ namespace ad_astris
 		 // ecore::StaticModel* model1 = async3.get().get_resource();
 		 // ecore::Texture2D* texture1 = async2.get().get_resource();
 		 // ecore::StaticModel* model2 = async1.get().get_resource();
-		 // LOG_INFO("Model 1 name: {}", model1->get_name()->get_string())
-		 // LOG_INFO("Model 2 name: {}", model2->get_name()->get_string())
-		 // LOG_INFO("Texture 1 name: {}", texture1->get_name()->get_string())
+		 // LOG_INFO("Model 1 name: {}", model1->get_name()->get_full_name())
+		 // LOG_INFO("Model 2 name: {}", model2->get_name()->get_full_name())
+		 // LOG_INFO("Texture 1 name: {}", texture1->get_name()->get_full_name())
 
 
 		// io::URI aaresPath = "assets/gun.aares";
@@ -417,7 +417,7 @@ namespace ad_astris
 		// auto accessor = manager.get_resource<ecore::StaticModel>(10841365285477739537);
 		// LOG_INFO("After getting resource")
 		// ecore::StaticModel* model = accessor.get_resource();
-		// LOG_INFO("Model name: {}", model->get_name()->get_string())
+		// LOG_INFO("Model name: {}", model->get_name()->get_full_name())
 		// LOG_INFO("Model path: {}", model->get_path().c_str())
 		// // ecore::tests();
 		//
@@ -425,12 +425,12 @@ namespace ad_astris
 		// //ecore::Texture2D* tempTexture = manager.convert_to_aares<ecore::Texture2D>(newTexture).get_resource();
 		// ecore::Texture2D* accessor2 = manager.get_resource<ecore::Texture2D>(14124523727936834206).get_resource();
 		//
-		// LOG_INFO("Texture 2 name: {}", accessor2->get_name()->get_string())
+		// LOG_INFO("Texture 2 name: {}", accessor2->get_name()->get_full_name())
 		// LOG_INFO("Texture 2 path: {}", accessor2->get_path().c_str())
 		// LOG_INFO("Texture 2 size: {}", accessor2->get_size())
 		//
 		// ecore::Texture2D* accessor3 = manager.get_resource<ecore::Texture2D>(10492210984281833974).get_resource();
-		// LOG_INFO("Texture 3 name: {}", accessor3->get_name()->get_string())
+		// LOG_INFO("Texture 3 name: {}", accessor3->get_name()->get_full_name())
 		// LOG_INFO("Texture 3 path: {}", accessor3->get_path().c_str())
 		// LOG_INFO("Texture 3 size: {}", accessor3->get_size())
 		//

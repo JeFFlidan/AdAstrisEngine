@@ -5,10 +5,10 @@
 using namespace ad_astris;
 using namespace ecore;
 
-Shader::Shader(const std::string& shaderName)
+Shader::Shader(ObjectName* shaderName)
 {
 	_uuid = UUID();
-	_name = ObjectName(shaderName.c_str());
+	_name = shaderName;
 }
 
 void Shader::serialize(io::IFile* file)
@@ -16,21 +16,14 @@ void Shader::serialize(io::IFile* file)
     
 }
 
-void Shader::deserialize(io::IFile* file, ObjectName* newName)
+void Shader::deserialize(io::IFile* file, ObjectName* objectName)
 {
     //_file = file;
 	_shaderInfo.data = file->get_binary_blob();
 	_shaderInfo.size = file->get_binary_blob_size();
 	_shaderInfo.shaderType = get_shader_type_by_file_ext(file->get_file_path());
 	_uuid = std::stoull(file->get_metadata());
-	if (!newName)
-	{
-		_name = ObjectName(file->get_file_name().c_str());
-	}
-	else
-	{
-		_name = *newName;
-	}
+	_name = objectName;
 }
 
 rhi::ShaderType Shader::get_shader_type_by_file_ext(const io::URI& path)

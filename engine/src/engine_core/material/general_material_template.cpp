@@ -6,10 +6,10 @@
 using namespace ad_astris;
 using namespace ecore;
 
-GeneralMaterialTemplate::GeneralMaterialTemplate(material::ShaderUUIDContext& shaderUUIDContext, const std::string& templateName)
+GeneralMaterialTemplate::GeneralMaterialTemplate(material::ShaderUUIDContext& shaderUUIDContext, ObjectName* objectName)
 {
 	_templateInfo.shaderUUIDContext = shaderUUIDContext;
-	_name = ObjectName(templateName.c_str());
+	_name = objectName;
 }
 
 void GeneralMaterialTemplate::serialize(io::IFile* file)
@@ -18,17 +18,10 @@ void GeneralMaterialTemplate::serialize(io::IFile* file)
 	file->set_metadata(newMetadata);
 }
 
-void GeneralMaterialTemplate::deserialize(io::IFile* file, ObjectName* newName)
+void GeneralMaterialTemplate::deserialize(io::IFile* file, ObjectName* templateName)
 {
 	_templateInfo = material::Utils::unpack_general_material_template_info(file->get_metadata());
-	if (!newName)
-	{
-		_name = ObjectName(file->get_file_name().c_str());
-	}
-	else
-	{
-		_name = *newName;
-	}
+	_name = templateName;
 	_path = file->get_file_path();
 }
 

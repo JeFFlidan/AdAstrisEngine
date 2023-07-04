@@ -41,7 +41,7 @@ void ecore::StaticModel::serialize(io::IFile* file)
 	file->set_metadata(newMetadata);
 }
 
-void ecore::StaticModel::deserialize(io::IFile* file, ObjectName* newName)
+void ecore::StaticModel::deserialize(io::IFile* file, ObjectName* objectName)
 {
 	std::string strMetadata = file->get_metadata();
 	_modelInfo = model::Utils::unpack_static_model_info(strMetadata);
@@ -49,14 +49,7 @@ void ecore::StaticModel::deserialize(io::IFile* file, ObjectName* newName)
 	uint8_t* buffer = file->get_binary_blob();
 	_vertexBuffer = buffer;
 	_indexBuffer = buffer + _modelInfo.vertexBufferSize;
-	if (!newName)
-	{
-		_name = ObjectName(file->get_file_name().c_str());
-	}
-	else
-	{
-		_name = *newName;
-	}
+	_name = objectName;
 	_path = file->get_file_path();
 }
 

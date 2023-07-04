@@ -81,12 +81,14 @@ namespace ad_astris::resource
 				}
 
 				ecore::Object* existedObject = nullptr;
+				ecore::ObjectName* existedObjectName = nullptr;
 				if (_resourceDataTable.check_name_in_table(path))
 				{
 					UUID uuid = _resourceDataTable.get_uuid_by_name(path);
 
 					// Have to think is it a good idea to delete existing object and file before reloading
 					existedObject = _resourceDataTable.get_resource_object(uuid);
+					existedObjectName = _resourceDataTable.get_resource_data(uuid)->metadata.objectName;
 				}
 
 				io::ConversionContext<T> conversionContext;
@@ -106,14 +108,16 @@ namespace ad_astris::resource
 				/** TODO have to fix resource name in deserialize. If object is existed, name should be taken
 				 from this existed object and passed to deserialize method*/
 				ResourceData resourceData{};
+				resourceData.metadata.path = absolutePath;
+				resourceData.metadata.objectName = existedObjectName ? existedObjectName : new ecore::ObjectName(io::Utils::get_file_name(absolutePath).c_str());
+
 				io::IFile* file = new io::ResourceFile(conversionContext);
 				T* typedObject = new T();
-				typedObject->deserialize(file);
+				typedObject->deserialize(file, resourceData.metadata.objectName);
+				
 				resourceData.file = file;
 				resourceData.object = typedObject;
-				resourceData.metadata.path = absolutePath;
 				resourceData.metadata.type = Utils::get_enum_resource_type(typedObject->get_type());
-				//resourceData.metadata.objectName = *typedObject->get_name(); Don't know if I need it
 				
 				write_to_disk(resourceData.file, path);
 				

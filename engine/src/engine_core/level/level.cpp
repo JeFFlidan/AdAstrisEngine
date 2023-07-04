@@ -5,11 +5,10 @@
 using namespace ad_astris;
 using namespace ad_astris::ecore;
 
-Level::Level(io::URI& path)
+Level::Level(io::URI& path, ObjectName* levelName)
 {
 	_levelInfo.uuid = UUID();
-	std::string levelName = io::Utils::get_file_name(path);
-	_name = ObjectName(levelName.c_str());
+	_name = levelName;
 	_path = path;
 }
 
@@ -43,15 +42,15 @@ void Level::serialize(io::IFile* file)
 	file->set_metadata(newMetadata);
 }
 
-void Level::deserialize(io::IFile* file, ObjectName* newName)
+void Level::deserialize(io::IFile* file, ObjectName* objectName)
 {
-	if (!newName)
+	if (!objectName)
 	{
 		LOG_ERROR("Level::deserialize(): Can't load level withoud name")
 		return;
 	}
 
-	_name = *newName;
+	_name = objectName;
 	_path = file->get_file_path();
 	
 	nlohmann::json levelMainJson = nlohmann::json::parse(file->get_metadata());

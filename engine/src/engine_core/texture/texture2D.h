@@ -22,7 +22,7 @@ namespace ad_astris::ecore
 			// ========== Begin Object interface ==========
 		
 			virtual void serialize(io::IFile* file) override;
-			virtual void deserialize(io::IFile* file, ObjectName* newName = nullptr) override;
+			virtual void deserialize(io::IFile* file, ObjectName* objectName) override;
 			virtual uint64_t get_size() override;
 			virtual bool is_resource() override;
 			virtual UUID get_uuid() override;

@@ -43,7 +43,7 @@ void resource::ResourceDataTable::load_table(BuiltinResourcesContext& context)
 			context.materialTemplateNames.push_back(uuid);
 
 		_uuidToResourceData[uuid] = resData;
-		_nameToUUID[resData.metadata.objectName->get_string()] = uuid;
+		_nameToUUID[resData.metadata.objectName->get_full_name()] = uuid;
 	}
 	LOG_INFO("Before unloading config file")
 	_config.unload();
@@ -58,21 +58,12 @@ void resource::ResourceDataTable::save_table()
 		io::URI relativePath = io::Utils::get_relative_path_to_file(_fileSystem, resData.metadata.path);
 		io::Utils::replace_back_slash_to_forward(relativePath);
 		Section newSection(relativePath.c_str());
+		
 		newSection.set_option("UUID", data.first);
+		newSection.set_option("Type", Utils::get_str_resource_type(resData.metadata.type));
+		newSection.set_option("Name", resData.metadata.objectName->get_name_without_id());
+		newSection.set_option("NameID", (uint64_t)resData.metadata.objectName->get_name_id());
 
-		if (!resData.object)
-		{
-			newSection.set_option("Type", Utils::get_str_resource_type(resData.metadata.type));
-			newSection.set_option("Name", resData.metadata.objectName->get_name_without_id());
-			newSection.set_option("NameID", (uint64_t)resData.metadata.objectName->get_name_id());
-		}
-		else
-		{
-			newSection.set_option("Type", resData.object->get_type());
-			ecore::ObjectName* name = resData.object->get_name();
-			newSection.set_option("Name", name->get_name_without_id());
-			newSection.set_option("NameID", (uint64_t)name->get_name_id());
-		}
 		_config.set_section(newSection);
 	}
 	_config.save(_fileSystem);
@@ -133,7 +124,7 @@ bool resource::ResourceDataTable::check_name_in_table(io::URI& path)
 
 bool resource::ResourceDataTable::check_name_in_table(const std::string& name)
 {
-	// TODO maybe I should change name.get_string() to name.get_string_without_id()
+	// TODO maybe I should change name.get_full_name() to name.get_full_name_without_id()
 	auto it = _nameToUUID.find(name);
 	if (it != _nameToUUID.end())
 		return true;
@@ -179,7 +170,7 @@ void resource::ResourceDataTable::add_resource(ResourceData* resource)
 	else if (it == _uuidToResourceData.end() && resource)
 	{
 		_uuidToResourceData[uuid] = *resource;
-		_nameToUUID[resource->object->get_name()->get_string()] = uuid;
+		_nameToUUID[resource->object->get_name()->get_full_name()] = uuid;
 	}
 }
 

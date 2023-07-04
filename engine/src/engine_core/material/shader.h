@@ -10,7 +10,7 @@ namespace ad_astris::ecore
 		public:
 			Shader() = default;
 			// Need this constructor to tell the engine that we want to add a new shader which has been never loaded
-			Shader(const std::string& shaderName);
+			Shader(ObjectName* shaderName);
 
 			bool is_shader_compiled()
 			{
@@ -39,7 +39,7 @@ namespace ad_astris::ecore
 			// ========== Begin Object interface ==========
 					
 			virtual void serialize(io::IFile* file) override;
-			virtual void deserialize(io::IFile* file, ObjectName* newName = nullptr) override;
+			virtual void deserialize(io::IFile* file, ObjectName* objectName) override;
 		
 			virtual uint64_t get_size() override
 			{
