@@ -1,62 +1,39 @@
 #pragma once
 
-#include "fwd.h"
-#include "shader.h"
 #include "material_common.h"
 #include "engine_core/object.h"
 #include "resource_manager/resource_manager.h"
 
 namespace ad_astris::ecore
 {
-	struct ShaderUUIDContext
-	{
-		std::vector<UUID> shaderUUIDs;
-	};
-	
-	struct ShaderHandleContext
-	{
-		ShaderHandle vertexShader{ nullptr };
-		ShaderHandle fragmentShader{ nullptr };
-		ShaderHandle tessControlShader{ nullptr };
-		ShaderHandle tessEvaluationShader{ nullptr };
-		ShaderHandle geometryShader{ nullptr };
-		ShaderHandle computeShader{ nullptr };
-		ShaderHandle meshShader{ nullptr };
-		ShaderHandle taskShader{ nullptr };
-		ShaderHandle rayGenerationShader{ nullptr };
-		ShaderHandle rayIntersectionShader{ nullptr };
-		ShaderHandle rayAnyHitShader{ nullptr };
-		ShaderHandle rayClosestHit{ nullptr };
-		ShaderHandle rayMiss{ nullptr };
-		ShaderHandle rayCallable{ nullptr };
-	};
-	
 	class GeneralMaterialTemplate : public Object
 	{
 		public:
 			GeneralMaterialTemplate() = default;
-			GeneralMaterialTemplate(ShaderUUIDContext& shaderUUIDContext);
+			// Need this constructor to create new material template.
+			GeneralMaterialTemplate(material::ShaderUUIDContext& shaderUUIDContext, const std::string& templateName);
 
-			ShaderHandleContext& get_shader_handle_context()
+			material::ShaderHandleContext& get_shader_handle_context()
 			{
-				return _shaderHandleContext;
+				return _templateInfo.shaderHandleContext;
 			}
 
-			ShaderUUIDContext& get_shader_uuid_context()
+			material::ShaderUUIDContext& get_shader_uuid_context()
 			{
-				return _shaderUUIDContext;
+				return _templateInfo.shaderUUIDContext;
 			}
+
+			void load_required_shaders(resource::ResourceManager* resourceManager);
 
 		private:
-			ShaderHandleContext _shaderHandleContext;
-			ShaderUUIDContext _shaderUUIDContext;
-			UUID _uuid;
+			material::GeneralMaterialTemplateInfo _templateInfo;
 		
 		public:
 			// ========== Begin Object interface ==========
 				
 			virtual void serialize(io::IFile* file) override;
 			virtual void deserialize(io::IFile* file, ObjectName* newName = nullptr) override;
+		
 			virtual bool is_resource() override
 			{
 				return false;				
@@ -64,10 +41,19 @@ namespace ad_astris::ecore
 		
 			virtual UUID get_uuid() override
 			{
-				return _uuid;
+				return _templateInfo.uuid;
 			}
-			virtual std::string get_description() override;
-			virtual std::string get_type() override;
+		
+			virtual std::string get_description() override
+			{
+				// TODO
+				return std::string();
+			}
+		
+			virtual std::string get_type() override
+			{
+				return "material_template";
+			}
 
 			// ========== End Object interface ==========
 	};

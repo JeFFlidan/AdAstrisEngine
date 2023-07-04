@@ -1,4 +1,4 @@
-# Install script for directory: E:/MyEngine/MyEngine/AdAstrisEngine/engine/src
+# Install script for directory: C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine/engine/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

@@ -26,6 +26,14 @@ std::string io::Utils::get_file_extension(const URI& path)
 	return extension;
 }
 
+io::URI io::Utils::get_relative_path_to_file(FileSystem* fileSystem, const URI& pathToFile)
+{
+	std::filesystem::path filePath(pathToFile.c_str());
+	std::filesystem::path projPath(fileSystem->get_root_path().c_str());
+	std::filesystem::path relativePath = std::filesystem::relative(filePath, projPath);
+	return relativePath.string().c_str();
+}
+
 io::URI io::Utils::get_absolute_path_to_file(FileSystem* fileSystem, const URI& relativePath)
 {
 	std::filesystem::path cppPath(relativePath.c_str());

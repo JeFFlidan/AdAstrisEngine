@@ -1,4 +1,4 @@
-# Install script for directory: E:/MyEngine/MyEngine/AdAstrisEngine/asset_baker
+# Install script for directory: C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine/asset_baker
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

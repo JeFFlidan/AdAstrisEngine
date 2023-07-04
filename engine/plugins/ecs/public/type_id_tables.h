@@ -5,6 +5,7 @@
 #include "profiler/logger.h"
 
 #include <unordered_map>
+#include <vector>
 #include <mutex>
 
 namespace ad_astris::ecs

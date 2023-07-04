@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "E:/MyEngine/MyEngine/AdAstrisEngine/third_party/spirv_reflect/spirv_reflect.c" "third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj" "gcc" "third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj.d"
+  "C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine/third_party/spirv_reflect/spirv_reflect.c" "third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj" "gcc" "third_party/CMakeFiles/spirv_reflect.dir/spirv_reflect/spirv_reflect.c.obj.d"
   )
 
 # Targets to which this target links.

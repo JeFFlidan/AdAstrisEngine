@@ -12,9 +12,10 @@
 #include <string>
 #include <json.hpp>
 
-namespace ad_astris::ecore
+namespace ad_astris::ecore::material
 {
 	struct ShaderUUIDContext;
+	struct ShaderHandleContext;
 }
 
 namespace ad_astris::resource
@@ -48,6 +49,13 @@ namespace ad_astris::resource
 
 	template<typename T>
 	struct FirstCreationContext{};
+
+	struct BuiltinResourcesContext
+	{
+		std::vector<UUID> materialTemplateNames;
+
+		void clear();
+	};
 	
 	// ResourceManager is responsible for loading levels and managing resources 
 	// (destroy, save, update, etc.) 
@@ -73,12 +81,12 @@ namespace ad_astris::resource
 				}
 
 				ecore::Object* existedObject = nullptr;
-				if (_resourceDataTable->check_name_in_table(path))
+				if (_resourceDataTable.check_name_in_table(path))
 				{
-					UUID uuid = _resourceDataTable->get_uuid_by_name(path);
+					UUID uuid = _resourceDataTable.get_uuid_by_name(path);
 
 					// Have to think is it a good idea to delete existing object and file before reloading
-					existedObject = _resourceDataTable->get_resource_object(uuid);
+					existedObject = _resourceDataTable.get_resource_object(uuid);
 				}
 
 				io::ConversionContext<T> conversionContext;
@@ -97,7 +105,7 @@ namespace ad_astris::resource
 
 				/** TODO have to fix resource name in deserialize. If object is existed, name should be taken
 				 from this existed object and passed to deserialize method*/
-				ResourceData resourceData;
+				ResourceData resourceData{};
 				io::IFile* file = new io::ResourceFile(conversionContext);
 				T* typedObject = new T();
 				typedObject->deserialize(file);
@@ -109,7 +117,7 @@ namespace ad_astris::resource
 				
 				write_to_disk(resourceData.file, path);
 				
-				_resourceDataTable->add_resource(&resourceData);
+				_resourceDataTable.add_resource(&resourceData);
 				
 				return ResourceAccessor<T>(resourceData.object);
 			}
@@ -130,43 +138,48 @@ namespace ad_astris::resource
 			template<typename T>
 			ResourceAccessor<T> get_resource(UUID uuid)
 			{
-				if (!_resourceDataTable->check_uuid_in_table(uuid))
+				if (!_resourceDataTable.check_uuid_in_table(uuid))
 				{
 					LOG_ERROR("ResourceManager:get_resource(): Invalid UUID {}", uuid)
 					return nullptr;
 				}
-				if (_resourceDataTable->check_resource_in_table(uuid))
+				if (_resourceDataTable.check_resource_in_table(uuid))
 				{
 					LOG_INFO("Get resource object")
-					return _resourceDataTable->get_resource_object(uuid);
+					return _resourceDataTable.get_resource_object(uuid);
 				}
 				
 				return load_resource<T>(uuid);
 			}
 
 			template<typename T>
-			ResourceAccessor<T> create_new_resource(FirstCreationContext<T> creationContext)
-			{
-				
-			}
+			ResourceAccessor<T> create_new_resource(FirstCreationContext<T> creationContext);
 
 			void save_resources();
 		
 		private:
 			io::FileSystem* _fileSystem;
-			ResourceDataTable* _resourceDataTable;
+			ResourceDataTable _resourceDataTable;
 			ResourceConverter _resourceConverter;
 
+			BuiltinResourcesContext _builtinResourcesContext;
+
 			void write_to_disk(io::IFile* file, io::URI& originalPath);
-			io::IFile* read_from_disk(io::URI& path);
+			io::IFile* read_from_disk(io::URI& path, bool isShader = false);
 		
 			template<typename T>
 			ResourceAccessor<T> load_resource(UUID& uuid)
 			{
-				io::URI path = _resourceDataTable->get_path(uuid);
-				io::IFile* file = read_from_disk(path);
+				io::URI path = _resourceDataTable.get_path(uuid);
+				bool isShader = _resourceDataTable.get_resource_type(uuid) == ResourceType::SHADER;
+				io::IFile* file = read_from_disk(path, isShader);
+				if (isShader)
+				{
+					std::string metadata = std::to_string(uuid);
+					file->set_metadata(metadata);
+				}
 
-				ResourceData* resource = _resourceDataTable->get_resource_data(uuid);
+				ResourceData* resource = _resourceDataTable.get_resource_data(uuid);
 				T* typedObject = new T();
 				typedObject->deserialize(file, resource->metadata.objectName);
 				resource->file = file;
@@ -174,7 +187,9 @@ namespace ad_astris::resource
 					
 				return ResourceAccessor<T>(resource->object);
 			}
-
-			UUID get_shader_uuid(io::URI& shaderPath, ecore::ShaderUUIDContext& shaderContext);
+		
+			void load_builtin_resources();
+			void add_shader_uuid_to_context(io::URI& shaderPath, ecore::material::ShaderUUIDContext& shaderContext);
+			void load_shader(UUID& shaderUUID, ecore::material::ShaderHandleContext& shaderContext);
 	};
 }

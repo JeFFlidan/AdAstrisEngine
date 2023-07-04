@@ -27,7 +27,9 @@ namespace ad_astris::io
 			virtual void deserialize(uint8_t* data, uint64_t size) = 0;
 
 			virtual bool is_valid() = 0;
+			virtual void set_binary_blob(uint8_t* blob, uint64_t blobSize) { }
 			virtual uint8_t* get_binary_blob() = 0;
+			virtual void destroy_binary_blob() { }
 			virtual uint64_t get_binary_blob_size() = 0;
 		
 			URI get_file_path();
@@ -52,7 +54,9 @@ namespace ad_astris::io
 			virtual void deserialize(uint8_t* data, uint64_t size) final override;
 
 			virtual bool is_valid() final override;
+			virtual void set_binary_blob(uint8_t* blob, uint64_t blobSize) override;
 			virtual uint8_t* get_binary_blob() final override;
+			virtual void destroy_binary_blob() override;
 			virtual uint64_t get_binary_blob_size() final override;
 			
 		private:

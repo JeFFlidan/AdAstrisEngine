@@ -25,15 +25,18 @@ namespace ad_astris::resource
 		ecore::Object* object{ nullptr };
 		ResourceMetadata metadata;
 	};
+
+	struct BuiltinResourcesContext;
 	
 	class ResourceDataTable
 	{
 		public:
+			ResourceDataTable() = default;
 			ResourceDataTable(io::FileSystem* fileSystem);
 			~ResourceDataTable();
 			
 			// Load uuids and paths from aarestable file
-			void load_table();
+			void load_table(BuiltinResourcesContext& context);
 
 			// Upload aarestable file
 			void save_table();
@@ -62,6 +65,7 @@ namespace ad_astris::resource
 			io::IFile* get_resource_file(UUID& uuid);
 			ecore::Object* get_resource_object(UUID& uuid);
 			ResourceData* get_resource_data(UUID& uuid);
+			ResourceType get_resource_type(UUID& uuid);
 			io::URI get_path(UUID& uuid);
 		
 		private:

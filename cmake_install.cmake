@@ -1,4 +1,4 @@
-# Install script for directory: E:/MyEngine/MyEngine/AdAstrisEngine
+# Install script for directory: C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,10 +39,10 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("E:/MyEngine/MyEngine/AdAstrisEngine/third_party/cmake_install.cmake")
-  include("E:/MyEngine/MyEngine/AdAstrisEngine/engine/src/cmake_install.cmake")
-  include("E:/MyEngine/MyEngine/AdAstrisEngine/assetlib/cmake_install.cmake")
-  include("E:/MyEngine/MyEngine/AdAstrisEngine/asset_baker/cmake_install.cmake")
+  include("C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine/third_party/cmake_install.cmake")
+  include("C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine/engine/src/cmake_install.cmake")
+  include("C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine/assetlib/cmake_install.cmake")
+  include("C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine/asset_baker/cmake_install.cmake")
 
 endif()
 
@@ -54,5 +54,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "E:/MyEngine/MyEngine/AdAstrisEngine/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

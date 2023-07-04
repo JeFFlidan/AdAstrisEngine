@@ -11,6 +11,7 @@ file(GLOB ENGINE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/level/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/model/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/texture/*.*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/material/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/file_system/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/material_system/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.*"

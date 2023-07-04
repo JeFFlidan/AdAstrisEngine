@@ -67,6 +67,7 @@
 
 #include "engine/vulkan_rhi_module.h"
 #include "render_core/render_graph_common.h"
+#include "engine_core/material/general_material_template.h"
 
 #define VK_CHECK(x)													 \
 	do																 \
@@ -353,6 +354,20 @@ namespace ad_astris
 		_renderScene.init();
 		_temporalFilter.init(this);
 		_composite.init(this);
+
+		resource::FirstCreationContext<ecore::GeneralMaterialTemplate> materialContext;
+		materialContext.materialTemplateName = "gbuffer";
+		materialContext.vertexShaderPath = "shaders/deferred/GBuffer.vert";
+		materialContext.fragmentShaderPath = "shaders/deferred/GBuffer.frag";
+		LOG_INFO("Before first creation")
+		manager.create_new_resource(materialContext);
+		LOG_INFO("After first creation")
+		materialContext.materialTemplateName = "gbuffer2";
+		materialContext.fragmentShaderPath = "shaders/deferred/deferred_lighting.frag";
+		LOG_INFO("Before second creation")
+		manager.create_new_resource(materialContext);
+		LOG_INFO("After second creation")
+		//manager.save_resources();
 		
 		// ecore::World* world = new ecore::World();
 		//
@@ -425,8 +440,6 @@ namespace ad_astris
 		// //manager.load_resource<resource::ModelInfo>(aaresPath);
 		//
 		//
-		std::string typeName = get_type_name<FirstComponent>();
-		LOG_INFO("Type name: {}", typeName)
 		//
 		// ecs::EntityManager system;
 		// ecs::ArchetypeCreationContext creationContext;

@@ -8,8 +8,8 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "E:/MyEngine/MyEngine/AdAstrisEngine/third_party/fmt_lib/fmt/format.cc" "third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.obj" "gcc" "third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.obj.d"
-  "E:/MyEngine/MyEngine/AdAstrisEngine/third_party/fmt_lib/fmt/os.cc" "third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.obj" "gcc" "third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.obj.d"
+  "C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine/third_party/fmt_lib/fmt/format.cc" "third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.obj" "gcc" "third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/format.cc.obj.d"
+  "C:/Users/zaver/RiderProjects/AdAstrisEngine/AdAstrisEngine/AdAstrisEngine/third_party/fmt_lib/fmt/os.cc" "third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.obj" "gcc" "third_party/CMakeFiles/fmt_lib.dir/fmt_lib/fmt/os.cc.obj.d"
   )
 
 # Targets to which this target links.

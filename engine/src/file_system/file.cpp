@@ -118,9 +118,20 @@ uint8_t* io::ResourceFile::get_binary_blob()
 	return _binBlob;
 }
 
+void io::ResourceFile::set_binary_blob(uint8_t* blob, uint64_t blobSize)
+{
+	_binBlob = blob;
+	_binBlobSize = blobSize;
+}
+
 uint64_t io::ResourceFile::get_binary_blob_size()
 {
 	return _binBlobSize;
+}
+
+void io::ResourceFile::destroy_binary_blob()
+{
+	delete[] _binBlob;
 }
 
 io::LevelFile::LevelFile(const URI& uri)

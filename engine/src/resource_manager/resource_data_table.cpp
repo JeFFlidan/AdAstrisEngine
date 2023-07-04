@@ -8,6 +8,8 @@
 #include <execution>
 #include <future>
 
+#include "resource_manager.h"
+
 using namespace ad_astris;
 
 resource::ResourceDataTable::ResourceDataTable(io::FileSystem* fileSystem) : _fileSystem(fileSystem)
@@ -17,18 +19,15 @@ resource::ResourceDataTable::ResourceDataTable(io::FileSystem* fileSystem) : _fi
 
 resource::ResourceDataTable::~ResourceDataTable()
 {
-	for (auto& res : _uuidToResourceData)
-	{
-		delete res.second.file;
-		delete res.second.object;
-		delete res.second.metadata.objectName;
-	}
+	_uuidToResourceData.clear();
 }
 
-void resource::ResourceDataTable::load_table()
+void resource::ResourceDataTable::load_table(BuiltinResourcesContext& context)
 {
 	io::URI path = io::Utils::get_absolute_path_to_file(_fileSystem, "configs/resource_table.ini");
+	LOG_INFO("Before loading config file into memory")
 	_config.load_from_file(path);
+	LOG_INFO("After loading config file into memory")
 
 	for (auto section : _config)
 	{
@@ -36,14 +35,19 @@ void resource::ResourceDataTable::load_table()
 		uint32_t nameID = section.get_option_value<uint64_t>("NameID");
 		std::string name = section.get_option_value<std::string>("Name");
 		ResourceData resData{};
-		resData.metadata.path = section.get_name().c_str();
+		resData.metadata.path = io::Utils::get_absolute_path_to_file(_fileSystem, section.get_name().c_str());
 		resData.metadata.type = Utils::get_enum_resource_type(section.get_option_value<std::string>("Type"));
 		resData.metadata.objectName = new ecore::ObjectName(name.c_str(), nameID);
 
-		_uuidToResourceData[uuid] = resData;
-	}
+		if (resData.metadata.type == ResourceType::MATERIAL_TEMPLATE)
+			context.materialTemplateNames.push_back(uuid);
 
+		_uuidToResourceData[uuid] = resData;
+		_nameToUUID[resData.metadata.objectName->get_string()] = uuid;
+	}
+	LOG_INFO("Before unloading config file")
 	_config.unload();
+	LOG_INFO("After unloading config file")
 }
 
 void resource::ResourceDataTable::save_table()
@@ -51,10 +55,9 @@ void resource::ResourceDataTable::save_table()
 	for (auto& data : _uuidToResourceData)
 	{
 		ResourceData& resData = data.second;
-		io::URI path = resData.metadata.path;
-		io::Utils::replace_back_slash_to_forward(path);
-
-		Section newSection(path.c_str());
+		io::URI relativePath = io::Utils::get_relative_path_to_file(_fileSystem, resData.metadata.path);
+		io::Utils::replace_back_slash_to_forward(relativePath);
+		Section newSection(relativePath.c_str());
 		newSection.set_option("UUID", data.first);
 
 		if (!resData.object)
@@ -70,10 +73,8 @@ void resource::ResourceDataTable::save_table()
 			newSection.set_option("Name", name->get_name_without_id());
 			newSection.set_option("NameID", (uint64_t)name->get_name_id());
 		}
-		
 		_config.set_section(newSection);
 	}
-	
 	_config.save(_fileSystem);
 }
 
@@ -84,8 +85,14 @@ void resource::ResourceDataTable::save_resources()
 	{
 		LOG_INFO("Start saving")
 		ResourceData& resourceData = pair.second;
+
+		
 		io::IFile* file = resourceData.file;
 		ecore::Object* object = resourceData.object;
+		ResourceMetadata& metadata = resourceData.metadata;
+		
+		if (resourceData.metadata.type == ResourceType::SHADER || !object)
+			continue;
 
 		uint8_t* data{ nullptr };
 		uint64_t size = 0;
@@ -166,12 +173,13 @@ void resource::ResourceDataTable::add_resource(ResourceData* resource)
 			delete it->second.file;
 		
 		it->second = *resource;
-		io::URI path = resource->file->get_file_path();
-		_nameToUUID[io::Utils::get_file_name(path)] = it->first;
+		//io::URI path = resource->file->get_file_path();
+		//_nameToUUID[io::Utils::get_file_name(path)] = it->first;
 	}
 	else if (it == _uuidToResourceData.end() && resource)
 	{
-		_uuidToResourceData[uuid] = *resource; 
+		_uuidToResourceData[uuid] = *resource;
+		_nameToUUID[resource->object->get_name()->get_string()] = uuid;
 	}
 }
 
@@ -210,6 +218,12 @@ ecore::Object* resource::ResourceDataTable::get_resource_object(UUID& uuid)
 resource::ResourceData* resource::ResourceDataTable::get_resource_data(UUID& uuid)
 {
 	return &_uuidToResourceData.find(uuid)->second;
+}
+
+resource::ResourceType resource::ResourceDataTable::get_resource_type(UUID& uuid)
+{
+	auto it = _uuidToResourceData.find(uuid);
+	return it->second.metadata.type;
 }
 
 io::URI resource::ResourceDataTable::get_path(UUID& uuid)
