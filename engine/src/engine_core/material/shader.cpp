@@ -16,14 +16,28 @@ void Shader::serialize(io::IFile* file)
     
 }
 
+Shader::~Shader()
+{
+	delete[] _shaderInfo.data;
+}
+
 void Shader::deserialize(io::IFile* file, ObjectName* objectName)
 {
-    //_file = file;
-	_shaderInfo.data = file->get_binary_blob();
-	_shaderInfo.size = file->get_binary_blob_size();
+	_file = file;
 	_shaderInfo.shaderType = get_shader_type_by_file_ext(file->get_file_path());
 	_uuid = std::stoull(file->get_metadata());
 	_name = objectName;
+}
+
+shader::CompilationContext Shader::get_compilation_context()
+{
+	shader::CompilationContext compilationContext;
+	compilationContext.nonCompiledShaderData.data = _file->get_binary_blob();
+	compilationContext.nonCompiledShaderData.size = _file->get_binary_blob_size();
+	compilationContext.compiledShaderInfo = &_shaderInfo;
+	compilationContext.shaderName = _name;
+	compilationContext.isCompiled = _isCompiled;
+	return compilationContext;
 }
 
 rhi::ShaderType Shader::get_shader_type_by_file_ext(const io::URI& path)

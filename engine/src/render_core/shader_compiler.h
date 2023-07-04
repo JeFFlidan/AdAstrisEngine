@@ -1,9 +1,10 @@
 ﻿#pragma once
 
+#include "shader_cache.h"
 #include "rhi/resources.h"
 #include "engine/render_core_module.h"
 #include "file_system/file_system.h"
-#include "shader_cache.h"
+#include "engine_core/material/shader_common.h"
 #include <shaderc/shaderc.h>
 
 namespace ad_astris::rcore::impl
@@ -25,7 +26,10 @@ namespace ad_astris::rcore::impl
 			ShaderCompiler() = default;
 
 			virtual void init(io::FileSystem* fileSystem) override;
+			// Legacy
 			virtual void compile_into_spv(io::URI& path, rhi::ShaderInfo* info) override;
+		
+			virtual void compile_shader_into_spv(ecore::shader::CompilationContext& compilationContext) override;
 		
 		private:
 			io::FileSystem* _fileSystem;

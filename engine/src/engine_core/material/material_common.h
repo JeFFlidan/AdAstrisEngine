@@ -26,6 +26,8 @@ namespace ad_astris::ecore::material
         ShaderHandle rayClosestHitShader{ nullptr };
         ShaderHandle rayMissShader{ nullptr };
         ShaderHandle rayCallableShader{ nullptr };
+
+        void get_all_valid_shader_handles(std::vector<ShaderHandle>& shaderHandles);
     };
 
     struct GeneralMaterialTemplateInfo

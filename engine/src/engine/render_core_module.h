@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/module.h"
+#include "engine_core/material/shader_common.h"
 #include "file_system/file_system.h"
 #include "rhi/resources.h"
 
@@ -28,7 +29,11 @@ namespace ad_astris::rcore
 		public:
 			virtual ~IShaderCompiler() = default;
 			virtual void init(io::FileSystem* filsSystem) = 0;
+		
+			//Legacy
 			virtual void compile_into_spv(io::URI& path, rhi::ShaderInfo* info) = 0;
+		
+			virtual void compile_shader_into_spv(ecore::shader::CompilationContext& compilationContext) = 0;
 	};
 	
 	class IRenderPass

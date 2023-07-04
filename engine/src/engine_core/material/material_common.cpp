@@ -42,3 +42,63 @@ GeneralMaterialTemplateInfo Utils::unpack_general_material_template_info(std::st
 
 	return templateInfo;
 }
+
+void ShaderHandleContext::get_all_valid_shader_handles(std::vector<ShaderHandle>& shaderHandles)
+{
+	if (vertexShader.is_valid())
+	{
+		shaderHandles.push_back(vertexShader);
+	}
+	if (fragmentShader.is_valid())
+	{
+		shaderHandles.push_back(fragmentShader);
+	}
+	if (tessControlShader.is_valid())
+	{
+		shaderHandles.push_back(tessControlShader);
+	}
+	if (tessEvaluationShader.is_valid())
+	{
+		shaderHandles.push_back(tessEvaluationShader);
+	}
+	if (geometryShader.is_valid())
+	{
+		shaderHandles.push_back(geometryShader);
+	}
+	if (computeShader.is_valid())
+	{
+		shaderHandles.push_back(computeShader);
+	}
+	if (meshShader.is_valid())
+	{
+		shaderHandles.push_back(meshShader);
+	}
+	if (taskShader.is_valid())
+	{
+		shaderHandles.push_back(taskShader);
+	}
+	if (rayGenerationShader.is_valid())
+	{
+		shaderHandles.push_back(rayGenerationShader);
+	}
+	if (rayIntersectionShader.is_valid())
+	{
+		shaderHandles.push_back(rayIntersectionShader);
+	}
+	if (rayAnyHitShader.is_valid())
+	{
+		shaderHandles.push_back(rayAnyHitShader);
+	}
+	if (rayClosestHitShader.is_valid())
+	{
+		shaderHandles.push_back(rayClosestHitShader);
+	}
+	if (rayMissShader.is_valid())
+	{
+		shaderHandles.push_back(rayMissShader);
+	}
+	if (rayCallableShader.is_valid())
+	{
+		shaderHandles.push_back(rayCallableShader);
+	}
+}

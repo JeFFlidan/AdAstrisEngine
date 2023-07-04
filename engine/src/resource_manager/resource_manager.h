@@ -135,6 +135,18 @@ namespace ad_astris::resource
 			 * 
 			 */
 			ResourceAccessor<ecore::Level> load_level(io::URI& path);
+
+			template<typename T>
+			ResourceAccessor<T> get_resource(const std::string& resourceName)
+			{
+				if (!_resourceDataTable.check_name_in_table(resourceName))
+				{
+					LOG_ERROR("ResourceManager:get_resource(): Invalid name {}", resourceName)
+					return nullptr;
+				}
+					
+				return get_resource<T>(_resourceDataTable.get_uuid_by_name(resourceName));
+			}
 		
 			/** If the resource has been loaded, the method returns the resource data. Otherwise, the resource will be loaded from disc
 			 * @param uuid should be valid uuid. 

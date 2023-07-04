@@ -3,6 +3,8 @@
 #include "profiler/logger.h"
 #include <string>
 
+#include "engine_core/material/shader.h"
+
 using namespace ad_astris;
 using namespace rcore;
 using namespace impl;
@@ -150,6 +152,71 @@ void ShaderCompiler::compile_into_spv(io::URI& uri, rhi::ShaderInfo* info)
 	_shaderCache.add_to_cache(info, data, count);
 	
 	_fileSystem->unmap_after_reading(data);
+	shaderc_result_release(finalResult);
+}
+
+void ShaderCompiler::compile_shader_into_spv(ecore::shader::CompilationContext& compilationContext)
+{
+	if (compilationContext.isCompiled)
+	{
+		LOG_INFO("ShaderCompiler::compile_shader_into_spv(): Shader {} has been already compiled", compilationContext.shaderName->get_full_name().c_str())
+		return;
+	}
+
+	rhi::ShaderInfo* shaderInfo = compilationContext.compiledShaderInfo;
+	auto& nonCompiledShader = compilationContext.nonCompiledShaderData;
+	const char* strShaderName = compilationContext.shaderName->get_full_name().c_str();
+
+	shaderc_shader_kind shaderKind = get_shader_kind(shaderInfo->shaderType);
+	shaderc_compilation_result_t preprocessResult = nullptr;
+	preprocessResult = shaderc_compile_into_preprocessed_text(
+		_compiler,
+		static_cast<char*>(nonCompiledShader.data),
+		nonCompiledShader.size,
+		shaderKind,
+		strShaderName,
+		"main",
+		_options);
+
+	if (shaderc_result_get_compilation_status(preprocessResult) != shaderc_compilation_status_success)
+	{
+		LOG_ERROR("ShaderCompiler::compile_to_spirv(): failed to precompile shader {}", strShaderName)
+		LOG_ERROR("Compilation error: {}", shaderc_result_get_error_message(preprocessResult))
+		shaderc_result_release(preprocessResult);
+		return;
+	}
+	
+	size_t codeLength = shaderc_result_get_length(preprocessResult);
+	const char* codeBin = shaderc_result_get_bytes(preprocessResult);
+	
+	shaderc_compilation_result_t finalResult = nullptr;
+	finalResult = shaderc_compile_into_spv(
+		_compiler,
+		codeBin,
+		codeLength,
+		shaderKind,
+		strShaderName,
+		"main",
+		_options);
+	
+	shaderc_result_release(preprocessResult);
+	
+	if (shaderc_result_get_compilation_status(finalResult) != shaderc_compilation_status_success)
+	{
+		LOG_ERROR("ShaderCompiler::compile_to_spirv(): failed to compile shader {}", strShaderName)
+		LOG_ERROR("Compilation error: {}", shaderc_result_get_error_message(finalResult))
+		shaderc_result_release(finalResult);
+		return;
+	}
+
+	shaderInfo->size = shaderc_result_get_length(finalResult);
+	const uint8_t* code = reinterpret_cast<const uint8_t*>(shaderc_result_get_bytes(finalResult));
+	uint8_t* codeNoConst = const_cast<uint8_t*>(code);
+	uint8_t* newCode = new uint8_t[shaderInfo->size];
+	memcpy(newCode, codeNoConst, shaderInfo->size);
+
+	shaderInfo->data = newCode;
+
 	shaderc_result_release(finalResult);
 }
 

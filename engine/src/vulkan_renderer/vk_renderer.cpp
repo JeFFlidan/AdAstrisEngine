@@ -68,6 +68,7 @@
 #include "engine/vulkan_rhi_module.h"
 #include "render_core/render_graph_common.h"
 #include "engine_core/material/general_material_template.h"
+#include "engine_core/material/shader.h"
 
 #define VK_CHECK(x)													 \
 	do																 \
@@ -368,6 +369,26 @@ namespace ad_astris
 		manager.create_new_resource(materialContext);
 		LOG_INFO("After second creation")
 		manager.save_resources();
+		LOG_INFO("After saving resources")
+		
+		ecore::GeneralMaterialTemplateHandle handle1 = manager.get_resource<ecore::GeneralMaterialTemplate>("gbuffer");
+		ecore::GeneralMaterialTemplateHandle handle2 = manager.get_resource<ecore::GeneralMaterialTemplate>("gbuffer2");
+
+		std::vector<ecore::GeneralMaterialTemplateHandle> handles = { handle1, handle2 };
+
+		for (auto& handle : handles)
+		{
+			ecore::material::ShaderHandleContext& handleContext = handle.get_resource()->get_shader_handle_context();
+			std::vector<ecore::ShaderHandle> shaderHandles;
+			handleContext.get_all_valid_shader_handles(shaderHandles);
+			for (auto& shaderHandle : shaderHandles)
+			{
+				ecore::Shader* shaderObject = shaderHandle.get_resource();
+				ecore::shader::CompilationContext compilationContext = shaderObject->get_compilation_context();
+				_shaderCompiler->compile_shader_into_spv(compilationContext);
+				shaderObject->set_shader_compiled_flag();
+			}
+		}
 		
 		// ecore::World* world = new ecore::World();
 		//

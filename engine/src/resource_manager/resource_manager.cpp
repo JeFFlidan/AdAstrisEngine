@@ -76,7 +76,6 @@ ResourceAccessor<ecore::Level> ResourceManager::load_level(io::URI& path)
 
 void ResourceManager::load_builtin_resources()
 {
-	LOG_INFO("Material template names size: {}", _builtinResourcesContext.materialTemplateNames.size())
 	for (auto& uuid : _builtinResourcesContext.materialTemplateNames)
 	{
 		ecore::GeneralMaterialTemplate* materialTemplate = get_resource<ecore::GeneralMaterialTemplate>(uuid).get_resource();
@@ -221,59 +220,59 @@ void ResourceManager::add_shader_uuid_to_context(io::URI& shaderPath, ecore::mat
 
 void ResourceManager::load_shader(UUID& shaderUUID, ecore::material::ShaderHandleContext& shaderContext)
 {
-		ResourceAccessor<ecore::Shader> shaderHandle = get_resource<ecore::Shader>(shaderUUID);
-		ecore::Shader* shaderObject = shaderHandle.get_resource();
-		if (shaderObject->get_shader_type() == rhi::ShaderType::UNDEFINED)
-		{
-			LOG_ERROR("GeneralMaterialTemplate::load_required_shaders(): Shader {} has undefined type.", shaderObject->get_path().c_str())
-			return;
-		}
+	ResourceAccessor<ecore::Shader> shaderHandle = get_resource<ecore::Shader>(shaderUUID);
+	ecore::Shader* shaderObject = shaderHandle.get_resource();
+	if (shaderObject->get_shader_type() == rhi::ShaderType::UNDEFINED)
+	{
+		LOG_ERROR("GeneralMaterialTemplate::load_required_shaders(): Shader {} has undefined type.", shaderObject->get_path().c_str())
+		return;
+	}
 
-		switch (shaderObject->get_shader_type())
-		{
-			case rhi::ShaderType::VERTEX:
-				shaderContext.vertexShader = shaderHandle;
-				break;
-			case rhi::ShaderType::FRAGMENT:
-				shaderContext.fragmentShader = shaderHandle;
-				break;
-			case rhi::ShaderType::TESSELLATION_CONTROL:
-				shaderContext.tessControlShader = shaderHandle;
-				break;
-			case rhi::ShaderType::TESSELLATION_EVALUATION:
-				shaderContext.tessEvaluationShader = shaderHandle;
-				break;
-			case rhi::ShaderType::GEOMETRY:
-				shaderContext.geometryShader = shaderHandle;
-				break;
-			case rhi::ShaderType::COMPUTE:
-				shaderContext.computeShader = shaderHandle;
-				break;
-			case rhi::ShaderType::MESH:
-				shaderContext.meshShader = shaderHandle;
-				break;
-			case rhi::ShaderType::TASK:
-				shaderContext.taskShader = shaderHandle;
-				break;
-			case rhi::ShaderType::RAY_GENERATION:
-				shaderContext.rayGenerationShader = shaderHandle;
-				break;
-			case rhi::ShaderType::RAY_INTERSECTION:
-				shaderContext.rayIntersectionShader = shaderHandle;
-				break;
-			case rhi::ShaderType::RAY_ANY_HIT:
-				shaderContext.rayAnyHitShader = shaderHandle;
-				break;
-			case rhi::ShaderType::RAY_CLOSEST_HIT:
-				shaderContext.rayClosestHitShader = shaderHandle;
-				break;
-			case rhi::ShaderType::RAY_MISS:
-				shaderContext.rayMissShader = shaderHandle;
-				break;
-			case rhi::ShaderType::RAY_CALLABLE:
-				shaderContext.rayClosestHitShader = shaderHandle;
-				break;
-		}
+	switch (shaderObject->get_shader_type())
+	{
+		case rhi::ShaderType::VERTEX:
+			shaderContext.vertexShader = shaderHandle;
+			break;
+		case rhi::ShaderType::FRAGMENT:
+			shaderContext.fragmentShader = shaderHandle;
+			break;
+		case rhi::ShaderType::TESSELLATION_CONTROL:
+			shaderContext.tessControlShader = shaderHandle;
+			break;
+		case rhi::ShaderType::TESSELLATION_EVALUATION:
+			shaderContext.tessEvaluationShader = shaderHandle;
+			break;
+		case rhi::ShaderType::GEOMETRY:
+			shaderContext.geometryShader = shaderHandle;
+			break;
+		case rhi::ShaderType::COMPUTE:
+			shaderContext.computeShader = shaderHandle;
+			break;
+		case rhi::ShaderType::MESH:
+			shaderContext.meshShader = shaderHandle;
+			break;
+		case rhi::ShaderType::TASK:
+			shaderContext.taskShader = shaderHandle;
+			break;
+		case rhi::ShaderType::RAY_GENERATION:
+			shaderContext.rayGenerationShader = shaderHandle;
+			break;
+		case rhi::ShaderType::RAY_INTERSECTION:
+			shaderContext.rayIntersectionShader = shaderHandle;
+			break;
+		case rhi::ShaderType::RAY_ANY_HIT:
+			shaderContext.rayAnyHitShader = shaderHandle;
+			break;
+		case rhi::ShaderType::RAY_CLOSEST_HIT:
+			shaderContext.rayClosestHitShader = shaderHandle;
+			break;
+		case rhi::ShaderType::RAY_MISS:
+			shaderContext.rayMissShader = shaderHandle;
+			break;
+		case rhi::ShaderType::RAY_CALLABLE:
+			shaderContext.rayClosestHitShader = shaderHandle;
+			break;
+	}
 }
 
 void BuiltinResourcesContext::clear()
