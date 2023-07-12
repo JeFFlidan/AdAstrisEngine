@@ -58,7 +58,7 @@ void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
 	_swapChain = nullptr;
 }
 
-void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, uint64_t size, void* data)
+void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data)
 {
 	if (!buffer)
 	{
@@ -80,9 +80,9 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufI
 		return;
 	}
 	
-	VulkanBuffer* vulkanBuffer = new VulkanBuffer(&_allocator, size, bufferUsage, memoryUsage);
+	VulkanBuffer* vulkanBuffer = new VulkanBuffer(&_allocator, bufInfo->size, bufferUsage, memoryUsage);
 	buffer->data = vulkanBuffer;
-	buffer->size = size;
+	buffer->size = bufInfo->size;
 	buffer->type = rhi::Resource::ResourceType::BUFFER;
 	buffer->bufferInfo = *bufInfo;
 	if (data == nullptr)
@@ -92,7 +92,7 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufI
 		LOG_ERROR("Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
 		return;
 	}
-	vulkanBuffer->copy_from(&_allocator, data, size);
+	vulkanBuffer->copy_from(&_allocator, data, bufInfo->size);
 }
 
 void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data)
@@ -784,7 +784,7 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vect
 				bufferBarriers.push_back(bufferBarrier);
 				break;
 			}
-			case rhi::PipelineBarrier::BarrierType::IMAGE:
+			case rhi::PipelineBarrier::BarrierType::TEXTURE:
 			{
 				VkImageMemoryBarrier imageBarrier{};
 				imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

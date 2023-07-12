@@ -282,6 +282,7 @@ namespace ad_astris::rhi
 	// Think about Format field
 	struct BufferInfo
 	{
+		uint64_t size{ 0 };
 		ResourceUsage bufferUsage{ ResourceUsage::UNDEFINED };
 		MemoryUsage memoryUsage{ MemoryUsage::UNDEFINED };
 	};
@@ -649,7 +650,7 @@ namespace ad_astris::rhi
 		{
 			MEMORY,
 			BUFFER,
-			IMAGE
+			TEXTURE
 		} type;
 
 		struct MemoryBarrier
@@ -719,7 +720,7 @@ namespace ad_astris::rhi
 			textureBarrier.baseLayer = baseLayer;
 			PipelineBarrier pipelineBarrier;
 			pipelineBarrier.textureBarrier = textureBarrier;
-			pipelineBarrier.type = BarrierType::IMAGE;
+			pipelineBarrier.type = BarrierType::TEXTURE;
 			return pipelineBarrier;
 		}
 	};

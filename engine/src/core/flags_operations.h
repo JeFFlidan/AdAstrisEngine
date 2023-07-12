@@ -18,7 +18,7 @@ typename std::enable_if<EnableBitMaskOperator<E>::enable, E>::type operator|(E l
 }
 
 template<typename E>
-typename std::enable_if<EnableBitMaskOperator<E>::enable, E&>::type operator|=(E lValue, E rValue)
+typename std::enable_if<EnableBitMaskOperator<E>::enable, E&>::type operator|=(E& lValue, E rValue)
 {
 	typedef typename std::underlying_type<E>::type underlying;
 	lValue = static_cast<E>(static_cast<underlying>(lValue) | static_cast<underlying>(rValue));
@@ -33,7 +33,7 @@ typename std::enable_if<EnableBitMaskOperator<E>::enable, E>::type operator&(E l
 }
 
 template<typename E>
-typename std::enable_if<EnableBitMaskOperator<E>::enable, E&>::type operator&=(E lValue, E rValue)
+typename std::enable_if<EnableBitMaskOperator<E>::enable, E&>::type operator&=(E& lValue, E rValue)
 {
 	typedef typename std::underlying_type<E>::type underlying;
 	lValue = static_cast<E>(static_cast<underlying>(lValue) & static_cast<underlying>(rValue));

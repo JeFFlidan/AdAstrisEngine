@@ -42,7 +42,7 @@ namespace ad_astris::rcore
 				_physicalIndex = physicalIndex;
 			}
 
-			std::unordered_set<uint8_t>& get_written_in_passes()
+			std::unordered_set<uint32_t>& get_written_in_passes()
 			{
 				return _writtenInPasses;
 			}
@@ -52,14 +52,14 @@ namespace ad_astris::rcore
 				_writtenInPasses.insert(passIndex);
 			}
 
-			std::unordered_set<uint8_t>& get_read_in_passes()
+			std::unordered_set<uint32_t>& get_read_in_passes()
 			{
-				return _writtenInPasses;
+				return _readInPasses;
 			}
 		
 			void add_read_in_pass(uint8_t passIndex)
 			{
-				_writtenInPasses.insert(passIndex);
+				_readInPasses.insert(passIndex);
 			}
 
 			RenderGraphQueue get_queues()
@@ -87,8 +87,8 @@ namespace ad_astris::rcore
 			std::string _name;
 			uint32_t _physicalIndex = Unused;
 			uint32_t _logicalIndex = Unused;
-			std::unordered_set<uint8_t> _writtenInPasses;
-			std::unordered_set<uint8_t> _readInPasses;
+			std::unordered_set<uint32_t> _writtenInPasses;
+			std::unordered_set<uint32_t> _readInPasses;
 			RenderGraphQueue _queues{ RenderGraphQueue::UNDEFINED };		// Do I need this?
 			rhi::ShaderType _shaderStages{ rhi::ShaderType::UNDEFINED };
 	};

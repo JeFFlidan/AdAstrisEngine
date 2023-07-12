@@ -26,11 +26,7 @@ namespace ad_astris::vulkan
 			virtual void create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info) final override;
 			virtual void destroy_swap_chain(rhi::SwapChain* swapChain) final override;
 		
-			virtual void create_buffer(
-				rhi::Buffer* buffer,
-				rhi::BufferInfo* bufInfo,
-				uint64_t size,
-				void* data = nullptr) final override;
+			virtual void create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data = nullptr) final override;
 
 			virtual void update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data) final override;
 			virtual void create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo) final override;

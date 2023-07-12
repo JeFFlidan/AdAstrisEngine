@@ -31,11 +31,27 @@ namespace ad_astris::rcore::impl
 			{
 				_physicalIndex = newPhysicalIndex;
 			}
+
+			virtual RenderGraphQueue get_queue() override
+			{
+				return _queue;
+			}
+
+			virtual void enable_multiview() override
+			{
+				_isMultiviewEnabled = true;
+			}
+
+			virtual bool is_multiview_enabled() override
+			{
+				return _isMultiviewEnabled;
+			}
 			// TODO Do I need this depth stencil input
 			virtual TextureDesc* set_depth_stencil_input(const std::string& inputName) override;
 			virtual TextureDesc* set_depth_stencil_output(
 				const std::string& outputName,
 				rhi::TextureInfo* textureInfo) override;
+			virtual TextureDesc* add_attachment_input(const std::string& inputName) override;
 			virtual TextureDesc* add_color_output(
 				const std::string& outputName,
 				rhi::TextureInfo* textureInfo) override;
@@ -88,6 +104,11 @@ namespace ad_astris::rcore::impl
 			TextureDesc* get_depth_stencil_output()
 			{
 				return _depthStencilOutput;
+			}
+
+			std::vector<TextureDesc*>& get_color_inputs()
+			{
+				return _colorInputs;
 			}
 			
 			std::vector<TextureDesc*>& get_color_outputs()
@@ -161,9 +182,11 @@ namespace ad_astris::rcore::impl
 			uint32_t _logicalIndex = ResourceDesc::Unused;
 			uint32_t _physicalIndex = ResourceDesc::Unused;
 			RenderGraphQueue _queue;
+			bool _isMultiviewEnabled{ false };
 
 			TextureDesc* _depthStencilInput{ nullptr };
 			TextureDesc* _depthStencilOutput{ nullptr };
+			std::vector<TextureDesc*> _colorInputs;
 			std::vector<TextureDesc*> _colorOutputs;
 			std::vector<TextureDesc*> _historyInputs;
 			std::vector<TextureDesc*> _customTextures;

@@ -48,10 +48,16 @@ namespace ad_astris::rcore
 			virtual uint32_t get_physical_pass_index() = 0;
 			virtual void set_physical_pass_index(uint32_t newPhysicalIndex) = 0;
 
+			virtual RenderGraphQueue get_queue() = 0;
+
+			virtual void enable_multiview() = 0;
+			virtual bool is_multiview_enabled() = 0;
+
 			virtual TextureDesc* set_depth_stencil_input(const std::string& inputName) = 0;
 			virtual TextureDesc* set_depth_stencil_output(
 				const std::string& outputName,
 				rhi::TextureInfo* textureInfo) = 0;
+			virtual TextureDesc* add_attachment_input(const std::string& inputName) = 0;
 			virtual TextureDesc* add_color_output(
 				const std::string& outputName,
 				rhi::TextureInfo* textureInfo) = 0;
@@ -102,10 +108,15 @@ namespace ad_astris::rcore
 	{
 		public:
 			virtual ~IRenderGraph() { }
+
+			virtual void cleanup() = 0;
 		
 			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue) = 0;
 			virtual IRenderPass* get_pass(const std::string& passName) = 0;
+			virtual void create_swapchain(rhi::SwapChainInfo& swapChainInfo) = 0;
+			virtual void set_swap_chain_source(const std::string& swapChainInputName) = 0;
 
+			virtual void bake() = 0;
 			virtual void log() = 0;
 		
 			virtual TextureDesc* get_texture_desc(const std::string& textureName) = 0;

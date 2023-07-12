@@ -34,6 +34,16 @@ TextureDesc* RenderPass::set_depth_stencil_output(const std::string& outputName,
 	return desc;
 }
 
+TextureDesc* RenderPass::add_attachment_input(const std::string& inputName)
+{
+	TextureDesc* desc = _renderGraph->get_texture_desc(inputName);
+	desc->add_read_in_pass(_logicalIndex);
+	desc->add_queue(_queue);
+	desc->add_texture_usage(rhi::ResourceUsage::SAMPLED_TEXTURE);
+	_colorInputs.push_back(desc);
+	return desc;
+}
+
 TextureDesc* RenderPass::add_color_output(const std::string& outputName, rhi::TextureInfo* textureInfo)
 {
 	TextureDesc* desc = _renderGraph->get_texture_desc(outputName);
@@ -76,6 +86,7 @@ TextureDesc* RenderPass::add_texture_input(
 {
 	TextureDesc* desc = add_texture_input(inputName, shaderStages);
 	desc->set_texture_info(textureInfo);
+	_customTextures.push_back(desc);
 	return desc;
 }
 

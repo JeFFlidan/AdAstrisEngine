@@ -303,7 +303,7 @@ namespace ad_astris
 		LOG_INFO("Before getting render graph")
 		rcore::IRenderGraph* graph = renderCoreModule->get_render_graph();
 		LOG_INFO("Before creating pass")
-		rcore::IRenderPass* pass = graph->add_new_pass("test_pass", rcore::RenderGraphQueue::GRAPHICS);
+		rcore::IRenderPass* pass = graph->add_new_pass("deferred_lighting", rcore::RenderGraphQueue::GRAPHICS);
 		LOG_INFO("After creating pass")
 		
 		rhi::TextureInfo colorOutput;
@@ -315,6 +315,21 @@ namespace ad_astris
 		colorOutput.textureDimension = rhi::TextureDimension::TEXTURE2D;
 		LOG_INFO("Before adding color output")
 		pass->add_color_output("test_color_output", &colorOutput);
+		pass->add_color_output("test_color_output2", &colorOutput);
+		
+		rcore::IRenderPass* thirdPass = graph->add_new_pass("composite", rcore::RenderGraphQueue::GRAPHICS);
+		thirdPass->add_attachment_input("test_color_output");
+		thirdPass->add_attachment_input("hdr_output");
+		thirdPass->add_color_output("tonemapped", &colorOutput);
+		
+		rcore::IRenderPass* secondPass = graph->add_new_pass("hdr", rcore::RenderGraphQueue::GRAPHICS);
+		secondPass->add_attachment_input("test_color_output2");
+		secondPass->add_color_output("hdr_output", &colorOutput);
+
+		graph->set_swap_chain_source("tonemapped");
+		LOG_INFO("Before bake")
+		graph->bake();
+		LOG_INFO("After bake")
 
 		graph->log();
 	}
@@ -346,7 +361,7 @@ namespace ad_astris
 		//resource::ResourceConverter resourceConverter(_fileSystem);
 
 		LOG_INFO("Before manager")
-		resource::ResourceManager manager(_fileSystem);
+		//resource::ResourceManager manager(_fileSystem);
 		//manager.save_resources();
 		LOG_INFO("After manager")
 		_shaderCompiler->init(_fileSystem);
@@ -356,40 +371,40 @@ namespace ad_astris
 		_temporalFilter.init(this);
 		_composite.init(this);
 
-		resource::FirstCreationContext<ecore::GeneralMaterialTemplate> materialContext;
-		materialContext.materialTemplateName = "gbuffer";
-		materialContext.vertexShaderPath = "shaders/deferred/GBuffer.vert";
-		materialContext.fragmentShaderPath = "shaders/deferred/GBuffer.frag";
-		LOG_INFO("Before first creation")
-		manager.create_new_resource(materialContext);
-		LOG_INFO("After first creation")
-		materialContext.materialTemplateName = "gbuffer2";
-		materialContext.fragmentShaderPath = "shaders/deferred/deferred_lighting.frag";
-		LOG_INFO("Before second creation")
-		manager.create_new_resource(materialContext);
-		LOG_INFO("After second creation")
-		manager.save_resources();
-		LOG_INFO("After saving resources")
-		
-		ecore::GeneralMaterialTemplateHandle handle1 = manager.get_resource<ecore::GeneralMaterialTemplate>("gbuffer");
-		ecore::GeneralMaterialTemplateHandle handle2 = manager.get_resource<ecore::GeneralMaterialTemplate>("gbuffer2");
-
-		std::vector<ecore::GeneralMaterialTemplateHandle> handles = { handle1, handle2 };
-
-		for (auto& handle : handles)
-		{
-			ecore::material::ShaderHandleContext& handleContext = handle.get_resource()->get_shader_handle_context();
-			std::vector<ecore::ShaderHandle> shaderHandles;
-			handleContext.get_all_valid_shader_handles(shaderHandles);
-			for (auto& shaderHandle : shaderHandles)
-			{
-				ecore::Shader* shaderObject = shaderHandle.get_resource();
-				ecore::shader::CompilationContext compilationContext = shaderObject->get_compilation_context();
-				_shaderCompiler->compile_shader_into_spv(compilationContext);
-				shaderObject->set_shader_compiled_flag();
-			}
-		}
-		
+		// resource::FirstCreationContext<ecore::GeneralMaterialTemplate> materialContext;
+		// materialContext.materialTemplateName = "gbuffer";
+		// materialContext.vertexShaderPath = "shaders/deferred/GBuffer.vert";
+		// materialContext.fragmentShaderPath = "shaders/deferred/GBuffer.frag";
+		// LOG_INFO("Before first creation")
+		// manager.create_new_resource(materialContext);
+		// LOG_INFO("After first creation")
+		// materialContext.materialTemplateName = "gbuffer2";
+		// materialContext.fragmentShaderPath = "shaders/deferred/deferred_lighting.frag";
+		// LOG_INFO("Before second creation")
+		// manager.create_new_resource(materialContext);
+		// LOG_INFO("After second creation")
+		// manager.save_resources();
+		// LOG_INFO("After saving resources")
+		//
+		// ecore::GeneralMaterialTemplateHandle handle1 = manager.get_resource<ecore::GeneralMaterialTemplate>("gbuffer");
+		// ecore::GeneralMaterialTemplateHandle handle2 = manager.get_resource<ecore::GeneralMaterialTemplate>("gbuffer2");
+		//
+		// std::vector<ecore::GeneralMaterialTemplateHandle> handles = { handle1, handle2 };
+		//
+		// for (auto& handle : handles)
+		// {
+		// 	ecore::material::ShaderHandleContext& handleContext = handle.get_resource()->get_shader_handle_context();
+		// 	std::vector<ecore::ShaderHandle> shaderHandles;
+		// 	handleContext.get_all_valid_shader_handles(shaderHandles);
+		// 	for (auto& shaderHandle : shaderHandles)
+		// 	{
+		// 		ecore::Shader* shaderObject = shaderHandle.get_resource();
+		// 		ecore::shader::CompilationContext compilationContext = shaderObject->get_compilation_context();
+		// 		_shaderCompiler->compile_shader_into_spv(compilationContext);
+		// 		shaderObject->set_shader_compiled_flag();
+		// 	}
+		// }
+		//
 		// ecore::World* world = new ecore::World();
 		//
 		// io::URI levelPath = "E:/MyEngine/MyEngine/AdAstrisEngine/bin/my_level.aalevel";
