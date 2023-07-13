@@ -67,7 +67,7 @@ vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDev
 	}
 }
 
-vulkan::VulkanSwapChain::~VulkanSwapChain()
+void vulkan::VulkanSwapChain::cleanup()
 {
 	for (auto& view : _textureViews)
 	{

@@ -50,7 +50,7 @@ IVulkanQueue* vulkan::VulkanDevice::get_present_queue() { return _presentQueue; 
 IVulkanQueue* vulkan::VulkanDevice::get_compute_queue() { return _computeQueue; }
 IVulkanQueue* vulkan::VulkanDevice::get_transfer_queue() { return _transferQueue; }
 
-vulkan::VulkanDevice::~VulkanDevice()
+void vulkan::VulkanDevice::cleanup()
 {
 	delete _graphicsQueue;
 	delete _presentQueue;

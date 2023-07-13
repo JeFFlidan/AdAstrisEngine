@@ -4,6 +4,11 @@
 #include "rhi/resources.h"
 #include "vulkan_device.h"
 #include "vulkan_command_manager.h"
+#include "vulkan_buffer.h"
+#include "vulkan_texture.h"
+#include "vulkan_render_pass.h"
+#include "vulkan_pipeline.h"
+#include "vulkan_shader.h"
 #include "vulkan_swap_chain.h"
 #include <vulkan/vulkan.h>
 
@@ -11,6 +16,7 @@
 #include <VkBootstrap.h>
 
 #include <vector>
+#include <memory>
 
 namespace ad_astris::vulkan
 {
@@ -89,7 +95,7 @@ namespace ad_astris::vulkan
 		
 			// Only for tests. Will be removed in the final implementation
 			VkInstance get_instance() { return _instance; }
-			VulkanDevice* get_device() { return _vulkanDevice; }
+			VulkanDevice* get_device() { return _vulkanDevice.get(); }
 			VmaAllocator get_allocator() { return _allocator; }
 			VkDebugUtilsMessengerEXT get_messenger() { return _debugMessenger; }
 		
@@ -97,9 +103,17 @@ namespace ad_astris::vulkan
 			VkInstance _instance{ VK_NULL_HANDLE };
 			VkDebugUtilsMessengerEXT _debugMessenger{ VK_NULL_HANDLE };
 			VmaAllocator _allocator;
-			VulkanDevice* _vulkanDevice;
-			VulkanSwapChain* _swapChain{ nullptr };
-			VulkanCommandManager* _cmdManager{ nullptr };
+			std::unique_ptr<VulkanDevice> _vulkanDevice{ nullptr };
+			std::unique_ptr<VulkanCommandManager> _cmdManager{ nullptr };
+			std::unique_ptr<VulkanSwapChain> _swapChain{ nullptr };
+
+			std::vector<std::unique_ptr<VulkanPipeline>> _vulkanPipelines;
+			std::vector<std::unique_ptr<VulkanShader>> _vulkanShaders;
+			std::vector<std::unique_ptr<VulkanRenderPass>> _vulkanRenderPasses;
+			std::vector<std::unique_ptr<VkSampler>> _vulkanSamplers;
+			std::vector<std::unique_ptr<VkImageView>> _vulkanImageViews;
+			std::vector<std::unique_ptr<VulkanTexture>> _vulkanTextures;
+			std::vector<std::unique_ptr<VulkanBuffer>> _vulkanBuffers;
 
 			vkb::Instance create_instance();
 			void create_allocator();};

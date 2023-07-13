@@ -21,7 +21,8 @@ namespace ad_astris::vulkan
 	{
 		public:
 			VulkanDevice(vkb::Instance& instance, void* window);
-			~VulkanDevice();
+
+			void cleanup();
 
 			// Maybe I shouldn't make those variables private
 			VkSurfaceKHR get_surface() { return _surface; }

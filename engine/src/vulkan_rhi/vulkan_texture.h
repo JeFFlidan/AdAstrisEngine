@@ -11,7 +11,8 @@ namespace ad_astris::vulkan
 		public:
 			VulkanTexture() = default;
 			VulkanTexture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);
-			~VulkanTexture();
+
+			void destroy_texture();
 			
 			void create_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);
 

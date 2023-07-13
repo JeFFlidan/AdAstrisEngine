@@ -11,7 +11,8 @@ namespace ad_astris::vulkan
 		public:
 			VulkanPipeline(VulkanDevice* device, rhi::GraphicsPipelineInfo* info);
 			VulkanPipeline(VulkanDevice* device, rhi::ComputePipelineInfo* info);
-			~VulkanPipeline();
+
+			void cleanup();
 
 			VkPipeline get_handle() { return _pipeline; }
 			VkPipelineLayout get_layout() { return _layout; }

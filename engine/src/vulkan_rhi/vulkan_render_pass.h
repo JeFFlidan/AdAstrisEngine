@@ -10,7 +10,8 @@ namespace ad_astris::vulkan
 	{
 		public:
 			VulkanRenderPass(VulkanDevice* device, rhi::RenderPassInfo* passInfo);
-			~VulkanRenderPass();
+
+			void cleanup();
 
 			VkRenderPassBeginInfo get_begin_info();
 		private:

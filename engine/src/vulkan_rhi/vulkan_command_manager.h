@@ -75,7 +75,7 @@ namespace ad_astris::vulkan
 		
 		public:
 			VulkanCommandManager(VulkanDevice* device, VulkanSwapChain* swapChain);
-			~VulkanCommandManager();
+			void cleanup();
 		
 			VulkanCommandBuffer* get_command_buffer(rhi::QueueType queueType = rhi::QueueType::GRAPHICS);
 			// cmd waits for waitForCmd

@@ -11,6 +11,11 @@
 
 namespace ad_astris::rcore::impl
 {
+	/* 
+	 * 1. Think about aliasing attachments. If I want to implement ray tracing and something like Nanite from UE,
+	 * it may become important to save memory
+	 * 2. Think about transient attachments. It's important to save memory, however I don't know if D3D12 supports this capability
+	 */
 	class RENDER_CORE_API RenderGraph : public IRenderGraph
 	{
 		public:

@@ -1,12 +1,6 @@
 ﻿#include "vulkan_rhi.h"
 
 #include "vulkan_common.h"
-#include "vulkan_buffer.h"
-#include "vulkan_texture.h"
-#include "vulkan_shader.h"
-#include "vulkan_pipeline.h"
-#include "vulkan_render_pass.h"
-#include "vulkan_swap_chain.h"
 
 #include "profiler/logger.h"
 #include <VkBootstrap.h>
@@ -23,14 +17,41 @@ void vulkan::VulkanRHI::init(void* window)
 	vkb::Instance vkbInstance = create_instance();
 	_instance = vkbInstance.instance;
 	_debugMessenger = vkbInstance.debug_messenger;
-	_vulkanDevice = new VulkanDevice(vkbInstance, window);
+	_vulkanDevice = std::make_unique<VulkanDevice>(vkbInstance, window);
 	create_allocator();
 }
 
+// TODO Must test it
 void vulkan::VulkanRHI::cleanup()
 {
-	delete _swapChain;
-	delete _cmdManager;
+	for (auto& pipeline : _vulkanPipelines)
+		pipeline->cleanup();
+
+	for (auto& shader : _vulkanShaders)
+		shader->cleanup();
+
+	for (auto& renderPass : _vulkanRenderPasses)
+		renderPass->cleanup();
+
+	VkDevice device = _vulkanDevice.get()->get_device();
+	for (auto& sampler : _vulkanSamplers)
+		vkDestroySampler(device, *sampler.get(), nullptr);
+
+	for (auto& imageView : _vulkanImageViews)
+		vkDestroyImageView(device, *imageView.get(), nullptr);
+
+	for (auto& texture : _vulkanTextures)
+		texture->destroy_texture();
+
+	for (auto& buffer : _vulkanBuffers)
+		buffer->destroy_buffer(&_allocator);
+
+	vmaDestroyAllocator(_allocator);
+	_cmdManager->cleanup();
+	_swapChain->cleanup();
+	_vulkanDevice->cleanup();
+	vkb::destroy_debug_utils_messenger(_instance, _debugMessenger, nullptr);
+	vkDestroyInstance(_instance, nullptr);
 }
 
 void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info)
@@ -40,9 +61,9 @@ void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapCh
 		LOG_ERROR("VulkanRHI::create_swap_chain(): Invalid pointers")
 		return;
 	}
-	_swapChain = new VulkanSwapChain(info, _vulkanDevice);
-	_cmdManager = new VulkanCommandManager(_vulkanDevice, _swapChain);
-	swapChain->handle = _swapChain;
+	_swapChain = std::make_unique<VulkanSwapChain>(info, _vulkanDevice.get());
+	_cmdManager = std::make_unique<VulkanCommandManager>(_vulkanDevice.get(), _swapChain.get());
+	swapChain->handle = _swapChain.get();
 }
 
 void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
@@ -52,10 +73,9 @@ void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
 		LOG_ERROR("VulkanRHI::destroy_swap_chain(): Invalid pointer to rhi::SwapChain")
 		return;
 	}
-	VulkanSwapChain* vkSwapChain = static_cast<VulkanSwapChain*>(swapChain->handle);
-	delete vkSwapChain;
+
+	_swapChain.reset();
 	swapChain->handle = nullptr;
-	_swapChain = nullptr;
 }
 
 void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data)
@@ -79,8 +99,9 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufI
 		LOG_ERROR("Invalid memory usage (buffer)")
 		return;
 	}
-	
-	VulkanBuffer* vulkanBuffer = new VulkanBuffer(&_allocator, bufInfo->size, bufferUsage, memoryUsage);
+
+	_vulkanBuffers.emplace_back(new VulkanBuffer(&_allocator, bufInfo->size, bufferUsage, memoryUsage));
+	VulkanBuffer* vulkanBuffer = _vulkanBuffers.back().get();
 	buffer->data = vulkanBuffer;
 	buffer->size = bufInfo->size;
 	buffer->type = rhi::Resource::ResourceType::BUFFER;
@@ -164,8 +185,9 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 	VkImageUsageFlags imgUsage = get_image_usage(texInfo->textureUsage);
 	createInfo.usage = imgUsage;
 	createInfo.imageType = get_image_type(texInfo->textureDimension);
-	
-	VulkanTexture* vkText = new VulkanTexture(createInfo, &_allocator, memoryUsage);
+
+	_vulkanTextures.emplace_back(new VulkanTexture(createInfo, &_allocator, memoryUsage));
+	VulkanTexture* vkText = _vulkanTextures.back().get();
 	if (vkText->get_handle() == VK_NULL_HANDLE)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Failed to allocate VkImage")
@@ -253,7 +275,8 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	createInfo.subresourceRange.layerCount = texInfo.layersCount;
 	createInfo.subresourceRange.aspectMask = aspectFlags;
 
-	VkImageView* view = new VkImageView();
+	_vulkanImageViews.emplace_back(new VkImageView());
+	VkImageView* view = _vulkanImageViews.back().get();
 	VK_CHECK(vkCreateImageView(_vulkanDevice->get_device(), &createInfo, nullptr, view));
 	textureView->handle = view;
 	textureView->viewInfo = *viewInfo;
@@ -325,8 +348,9 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 			createInfo.pNext = &reductionMode;
 			break;
 	}
-	
-	VkSampler* vkSampler = new VkSampler();
+
+	_vulkanSamplers.emplace_back(new VkSampler());
+	VkSampler* vkSampler = _vulkanSamplers.back().get();
 	VK_CHECK(vkCreateSampler(_vulkanDevice->get_device(), &createInfo, nullptr, vkSampler));
 	sampler->handle = vkSampler;
 	sampler->sampInfo = *sampInfo;
@@ -344,7 +368,9 @@ void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shad
 		LOG_ERROR("VulkanRHI::create_shader(): Invalid pointer to rhi::Shader")
 		return;
 	}
-	VulkanShader* vulkanShader = new VulkanShader(_vulkanDevice->get_device());
+
+	_vulkanShaders.emplace_back(new VulkanShader(_vulkanDevice->get_device()));
+	VulkanShader* vulkanShader = _vulkanShaders.back().get();
 	vulkanShader->create_shader_module(shaderInfo);
 	shader->type = shaderInfo->shaderType;
 	shader->handle = vulkanShader;
@@ -357,8 +383,9 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Invalid pointers")
 		return;
 	}
+	_vulkanPipelines.emplace_back(new VulkanPipeline(_vulkanDevice.get(), info));
 	pipeline->type = rhi::PipelineType::GRAPHICS;
-	pipeline->handle = new VulkanPipeline(_vulkanDevice, info);
+	pipeline->handle = _vulkanPipelines.back().get();
 }
 
 void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info)
@@ -368,8 +395,9 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid pointers")
 		return;
 	}
+	_vulkanPipelines.emplace_back(new VulkanPipeline(_vulkanDevice.get(), info));
 	pipeline->type = rhi::PipelineType::COMPUTE;
-	pipeline->handle = new VulkanPipeline(_vulkanDevice, info);
+	pipeline->handle = _vulkanPipelines.back().get();
 }
 
 void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
@@ -390,7 +418,8 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 		return;
 	}
 
-	renderPass->handle = new VulkanRenderPass(_vulkanDevice, passInfo);
+	_vulkanRenderPasses.emplace_back(new VulkanRenderPass(_vulkanDevice.get(), passInfo));
+	renderPass->handle = _vulkanRenderPasses.back().get();
 }
 
 // TODO Queue type for command buffer

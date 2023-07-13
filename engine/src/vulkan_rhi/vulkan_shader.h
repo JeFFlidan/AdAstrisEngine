@@ -24,7 +24,8 @@ namespace ad_astris::vulkan
 			};
 
 			VulkanShader(VkDevice device) : _device(device) {}
-			~VulkanShader()
+
+			void cleanup()
 			{
 				if (_shaderModule != VK_NULL_HANDLE)
 					vkDestroyShaderModule(_device, _shaderModule, nullptr);

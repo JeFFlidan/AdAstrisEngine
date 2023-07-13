@@ -17,7 +17,7 @@ vulkan::VulkanPipeline::VulkanPipeline(VulkanDevice* device, rhi::ComputePipelin
 	_type = rhi::PipelineType::COMPUTE;
 }
 
-vulkan::VulkanPipeline::~VulkanPipeline()
+void vulkan::VulkanPipeline::cleanup()
 {
 	vkDestroyPipeline(_device->get_device(), _pipeline, nullptr);
 	vkDestroyPipelineLayout(_device->get_device(), _layout, nullptr);

@@ -11,7 +11,7 @@ namespace ad_astris::vulkan
 	{
 		public:
 			VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDevice* device);
-			~VulkanSwapChain();
+			void cleanup();
 
 			VkSwapchainKHR get_swap_chain() { return _swapChain; }
 			VkFormat get_format() { return _format; }

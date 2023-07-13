@@ -169,7 +169,7 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 	}
 }
 
-vulkan::VulkanCommandManager::~VulkanCommandManager()
+void vulkan::VulkanCommandManager::cleanup()
 {
 	for (size_t i = 0; i != _imageIndex; ++i)
 	{
