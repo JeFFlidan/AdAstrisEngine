@@ -40,6 +40,13 @@ target_include_directories(fmt_lib PUBLIC ${THIRD_PARTY_PATH}/fmt_lib)
 file(GLOB FMT_FILES "${THIRD_PARTY_PATH}/fmt_lib/fmt/*")
 target_sources(fmt_lib PRIVATE ${FMT_FILES})
 
+add_library(file_system STATIC)
+target_include_directories(file_system PUBLIC ${ENGINE_SRC_PATH}/file_system)
+file(GLOB FILE_SYSTEM_FILES
+	"${ENGINE_SRC_PATH}/file_system/utils.h"
+	"${ENGINE_SRC_PATH}/file_system/utils.cpp")
+target_sources(file_system PRIVATE ${FILE_SYSTEM_FILES})
+
 add_library(sdl2 INTERFACE)
 set(sdl2_DIR ${THIRD_PARTY_PATH}/SDL)
 
@@ -63,5 +70,5 @@ target_sources(spirv_reflect PRIVATE
 include_directories(${ENGINE_SRC_PATH})
 include_directories(${THIRD_PARTY_PATH}/vma)
 
-target_link_libraries(vulkan_rhi vkbootstrap spirv_reflect fmt_lib Vulkan::Vulkan sdl2)
+target_link_libraries(vulkan_rhi vkbootstrap spirv_reflect fmt_lib Vulkan::Vulkan sdl2 file_system)
 

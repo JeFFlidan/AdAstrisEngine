@@ -125,6 +125,10 @@ namespace ad_astris
 		_windowExtent.width = size.width;
 		_windowExtent.height = size.height;
 
+		_projectPath = fs::current_path().string();
+		_projectPath.erase(_projectPath.find("\\bin"), 4);
+		_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
+
 		init_vulkan();
 		init_engine_systems();
 		init_sync_structures();
@@ -149,6 +153,8 @@ namespace ad_astris
 	
 	void VkRenderer::cleanup()
 	{
+		_eRhi->cleanup();
+		
 		// I must delete objects in the reverse order of their creation
 		if (_isInitialized) 
 		{
@@ -229,7 +235,7 @@ namespace ad_astris
 		IVulkanRHIModule* rhiModule = _moduleManager->load_module<IVulkanRHIModule>("libvulkan_rhi.dll");
 		LOG_INFO("After loading module")
 		_eRhi = rhiModule->create_vulkan_rhi();
-		_eRhi->init(_sdlWindow.get_window());
+		_eRhi->init(_sdlWindow.get_window(), _fileSystem);
 		IVulkanDevice* vulkanDevice = _eRhi->get_device();
 		_device = vulkanDevice->get_device();
 		_debug_messenger = _eRhi->get_messenger();
@@ -339,9 +345,6 @@ namespace ad_astris
 	*/
 	void VkRenderer::init_engine_systems()
 	{
-		_projectPath = fs::current_path().string();
-		_projectPath.erase(_projectPath.find("\\bin"), 4);
-
 		_numThreads = std::thread::hardware_concurrency();
 		_threadInfo.resize(_numThreads);
 
@@ -356,7 +359,7 @@ namespace ad_astris
 			_frames[i]._dynamicDescriptorAllocator.init(_device);
 		}
 
-		_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
+		//_fileSystem = new io::EngineFileSystem(_projectPath.c_str());
 		//_shaderCompiler = new rcore::ShaderCompiler(_fileSystem);
 		//resource::ResourceConverter resourceConverter(_fileSystem);
 

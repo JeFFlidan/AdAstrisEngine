@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "resources.h"
+#include "file_system/file_system.h"
 #include <vector>
 #include <array>
 #include <vulkan/vulkan.h>
@@ -18,7 +19,7 @@ namespace ad_astris::rhi
 		public:
 			virtual ~IEngineRHI() = default;
 		
-			virtual void init(void* window) = 0;
+			virtual void init(void* window, io::FileSystem* fileSystem) = 0;
 			virtual void cleanup() = 0;
 
 			virtual void create_swap_chain(SwapChain* swapChain, SwapChainInfo* info) = 0;

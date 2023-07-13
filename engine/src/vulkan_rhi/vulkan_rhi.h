@@ -26,7 +26,7 @@ namespace ad_astris::vulkan
 			// TODO Create custom destructor
 			~VulkanRHI() final override = default;
 
-			virtual void init(void* window) final override;
+			virtual void init(void* window, io::FileSystem* fileSystem) final override;
 			virtual void cleanup() final override;
 
 			virtual void create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info) final override;
@@ -100,12 +100,14 @@ namespace ad_astris::vulkan
 			VkDebugUtilsMessengerEXT get_messenger() { return _debugMessenger; }
 		
 		private:
+			io::FileSystem* _fileSystem{ nullptr };
 			VkInstance _instance{ VK_NULL_HANDLE };
 			VkDebugUtilsMessengerEXT _debugMessenger{ VK_NULL_HANDLE };
 			VmaAllocator _allocator;
 			std::unique_ptr<VulkanDevice> _vulkanDevice{ nullptr };
 			std::unique_ptr<VulkanCommandManager> _cmdManager{ nullptr };
 			std::unique_ptr<VulkanSwapChain> _swapChain{ nullptr };
+			VkPipelineCache _pipelineCache;
 
 			std::vector<std::unique_ptr<VulkanPipeline>> _vulkanPipelines;
 			std::vector<std::unique_ptr<VulkanShader>> _vulkanShaders;
@@ -116,5 +118,8 @@ namespace ad_astris::vulkan
 			std::vector<std::unique_ptr<VulkanBuffer>> _vulkanBuffers;
 
 			vkb::Instance create_instance();
-			void create_allocator();};
+			void create_allocator();
+			void create_pipeline_cache();
+			void save_pipeline_cache();
+	};
 }

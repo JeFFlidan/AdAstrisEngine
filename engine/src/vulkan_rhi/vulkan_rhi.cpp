@@ -1,8 +1,8 @@
 ﻿#include "vulkan_rhi.h"
-
 #include "vulkan_common.h"
 
 #include "profiler/logger.h"
+#include "file_system/utils.h"
 #include <VkBootstrap.h>
 
 #ifndef VMA_IMPLEMENTATION
@@ -12,46 +12,51 @@
 
 using namespace ad_astris;
 
-void vulkan::VulkanRHI::init(void* window)
+void vulkan::VulkanRHI::init(void* window, io::FileSystem* fileSystem)
 {
+	_fileSystem = fileSystem;
 	vkb::Instance vkbInstance = create_instance();
 	_instance = vkbInstance.instance;
 	_debugMessenger = vkbInstance.debug_messenger;
 	_vulkanDevice = std::make_unique<VulkanDevice>(vkbInstance, window);
 	create_allocator();
+	create_pipeline_cache();
 }
 
 // TODO Must test it
 void vulkan::VulkanRHI::cleanup()
 {
-	for (auto& pipeline : _vulkanPipelines)
-		pipeline->cleanup();
-
-	for (auto& shader : _vulkanShaders)
-		shader->cleanup();
-
-	for (auto& renderPass : _vulkanRenderPasses)
-		renderPass->cleanup();
-
-	VkDevice device = _vulkanDevice.get()->get_device();
-	for (auto& sampler : _vulkanSamplers)
-		vkDestroySampler(device, *sampler.get(), nullptr);
-
-	for (auto& imageView : _vulkanImageViews)
-		vkDestroyImageView(device, *imageView.get(), nullptr);
-
-	for (auto& texture : _vulkanTextures)
-		texture->destroy_texture();
-
-	for (auto& buffer : _vulkanBuffers)
-		buffer->destroy_buffer(&_allocator);
-
-	vmaDestroyAllocator(_allocator);
-	_cmdManager->cleanup();
-	_swapChain->cleanup();
-	_vulkanDevice->cleanup();
-	vkb::destroy_debug_utils_messenger(_instance, _debugMessenger, nullptr);
-	vkDestroyInstance(_instance, nullptr);
+	save_pipeline_cache();
+	
+	// for (auto& pipeline : _vulkanPipelines)
+	// 	pipeline->cleanup();
+	//
+	// for (auto& shader : _vulkanShaders)
+	// 	shader->cleanup();
+	//
+	// for (auto& renderPass : _vulkanRenderPasses)
+	// 	renderPass->cleanup();
+	//
+	// VkDevice device = _vulkanDevice.get()->get_device();
+	// for (auto& sampler : _vulkanSamplers)
+	// 	vkDestroySampler(device, *sampler.get(), nullptr);
+	//
+	// for (auto& imageView : _vulkanImageViews)
+	// 	vkDestroyImageView(device, *imageView.get(), nullptr);
+	//
+	// for (auto& texture : _vulkanTextures)
+	// 	texture->destroy_texture();
+	//
+	// for (auto& buffer : _vulkanBuffers)
+	// 	buffer->destroy_buffer(&_allocator);
+	//
+	// vkDestroyPipelineCache(device, _pipelineCache, nullptr);
+	// vmaDestroyAllocator(_allocator);
+	// _cmdManager->cleanup();
+	// _swapChain->cleanup();
+	// _vulkanDevice->cleanup();
+	// vkb::destroy_debug_utils_messenger(_instance, _debugMessenger, nullptr);
+	// vkDestroyInstance(_instance, nullptr);
 }
 
 void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info)
@@ -383,7 +388,7 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Invalid pointers")
 		return;
 	}
-	_vulkanPipelines.emplace_back(new VulkanPipeline(_vulkanDevice.get(), info));
+	_vulkanPipelines.emplace_back(new VulkanPipeline(_vulkanDevice.get(), info, _pipelineCache));
 	pipeline->type = rhi::PipelineType::GRAPHICS;
 	pipeline->handle = _vulkanPipelines.back().get();
 }
@@ -395,7 +400,7 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid pointers")
 		return;
 	}
-	_vulkanPipelines.emplace_back(new VulkanPipeline(_vulkanDevice.get(), info));
+	_vulkanPipelines.emplace_back(new VulkanPipeline(_vulkanDevice.get(), info, _pipelineCache));
 	pipeline->type = rhi::PipelineType::COMPUTE;
 	pipeline->handle = _vulkanPipelines.back().get();
 }
@@ -886,4 +891,36 @@ void vulkan::VulkanRHI::create_allocator()
 	allocatorInfo.instance = _instance;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
 	LOG_INFO("End creating allocator")
+}
+
+void vulkan::VulkanRHI::create_pipeline_cache()
+{
+	size_t size = 0;
+	void* data = nullptr;
+	
+	if (io::Utils::exists(_fileSystem, "configs/pipeline_cache.bin"))
+		data = _fileSystem->map_to_read("configs/pipeline_cache.bin", size);
+
+	VkPipelineCacheCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+	createInfo.initialDataSize = size;
+	createInfo.pInitialData = data;
+
+	VK_CHECK(vkCreatePipelineCache(_vulkanDevice.get()->get_device(), &createInfo, nullptr, &_pipelineCache));
+
+	if (data)
+		_fileSystem->unmap_after_reading(data);
+}
+
+void vulkan::VulkanRHI::save_pipeline_cache()
+{
+	VkDevice device = _vulkanDevice.get()->get_device();
+	size_t cacheSize;
+	vkGetPipelineCacheData(device, _pipelineCache, &cacheSize, nullptr);
+	std::vector<uint8_t> cacheData(cacheSize);
+	vkGetPipelineCacheData(device, _pipelineCache, &cacheSize, cacheData.data());
+
+	io::Stream* stream = _fileSystem->open("configs/pipeline_cache.bin", "wb");
+	stream->write(cacheData.data(), sizeof(uint8_t), cacheSize);
+	_fileSystem->close(stream);
 }

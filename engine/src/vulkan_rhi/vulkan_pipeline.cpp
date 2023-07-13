@@ -5,15 +5,15 @@
 
 using namespace ad_astris;
 
-vulkan::VulkanPipeline::VulkanPipeline(VulkanDevice* device, rhi::GraphicsPipelineInfo* info) : _device(device)
+vulkan::VulkanPipeline::VulkanPipeline(VulkanDevice* device, rhi::GraphicsPipelineInfo* info, VkPipelineCache pipelineCache) : _device(device)
 {
-	create_graphics_pipeline(info);
+	create_graphics_pipeline(info, pipelineCache);
 	_type = rhi::PipelineType::GRAPHICS;
 }
 
-vulkan::VulkanPipeline::VulkanPipeline(VulkanDevice* device, rhi::ComputePipelineInfo* info) : _device(device)
+vulkan::VulkanPipeline::VulkanPipeline(VulkanDevice* device, rhi::ComputePipelineInfo* info, VkPipelineCache pipelineCache) : _device(device)
 {
-	create_compute_pipeline(info);
+	create_compute_pipeline(info, pipelineCache);
 	_type = rhi::PipelineType::COMPUTE;
 }
 
@@ -24,7 +24,7 @@ void vulkan::VulkanPipeline::cleanup()
 }
 
 //private
-void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo* info)
+void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo* info, VkPipelineCache pipelineCache)
 {
 	VkPipelineInputAssemblyStateCreateInfo assemblyState{};
 	assemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -275,10 +275,10 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 	pipelineInfo.pDepthStencilState = &depthStencilState;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	
-	VK_CHECK(vkCreateGraphicsPipelines(_device->get_device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_pipeline));
+	VK_CHECK(vkCreateGraphicsPipelines(_device->get_device(), pipelineCache, 1, &pipelineInfo, nullptr, &_pipeline));
 }
 
-void vulkan::VulkanPipeline::create_compute_pipeline(rhi::ComputePipelineInfo* info)
+void vulkan::VulkanPipeline::create_compute_pipeline(rhi::ComputePipelineInfo* info, VkPipelineCache pipelineCache)
 {
 	VkShaderStageFlagBits stageBit = (VkShaderStageFlagBits)get_shader_stage(info->shaderStage.type);
 	VulkanShader* vkShader = static_cast<VulkanShader*>(info->shaderStage.handle); 
@@ -297,5 +297,5 @@ void vulkan::VulkanPipeline::create_compute_pipeline(rhi::ComputePipelineInfo* i
 	createInfo.layout = _layout;
 	createInfo.stage = shaderStage;
 	
-	VK_CHECK(vkCreateComputePipelines(_device->get_device(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &_pipeline));
+	VK_CHECK(vkCreateComputePipelines(_device->get_device(), pipelineCache, 1, &createInfo, nullptr, &_pipeline));
 }
