@@ -2,6 +2,7 @@
 #include "core/flags_operations.h"
 #include <cstdint>
 #include <vector>
+#include <array>
 
 namespace ad_astris::rhi
 {
@@ -433,6 +434,17 @@ namespace ad_astris::rhi
 	struct RenderPass : public ObjectHandle
 	{
 		
+	};
+
+	struct ClearValues
+	{
+		std::array<float, 4> color;
+
+		struct
+		{
+			float depth;
+			uint32_t stencil;
+		} depthStencil;
 	};
 	
 	enum class TopologyType

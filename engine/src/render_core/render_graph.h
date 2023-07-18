@@ -29,7 +29,9 @@ namespace ad_astris::rcore::impl
 			RenderGraph& operator=(const RenderGraph&&) = delete;
 
 			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue) override;
-			virtual IRenderPass* get_pass(const std::string& passName) override;
+			virtual IRenderPass* get_logical_pass(const std::string& passName) override;
+			virtual rhi::RenderPass* get_physical_pass(const std::string& passName) override;
+			virtual rhi::RenderPass* get_physical_pass(IRenderPass* logicalPass) override;
 		
 			virtual void create_swapchain(rhi::SwapChainInfo& swapChainInfo) override
 			{
@@ -59,22 +61,23 @@ namespace ad_astris::rcore::impl
 			rhi::IEngineRHI* _engineRHI{ nullptr };
 
 			std::vector<std::unique_ptr<RenderPass>> _logicalPasses;
-			std::unordered_map<std::string, uint16_t> _logicalPassNameToIndex;
+			std::unordered_map<std::string, uint16_t> _logicalPassIndexByItsName;
 
 			std::vector<uint32_t> _sortedPasses;
 			std::vector<std::unordered_set<uint32_t>> _passDependencies;
 		
 			std::vector<std::unique_ptr<ResourceDesc>> _logicalResources;
-			std::unordered_map<std::string, uint32_t> _logicalResourceNameToIndex;
+			std::unordered_map<std::string, uint32_t> _logicalResourceIndexByItsName;
 
 			std::vector<rhi::Texture> _physicalTextures;
 			std::vector<rhi::TextureView> _physicalTextureViews;	// Do not forget to clear texture and texture view
 			std::vector<rhi::Buffer> _physicalBuffers;
 
 			std::vector<rhi::RenderPass> _physicalPasses;
-		
-			std::unordered_map<std::string, rhi::ResourceLayout> _resourceNameToLastLayout;
-			std::vector<std::vector<rhi::PipelineBarrier>> _passBarriers;
+
+			std::unordered_set<uint32_t> _passToIgnore;
+			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _barriersByResourceName;
+			std::vector<std::vector<std::pair<uint32_t, uint32_t>>> _passBarriers;
 
 			std::string _swapChainInputName;
 			rhi::SwapChain* _swapChain{ nullptr };
@@ -99,17 +102,22 @@ namespace ad_astris::rcore::impl
 			void setup_depth_stencil_render_target(rhi::RenderTarget& renderTarget, rhi::TextureView& textureView);
 			void setup_color_render_target(rhi::RenderTarget& renderTarget, rhi::TextureView& textureView);
 
-			void setup_texture_barrier(
+			void setup_barrier(
 				RenderPass* passHandle,
-				TextureDesc* textureDesc,
+				ResourceDesc* resourceDesc,
 				rhi::ResourceLayout srcLayout,
 				rhi::ResourceLayout dstLayout);
 
-			void setup_buffer_barrier(
-				RenderPass* passHandle,
-				BufferDesc* bufferDesc,
+			void setup_incomplete_barrier(
+				ResourceDesc* resourceDesc,
 				rhi::ResourceLayout srcLayout,
-				rhi::ResourceLayout dstLayout);
+				std::unordered_map<uint32_t, uint32_t>& incompleteBarrierByResIndex);
+
+			bool finish_incomplete_barrier(
+				RenderPass* passHandle,
+				ResourceDesc* resourceDesc,
+				rhi::ResourceLayout dstLayout,
+				std::unordered_map<uint32_t, uint32_t>& incompleteBarrierByResIndex);
 
 			bool check_if_compute(RenderPass* passHandle);
 			bool check_if_graphics(RenderPass* passHandle);

@@ -77,7 +77,7 @@ namespace ad_astris::vulkan
 			virtual void bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;
 			virtual void bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;
 			virtual void bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline) final override;
-			virtual void begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass) final override;
+			virtual void begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass, rhi::ClearValues& clearValues) final override;
 			virtual void end_render_pass(rhi::CommandBuffer* cmd) final override;
 			virtual void draw(rhi::CommandBuffer* cmd, uint64_t vertexCount) final override;
 			virtual void draw_indexed(

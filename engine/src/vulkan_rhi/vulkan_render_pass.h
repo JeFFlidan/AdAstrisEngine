@@ -13,7 +13,7 @@ namespace ad_astris::vulkan
 
 			void cleanup();
 
-			VkRenderPassBeginInfo get_begin_info();
+			VkRenderPassBeginInfo get_begin_info(rhi::ClearValues& rhiClearValue);
 		private:
 			VulkanDevice* _device;
 			VkRenderPass _renderPass;

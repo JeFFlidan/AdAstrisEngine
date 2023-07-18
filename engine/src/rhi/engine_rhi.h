@@ -70,7 +70,7 @@ namespace ad_astris::rhi
 			virtual void bind_vertex_buffer(CommandBuffer* cmd, Buffer* buffer) = 0;
 			virtual void bind_index_buffer(CommandBuffer* cmd, Buffer* buffer) = 0;
 			virtual void bind_pipeline(CommandBuffer* cmd, Pipeline* pipeline) = 0;
-			virtual void begin_render_pass(CommandBuffer* cmd, RenderPass* renderPass) = 0;
+			virtual void begin_render_pass(CommandBuffer* cmd, RenderPass* renderPass, ClearValues& clearValues) = 0;
 			virtual void end_render_pass(CommandBuffer* cmd) = 0;
 			// One buffer - one object
 			virtual void draw(CommandBuffer* cmd, uint64_t vertexCount) = 0;

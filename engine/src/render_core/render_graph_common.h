@@ -26,10 +26,24 @@ namespace ad_astris::rcore
 				return _type;
 			}	
 
-			std::string get_name() { return _name; }
+			std::string get_name()
+			{
+				return _name;
+			}
+		
 			void set_name(const std::string& newName)
 			{
 				_name = newName;
+			}
+
+			uint32_t get_logical_index()
+			{
+				return _logicalIndex;
+			}
+
+			void set_logical_index(uint32_t newLogicalIndex)
+			{
+				_logicalIndex = newLogicalIndex;
 			}
 
 			uint32_t get_physical_index()

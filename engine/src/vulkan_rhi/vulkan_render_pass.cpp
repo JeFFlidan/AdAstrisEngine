@@ -18,7 +18,7 @@ void vulkan::VulkanRenderPass::cleanup()
 	vkDestroyRenderPass(_device->get_device(), _renderPass, nullptr);
 }
 
-VkRenderPassBeginInfo vulkan::VulkanRenderPass::get_begin_info()
+VkRenderPassBeginInfo vulkan::VulkanRenderPass::get_begin_info(rhi::ClearValues& rhiClearValue)
 {
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -27,21 +27,22 @@ VkRenderPassBeginInfo vulkan::VulkanRenderPass::get_begin_info()
 	beginInfo.renderArea.offset.x = 0;
 	beginInfo.renderArea.offset.y = 0;
 	beginInfo.renderArea.extent = _extent;
-	std::vector<VkClearValue> clearValues;
+	std::vector<VkClearValue> vkClearValues;
 	for (int i = 0; i != _colorAttachCount; ++i)
 	{
 		VkClearValue clearValue;
-		clearValue.color = { {0.1f, 0.1f, 0.1f, 1.0f} };
-		clearValues.push_back(clearValue);
+		auto& arr = rhiClearValue.color;
+		clearValue.color = { {arr[0], arr[1], arr[2], arr[3]} };
+		vkClearValues.push_back(clearValue);
 	}
 	if (_depthAttachCount)
 	{
 		VkClearValue clearValue;
-		clearValue.depthStencil.depth = 1.0;
-		clearValues.push_back(clearValue);
+		clearValue.depthStencil.depth = rhiClearValue.depthStencil.depth;
+		vkClearValues.push_back(clearValue);
 	}
-	beginInfo.clearValueCount = clearValues.size();
-	beginInfo.pClearValues = clearValues.data();
+	beginInfo.clearValueCount = vkClearValues.size();
+	beginInfo.pClearValues = vkClearValues.data();
 	return beginInfo;
 }
 

@@ -687,7 +687,7 @@ void vulkan::VulkanRHI::bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pi
 	vkCmdBindPipeline(vkCmd->get_handle(), get_pipeline_bind_point(vkPipeline->get_type()), vkPipeline->get_handle());
 }
 
-void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass)
+void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass, rhi::ClearValues& clearValues)
 {
 	if (!cmd || !renderPass)
 	{
@@ -698,7 +698,7 @@ void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPa
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanRenderPass* pass = get_vk_obj(renderPass);
 
-	VkRenderPassBeginInfo beginInfo = pass->get_begin_info();
+	VkRenderPassBeginInfo beginInfo = pass->get_begin_info(clearValues);
 
 	vkCmdBeginRenderPass(vkCmd->get_handle(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
