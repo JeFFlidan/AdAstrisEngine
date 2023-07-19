@@ -69,14 +69,34 @@ namespace ad_astris::rcore::impl
 			std::vector<std::unique_ptr<ResourceDesc>> _logicalResources;
 			std::unordered_map<std::string, uint32_t> _logicalResourceIndexByItsName;
 
-			std::vector<rhi::Texture> _physicalTextures;
-			std::vector<rhi::TextureView> _physicalTextureViews;	// Do not forget to clear texture and texture view
-			std::vector<rhi::Buffer> _physicalBuffers;
+			std::vector<std::unique_ptr<rhi::Texture>> _physicalTextures;
+			std::vector<std::unique_ptr<rhi::TextureView>> _physicalTextureViews;	// Do not forget to clear texture and texture view
+			std::vector<std::unique_ptr<rhi::Buffer>> _physicalBuffers;
 
 			std::vector<rhi::RenderPass> _physicalPasses;
 
+			struct BarrierIndices
+			{
+				uint32_t resourceIndex;
+				uint32_t barrierIndex;
+
+				bool operator==(const BarrierIndices& other) const;
+				size_t hash() const;
+			};
+
+			struct BarrierIndicesHash
+			{
+				std::size_t operator()(const BarrierIndices& k) const
+				{
+					return k.hash();
+				}
+			};
+
 			std::unordered_set<uint32_t> _passToIgnore;
-			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _barriersByResourceName;
+			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _barriersByResourceIndex;
+			// need this collection to store original barriers because some barriers can be changed in runtime and I need original barriers to reset barriers
+			std::unordered_set<BarrierIndices, BarrierIndicesHash> _barrierToIgnore;
+			std::unordered_map<BarrierIndices, rhi::PipelineBarrier, BarrierIndicesHash> _bakedBarrierByItsIndices;
 			std::vector<std::vector<std::pair<uint32_t, uint32_t>>> _passBarriers;
 
 			std::string _swapChainInputName;
@@ -118,6 +138,11 @@ namespace ad_astris::rcore::impl
 				ResourceDesc* resourceDesc,
 				rhi::ResourceLayout dstLayout,
 				std::unordered_map<uint32_t, uint32_t>& incompleteBarrierByResIndex);
+
+			void add_pass_to_ignore(uint32_t passIndex);
+			void remove_pass_from_ignore(uint32_t passIndex);
+
+			rhi::ResourceLayout& get_barrier_layout(rhi::PipelineBarrier& barrier, bool getSrcLayout = true);
 
 			bool check_if_compute(RenderPass* passHandle);
 			bool check_if_graphics(RenderPass* passHandle);
