@@ -6,7 +6,6 @@ using namespace ad_astris;
 
 vulkan::VulkanRenderPass::VulkanRenderPass(VulkanDevice* device, rhi::RenderPassInfo* passInfo) : _device(device)
 {
-	LOG_INFO("Texture dimesions: {} x {}", passInfo->renderTargets[0].target->texture->textureInfo.width, passInfo->renderTargets[0].target->texture->textureInfo.height)
 	_extent.width = passInfo->renderTargets[0].target->texture->textureInfo.width;
 	_extent.height = passInfo->renderTargets[0].target->texture->textureInfo.height;
 	create_render_pass(passInfo);

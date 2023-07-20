@@ -19,14 +19,14 @@ namespace ad_astris::rcore::impl
 	class RENDER_CORE_API RenderGraph : public IRenderGraph
 	{
 		public:
-			RenderGraph(rhi::IEngineRHI* engineRHI);
-
-			virtual void cleanup() override;
-
+			RenderGraph() = default;
 			RenderGraph(const RenderGraph&) = delete;
 			RenderGraph(const RenderGraph&&) = delete;
 			RenderGraph& operator=(const RenderGraph&) = delete;
 			RenderGraph& operator=(const RenderGraph&&) = delete;
+		
+			virtual void init(rhi::IEngineRHI* engineRHI) override;
+			virtual void cleanup() override;
 
 			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue) override;
 			virtual IRenderPass* get_logical_pass(const std::string& passName) override;

@@ -1,10 +1,24 @@
+#include "config_base.h"
+#include "module_manager.h"
 #include "profiler/logger.h"
+#include "file_system/utils.h"
 
 #include <windows.h>
 
-#include "module_manager.h"
-
 using namespace ad_astris;
+
+ModuleManager::ModuleManager(io::FileSystem* fileSystem)
+{
+	io::URI path = io::Utils::get_absolute_path_to_file(fileSystem, "configs/modules.ini");
+	
+	Config config;
+	config.load_from_file(path);
+
+	for (auto section : config)
+	{
+		_dllPathByModulePseudonym[section.get_name()] = section.get_option_value<std::string>("Path");
+	}
+}
 
 IModule* ModuleManager::load_module(const std::string& moduleName)
 {
@@ -12,9 +26,15 @@ IModule* ModuleManager::load_module(const std::string& moduleName)
 	auto moduleInfoFromMap = _loadedModules.find(moduleName);
 	if (moduleInfoFromMap != _loadedModules.end())
 		return moduleInfoFromMap->second.module;
+
+	auto itFromDllPathByModulePseudonym = _dllPathByModulePseudonym.find(moduleName);
+	if (itFromDllPathByModulePseudonym == _dllPathByModulePseudonym.end())
+		LOG_FATAL("ModuleManager::load_module(): There is no module with pseudonym {}", moduleName)
+
+	std::string modulePath = itFromDllPathByModulePseudonym->second;
 	
 	ModuleInfo moduleInfo;
-	HMODULE hmodule = LoadLibraryA(moduleName.c_str());
+	HMODULE hmodule = LoadLibraryA(modulePath.c_str());
 	if (hmodule == NULL)
 	{
 		LOG_FATAL("ModuleManager::load_module(): Failed to load module {}", moduleName)

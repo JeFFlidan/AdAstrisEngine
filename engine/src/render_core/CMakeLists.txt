@@ -50,7 +50,8 @@ target_include_directories(module_manager PUBLIC ${ENGINE_SRC_PATH}/core ${THIRD
 file(GLOB FILE_SYSTEM_FILES
 	"${ENGINE_SRC_PATH}/core/module_manager.h"
 	"${ENGINE_SRC_PATH}/core/module_manager.cpp"
-	"${THIRD_PARTY_PATH}/fmt_lib/fmt/*")
+	"${THIRD_PARTY_PATH}/fmt_lib/fmt/*"
+	"${THIRD_PARTY_PATH}/inicpp/*")
 target_sources(module_manager PRIVATE ${FILE_SYSTEM_FILES})
 
 add_library(shaderc STATIC IMPORTED)
@@ -59,5 +60,6 @@ set_target_properties(shaderc PROPERTIES IMPORTED_LOCATION ${THIRD_PARTY_PATH}/s
 include_directories(${ENGINE_SRC_PATH})
 include_directories(${THIRD_PARTY_PATH}/vma)
 include_directories(${THIRD_PARTY_PATH}/glm)
+include_directories(${THIRD_PARTY_PATH}/inicpp)
 
 target_link_libraries(render_core Vulkan::Vulkan fmt_lib module_manager file_system object_name shaderc)

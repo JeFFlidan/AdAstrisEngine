@@ -1,6 +1,7 @@
 #pragma once
 
 #include "module.h"
+#include "file_system/file_system.h"
 
 #include <unordered_map>
 #include <string>
@@ -21,6 +22,7 @@ namespace ad_astris
 	class ModuleManager
 	{
 		public:
+			ModuleManager(io::FileSystem* fileSystem);
 			IModule* load_module(const std::string& moduleName);
 
 			template<typename T>
@@ -32,6 +34,7 @@ namespace ad_astris
 			void unload_module(const std::string& moduleName);
 		
 		private:
+			std::unordered_map<std::string, std::string> _dllPathByModulePseudonym;
 			std::unordered_map<std::string, ModuleInfo> _loadedModules;
 			std::string _rootPath;
 	};

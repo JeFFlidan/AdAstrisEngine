@@ -8,9 +8,9 @@ using namespace ad_astris;
 using namespace rcore;
 using namespace impl;
 
-RenderGraph::RenderGraph(rhi::IEngineRHI* engineRHI) : _engineRHI(engineRHI)
+void RenderGraph::init(rhi::IEngineRHI* engineRHI)
 {
-
+	_engineRHI = engineRHI;
 }
 
 void RenderGraph::cleanup()

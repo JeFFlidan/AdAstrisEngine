@@ -10,17 +10,17 @@ namespace ad_astris::vulkan
 			rhi::IEngineRHI* create_vulkan_rhi() override;
 
 		private:
-			VulkanRHI* _vulkanRHI{ nullptr };
+			std::unique_ptr<VulkanRHI> _vulkanRHI{ nullptr };
 	};
 
 	rhi::IEngineRHI* VulkanRHIModule::create_vulkan_rhi()
 	{
 		if (!_vulkanRHI)
 		{
-			_vulkanRHI = new VulkanRHI();
+			_vulkanRHI = std::make_unique<VulkanRHI>();
 		}
 		
-		return _vulkanRHI;
+		return _vulkanRHI.get();
 	}
 
 	extern "C" VK_RHI_API IVulkanRHIModule* register_module()

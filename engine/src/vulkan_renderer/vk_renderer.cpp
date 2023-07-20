@@ -230,9 +230,9 @@ namespace ad_astris
 		LOG_INFO("Start")
 
 		// RHI tests
-		_moduleManager = new ModuleManager();
+		_moduleManager = new ModuleManager(_fileSystem);
 		LOG_INFO("Loading module")
-		IVulkanRHIModule* rhiModule = _moduleManager->load_module<IVulkanRHIModule>("libvulkan_rhi.dll");
+		IVulkanRHIModule* rhiModule = _moduleManager->load_module<IVulkanRHIModule>("VulkanRHI");
 		LOG_INFO("After loading module")
 		_eRhi = rhiModule->create_vulkan_rhi();
 		_eRhi->init(_sdlWindow.get_window(), _fileSystem);
@@ -303,11 +303,12 @@ namespace ad_astris
 
 		UUID uuid;
 
-		auto renderCoreModule = _moduleManager->load_module<rcore::IRenderCoreModule>("librender_core.dll");
+		auto renderCoreModule = _moduleManager->load_module<rcore::IRenderCoreModule>("RenderCore");
 		LOG_INFO("Before getting shader compiler")
 		_shaderCompiler = renderCoreModule->get_shader_compiler();
 		LOG_INFO("Before getting render graph")
 		rcore::IRenderGraph* graph = renderCoreModule->get_render_graph();
+		graph->init(_eRhi);
 		LOG_INFO("Before creating pass")
 		rcore::IRenderPass* pass = graph->add_new_pass("deferred_lighting", rcore::RenderGraphQueue::GRAPHICS);
 		LOG_INFO("After creating pass")

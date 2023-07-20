@@ -13,8 +13,14 @@ def get_info():
     '                       if you want to compile the engine and some plugins')
     print('\t-plugins     = Compile plugins. If you use only this flag,\n'
     '                       all plugins will be compiled.')
-    print('\t-ecs         = Compile entity-component-system plugin.\n'
+    print('\t-modules     = Compile modules. If you use only this flag,\n'
+    '                       all modules will be compiled.')
+    print('\t-ecs         = Compile Entity-Component-System plugin.\n'
     '                       Should be used with the -plugins flag.')
+    print('\t-vulkan_rhi  = Compile Vulkan Render Hardware Interface module.\n'
+    '                       Should be used with the -modules flag.')
+    print('\t-render_core = Compile Render Core Module.\n'
+    '                       Should be used with the -modules flag.')
     print('\t-help        = Print information about compile script.')
 
 

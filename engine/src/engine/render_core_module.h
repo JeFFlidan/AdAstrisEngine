@@ -4,6 +4,7 @@
 #include "engine_core/material/shader_common.h"
 #include "file_system/file_system.h"
 #include "rhi/resources.h"
+#include "rhi/engine_rhi.h"
 
 #include <string>
 
@@ -108,7 +109,8 @@ namespace ad_astris::rcore
 	{
 		public:
 			virtual ~IRenderGraph() { }
-
+		
+			virtual void init(rhi::IEngineRHI* engineRHI) = 0;
 			virtual void cleanup() = 0;
 		
 			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue) = 0;
