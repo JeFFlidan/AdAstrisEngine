@@ -20,6 +20,7 @@ file(GLOB ENGINE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/resource_manager/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/rhi/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/vulkan_renderer/*.*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/events/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/*.*")
  
 add_executable(AdAstrisEngine ${ENGINE_FILES})

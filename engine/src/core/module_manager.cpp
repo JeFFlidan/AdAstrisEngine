@@ -20,6 +20,14 @@ ModuleManager::ModuleManager(io::FileSystem* fileSystem)
 	}
 }
 
+void ModuleManager::cleanup()
+{
+	for (auto& moduleInfo : _loadedModules)
+	{
+		FreeModule(moduleInfo.second.moduleHandler);
+	}
+}
+
 IModule* ModuleManager::load_module(const std::string& moduleName)
 {
 	LOG_INFO("Start loading module")
@@ -71,4 +79,5 @@ void ModuleManager::unload_module(const std::string& moduleName)
 	}
 
 	FreeModule(moduleInfoIt->second.moduleHandler);
+	_loadedModules.erase(moduleInfoIt);
 }

@@ -23,6 +23,9 @@ namespace ad_astris
 	{
 		public:
 			ModuleManager(io::FileSystem* fileSystem);
+
+			void cleanup();
+		
 			IModule* load_module(const std::string& moduleName);
 
 			template<typename T>
