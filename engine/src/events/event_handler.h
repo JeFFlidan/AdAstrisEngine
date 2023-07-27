@@ -14,7 +14,7 @@ namespace ad_astris::events
 		public:
 			virtual ~IEventHandler() { }
 		
-			void execute(Event& event)
+			void execute(IEvent& event)
 			{
 				internal_execute(event);
 			}
@@ -22,7 +22,7 @@ namespace ad_astris::events
 			virtual std::string get_type() = 0;
 
 		protected:
-			virtual void internal_execute(Event& event) = 0;
+			virtual void internal_execute(IEvent& event) = 0;
 	};
 
 	template<typename EventType>
@@ -41,7 +41,7 @@ namespace ad_astris::events
 			EventDelegate<EventType> _eventDelegate;
 			std::string _type;
 
-			virtual void internal_execute(Event& event) override
+			virtual void internal_execute(IEvent& event) override
 			{
 				if (EventType::get_type_id_static() == event.get_type_id())
 					_eventDelegate(static_cast<EventType&>(event));

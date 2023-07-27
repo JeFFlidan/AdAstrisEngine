@@ -11,25 +11,6 @@ EventManager::EventManager()
 	
 }
 
-void EventManager::subscribe(uint64_t eventID, std::unique_ptr<IEventHandler>&& eventHandler)
-{
-	auto it = _handlersByEventID.find(eventID);
-
-	if (it != _handlersByEventID.end())
-	{
-		for (auto& handler : _handlersByEventID[eventID])
-		{
-			if (handler->get_type() == eventHandler->get_type())
-			{
-				LOG_ERROR("EventManager::subscribe(): Engine subscribed the event to the same event handler")
-				return;
-			}
-		}
-	}
-
-	_handlersByEventID[eventID].emplace_back(std::move(eventHandler));
-}
-
 void EventManager::unsubscribe(uint64_t eventID, const std::string& eventHandlerTypeName)
 {
 	std::lock_guard<std::mutex> locker(_handlersByEventIDMutex);
@@ -53,13 +34,7 @@ void EventManager::unsubscribe(uint64_t eventID, const std::string& eventHandler
 	}
 }
 
-void EventManager::enqueue_event(std::unique_ptr<Event>&& event)
-{
-	std::lock_guard<std::mutex> locker(_eventQueueMutex);
-	_eventsQueue.emplace(std::move(event));
-}
-
-void EventManager::trigger_event(Event& event)
+void EventManager::trigger_event(IEvent& event)
 {
 	std::lock_guard<std::mutex> locker(_eventQueueMutex);
 	auto it = _handlersByEventID.find(event.get_type_id());
@@ -78,7 +53,7 @@ void EventManager::dispatch_events()
 {
 	while (!_eventsQueue.empty())
 	{
-		Event* event = _eventsQueue.front().get();
+		IEvent* event = _eventsQueue.front().get();
 		auto it = _handlersByEventID.find(event->get_type_id());
 		if (it == _handlersByEventID.end())
 		{
@@ -123,12 +98,11 @@ void EventManagerTests::test1()
 	{
 		LOG_INFO("EXECUTE EVENT1 DELEGATE FROM METHOD TEST1")
 	};
+	
+	eventManager.subscribe(Event1::get_type_id_static(), delegate);
 
-	std::unique_ptr<EventHandler<Event1>> handlerPtr(new EventHandler(delegate));
-	eventManager.subscribe(Event1::get_type_id_static(), std::move(handlerPtr));
-
-	std::unique_ptr<Event1> event1(new Event1());
-	eventManager.enqueue_event(std::move(event1));
+	Event1 event1;
+	eventManager.enqueue_event(event1);
 }
 
 void EventManagerTests::test2()
@@ -142,15 +116,13 @@ void EventManagerTests::test2()
 	{
 		LOG_INFO("EXECUTE EVENT3 DELEGATE FROM METHOD TEST2")
 	};
-
-	std::unique_ptr<EventHandler<Event2>> handlerPtr(new EventHandler(delegate));
-	eventManager.subscribe(Event2::get_type_id_static(), std::move(handlerPtr));
-
-	std::unique_ptr<EventHandler<Event3>> handlerPtr3(new EventHandler(delegate3));
-	eventManager.subscribe(Event3::get_type_id_static(), std::move(handlerPtr3));
 	
-	std::unique_ptr<Event2> event2(new Event2());
-	eventManager.enqueue_event(std::move(event2));
+	eventManager.subscribe(Event2::get_type_id_static(), delegate);
+	
+	eventManager.subscribe(Event3::get_type_id_static(), delegate3);
+	
+	Event2 event2;
+	eventManager.enqueue_event(event2);
 }
 
 void EventManagerTests::test3()
@@ -159,9 +131,8 @@ void EventManagerTests::test3()
 	{
 		LOG_INFO("EXECUTE EVENT3 DELEGATE FROM METHOD TEST3")
 	};
-
-	std::unique_ptr<EventHandler<Event3>> handlerPtr3(new EventHandler(delegate3));
-	eventManager.subscribe(Event3::get_type_id_static(), std::move(handlerPtr3));
+	
+	eventManager.subscribe(Event3::get_type_id_static(), delegate3);
 
 	Event3 event3;
 	eventManager.trigger_event(event3);

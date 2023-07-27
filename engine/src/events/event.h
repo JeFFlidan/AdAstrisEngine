@@ -20,10 +20,10 @@ namespace ad_astris::events
 		return static_cast<uint64_t>(EventType::TYPE_ID);	\
 	}
 
-	class Event
+	class IEvent
 	{
 		public:
-			virtual ~Event() { }
+			virtual ~IEvent() { }
 			virtual uint64_t get_type_id() = 0; 
 	};
 }

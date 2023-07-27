@@ -102,6 +102,18 @@ namespace ad_astris
 			inicpp::option get_option(const std::string& sectionName, const std::string& optionName);
 
 			void set_section(Section& section);
+		
+			template<typename T>
+			void set_option(const std::string& sectionName, const std::string& optionName, T& value)
+			{
+				if (!check_section(sectionName))
+				{
+					LOG_ERROR("ConfigBase::set_option(): There is no section {} in config file {}", sectionName, _configPath)
+					return;
+				}
+
+				_config.add_option(sectionName, optionName, value);
+			}
 
 			class ConfigIterator
 			{
