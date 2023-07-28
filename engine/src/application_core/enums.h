@@ -59,6 +59,7 @@ namespace ad_astris::acore
 
 	enum class MouseButton
 	{
+		UNKNOWN,
 		LEFT,
 		MIDDLE,
 		RIGHT

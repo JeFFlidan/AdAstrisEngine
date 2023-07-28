@@ -1,7 +1,9 @@
 ﻿#pragma once
 
 #include "enums.h"
+#include "window_events_impl.h"
 #include "events/event.h"
+#include "events/event_manager.h"
 
 namespace ad_astris::acore
 {
@@ -26,26 +28,6 @@ namespace ad_astris::acore
 			uint32_t _height{ 0 };
 	};
 
-	namespace impl
-	{
-		class KeyEvent
-		{
-			public:
-				void add_key(Key key)
-				{
-					_keysState |= key;
-				}
-			
-				Key get_keys_state()
-				{
-					return _keysState;
-				}
-			
-			private:
-				Key _keysState{ Key::UNKNOWN };
-		};
-	}
-
 	class KeyDownEvent : public impl::KeyEvent, public events::IEvent
 	{
 		public:
@@ -58,40 +40,11 @@ namespace ad_astris::acore
 			EVENT_TYPE_DECL(KeyUpEvent)
 	};
 
-	namespace impl
-	{
-		class MouseButtonEvent
-		{
-			public:
-				MouseButtonEvent(MouseButton mouseButton, int32_t xPos, int32_t yPos)
-					: _mouseButton(mouseButton), _xPos(xPos), _yPos(yPos) { }
-			
-				MouseButton get_button()
-				{
-					return _mouseButton;
-				}
-
-				int32_t get_x_position()
-				{
-					return _xPos;
-				}
-
-				int32_t get_y_position()
-				{
-					return _yPos;
-				}
-
-			protected:
-				MouseButton _mouseButton;
-				int32_t _xPos;
-				int32_t _yPos;
-		};
-	}
-
 	class MouseButtonDownEvent : public impl::MouseButtonEvent, public events::IEvent
 	{
 		public:
 			EVENT_TYPE_DECL(MouseButtonDownEvent)
+			MouseButtonDownEvent() = default;
 			MouseButtonDownEvent(MouseButton mouseButton, int32_t xPos, int32_t yPos)
 				: MouseButtonEvent(mouseButton, xPos, yPos) { }
 	};
@@ -100,7 +53,35 @@ namespace ad_astris::acore
 	{
 		public:
 			EVENT_TYPE_DECL(MouseButtonUpEvent)
+			MouseButtonUpEvent() = default;
 			MouseButtonUpEvent(MouseButton mouseButton, int32_t xPos, int32_t yPos)
 				: MouseButtonEvent(mouseButton, xPos, yPos) { }
 	};
+
+	class MouseMoveWithLeftButtonPressedEvent : public impl::MouseMoveWithPressedButtonEvent, public events::IEvent
+	{
+		public:
+			EVENT_TYPE_DECL(MouseMoveWithLeftButtonPressedEvent)
+	};
+
+	class MouseMoveWithRightButtonPressedEvent : public impl::MouseMoveWithPressedButtonEvent, public events::IEvent
+	{
+		public:
+			EVENT_TYPE_DECL(MouseMoveWithRightButtonPressedEvent)
+	};
+
+	namespace impl
+	{
+		struct WindowEvents
+		{
+			KeyDownEvent keyDownEvent;
+			KeyUpEvent keyUpEvent;
+			MouseButtonDownEvent mouseButtonDownEvent;
+			MouseButtonUpEvent mouseButtonUpEvent;
+			MouseMoveWithLeftButtonPressedEvent mouseMoveLeftButton;
+			MouseMoveWithRightButtonPressedEvent mouseMoveRightButton;
+
+			void enqueue_events(events::EventManager* eventManager);
+		};
+	}
 }

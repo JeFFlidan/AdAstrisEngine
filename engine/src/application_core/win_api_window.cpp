@@ -11,16 +11,15 @@ LRESULT CALLBACK window_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	using namespace ad_astris;
 	
-	auto window = reinterpret_cast<acore::impl::WinApiWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-	acore::KeyDownEvent keyDownEvent{};
-	acore::KeyUpEvent keyUpEvent{};
+	auto window = reinterpret_cast<WinApiWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+	WindowEvents windowEvents;
 	
 	switch (uMsg)
 	{
 		case WM_CREATE:
 		{
 			LPCREATESTRUCT lpCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
-			auto window = reinterpret_cast<acore::impl::WinApiWindow*>(lpCreateStruct->lpCreateParams);
+			auto window = reinterpret_cast<WinApiWindow*>(lpCreateStruct->lpCreateParams);
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 			break;
 		}
@@ -43,21 +42,60 @@ LRESULT CALLBACK window_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		case WM_KEYDOWN:
 		{
-			window->parse_keys(keyDownEvent, wParam);
+			window->parse_keys(windowEvents.keyDownEvent, wParam);
 			break;
 		}
 		case WM_KEYUP:
 		{
-			window->parse_keys(keyUpEvent, wParam);
+			window->parse_keys(windowEvents.keyUpEvent, wParam);
+			break;
+		}
+		case WM_LBUTTONDOWN:
+		{
+			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonDownEvent, MouseButton::LEFT);
+			break;
+		}
+		case WM_LBUTTONUP:
+		{
+			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonUpEvent, MouseButton::LEFT);
+			break;
+		}
+		case WM_MBUTTONDOWN:
+		{
+			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonDownEvent, MouseButton::MIDDLE);
+			break;
+		}
+		case WM_MBUTTONUP:
+		{
+			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonUpEvent, MouseButton::MIDDLE);
+			break;
+		}
+		case WM_RBUTTONDOWN:
+		{
+			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonDownEvent, MouseButton::RIGHT);
+			break;
+		}
+		case WM_RBUTTONUP:
+		{
+			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonUpEvent, MouseButton::RIGHT);
+			break;
+		}
+		case WM_MOUSEMOVE:
+		{
+			if (wParam & MK_LBUTTON)
+			{
+				window->setup_mouse_move_with_pressed_button_event(windowEvents.mouseMoveLeftButton);
+			}
+			else if (wParam & MK_RBUTTON)
+			{
+				window->setup_mouse_move_with_pressed_button_event(windowEvents.mouseMoveRightButton);
+			}
 			break;
 		}
 	}
 
-	if (keyDownEvent.get_keys_state() != Key::UNKNOWN)
-		window->get_event_manager()->enqueue_event(keyDownEvent);
-
-	if (keyUpEvent.get_keys_state() != Key::UNKNOWN)
-		window->get_event_manager()->enqueue_event(keyUpEvent);
+	if (window)
+		windowEvents.enqueue_events(window->get_event_manager());
 
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
@@ -277,4 +315,32 @@ void WinApiWindow::parse_keys(KeyEvent& keyEvent, WPARAM wParam)
 			keyEvent.add_key(Key::Z);
 			break;
 	}
+}
+
+void WinApiWindow::setup_mouse_button_down_up_event(MouseButtonEvent* event, MouseButton button)
+{
+	POINT cursorPosition = get_cursor_coords_relative_to_window();
+	*event = MouseButtonEvent(button, cursorPosition.x, cursorPosition.y);
+}
+
+void WinApiWindow::setup_mouse_move_with_pressed_button_event(MouseMoveWithPressedButtonEvent& mouseMoveButtonEvent)
+{
+	POINT cursorPos = get_cursor_coords_relative_to_window();
+	mouseMoveButtonEvent.set_event_is_valid();
+	mouseMoveButtonEvent.set_x_position(cursorPos.x);
+	mouseMoveButtonEvent.set_y_position(cursorPos.y);
+}
+
+POINT WinApiWindow::get_cursor_coords_relative_to_window()
+{
+	POINT point;
+	if (!GetCursorPos(&point))
+	{
+		return POINT();
+	}
+	if (!ScreenToClient(_hWnd, &point))
+	{
+		return POINT();
+	}
+	return point;
 }

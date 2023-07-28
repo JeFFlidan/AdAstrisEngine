@@ -18,7 +18,10 @@ namespace ad_astris::acore::impl
 
 			virtual bool process_messages() override;
 
-			void parse_keys(impl::KeyEvent& keyEvent, WPARAM wParam);
+			void parse_keys(KeyEvent& keyEvent, WPARAM wParam);
+			void setup_mouse_button_down_up_event(MouseButtonEvent* event, MouseButton button);
+			void setup_mouse_move_with_pressed_button_event(MouseMoveWithPressedButtonEvent& mouseMoveButtonEvent);
+			POINT get_cursor_coords_relative_to_window();
 
 			events::EventManager* get_event_manager()
 			{
