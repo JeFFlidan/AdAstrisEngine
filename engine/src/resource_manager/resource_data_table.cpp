@@ -61,7 +61,7 @@ void resource::ResourceDataTable::save_table()
 		io::Utils::replace_back_slash_to_forward(relativePath);
 		Section newSection(relativePath.c_str());
 		
-		newSection.set_option("UUID", data.first);
+		newSection.set_option("UUID", (uint64_t)data.first);
 		newSection.set_option("Type", Utils::get_str_resource_type(resData.metadata.type));
 		newSection.set_option("Name", resData.metadata.objectName->get_name_without_id());
 		newSection.set_option("NameID", (uint64_t)resData.metadata.objectName->get_name_id());

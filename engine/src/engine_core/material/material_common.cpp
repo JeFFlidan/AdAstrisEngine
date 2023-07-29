@@ -2,6 +2,7 @@
 #include <json.hpp>
 
 #include "shader.h"
+#include "shader_pass.h"
 
 using namespace ad_astris;
 using namespace ecore;
@@ -9,38 +10,71 @@ using namespace material;
 
 std::string Utils::pack_general_material_template_info(GeneralMaterialTemplateInfo& info)
 {
-	ShaderUUIDContext& uuidContext = info.shaderUUIDContext;
-
 	nlohmann::json templateMetadata;
+	templateMetadata["passes_order"] = info.shaderPassesOrder;
 	templateMetadata["uuid"] = (uint64_t)info.uuid;
-	
-	std::vector<uint64_t> uuids;
-	for (auto& uuid : uuidContext.shaderUUIDs)
+
+	for (auto& pair : info.shaderPassByItsName)
 	{
-		uuids.push_back(uuid);
+		templateMetadata[pair.first] = pair.second.serialize();
 	}
-	templateMetadata["shader_uuids"] = uuids;
 
 	return templateMetadata.dump();
 }
 
 GeneralMaterialTemplateInfo Utils::unpack_general_material_template_info(std::string& metadata)
 {
-	nlohmann::json templateMetadata = nlohmann::json::parse(metadata);
-
-	// TODO Think about optimizing getting UUIDs
-	std::vector<uint64_t> tempShaderUUIDs = templateMetadata["shader_uuids"].get<std::vector<uint64_t>>();
-	std::vector<UUID> shaderUUIDs;
-	for (auto& uint64UUID : tempShaderUUIDs)
-		shaderUUIDs.push_back(uint64UUID);
-	
-	UUID templateUUID = UUID(templateMetadata["uuid"]);
+	nlohmann::json jsonMetadata = nlohmann::json::parse(metadata);
 
 	GeneralMaterialTemplateInfo templateInfo;
-	templateInfo.uuid = templateUUID;
-	templateInfo.shaderUUIDContext.shaderUUIDs = shaderUUIDs;
+
+	for (auto& keyAndValue : jsonMetadata.items())
+	{
+		if (keyAndValue.key() == "uuid")
+		{
+			templateInfo.uuid = UUID(keyAndValue.value().get<uint64_t>());
+		}
+		else if (keyAndValue.key() == "passes_order")
+		{
+			templateInfo.shaderPassesOrder = keyAndValue.value().get<std::vector<std::string>>();
+		}
+		else
+		{
+			ShaderPass shaderPass(keyAndValue.key());
+			std::string shaderPassMetadata = keyAndValue.value().get<std::string>();
+			shaderPass.deserialize(shaderPassMetadata);
+			templateInfo.shaderPassByItsName[shaderPass.get_name()] = shaderPass;
+		}
+	}
 
 	return templateInfo;
+}
+
+std::string Utils::pack_shader_pass_info(ShaderPassInfo& info)
+{
+	nlohmann::json shaderPassMetadata;
+
+	std::vector<ShaderHandle> shaderHandles;
+	info.shaderHandleContext.get_all_valid_shader_handles(shaderHandles);
+	for (auto& shaderHandle : shaderHandles)
+	{
+		Shader* shader = shaderHandle.get_resource();
+		shaderPassMetadata[shader->get_name()->get_full_name()] = (uint64_t)shader->get_uuid();
+	}
+	return shaderPassMetadata.dump();
+}
+
+ShaderPassInfo Utils::unpack_shader_pass_info(std::string& metadata)
+{
+	nlohmann::json shaderPassMetadata = nlohmann::json::parse(metadata);
+
+	ShaderPassInfo shaderPassInfo;
+	for (auto& shaderInfo : shaderPassMetadata.items())
+	{
+		shaderPassInfo.shaderUUIDContext.shaderUUIDs.push_back(UUID(shaderInfo.value()));
+	}
+
+	return shaderPassInfo;
 }
 
 void ShaderHandleContext::get_all_valid_shader_handles(std::vector<ShaderHandle>& shaderHandles)

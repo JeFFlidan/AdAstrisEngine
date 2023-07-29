@@ -15,10 +15,14 @@
 #include <string>
 #include <json.hpp>
 
-namespace ad_astris::ecore::material
+namespace ad_astris::ecore
 {
-	struct ShaderUUIDContext;
-	struct ShaderHandleContext;
+	class Shader;
+	namespace material
+	{
+		struct ShaderUUIDContext;
+		struct ShaderHandleContext;
+	}
 }
 
 namespace ad_astris::resource
@@ -178,7 +182,7 @@ namespace ad_astris::resource
 			}
 
 			template<typename T>
-			ResourceAccessor<T> create_new_resource(FirstCreationContext<T> creationContext);
+			ResourceAccessor<T> create_new_resource(FirstCreationContext<T>& creationContext);
 
 			void save_resources();
 		
@@ -221,7 +225,7 @@ namespace ad_astris::resource
 			void send_resource_event(T* resourceObject);
 		
 			void load_builtin_resources();
-			void add_shader_uuid_to_context(io::URI& shaderPath, ecore::material::ShaderUUIDContext& shaderContext);
+			void add_shader_to_handle_context(io::URI& shaderPath, ResourceAccessor<ecore::Shader>& shaderHandle);
 			void load_shader(UUID& shaderUUID, ecore::material::ShaderHandleContext& shaderContext);
 	};
 }

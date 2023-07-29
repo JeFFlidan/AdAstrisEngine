@@ -83,11 +83,15 @@ void ResourceManager::load_builtin_resources()
 	{
 		ecore::GeneralMaterialTemplate* materialTemplate = get_resource<ecore::GeneralMaterialTemplate>(uuid).get_resource();
 		LOG_INFO("Template name: {}", materialTemplate->get_name()->get_full_name())
-		ecore::material::ShaderUUIDContext& uuidContext = materialTemplate->get_shader_uuid_context();
-		ecore::material::ShaderHandleContext& handleContext = materialTemplate->get_shader_handle_context();
-		for (auto& shaderUUID : uuidContext.shaderUUIDs)
+		for (auto& pair : materialTemplate->get_shader_passes())
 		{
-			load_shader(shaderUUID, handleContext);
+			ecore::material::ShaderPass& shaderPass = pair.second;
+			ecore::material::ShaderUUIDContext& uuidContext = shaderPass.get_shader_uuid_context();
+			ecore::material::ShaderHandleContext& handleContext = shaderPass.get_shader_handle_context();
+			for (auto& shaderUUID : uuidContext.shaderUUIDs)
+			{
+				load_shader(shaderUUID, handleContext);
+			}
 		}
 		LOG_INFO("Load material template: {}", materialTemplate->get_name()->get_full_name())
 	}
@@ -96,14 +100,14 @@ void ResourceManager::load_builtin_resources()
 }
 
 template <typename T>
-ResourceAccessor<T> ResourceManager::create_new_resource(FirstCreationContext<T> creationContext)
+ResourceAccessor<T> ResourceManager::create_new_resource(FirstCreationContext<T>& creationContext)
 {
 	
 }
 
 template<>
 ResourceAccessor<ecore::GeneralMaterialTemplate> ResourceManager::create_new_resource(
-	FirstCreationContext<ecore::GeneralMaterialTemplate> creationContext)
+	FirstCreationContext<ecore::GeneralMaterialTemplate>& creationContext)
 {
 	if (_resourceDataTable.check_name_in_table(creationContext.materialTemplateName))
 	{
@@ -111,21 +115,29 @@ ResourceAccessor<ecore::GeneralMaterialTemplate> ResourceManager::create_new_res
 		return get_resource<ecore::GeneralMaterialTemplate>(uuid);
 	}
 
-	ecore::material::ShaderUUIDContext uuidContext;
-	add_shader_uuid_to_context(creationContext.vertexShaderPath, uuidContext);
-	add_shader_uuid_to_context(creationContext.fragmentShaderPath, uuidContext);
-	add_shader_uuid_to_context(creationContext.tessControlShader, uuidContext);
-	add_shader_uuid_to_context(creationContext.tessEvaluationShader, uuidContext);
-	add_shader_uuid_to_context(creationContext.geometryShader, uuidContext);
-	add_shader_uuid_to_context(creationContext.computeShader, uuidContext);
-	add_shader_uuid_to_context(creationContext.meshShader, uuidContext);
-	add_shader_uuid_to_context(creationContext.taskShader, uuidContext);
-	add_shader_uuid_to_context(creationContext.rayGenerationShader, uuidContext);
-	add_shader_uuid_to_context(creationContext.rayIntersectionShader, uuidContext);
-	add_shader_uuid_to_context(creationContext.rayAnyHitShader, uuidContext);
-	add_shader_uuid_to_context(creationContext.rayClosestHit, uuidContext);
-	add_shader_uuid_to_context(creationContext.rayMiss, uuidContext);
-	add_shader_uuid_to_context(creationContext.rayCallable, uuidContext);
+	ecore::material::GeneralMaterialTemplateInfo templateInfo;
+	templateInfo.uuid = UUID();
+	for (auto& shaderPassInfo : creationContext.shaderPassCreateInfos)
+	{
+		ecore::material::ShaderHandleContext handleContext;
+		add_shader_to_handle_context(shaderPassInfo.vertexShaderPath, handleContext.vertexShader);
+		add_shader_to_handle_context(shaderPassInfo.fragmentShaderPath, handleContext.fragmentShader);
+		add_shader_to_handle_context(shaderPassInfo.tessControlShader, handleContext.tessControlShader);
+		add_shader_to_handle_context(shaderPassInfo.tessEvaluationShader, handleContext.tessEvaluationShader);
+		add_shader_to_handle_context(shaderPassInfo.geometryShader, handleContext.geometryShader);
+		add_shader_to_handle_context(shaderPassInfo.computeShader, handleContext.computeShader);
+		add_shader_to_handle_context(shaderPassInfo.meshShader, handleContext.meshShader);
+		add_shader_to_handle_context(shaderPassInfo.taskShader, handleContext.taskShader);
+		add_shader_to_handle_context(shaderPassInfo.rayGenerationShader, handleContext.rayGenerationShader);
+		add_shader_to_handle_context(shaderPassInfo.rayIntersectionShader, handleContext.rayIntersectionShader);
+		add_shader_to_handle_context(shaderPassInfo.rayAnyHitShader, handleContext.rayAnyHitShader);
+		add_shader_to_handle_context(shaderPassInfo.rayClosestHit, handleContext.rayClosestHitShader);
+		add_shader_to_handle_context(shaderPassInfo.rayMiss, handleContext.rayMissShader);
+		add_shader_to_handle_context(shaderPassInfo.rayCallable, handleContext.rayCallableShader);
+		ecore::material::ShaderPass shaderPass(handleContext, shaderPassInfo.passName);
+		templateInfo.shaderPassByItsName[shaderPass.get_name()] = shaderPass;
+		templateInfo.shaderPassesOrder.push_back(shaderPass.get_name());
+	}
 	
 	std::string relativePath = "assets/" + creationContext.materialTemplateName + ".aares";
 	io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem, relativePath.c_str());
@@ -134,7 +146,7 @@ ResourceAccessor<ecore::GeneralMaterialTemplate> ResourceManager::create_new_res
 	resData.metadata.path = absolutePath;
 	resData.metadata.type = ResourceType::MATERIAL_TEMPLATE;
 	resData.metadata.objectName = _resourcePool.allocate<ecore::ObjectName>(creationContext.materialTemplateName.c_str());
-	resData.object = _resourcePool.allocate<ecore::GeneralMaterialTemplate>(uuidContext, resData.metadata.objectName);
+	resData.object = _resourcePool.allocate<ecore::GeneralMaterialTemplate>(templateInfo, resData.metadata.objectName);
 	resData.file = _resourcePool.allocate<io::ResourceFile>(absolutePath);
 
 	_resourceDataTable.add_resource(&resData);
@@ -183,7 +195,7 @@ io::IFile* ResourceManager::read_from_disk(io::URI& path, bool isShader)
 	return file;
 }
 
-void ResourceManager::add_shader_uuid_to_context(io::URI& shaderPath, ecore::material::ShaderUUIDContext& shaderContext)
+void ResourceManager::add_shader_to_handle_context(io::URI& shaderPath, ResourceAccessor<ecore::Shader>& shaderHandle)
 {
 	if (std::string(shaderPath.c_str()).empty())
 	{
@@ -207,7 +219,7 @@ void ResourceManager::add_shader_uuid_to_context(io::URI& shaderPath, ecore::mat
 	if (_resourceDataTable.check_name_in_table(shaderPath.c_str()))
 	{
 		UUID uuid = _resourceDataTable.get_uuid_by_name(shaderPath.c_str());
-		shaderContext.shaderUUIDs.push_back(uuid);
+		shaderHandle = ResourceAccessor<ecore::Shader>(_resourceDataTable.get_resource_object(uuid));
 		return;
 	}
 
@@ -218,7 +230,7 @@ void ResourceManager::add_shader_uuid_to_context(io::URI& shaderPath, ecore::mat
 	resData.object = _resourcePool.allocate<ecore::Shader>(resData.metadata.objectName);
 
 	_resourceDataTable.add_resource(&resData);
-	shaderContext.shaderUUIDs.push_back(resData.object->get_uuid());
+	shaderHandle = ResourceAccessor<ecore::Shader>(resData.object);
 }
 
 void ResourceManager::load_shader(UUID& shaderUUID, ecore::material::ShaderHandleContext& shaderContext)

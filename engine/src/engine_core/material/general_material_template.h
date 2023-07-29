@@ -1,6 +1,7 @@
 #pragma once
 
 #include "material_common.h"
+#include "shader_pass.h"
 #include "engine_core/object.h"
 #include "resource_manager/resource_manager.h"
 
@@ -11,19 +12,17 @@ namespace ad_astris::ecore
 		public:
 			GeneralMaterialTemplate() = default;
 			// Need this constructor to create new material template.
-			GeneralMaterialTemplate(material::ShaderUUIDContext& shaderUUIDContext, ObjectName* objectName);
+			GeneralMaterialTemplate(material::GeneralMaterialTemplateInfo& templateInfo, ObjectName* objectName);
 
-			material::ShaderHandleContext& get_shader_handle_context()
+			std::unordered_map<std::string, material::ShaderPass>& get_shader_passes()
 			{
-				return _templateInfo.shaderHandleContext;
+				return _templateInfo.shaderPassByItsName;
 			}
 
-			material::ShaderUUIDContext& get_shader_uuid_context()
+			std::vector<std::string> get_shader_passes_order()
 			{
-				return _templateInfo.shaderUUIDContext;
+				return _templateInfo.shaderPassesOrder;
 			}
-
-			void load_required_shaders(resource::ResourceManager* resourceManager);
 
 		private:
 			material::GeneralMaterialTemplateInfo _templateInfo;
@@ -64,20 +63,7 @@ namespace ad_astris::resource
 	template<>
 	struct FirstCreationContext<ecore::GeneralMaterialTemplate>
 	{
-		io::URI vertexShaderPath;
-		io::URI fragmentShaderPath;
-		io::URI tessControlShader;
-		io::URI tessEvaluationShader;
-		io::URI geometryShader;
-		io::URI computeShader;
-		io::URI meshShader;
-		io::URI taskShader;
-		io::URI rayGenerationShader;
-		io::URI rayIntersectionShader;
-		io::URI rayAnyHitShader;
-		io::URI rayClosestHit;
-		io::URI rayMiss;
-		io::URI rayCallable;
+		std::vector<ecore::material::ShaderPassCreateInfo> shaderPassCreateInfos;
 		std::string materialTemplateName;
 	};
 }
