@@ -1,5 +1,6 @@
 #include "resource_data_table.h"
 #include "file_system/utils.h"
+#include "core/reflection.h"
 #include "utils.h"
 
 #include <lz4.h>
@@ -12,9 +13,10 @@
 
 using namespace ad_astris;
 
-resource::ResourceDataTable::ResourceDataTable(io::FileSystem* fileSystem) : _fileSystem(fileSystem)
+resource::ResourceDataTable::ResourceDataTable(io::FileSystem* fileSystem, ResourcePool* resourcePool)
+	: _fileSystem(fileSystem), _resourcePool(resourcePool)
 {
-	
+
 }
 
 resource::ResourceDataTable::~ResourceDataTable()
@@ -37,7 +39,7 @@ void resource::ResourceDataTable::load_table(BuiltinResourcesContext& context)
 		ResourceData resData{};
 		resData.metadata.path = io::Utils::get_absolute_path_to_file(_fileSystem, section.get_name().c_str());
 		resData.metadata.type = Utils::get_enum_resource_type(section.get_option_value<std::string>("Type"));
-		resData.metadata.objectName = new ecore::ObjectName(name.c_str(), nameID);
+		resData.metadata.objectName = _resourcePool->allocate<ecore::ObjectName>(name.c_str(), nameID);
 
 		if (resData.metadata.type == ResourceType::MATERIAL_TEMPLATE)
 			context.materialTemplateNames.push_back(uuid);
@@ -187,8 +189,8 @@ void resource::ResourceDataTable::destroy_resource(UUID& uuid)
 	ResourceData resourceData = it->second;
 	std::string name = io::Utils::get_file_name(resourceData.file->get_file_path());
 	_nameToUUID.erase(_nameToUUID.find(name));
-	delete resourceData.file;
-	delete resourceData.object;
+	delete resourceData.file;			// HAVE TO THINK HOW TO FREE FILE OBJECT BECAUSE I HAVE RESOURCE FILE AND LEVEL FILE
+	delete resourceData.object;			// HAVE TO THINK HOW TO FREE RESOURCE OBJECT
 	_uuidToResourceData.erase(it);
 }
 
@@ -217,7 +219,7 @@ resource::ResourceType resource::ResourceDataTable::get_resource_type(UUID& uuid
 	return it->second.metadata.type;
 }
 
-io::URI resource::ResourceDataTable::get_path(UUID& uuid)
+io::URI resource::ResourceDataTable::get_resource_path(UUID& uuid)
 {
 	auto it = _uuidToResourceData.find(uuid);
 	return it->second.metadata.path;

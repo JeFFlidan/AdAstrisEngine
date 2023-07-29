@@ -10,12 +10,15 @@
 using namespace ad_astris;
 using namespace resource;
 
-ResourceManager::ResourceManager(io::FileSystem* fileSystem) : _fileSystem(fileSystem)
+ResourceManager::ResourceManager(io::FileSystem* fileSystem, events::EventManager* eventManager)
+	: _fileSystem(fileSystem), _eventManager(eventManager)
 {
 	LOG_INFO("Before initing resource converter")
 	_resourceConverter = ResourceConverter(_fileSystem);
+	LOG_INFO("Before initing resource pool")
+	_resourcePool = ResourcePool();
 	LOG_INFO("Before initing table")
-	_resourceDataTable = ResourceDataTable(_fileSystem);
+	_resourceDataTable = ResourceDataTable(_fileSystem, &_resourcePool);
 	LOG_INFO("Before loading")
 	_resourceDataTable.load_table(_builtinResourcesContext);
 	LOG_INFO("Before loading builtin resources")
@@ -25,15 +28,15 @@ ResourceManager::ResourceManager(io::FileSystem* fileSystem) : _fileSystem(fileS
 
 ResourceManager::~ResourceManager()
 {
-
+	_resourcePool.cleanup();
 }
 
 ResourceAccessor<ecore::Level> ResourceManager::create_level(io::URI& path)
 {
 	std::string strLevelName = io::Utils::get_file_name(path);
-	ecore::ObjectName* levelName = new ecore::ObjectName(strLevelName.c_str());
-	io::IFile* levelFile = new io::LevelFile(path);
-	ecore::Level* level = new ecore::Level(path, levelName);
+	ecore::ObjectName* levelName = _resourcePool.allocate<ecore::ObjectName>(strLevelName.c_str());
+	io::IFile* levelFile = _resourcePool.allocate<io::LevelFile>(path);
+	ecore::Level* level = _resourcePool.allocate<ecore::Level>(path, levelName);
 	level->serialize(levelFile);
 
 	ResourceData resourceData;
@@ -57,11 +60,11 @@ ResourceAccessor<ecore::Level> ResourceManager::load_level(io::URI& path)
 	
 	size_t size = 0;
 	uint8_t* data = static_cast<uint8_t*>(_fileSystem->map_to_read(path, size, "rb"));
-	io::IFile* newFile = new io::LevelFile(path);
+	io::IFile* newFile = _resourcePool.allocate<io::LevelFile>(path);
 	newFile->deserialize(data, size);
 	_fileSystem->unmap_after_reading(data);
 	
-	ecore::Level* newLevel = new ecore::Level();
+	ecore::Level* newLevel = _resourcePool.allocate<ecore::Level>();
 	newLevel->deserialize(newFile, resourceData->metadata.objectName);
 
 	resourceData->file = newFile;
@@ -130,9 +133,9 @@ ResourceAccessor<ecore::GeneralMaterialTemplate> ResourceManager::create_new_res
 	ResourceData resData{};
 	resData.metadata.path = absolutePath;
 	resData.metadata.type = ResourceType::MATERIAL_TEMPLATE;
-	resData.metadata.objectName = new ecore::ObjectName(creationContext.materialTemplateName.c_str());
-	resData.object = new ecore::GeneralMaterialTemplate(uuidContext, resData.metadata.objectName);
-	resData.file = new io::ResourceFile(absolutePath);
+	resData.metadata.objectName = _resourcePool.allocate<ecore::ObjectName>(creationContext.materialTemplateName.c_str());
+	resData.object = _resourcePool.allocate<ecore::GeneralMaterialTemplate>(uuidContext, resData.metadata.objectName);
+	resData.file = _resourcePool.allocate<io::ResourceFile>(absolutePath);
 
 	_resourceDataTable.add_resource(&resData);
 
@@ -169,7 +172,7 @@ io::IFile* ResourceManager::read_from_disk(io::URI& path, bool isShader)
 {
 	size_t size = 0;
 	uint8_t* data = static_cast<uint8_t*>(_fileSystem->map_to_read(path, size, "rb"));
-	io::IFile* file = new io::ResourceFile(path);
+	io::IFile* file = _resourcePool.allocate<io::ResourceFile>(path);
 	
 	if (isShader)
 		file->set_binary_blob(data, size);
@@ -211,8 +214,8 @@ void ResourceManager::add_shader_uuid_to_context(io::URI& shaderPath, ecore::mat
 	ResourceData resData;
 	resData.metadata.type = ResourceType::SHADER;
 	resData.metadata.path = absolutePath;
-	resData.metadata.objectName = new ecore::ObjectName(shaderPath.c_str());
-	resData.object = new ecore::Shader(resData.metadata.objectName);
+	resData.metadata.objectName = _resourcePool.allocate<ecore::ObjectName>(shaderPath.c_str());
+	resData.object = _resourcePool.allocate<ecore::Shader>(resData.metadata.objectName);
 
 	_resourceDataTable.add_resource(&resData);
 	shaderContext.shaderUUIDs.push_back(resData.object->get_uuid());
@@ -273,6 +276,28 @@ void ResourceManager::load_shader(UUID& shaderUUID, ecore::material::ShaderHandl
 			shaderContext.rayClosestHitShader = shaderHandle;
 			break;
 	}
+}
+
+template <typename T>
+void ResourceManager::send_resource_event(T* resourceObject)
+{
+	
+}
+
+template<>
+void ResourceManager::send_resource_event(ecore::StaticModel* resourceObject)
+{
+	LOG_INFO("Sending static model event")
+	StaticModelLoadedEvent event(resourceObject);
+	_eventManager->trigger_event(event);
+}
+
+template<>
+void ResourceManager::send_resource_event(ecore::Texture2D* resourceObject)
+{
+	LOG_INFO("Sending texture2D event")
+	Texture2DLoadedEvent event(resourceObject);
+	_eventManager->trigger_event(event);
 }
 
 void BuiltinResourcesContext::clear()

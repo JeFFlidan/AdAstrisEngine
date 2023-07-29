@@ -45,6 +45,8 @@ namespace ad_astris::io
 	class ResourceFile : public IFile
 	{
 		public:
+			ResourceFile() = default;
+		
 			template<typename T>
 			ResourceFile(ConversionContext<T>& context);
 			ResourceFile(const URI& uri);
@@ -67,6 +69,7 @@ namespace ad_astris::io
 	class LevelFile : public IFile
 	{
 		public:
+			LevelFile() = default;
 			LevelFile(const URI& uri);
 			
 			virtual ~LevelFile() final override;

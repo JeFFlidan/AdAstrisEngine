@@ -93,6 +93,7 @@ void io::ConversionContext<ecore::StaticModel>::get_data(std::string& metadata, 
 	info.originalFile = originalFile;
 	info.bounds = modelBounds;
 	info.materialsName = materialsName;
+	info.vertexFormat = vertexFormat;
 
 	metadata = ecore::model::Utils::pack_static_model_info(&info);
 

@@ -1,12 +1,11 @@
 #pragma once
 
+#include "resource_pool.h"
 #include "file_system/file_system.h"
 #include "engine_core/object.h"
 #include "resource_formats.h"
 
 #include "core/config_base.h"
-
-#include <unordered_map>
 
 namespace ad_astris::resource
 {
@@ -32,7 +31,7 @@ namespace ad_astris::resource
 	{
 		public:
 			ResourceDataTable() = default;
-			ResourceDataTable(io::FileSystem* fileSystem);
+			ResourceDataTable(io::FileSystem* fileSystem, ResourcePool* resourcePool);
 			~ResourceDataTable();
 			
 			// Load uuids and paths from aarestable file
@@ -66,10 +65,11 @@ namespace ad_astris::resource
 			ecore::Object* get_resource_object(UUID& uuid);
 			ResourceData* get_resource_data(UUID& uuid);
 			ResourceType get_resource_type(UUID& uuid);
-			io::URI get_path(UUID& uuid);
+			io::URI get_resource_path(UUID& uuid);
 		
 		private:
 			io::FileSystem* _fileSystem{ nullptr };
+			ResourcePool* _resourcePool{ nullptr };
 			std::map<std::string, UUID> _nameToUUID;
 			std::map<UUID, ResourceData> _uuidToResourceData;
 			Config _config;

@@ -252,6 +252,7 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 	context->vertexBufferSize = vertexBufferSize;
 	context->indexBufferSize = indexBufferSize;
 	context->buffer = new uint8_t[vertexBufferSize + indexBufferSize];
+	context->vertexFormat = ecore::model::VertexFormat::F32;
 	memcpy(context->buffer, vertexData.data(), vertexBufferSize);
 	memcpy(context->buffer + vertexBufferSize, modelIndices.data(), indexBufferSize);
 }
@@ -333,6 +334,7 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 	context->vertexBufferSize = vertexBufferSize;
 	context->indexBufferSize = indexBufferSize;
 	context->buffer = new uint8_t[vertexBufferSize + indexBufferSize];
+	context->vertexFormat = ecore::model::VertexFormat::F32;
 	memcpy(context->buffer, vertexData.data(), vertexBufferSize);
 	memcpy(context->buffer + vertexBufferSize, indices.data(), indexBufferSize);
 }

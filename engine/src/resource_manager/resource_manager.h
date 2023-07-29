@@ -2,9 +2,12 @@
 
 #include "resource_converter.h"
 #include "resource_data_table.h"
+#include "resource_pool.h"
+#include "resource_events.h"
+#include "utils.h"
 #include "file_system/file.h"
 #include "file_system/utils.h"
-#include "utils.h"
+#include "events/event_manager.h"
 #include "profiler/logger.h"
 #include "engine_core/level/level.h"
 
@@ -63,7 +66,7 @@ namespace ad_astris::resource
 	class ResourceManager
 	{
 		public:
-			ResourceManager(io::FileSystem* fileSystem);
+			ResourceManager(io::FileSystem* fileSystem, events::EventManager* eventManager);
 			~ResourceManager();
 
 			/** Convert file from DCC tools to a custom '.aares' file. \n
@@ -78,6 +81,11 @@ namespace ad_astris::resource
 				{
 					LOG_ERROR("ResourceManager::convert_to_aares(): Invalid path {}", path.c_str())
 					return nullptr;
+				}
+
+				if (io::Utils::is_relative(path))
+				{
+					path = io::Utils::get_absolute_path_to_file(_fileSystem, path);
 				}
 
 				ecore::Object* existedObject = nullptr;
@@ -109,16 +117,17 @@ namespace ad_astris::resource
 				 from this existed object and passed to deserialize method*/
 				ResourceData resourceData{};
 				resourceData.metadata.path = absolutePath;
-				resourceData.metadata.objectName = existedObjectName ? existedObjectName : new ecore::ObjectName(io::Utils::get_file_name(absolutePath).c_str());
-
-				io::IFile* file = new io::ResourceFile(conversionContext);
-				T* typedObject = new T();
+				resourceData.metadata.objectName = existedObjectName ? existedObjectName : _resourcePool.allocate<ecore::ObjectName>(io::Utils::get_file_name(absolutePath).c_str());
+				
+				io::IFile* file = _resourcePool.allocate<io::ResourceFile>(conversionContext);
+				T* typedObject = _resourcePool.allocate<T>();
 				typedObject->deserialize(file, resourceData.metadata.objectName);
 				
 				resourceData.file = file;
 				resourceData.object = typedObject;
 				resourceData.metadata.type = Utils::get_enum_resource_type(typedObject->get_type());
 				
+				send_resource_event(typedObject);			// I have to make it in another thread.
 				write_to_disk(resourceData.file, path);
 				
 				_resourceDataTable.add_resource(&resourceData);
@@ -175,8 +184,10 @@ namespace ad_astris::resource
 		
 		private:
 			io::FileSystem* _fileSystem;
+			events::EventManager* _eventManager;
 			ResourceDataTable _resourceDataTable;
 			ResourceConverter _resourceConverter;
+			ResourcePool _resourcePool;
 
 			BuiltinResourcesContext _builtinResourcesContext;
 
@@ -186,7 +197,7 @@ namespace ad_astris::resource
 			template<typename T>
 			ResourceAccessor<T> load_resource(UUID& uuid)
 			{
-				io::URI path = _resourceDataTable.get_path(uuid);
+				io::URI path = _resourceDataTable.get_resource_path(uuid);
 				bool isShader = _resourceDataTable.get_resource_type(uuid) == ResourceType::SHADER;
 				io::IFile* file = read_from_disk(path, isShader);
 				if (isShader)
@@ -196,13 +207,18 @@ namespace ad_astris::resource
 				}
 
 				ResourceData* resource = _resourceDataTable.get_resource_data(uuid);
-				T* typedObject = new T();
+				T* typedObject = _resourcePool.allocate<T>();
 				typedObject->deserialize(file, resource->metadata.objectName);
 				resource->file = file;
 				resource->object = typedObject;
-					
+
+				send_resource_event(typedObject);
+				
 				return ResourceAccessor<T>(resource->object);
 			}
+
+			template<typename T>
+			void send_resource_event(T* resourceObject);
 		
 			void load_builtin_resources();
 			void add_shader_uuid_to_context(io::URI& shaderPath, ecore::material::ShaderUUIDContext& shaderContext);

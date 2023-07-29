@@ -65,6 +65,7 @@ namespace ad_astris::io
 		std::string originalFile;
 		std::string filePath;
 		ecore::model::ModelBounds modelBounds;
+		ecore::model::VertexFormat vertexFormat;
 		std::vector<std::string> materialsName;
 		
 		void get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize, URI& path);
