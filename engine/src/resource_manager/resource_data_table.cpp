@@ -27,9 +27,7 @@ resource::ResourceDataTable::~ResourceDataTable()
 void resource::ResourceDataTable::load_table(BuiltinResourcesContext& context)
 {
 	io::URI path = io::Utils::get_absolute_path_to_file(_fileSystem, "configs/resource_table.ini");
-	LOG_INFO("Before loading config file into memory")
 	_config.load_from_file(path);
-	LOG_INFO("After loading config file into memory")
 
 	for (auto section : _config)
 	{
@@ -40,16 +38,12 @@ void resource::ResourceDataTable::load_table(BuiltinResourcesContext& context)
 		resData.metadata.path = io::Utils::get_absolute_path_to_file(_fileSystem, section.get_name().c_str());
 		resData.metadata.type = Utils::get_enum_resource_type(section.get_option_value<std::string>("Type"));
 		resData.metadata.objectName = _resourcePool->allocate<ecore::ObjectName>(name.c_str(), nameID);
-
 		if (resData.metadata.type == ResourceType::MATERIAL_TEMPLATE)
 			context.materialTemplateNames.push_back(uuid);
-
 		_uuidToResourceData[uuid] = resData;
 		_nameToUUID[resData.metadata.objectName->get_full_name()] = uuid;
 	}
-	LOG_INFO("Before unloading config file")
 	_config.unload();
-	LOG_INFO("After unloading config file")
 }
 
 void resource::ResourceDataTable::save_table()
@@ -65,9 +59,9 @@ void resource::ResourceDataTable::save_table()
 		newSection.set_option("Type", Utils::get_str_resource_type(resData.metadata.type));
 		newSection.set_option("Name", resData.metadata.objectName->get_name_without_id());
 		newSection.set_option("NameID", (uint64_t)resData.metadata.objectName->get_name_id());
-
 		_config.set_section(newSection);
 	}
+
 	_config.save(_fileSystem);
 }
 

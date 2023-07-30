@@ -64,18 +64,15 @@ namespace ad_astris::ecore
 			std::string get_name_without_id();
 			NameID get_name_id();
 
-			// Destroy name table
-			static void cleanup();
-
 			ObjectName& operator=(const ObjectName& otherName);
 			bool operator==(const ObjectName& name) const;
 			bool operator<(const ObjectName& name) const;
 		
 		private:
-			char* _name{ nullptr };
+			std::string _name;
 			NameID _nameID;
 		
-			static std::map<ObjectName, NameIDTable> _nameTable;
+			static std::map<std::string, NameIDTable> _nameTable;
 		
 			void delete_name_from_table();
 			void add_new_name_to_table(NameID nameID = 0);

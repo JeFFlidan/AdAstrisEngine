@@ -53,6 +53,7 @@ ecore::NameIDTable::NameIDTable()
 ecore::NameIDTable::NameIDTable(NameID nameId)
 {
 	_table.push_back(nameId);
+	
 	if (_table.size() > 1)
 	{
 		std::sort(_table.begin(), _table.end());
@@ -60,6 +61,7 @@ ecore::NameIDTable::NameIDTable(NameID nameId)
 	if (nameId != 0)
 	{
 		auto it = std::find(_table.begin(), _table.end(), nameId);
+
 		if (_table.size() > 1 && it != _table.begin())
 		{
 			auto firstIt = it - 1;
@@ -151,21 +153,20 @@ bool ecore::NameIDTable::is_empty()
 	return _table.empty();
 }
 
-std::map<ecore::ObjectName, ecore::NameIDTable> ecore::ObjectName::_nameTable;
+std::map<std::string, ecore::NameIDTable> ecore::ObjectName::_nameTable;
 
 ecore::ObjectName::ObjectName(const char* newName)
 {
 	LOG_WARNING("FIRST CONSTRUCTOR OF OBJECTNAME")
-	_name = new char[MAX_NAME_LENGTH];
 	if (strlen(newName) > MAX_NAME_LENGTH)
 	{
 		LOG_ERROR("ObjectName::ObjectName(): New name is too long")
-		strcpy(_name, "NoName");
+		_name = "NoName";
 		return;
 	}
 	
-	strcpy(_name, newName);
-	auto it = _nameTable.find(*this);
+	_name = newName;
+	auto it = _nameTable.find(_name);
 	if (it != _nameTable.end())
 	{
 		_nameID = it->second.get_next_id();
@@ -185,18 +186,16 @@ ecore::ObjectName::ObjectName(const char* newName, NameID nameId)
 		return;
 	}
 
-	_name = new char[MAX_NAME_LENGTH];
 	if (strlen(newName) > MAX_NAME_LENGTH)
 	{
 		LOG_ERROR("ObjectName::ObjectName(): New name is too long")
-		strcpy(_name, "NoName");
+		_name = "NoName";
 		return;
 	}
 
-	strcpy(_name, newName);
+	_name = newName;
 	_nameID = nameId;
-	
-	auto it = _nameTable.find(*this);
+	auto it = _nameTable.find(_name);
 
 	if (it == _nameTable.end())
 	{
@@ -210,8 +209,6 @@ ecore::ObjectName::ObjectName(const char* newName, NameID nameId)
 
 ecore::ObjectName::~ObjectName()
 {
-	if (_name)
-		delete[] _name;
 }
 
 void ecore::ObjectName::change_name(const char* newName)
@@ -221,19 +218,15 @@ void ecore::ObjectName::change_name(const char* newName)
 		LOG_ERROR("ObjectName::change_name(): New name is too long")
 		return;
 	}
-
-	if (!_name)
-	{
-		_name = new char[MAX_NAME_LENGTH];
-	}
-	else
+	
+	if (!_name.empty())
 	{
 		delete_name_from_table();
 	}
 	
-	strcpy(_name, newName);
+	_name = newName;
 
-	auto it = _nameTable.find(*this);
+	auto it = _nameTable.find(_name);
 	if (it != _nameTable.end())
 	{
 		_nameID = it->second.get_next_id();
@@ -247,29 +240,24 @@ void ecore::ObjectName::change_name(const char* newName)
 
 void ecore::ObjectName::change_name(ObjectName& otherName)
 {
-	if (!_name)
-	{
-		_name = new char[MAX_NAME_LENGTH];
-	}
-	else
+	if (!_name.empty())
 	{
 		delete_name_from_table();
 	}
 
-	strcpy(_name, otherName._name);
-	_nameID = _nameTable.find(otherName)->second.get_next_id();
+	_name = otherName._name;
+	_nameID = _nameTable.find(otherName._name)->second.get_next_id();
 }
 
 void ecore::ObjectName::destroy_name()
 {
 	delete_name_from_table();
-	delete[] _name;
-	_name = nullptr;
+	_name.clear();
 }
 
 std::string ecore::ObjectName::get_full_name()
 {
-	std::string name(_name);
+	std::string name = _name;
 	if (_nameID.get_id() > 0)
 		name += "_" + std::to_string(_nameID);
 	return name;
@@ -285,43 +273,33 @@ ecore::NameID ecore::ObjectName::get_name_id()
 	return _nameID;
 }
 
-void ecore::ObjectName::cleanup()
-{
-	for (auto& it : _nameTable)
-	{
-		delete[] it.first._name;
-	}
-}
-
 ecore::ObjectName& ecore::ObjectName::operator=(const ObjectName& otherName)
 {
-	if (!_name)
-		_name = new char[MAX_NAME_LENGTH];
-	strcpy(_name, otherName._name);
+	_name = otherName._name;
 	this->_nameID = otherName._nameID;
 	return *this;
 }
 
 bool ecore::ObjectName::operator==(const ObjectName& name) const
 {
-	return strcmp(this->_name, name._name) == 0;
+	return _name == name._name;
 }
 
 bool ecore::ObjectName::operator<(const ObjectName& name) const
 {
-	return strcmp(this->_name, name._name) < 0;
+	return _name < name._name;
 }
 
 // Have to make improvements to handle more situation
 void ecore::ObjectName::delete_name_from_table()
 {
-	auto it = _nameTable.find(*this);
+	auto it = _nameTable.find(_name);
 
 	if (it != _nameTable.end())
 	{
 		NameIDTable table = it->second;
 		table.remove_id(_nameID);
-		_nameTable[*this] = table;
+		_nameTable[_name] = table;
 		if (it->second.is_empty())
 		{
 			//delete[] it->first._name;
@@ -332,12 +310,7 @@ void ecore::ObjectName::delete_name_from_table()
 
 void ecore::ObjectName::add_new_name_to_table(NameID nameID)
 {
-	char* keyName = new char[strlen(_name)];
-	strcpy(keyName, this->_name);
-	ObjectName objectName{};
-	objectName._name = keyName;
-	_nameTable[objectName] = NameIDTable(nameID);
-	objectName._name = nullptr;
+	_nameTable[_name] = NameIDTable(nameID);
 }
 
 void ecore::tests()

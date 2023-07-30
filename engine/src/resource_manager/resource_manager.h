@@ -177,7 +177,7 @@ namespace ad_astris::resource
 					LOG_INFO("Get resource object")
 					return _resourceDataTable.get_resource_object(uuid);
 				}
-				
+
 				return load_resource<T>(uuid);
 			}
 
@@ -203,7 +203,9 @@ namespace ad_astris::resource
 			{
 				io::URI path = _resourceDataTable.get_resource_path(uuid);
 				bool isShader = _resourceDataTable.get_resource_type(uuid) == ResourceType::SHADER;
+
 				io::IFile* file = read_from_disk(path, isShader);
+
 				if (isShader)
 				{
 					std::string metadata = std::to_string(uuid);
@@ -215,7 +217,7 @@ namespace ad_astris::resource
 				typedObject->deserialize(file, resource->metadata.objectName);
 				resource->file = file;
 				resource->object = typedObject;
-
+		
 				send_resource_event(typedObject);
 				
 				return ResourceAccessor<T>(resource->object);

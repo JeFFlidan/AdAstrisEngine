@@ -81,6 +81,7 @@ void ResourceManager::load_builtin_resources()
 {
 	for (auto& uuid : _builtinResourcesContext.materialTemplateNames)
 	{
+		LOG_INFO("BEFORE GETTING MATERIAL TEMPLATE")
 		ecore::GeneralMaterialTemplate* materialTemplate = get_resource<ecore::GeneralMaterialTemplate>(uuid).get_resource();
 		LOG_INFO("Template name: {}", materialTemplate->get_name()->get_full_name())
 		for (auto& pair : materialTemplate->get_shader_passes())
