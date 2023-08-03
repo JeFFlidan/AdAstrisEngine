@@ -76,7 +76,7 @@ bool Config::load_from_file(const io::URI& configPath)
 
 void Config::unload()
 {
-	_config.clear_config();
+	_config = inicpp::config();
 }
 
 void Config::save(io::FileSystem* fileSystem)

@@ -169,18 +169,17 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 	Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
 	uint32_t column = entityInArchetype.column;
 	uint32_t componentsNumberInArchetype = archetype._chunkStructure.componentIds.size();
-	uint8_t* componentsArray = new uint8_t[constants::MAX_COMPONENT_COUNT * componentsNumberInArchetype];
-	uint8_t* componentsArrayStartPtr = componentsArray;
+	uint8_t componentPtr[constants::MAX_COMPONENT_SIZE];
 	
 	nlohmann::json componentsJson;
 	
 	for (int i = 0; i != componentsNumberInArchetype; ++i)
 	{
-		componentsArray += i * constants::MAX_COMPONENT_SIZE;
+		//componentsArray += i * constants::MAX_COMPONENT_SIZE;
 		uint32_t typeId = archetype._chunkStructure.componentIds[i];
-		archetype.get_component_by_component_type_id(entity, column, typeId, componentsArray);
+		archetype.get_component_by_component_type_id(entity, column, typeId, componentPtr);
 		serializers::BaseSerializer* serializer = serializers::get_table()->get_serializer(typeId);
-		serializer->serialize(componentsArray, componentsJson);
+		serializer->serialize(componentPtr, componentsJson);
 	}
 
 	nlohmann::json entityJson;
@@ -196,8 +195,6 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 
 	entityJson["tags"] = tagNames;
 	levelJson[std::to_string(entity.get_uuid())] = entityJson.dump();
-	
-	delete[] componentsArrayStartPtr;
 }
 
 void EntityManager::destroy_entity(Entity& entity)

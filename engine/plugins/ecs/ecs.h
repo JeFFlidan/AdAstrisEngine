@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "core/glm_to_json.h"
 #include "public/api.h"
 #include "public/archetype_types.h"
 #include "public/archetype.h"
@@ -80,18 +81,6 @@ namespace ad_astris::ecs
 					}																						\
 			};																								\
 																											\
-			static bool Type##FactoryRegistered = []()														\
-			{																								\
-				BaseFactory* factory = new Type##Factory();													\
-				FactoriesTable::get_instance()->add_factory<Type>(factory);									\
-				return true;																				\
-			}();																							\
-																											\
-			static bool Type##Register = []()																\
-			{																								\
-				ComponentTypeIDTable::add_component_info<Type>();											\
-				return true;																				\
-			}();																							\
 		}																									\
 																											\
 		namespace serializers																				\
@@ -126,8 +115,11 @@ namespace ad_astris::ecs
 					}																						\
 			};																								\
 																											\
-			static bool Type##SerializerRegistered = []()													\
+			static bool Type##Register = []()																\
 			{																								\
+				ComponentTypeIDTable::add_component_info<Type>();											\
+				factories::BaseFactory* factory = new factories::Type##Factory();							\
+				factories::FactoriesTable::get_instance()->add_factory<Type>(factory);						\
 				BaseSerializer* serializer = new Type##Serializer();										\
 				serializers::get_table()->add_serializer<Type>(serializer);									\
 				return true;																				\
