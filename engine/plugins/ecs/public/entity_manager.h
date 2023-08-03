@@ -85,7 +85,7 @@ namespace ad_astris::ecs
 				// TODO should improve extension context
 				EntityInArchetypeInfo oldEntityInArchetype = _entityToItsInfoInArchetype[entity];
 				ArchetypeExtensionContext extensionContext(oldEntityInArchetype.archetypeId);
-				extensionContext.add_components_id<ARGS...>();
+				extensionContext.add_components<ARGS...>();
 				ArchetypeHandle newArchetypeHandle = create_archetype(extensionContext);
 
 				Archetype& oldArchetype = _archetypes[oldEntityInArchetype.archetypeId];
@@ -116,7 +116,7 @@ namespace ad_astris::ecs
 				// TODO Should improve reduction context
 				EntityInArchetypeInfo oldEntityInArchetype = _entityToItsInfoInArchetype[entity];
 				ArchetypeReductionContext reductionContext(oldEntityInArchetype.archetypeId);
-				reductionContext.add_components_id<ARGS...>();
+				reductionContext.add_components<ARGS...>();
 				ArchetypeHandle newArchetypeHandle = create_archetype(reductionContext);
 
 				Archetype& oldArchetype = _archetypes[oldEntityInArchetype.archetypeId];
@@ -161,6 +161,11 @@ namespace ad_astris::ecs
 				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
 				T* component = archetype.get_entity_component<T>(entity, entityInArchetype.column);
 				return *component;
+			}
+
+			uint32_t get_archetypes_count()
+			{
+				return _archetypes.size();
 			}
 		
 		private:

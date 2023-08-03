@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/glm_to_json.h"
+#include "..\..\src\core\custom_objects_to_json.h"
 #include "public/api.h"
 #include "public/archetype_types.h"
 #include "public/archetype.h"

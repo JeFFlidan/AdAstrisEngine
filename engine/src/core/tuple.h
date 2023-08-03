@@ -35,22 +35,22 @@ namespace ad_astris
 		template<std::size_t N>
 		struct CustomDataTypeToTuple;
 
-		template<>
-		struct CustomDataTypeToTuple<0>
-		{
-			template<class S>
-			auto operator()(S&& s)const {
-				auto[e0]=std::forward<S>(s);
-				return std::make_tuple(e0);
-			}
-		};
+		// template<>
+		// struct CustomDataTypeToTuple<0>
+		// {
+		// 	template<class S>
+		// 	auto operator()(S&& s)const {
+		// 		auto[e0]=std::forward<S>(s);
+		// 		return std::make_tuple(e0);
+		// 	}
+		// };
 
 		template<>
 		struct CustomDataTypeToTuple<1>
 		{
 			template<class S>
 			auto operator()(S&& s)const {
-				auto[e0, e1]=std::forward<S>(s);
+				auto[e0]=std::forward<S>(s);
 				return std::make_tuple(e0);
 			}
 		};

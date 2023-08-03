@@ -35,7 +35,7 @@ namespace ad_astris::ecs
 		
 		public:
 			template<typename ...TYPES>
-			void add_components_id()
+			void add_components()
 			{
 				((set_up_components<TYPES>()), ...);
 				std::sort(_componentIDs.begin(), _componentIDs.end());
