@@ -1,7 +1,8 @@
 ﻿#pragma once
 
-#include "engine_settings.h"
+#include "engine_core/engine_settings/engine_settings.h"
 #include "resource_manager/resource_manager.h"
+#include "application_core/window.h"
 #include "core/module_manager.h"
 
 namespace ad_astris::renderer
@@ -14,8 +15,8 @@ namespace ad_astris::renderer
 			virtual void init(
 				ModuleManager* moduleManager,
 				resource::ResourceManager* resourceManager,
-				io::FileSystem* fileSystem,
-				engine::EngineSettings& engineSettings) = 0;
+				acore::IWindow* window,
+				ecore::EngineSettings& engineSettings) = 0;
 			virtual void cleanup() = 0;
 
 			virtual void bake() = 0;

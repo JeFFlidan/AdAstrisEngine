@@ -73,6 +73,11 @@ namespace ad_astris::resource
 			ResourceManager(io::FileSystem* fileSystem, events::EventManager* eventManager);
 			~ResourceManager();
 
+			io::FileSystem* get_file_system()
+			{
+				return _fileSystem;
+			}
+
 			/** Convert file from DCC tools to a custom '.aares' file. \n
 			 * Supported file formats for 3D-models: gltf, obj
 			 * Supported file formats for textures: tga, png, jpg, tiff
