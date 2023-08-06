@@ -9,19 +9,21 @@ def get_info():
     print('\tpython compile.py [options]')
     print("\tIf you don't use any flags, only the engine will be compiled (without plugins).\n")
     print('Options')
-    print('\t-engine      = Compile engine source. You have to use it\n'
-    '                       if you want to compile the engine and some plugins')
-    print('\t-plugins     = Compile plugins. If you use only this flag,\n'
-    '                       all plugins will be compiled.')
-    print('\t-modules     = Compile modules. If you use only this flag,\n'
-    '                       all modules will be compiled.')
-    print('\t-ecs         = Compile Entity-Component-System plugin.\n'
-    '                       Should be used with the -plugins flag.')
-    print('\t-vulkan_rhi  = Compile Vulkan Render Hardware Interface module.\n'
-    '                       Should be used with the -modules flag.')
-    print('\t-render_core = Compile Render Core Module.\n'
-    '                       Should be used with the -modules flag.')
-    print('\t-help        = Print information about compile script.')
+    print('\t-help             = Print information about compile script.')
+    print('\t-engine           = Compile engine source. You have to use it\n'
+    '                            if you want to compile the engine and some plugins')
+    print('\t-plugins          = Compile plugins. If you use only this flag,\n'
+    '                            all plugins will be compiled.')
+    print('\t-modules          = Compile modules. If you use only this flag,\n'
+    '                            all modules will be compiled.')
+    print('\t-ecs              = Compile Entity-Component-System plugin.\n'
+    '                            Should be used with the -plugins flag.')
+    print('\t-vulkan_rhi       = Compile Vulkan Render Hardware Interface Module.\n'
+    '                            Should be used with the -modules flag.')
+    print('\t-render_core      = Compile Render Core Module.\n'
+    '                            Should be used with the -modules flag.')
+    print('\t-project_launcher = Compile Project Launcher Module.\n'
+    '                            Should be used with the -modules flag')
 
 
 def compile_commmon(rootPath, buildPath):
@@ -69,14 +71,14 @@ def compile_plugins(flags):
 
 def compile_module(name):
     rootPath = os.getcwd()
-    buildPath = rootPath + '\\engine\\src\\' + name + '\\build'
-    os.chdir(rootPath + '\\engine\\src\\' + name)
+    buildPath = rootPath + '\\engine\\' + name + '\\build'
+    os.chdir(rootPath + '\\engine\\' + name)
     compile_commmon(rootPath, buildPath)
 
 
 def compile_modules(flags):
     if (len(flags) == 2 or (len(flags) == 3 and '-engine' in flags)):
-        moduleNames = ["vulkan_rhi", "render_core"]
+        moduleNames = ["src\\vulkan_rhi", "src\\render_core", "devtools\\project_launcher"]
 
         for name in moduleNames:
             compile_module(name)
@@ -84,10 +86,16 @@ def compile_modules(flags):
         return
 
     if '-vulkan_rhi' in flags:
-        compile_module('vulkan_rhi')
+        compile_module('src\\vulkan_rhi')
 
     if '-render_core' in flags:
-        compile_module('render_core')
+        compile_module('src\\render_core')
+
+    if '-renderer' in flags:
+        compile_module('src\\renderer')
+        
+    if '-project_launcher' in flags:
+        compile_module('devtools\\project_launcher')
 
 
 def compile_engine():
@@ -108,13 +116,10 @@ def compile():
         return
 
     if (len(flags) == 1 and '-plugins' not in flags) or '-engine' in flags:
-        print("Compile engine")
         compile_engine()
 
 
     if '-plugins' in flags:
-        print("Compile plugins")
-        print(f"Flags length = {len(flags)}")
         compile_plugins(flags)
 
     if '-modules' in flags:

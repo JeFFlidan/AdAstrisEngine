@@ -3,11 +3,15 @@ add_library(logger INTERFACE)
 # Add source to this project's executable.
 
 file(GLOB ENGINE_FILES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/application/project_launcher_module.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/application_core/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/*.*"
-    "${CMAKE_CURRENT_SOURCE_DIR}/engine/*.*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/engine/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/engine/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/components/*.*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/editor_settings/*.*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/project_settings/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/level/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/model/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine_core/texture/*.*"
@@ -16,7 +20,6 @@ file(GLOB ENGINE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/material_system/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/profiler/*.*"
-    "${CMAKE_CURRENT_SOURCE_DIR}/renderer/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/resource_manager/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/rhi/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/vulkan_renderer/*.*"

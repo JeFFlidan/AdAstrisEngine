@@ -17,6 +17,10 @@ namespace ad_astris::acore::impl
 			WinApiWindow& operator=(const WinApiWindow&) = delete;
 
 			virtual bool process_messages() override;
+			virtual HWND get_hWnd() override
+			{
+				return _hWnd;
+			}
 
 			void parse_keys(KeyEvent& keyEvent, WPARAM wParam);
 			void setup_mouse_button_down_up_event(MouseButtonEvent* event, MouseButton button);

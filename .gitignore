@@ -27,7 +27,8 @@ src/CMakeFiles
 /engine/plugins/ecs/build
 /engine/plugins/ecs/libecs.dll
 /*/#*.*#
-/*/.#*.*
+/*/.#*.*\
+/engine/devtools/*/build
 <<<<<<< HEAD
 src/file_system/Makefile
 src/file_system/main.cpp
