@@ -11,13 +11,16 @@ namespace ad_astris::acore
 	{
 		public:
 			GlfwWindow(WindowCreationContext& creationContext);
-			void terminate();
+			void cleanup();
 			virtual bool process_messages() override;
 			void swap_buffers();
+			void get_window_size(int* width, int* height);
+		
 			GLFWwindow* get_window_handle()
 			{
 				return _window;
 			}
+		
 			virtual HWND get_hWnd() override;
 
 		private:

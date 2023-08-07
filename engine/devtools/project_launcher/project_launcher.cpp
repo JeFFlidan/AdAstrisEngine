@@ -1,29 +1,34 @@
 ﻿#include "project_launcher.h"
-#include <iostream>
 
 using namespace ad_astris;
 using namespace devtools;
-using namespace impl;
+using namespace pl_impl;
 
-ProjectLauncher::ProjectLauncher()
+void ProjectLauncher::init(io::FileSystem* fileSystem)
 {
 	create_window();
+	_fileSystem = fileSystem;
+	_config = std::make_unique<Config>();
+	std::string rootPath(_fileSystem->get_root_path().c_str());
+	io::URI configPath = (rootPath + "/configs/projects.ini").c_str(); 
+	_config->load_from_file(configPath);
+	_uiManager = std::make_unique<UIManager>(rootPath, _config.get(), _glfwWindow.get());
 }
 
 void ProjectLauncher::draw_window()
 {
 	bool shouldClose = false;
+	
 	while (!shouldClose)
 	{
 		shouldClose = _glfwWindow->process_messages();
-
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
+		if (!shouldClose)
+			shouldClose = _uiManager->draw_ui();
 		_glfwWindow->swap_buffers();
 	}
-
-	_glfwWindow->terminate();
+	
+	_uiManager->cleanup();
+	_glfwWindow->cleanup();
 }
 
 void ProjectLauncher::create_window()

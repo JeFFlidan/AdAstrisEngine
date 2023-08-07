@@ -31,8 +31,9 @@ GlfwWindow::GlfwWindow(WindowCreationContext& creationContext)
 	glfwSetFramebufferSizeCallback(_window, glfw_framebuffer_size_callback);
 }
 
-void GlfwWindow::terminate()
+void GlfwWindow::cleanup()
 {
+	glfwDestroyWindow(_window);
 	glfwTerminate();
 }
 
@@ -48,6 +49,11 @@ void GlfwWindow::swap_buffers()
 {
 	glfwSwapBuffers(_window);
 	glfwPollEvents();
+}
+
+void GlfwWindow::get_window_size(int* width, int* height)
+{
+	glfwGetWindowSize(_window, width, height);
 }
 
 HWND GlfwWindow::get_hWnd()

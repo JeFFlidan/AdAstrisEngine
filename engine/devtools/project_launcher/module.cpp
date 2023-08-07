@@ -1,7 +1,7 @@
 #include "project_launcher.h"
 #include "core/module_manager.h"
 
-namespace ad_astris::devtools::impl
+namespace ad_astris::devtools::pl_impl
 {
 	class ProjectLauncherModule : public IProjectLauncherModule
 	{

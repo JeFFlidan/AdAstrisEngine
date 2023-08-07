@@ -9,6 +9,7 @@ namespace ad_astris::devtools
 	{
 		public:
 			virtual ~IProjectLauncher() { }
+			virtual void init(io::FileSystem* fileSystem) = 0;
 			virtual void draw_window() = 0;
 			virtual std::string get_project_path() = 0;
 	};
