@@ -8,6 +8,7 @@ namespace ad_astris::uicore::internal
 	{
 		public:
 			virtual ~BaseWidget() { }
+			BaseWidget() = default;
 			BaseWidget(const std::string& name) : _name(name) { }
 		
 			virtual bool draw() = 0;

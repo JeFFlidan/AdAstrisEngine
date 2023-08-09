@@ -29,6 +29,7 @@ namespace ad_astris::uicore
 	class FileExplorer
 	{
 		public:
+			FileExplorer() = default;
 			// No filter. Should be used with PICK_FOLDER mode or when you don't want to have file filter when opening a file
 			FileExplorer(FileExplorerMode mode);
 			/** Should be used with one of those modes: OPEN_FILE, SAVE_FILE or OPEN_MULTIPLE_FILE.

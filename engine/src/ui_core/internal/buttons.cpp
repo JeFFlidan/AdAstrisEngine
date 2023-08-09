@@ -20,5 +20,5 @@ ImageButton::ImageButton(const std::string& buttonName, TextureInfo& textureInfo
 bool ImageButton::draw()
 {
 	ImVec2 size( _textureInfo.width, _textureInfo.height );
-	return ImGui::ImageButton((void*)(intptr_t)_textureInfo.textureID, size, _textureInfo.uv0, _textureInfo.uv1);
+	return ImGui::ImageButton(_name.c_str(), (void*)(intptr_t)_textureInfo.textureID, size, _textureInfo.uv0, _textureInfo.uv1);
 }

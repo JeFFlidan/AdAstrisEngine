@@ -88,6 +88,16 @@ void Utils::setup_dark_theme()
 	style.TabRounding                       = 4;
 }
 
+ImVec4 Utils::get_default_fill_color()
+{
+	return get_normalized_color(239.0f, 151.0f, 133.0f, 0.75f);
+}
+
+ImVec4 Utils::get_default_hover_color()
+{
+	return get_normalized_color(255.0f, 118.0f, 40.0f, 1.0f);
+}
+
 ImVec4 Utils::get_normalized_color(float r, float g, float b, float a)
 {
 	return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, a);

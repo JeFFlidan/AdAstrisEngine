@@ -24,7 +24,7 @@ FileExplorer::FileExplorer(FileExplorerMode mode, const std::vector<FileFilter>&
 bool FileExplorer::open_file_explorer(std::vector<std::string>& paths, const std::string& defaultPath)
 {
 	nfdchar_t* defaultPathPtr = defaultPath.empty() ? nullptr : const_cast<char*>(defaultPath.c_str());
-	nfdchar_t* filterList = defaultPath.empty() ? nullptr : const_cast<char*>(_filterList.c_str());
+	nfdchar_t* filterList = _filterList.empty() ? nullptr : const_cast<char*>(_filterList.c_str());
 	switch (_fileExplorerMode)
 	{
 		case FileExplorerMode::PICK_FOLDER:

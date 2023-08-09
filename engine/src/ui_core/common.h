@@ -1,7 +1,9 @@
 ﻿#pragma once
 
+#include "internal/base_widget.h"
 #include <imgui.h>
 #include <cstdint>
+#include <functional>
 
 namespace ad_astris::uicore
 {
@@ -13,4 +15,7 @@ namespace ad_astris::uicore
 		ImVec2 uv0 = { 0, 0 };
 		ImVec2 uv1 = { 1, 1 };
 	};
+
+	using UICallback = std::function<void(internal::BaseWidget&)>;
+	using UISetCustomStyleCallback = std::function<void()>;
 }
