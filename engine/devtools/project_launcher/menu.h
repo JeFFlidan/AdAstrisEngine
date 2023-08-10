@@ -1,8 +1,9 @@
 ﻿#pragma once
 
 #include "api.h"
-#include "utils.h"
+#include "ui_core/widget_selection_manager.h"
 #include <string>
+#include <memory>
 
 namespace ad_astris::devtools::pl_impl
 {
@@ -21,8 +22,7 @@ namespace ad_astris::devtools::pl_impl
 			MenuSection draw_ui();
 
 		private:
-			TextureInfo _recentProjectsTextureInfo;
-			TextureInfo _createNewGameTextureInfo;
+			std::unique_ptr<uicore::WidgetSelectionManager> _highlightManager;
 			MenuSection _lastChosenMenuSection;
 	};
 }

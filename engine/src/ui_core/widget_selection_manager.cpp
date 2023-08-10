@@ -45,7 +45,11 @@ void WidgetSelectionManager::add_image_button(const std::string& buttonName, Tex
 	auto button = std::make_unique<internal::ImageButton>(buttonName, textureInfo); 
 	_widgets.emplace_back(std::move(button));
 	if (isSelectedInitially)
+	{
+		_selectedWidgetIndices.clear();
+		_selectedWidgetNames.clear();
 		_selectedWidgetNames.insert(buttonName);
+	}
 }
 
 std::unordered_set<std::string>& WidgetSelectionManager::draw_widgets()

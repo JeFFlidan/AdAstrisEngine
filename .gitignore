@@ -29,6 +29,7 @@ src/CMakeFiles
 /*/#*.*#
 /*/.#*.*\
 /engine/devtools/*/build
+/engine/devtools/*/*/*.krz
 <<<<<<< HEAD
 src/file_system/Makefile
 src/file_system/main.cpp

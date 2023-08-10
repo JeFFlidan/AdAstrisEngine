@@ -17,6 +17,16 @@ namespace ad_astris::uicore
 
 			virtual bool draw() override;
 
+			void set_text(const std::string& newText)
+			{
+				_text = newText;
+			}
+
+			std::string get_text()
+			{
+				return _text;
+			}
+
 		private:
 			std::string _text;
 			bool _editable;

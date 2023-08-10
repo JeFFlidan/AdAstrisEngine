@@ -7,7 +7,7 @@
 
 using namespace ad_astris::devtools::pl_impl;
 
-bool Utils::load_texture_from_file(const std::string& filePath, TextureInfo& textureInfo)
+bool Utils::load_texture_from_file(const std::string& filePath, uicore::TextureInfo& textureInfo)
 {
 	// Load from file
 	unsigned char* image_data = stbi_load(filePath.c_str(), &textureInfo.width, &textureInfo.height, NULL, 4);

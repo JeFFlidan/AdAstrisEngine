@@ -5,6 +5,7 @@
 #include "recent_projects_browser.h"
 #include "create_new_game_browser.h"
 #include "core/config_base.h"
+#include "application/project_launcher_module.h"
 #include "ui_core/docking_window.h"
 
 #include <application_core/glfw_window/glfw_window.h>
@@ -20,12 +21,18 @@ namespace ad_astris::devtools::pl_impl
 			void cleanup();
 			bool draw_ui();
 
+			ProjectInfo get_project_info()
+			{
+				return _projectInfo;
+			}
+
 		private:
 			uicore::DockingWindow _dockingWindow;
 			Menu _menu;
 			RecentProjectsBrowser _recentProjectsBrowser;
 			CreateNewGameBrowser _createNewGameBrowser;
 			acore::GlfwWindow* _glfwWindow{ nullptr };
-			std::string _configPath;
+			std::string _imguiConfigPath;
+			ProjectInfo _projectInfo;
 	};
 }

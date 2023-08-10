@@ -18,9 +18,10 @@ string(REPLACE "/engine/devtools/project_launcher" "/build" GLOBAL_BUILD_PATH ${
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${BIN_PATH}")
 
 file(GLOB PROJECT_LAUNCHER_FILES
-    ${ENGINE_SRC_PATH}/ui_core/*    
-	${CMAKE_SOURCE_DIR}/*.cpp
-	${CMAKE_SOURCE_DIR}/*.h
+    ${ENGINE_SRC_PATH}/ui_core/*
+    ${ENGINE_SRC_PATH}/ui_core/*/*
+    ${CMAKE_SOURCE_DIR}/*.cpp
+    ${CMAKE_SOURCE_DIR}/*.h
     ${THIRD_PARTY_PATH}/glad/src/glad.c
     ${ENGINE_SRC_PATH}/application_core/glfw_window/glfw_window.*
 )
@@ -48,11 +49,15 @@ target_sources(core PRIVATE ${CORE_FILES})
 add_library(glfw STATIC IMPORTED)
 set_target_properties(glfw PROPERTIES IMPORTED_LOCATION ${THIRD_PARTY_PATH}/glfw/libglfw3.a)
 
+add_library(nfd STATIC IMPORTED)
+set_target_properties(nfd PROPERTIES IMPORTED_LOCATION ${THIRD_PARTY_PATH}/nfd/nfd.lib)
+
 include_directories(${ENGINE_SRC_PATH})
 include_directories(${THIRD_PARTY_PATH}/inicpp)
 include_directories(${THIRD_PARTY_PATH}/glfw)
 include_directories(${THIRD_PARTY_PATH}/glad)
 include_directories(${THIRD_PARTY_PATH}/imgui)
 include_directories(${THIRD_PARTY_PATH}/stb_image)
+include_directories(${THIRD_PARTY_PATH}/nfd)
 
-target_link_libraries(project_launcher fmt_lib core glfw imgui)
+target_link_libraries(project_launcher fmt_lib core glfw imgui nfd)

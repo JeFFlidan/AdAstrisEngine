@@ -52,7 +52,7 @@ namespace ad_astris::uicore
 				return _widgets.size();
 			}
 		
-			std::unordered_set<std::string>& get_current_selected_button_name()
+			std::unordered_set<std::string>& get_current_selected_widget_names()
 			{
 				return _selectedWidgetNames;
 			}

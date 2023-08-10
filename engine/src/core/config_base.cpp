@@ -49,12 +49,12 @@ uint32_t Section::get_option_count()
 
 Section::SectionIterator Section::begin()
 {
-	return SectionIterator(_section.end());
+	return SectionIterator(_section.begin());
 }
 
 Section::SectionIterator Section::end()
 {
-	return SectionIterator(_section.begin());
+	return SectionIterator(_section.end());
 }
 
 bool Config::load_from_file(const io::URI& configPath)

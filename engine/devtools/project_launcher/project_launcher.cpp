@@ -26,7 +26,9 @@ void ProjectLauncher::draw_window()
 			shouldClose = _uiManager->draw_ui();
 		_glfwWindow->swap_buffers();
 	}
-	
+
+	_config->save(_fileSystem);
+	_projectInfo = _uiManager->get_project_info();
 	_uiManager->cleanup();
 	_glfwWindow->cleanup();
 }
@@ -36,7 +38,7 @@ void ProjectLauncher::create_window()
 	acore::WindowCreationContext creationContext;
 	creationContext.width = 1280;
 	creationContext.height = 720;
-	creationContext.isResizable = true;
+	creationContext.isResizable = false;
 	creationContext.windowTitle = "AdAstris Project Launcher";
 	_glfwWindow = std::make_unique<acore::GlfwWindow>(creationContext);
 }

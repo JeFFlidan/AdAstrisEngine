@@ -29,6 +29,8 @@ GlfwWindow::GlfwWindow(WindowCreationContext& creationContext)
 		LOG_FATAL("GlfwWindow::GlfwWindow(): Failed to load glad")
 
 	glfwSetFramebufferSizeCallback(_window, glfw_framebuffer_size_callback);
+
+	glfwSetWindowAttrib(_window, GLFW_RESIZABLE, creationContext.isResizable);
 }
 
 void GlfwWindow::cleanup()

@@ -3,22 +3,18 @@
 
 using namespace ad_astris::uicore;
 
-ThumbnailTableManager::ThumbnailTableManager(const std::string& tableName, float thumbnailSize, bool editableButtonLabels)
-	: _thumbnailSize(thumbnailSize), _editableButtonLabels(editableButtonLabels), _tableName(tableName)
+ThumbnailTableManager::ThumbnailTableManager(const std::string& tableName, float thumbnailSize, WidgetSelectionManagerCreationContext& selectionManagerCreationContext)
+	: _thumbnailSize(thumbnailSize), _tableName(tableName)
 {
-	WidgetSelectionManagerCreationContext creationContext;
-	creationContext.multipleSelection = true;
-	creationContext.drawImageButtonLabel = true;
-	creationContext.editableButtonLabel = _editableButtonLabels;
-	_widgetSelectionManager = std::make_unique<WidgetSelectionManager>(creationContext);
+	_widgetSelectionManager = std::make_unique<WidgetSelectionManager>(selectionManagerCreationContext);
 }
 
-void ThumbnailTableManager::add_button(const std::string& buttonLabel, TextureInfo& textureInfo)
+void ThumbnailTableManager::add_button(const std::string& buttonLabel, TextureInfo& textureInfo, bool initiallyActive)
 {
-	_widgetSelectionManager->add_image_button(buttonLabel, textureInfo);
+	_widgetSelectionManager->add_image_button(buttonLabel, textureInfo, initiallyActive);
 }
 
-void ThumbnailTableManager::draw(std::vector<std::string> selectedButtonNames)
+std::unordered_set<std::string>& ThumbnailTableManager::draw()
 {
 	float padding = 16.0f;
 	float cellSize = _thumbnailSize + padding;
@@ -34,7 +30,8 @@ void ThumbnailTableManager::draw(std::vector<std::string> selectedButtonNames)
 		ImGui::TableNextColumn();
 		_widgetSelectionManager->draw_one_widget(i);
 	}
-
-	//selectedButtonNames.push_back(_lastSelectionHighlightManager.get_current_selected_button_name());
+	
 	ImGui::EndTable();
+
+	return _widgetSelectionManager->get_current_selected_widget_names();
 }

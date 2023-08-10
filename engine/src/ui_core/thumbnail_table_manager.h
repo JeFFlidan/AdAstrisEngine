@@ -12,18 +12,22 @@ namespace ad_astris::uicore
 	{
 		public:
 			// Must be used when window with thumbnails is resizable
-			ThumbnailTableManager(const std::string& tableName, float thumbnailSize, bool editableButtonLabel);
-			void add_button(const std::string& buttonLabel, TextureInfo& textureInfo);
-			void draw(std::vector<std::string> selectedButtonNames);
+			ThumbnailTableManager(const std::string& tableName, float thumbnailSize, WidgetSelectionManagerCreationContext& selectionManagerCreationContext);
+			void add_button(const std::string& buttonLabel, TextureInfo& textureInfo, bool initiallyActive = false);
+			std::unordered_set<std::string>& draw();
 
 			std::string get_table_name()
 			{
 				return _tableName;
 			}
 
+			uint32_t get_thumbnail_size()
+			{
+				return _thumbnailSize;
+			}
+
 		private:
 			std::unique_ptr<WidgetSelectionManager> _widgetSelectionManager;
-			bool _editableButtonLabels;
 			uint32_t _thumbnailSize;
 			std::string _tableName;
 	};

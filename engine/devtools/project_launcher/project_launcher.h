@@ -7,7 +7,6 @@
 #include "application/project_launcher_module.h"
 #include "file_system/file_system.h"
 #include <memory>
-#include <string>
 
 namespace ad_astris::devtools::pl_impl
 {
@@ -17,17 +16,17 @@ namespace ad_astris::devtools::pl_impl
 			virtual void init(io::FileSystem* fileSystem) override;
 			virtual void draw_window() override;
 
-			virtual std::string get_project_path() override
+			virtual ProjectInfo get_project_info() override
 			{
-				return _projectPath;
+				return _projectInfo;		
 			}
-
+		
 		private:
 			std::unique_ptr<acore::GlfwWindow> _glfwWindow{ nullptr };
 			std::unique_ptr<UIManager> _uiManager{ nullptr };
 			std::unique_ptr<Config> _config{ nullptr };
 			io::FileSystem* _fileSystem{ nullptr };
-			std::string _projectPath;
+			ProjectInfo _projectInfo;
 
 			void create_window();
 	};
