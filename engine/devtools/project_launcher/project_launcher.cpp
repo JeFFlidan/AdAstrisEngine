@@ -9,7 +9,7 @@ void ProjectLauncher::init(io::FileSystem* fileSystem)
 	create_window();
 	_fileSystem = fileSystem;
 	_config = std::make_unique<Config>();
-	std::string rootPath(_fileSystem->get_root_path().c_str());
+	std::string rootPath(_fileSystem->get_engine_root_path().c_str());
 	io::URI configPath = (rootPath + "/configs/projects.ini").c_str(); 
 	_config->load_from_file(configPath);
 	_uiManager = std::make_unique<UIManager>(rootPath, _config.get(), _glfwWindow.get());

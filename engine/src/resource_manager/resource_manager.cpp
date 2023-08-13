@@ -5,7 +5,6 @@
 #include "utils.h"
 
 #include <lz4.h>
-#include <inicpp.h>
 
 using namespace ad_astris;
 using namespace resource;
@@ -13,17 +12,15 @@ using namespace resource;
 ResourceManager::ResourceManager(io::FileSystem* fileSystem, events::EventManager* eventManager)
 	: _fileSystem(fileSystem), _eventManager(eventManager)
 {
-	LOG_INFO("Before initing resource converter")
 	_resourceConverter = ResourceConverter(_fileSystem);
-	LOG_INFO("Before initing resource pool")
+	LOG_INFO("ResourceManager::ResourceManager(): Initialized resource converter")
 	_resourcePool = ResourcePool();
-	LOG_INFO("Before initing table")
+	LOG_INFO("ResourceManager::ResourceManager(): Initialized resource pool")
 	_resourceDataTable = ResourceDataTable(_fileSystem, &_resourcePool);
-	LOG_INFO("Before loading")
 	_resourceDataTable.load_table(_builtinResourcesContext);
-	LOG_INFO("Before loading builtin resources")
+	LOG_INFO("ResourceManager::ResourceManager(): Initialized resource table")
 	load_builtin_resources();
-	LOG_INFO("After loading builtin resources")
+	LOG_INFO("ResourceManager::ResourceManager(): Loaded builtin resources")
 }
 
 ResourceManager::~ResourceManager()
@@ -55,35 +52,32 @@ ResourceAccessor<ecore::Level> ResourceManager::load_level(io::URI& path)
 {
 	UUID uuidByName = _resourceDataTable.get_uuid_by_name(path);
 	ResourceData* resourceData = _resourceDataTable.get_resource_data(uuidByName);
-	io::IFile* oldFile = resourceData->file;
-	ecore::Level* oldLevel = static_cast<ecore::Level*>(resourceData->object);
+	io::IFile* file = resourceData->file;
+	ecore::Level* level = static_cast<ecore::Level*>(resourceData->object);
+
+	if (file)
+		return level;
 	
 	size_t size = 0;
 	uint8_t* data = static_cast<uint8_t*>(_fileSystem->map_to_read(path, size, "rb"));
-	io::IFile* newFile = _resourcePool.allocate<io::LevelFile>(path);
-	newFile->deserialize(data, size);
+	file = _resourcePool.allocate<io::LevelFile>(path);
+	file->deserialize(data, size);
 	_fileSystem->unmap_after_reading(data);
 	
-	ecore::Level* newLevel = _resourcePool.allocate<ecore::Level>();
-	newLevel->deserialize(newFile, resourceData->metadata.objectName);
+	level = _resourcePool.allocate<ecore::Level>();
+	level->deserialize(file, resourceData->metadata.objectName);
 
-	resourceData->file = newFile;
-	resourceData->object = newLevel;
-
-	// TODO Think if I need this deletion
-	delete oldFile;
-	delete oldLevel;
+	resourceData->file = file;
+	resourceData->object = level;
 	
-	return newLevel;
+	return level;
 }
 
 void ResourceManager::load_builtin_resources()
 {
 	for (auto& uuid : _builtinResourcesContext.materialTemplateNames)
 	{
-		LOG_INFO("BEFORE GETTING MATERIAL TEMPLATE")
 		ecore::GeneralMaterialTemplate* materialTemplate = get_resource<ecore::GeneralMaterialTemplate>(uuid).get_resource();
-		LOG_INFO("Template name: {}", materialTemplate->get_name()->get_full_name())
 		for (auto& pair : materialTemplate->get_shader_passes())
 		{
 			ecore::material::ShaderPass& shaderPass = pair.second;
@@ -94,7 +88,7 @@ void ResourceManager::load_builtin_resources()
 				load_shader(shaderUUID, handleContext);
 			}
 		}
-		LOG_INFO("Load material template: {}", materialTemplate->get_name()->get_full_name())
+		LOG_INFO("ResourceManager::load_builting_resources(): Loaded material template: {}", materialTemplate->get_name()->get_full_name())
 	}
 
 	_builtinResourcesContext.clear();
@@ -157,11 +151,10 @@ ResourceAccessor<ecore::GeneralMaterialTemplate> ResourceManager::create_new_res
 
 void ResourceManager::save_resources()
 {
-	LOG_INFO("Before saving table")
 	_resourceDataTable.save_table();
-	LOG_INFO("Before sabing resources in the ResourceManager")
+	LOG_INFO("ResourceMangaer::save_resources(): Saved resource table")
 	_resourceDataTable.save_resources();
-	LOG_INFO("After saving resources in the ResourceManager")
+	LOG_INFO("ResourceManager::save_resources(): Saved resources")
 }
 
 /** @warning MEMORY LEAK, uint8_t* data, should be tested if everything works correct after delete[]

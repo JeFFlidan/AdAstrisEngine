@@ -3,7 +3,7 @@
 #include "file_system/utils.h"
 
 using namespace ad_astris;
-using namespace ad_astris::ecore;
+using namespace ecore;
 
 Level::Level(io::URI& path, ObjectName* levelName)
 {
@@ -12,9 +12,15 @@ Level::Level(io::URI& path, ObjectName* levelName)
 	_path = path;
 }
 
-Level::Level(void* entityManager)
+World* Level::get_owning_world()
 {
-	_entityManager = static_cast<ecs::EntityManager*>(entityManager);
+	return _owningWorld;
+}
+
+void Level::set_owning_world(World* world)
+{
+	_owningWorld = world;
+	_entityManager = _owningWorld->get_entity_manager();
 }
 
 ecs::EntityManager* Level::get_entity_manager()
@@ -58,8 +64,16 @@ void Level::deserialize(io::IFile* file, ObjectName* objectName)
 	
 	_levelInfo = level::Utils::unpack_level_info(levelMetadata);
 	
-	std::string entitiesInfo = levelMainJson["entities"];
-	level::Utils::build_entities_from_json(entitiesInfo, this);
+	_entitiesJsonStr = levelMainJson["entities"];
+}
+
+void Level::build_entities()
+{
+	if (!_entitiesJsonStr.empty())
+	{
+		level::Utils::build_entities_from_json(_entitiesJsonStr, this);
+		_entitiesJsonStr.clear();
+	}
 }
 
 uint64_t Level::get_size()

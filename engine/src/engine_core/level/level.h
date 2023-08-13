@@ -13,28 +13,26 @@ namespace ad_astris::ecore
 	class Level : public Object
 	{
 		friend class level::Utils;
-		friend class World;
 		
 		// TODO
 		public:
 			Level() = default;
-			
 			// Constructor to create level with default settings
 			Level(io::URI& path, ObjectName* levelName);
-			
-			// Constructor to use while loading and existing level 
-			Level(void* entityManager);
-			
+
+			World* get_owning_world();
+			void set_owning_world(World* world);
 			ecs::EntityManager* get_entity_manager();
+			void build_entities();
 			void add_entity(ecs::Entity& entity);
 
 		private:
 			World* _owningWorld{ nullptr }; // ?
-			
 			ecs::EntityManager* _entityManager{ nullptr };
 			std::vector<ecs::Entity> _entities;
 			
 			level::LevelInfo _levelInfo;
+			std::string _entitiesJsonStr;
 		
 		public:
 			// ========== Begin Object interface ==========

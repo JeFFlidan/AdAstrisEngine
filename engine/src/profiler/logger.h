@@ -28,7 +28,7 @@
 #endif
 
 #if LOG_ERROR_ENABLED == 1
-#define LOG_ERROR(message,...) Logger::get_logger().log(LogType::ERROR, message, ##__VA_ARGS__);
+#define LOG_ERROR(message,...) Logger::get_logger().log(LogType::ERROR_TYPE, message, ##__VA_ARGS__);
 #else
 #define LOG_ERROR(message,...)
 #endif
@@ -51,10 +51,10 @@
 #define LOG_SUCCESS(message,...)
 #endif
 
-enum LogType
+enum class LogType
 {
 	FATAL,
-	ERROR,
+	ERROR_TYPE,
 	WARNING,
 	INFO,
 	SUCCESS
@@ -80,7 +80,7 @@ class Logger
 				case(LogType::FATAL):
 					fmt::print(fg(fmt::color::dark_red) | fmt::emphasis::bold, "[FATAL]:   ");
 					break;
-				case(LogType::ERROR):
+				case(LogType::ERROR_TYPE):
 					fmt::print(fg(fmt::color::red) | fmt::emphasis::bold, "[ERROR]:   ");
 					break;
 				case(LogType::WARNING):

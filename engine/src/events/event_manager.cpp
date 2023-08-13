@@ -39,9 +39,7 @@ void EventManager::trigger_event(IEvent& event)
 	std::lock_guard<std::mutex> locker(_eventQueueMutex);
 	auto it = _handlersByEventID.find(event.get_type_id());
 	if (it == _handlersByEventID.end())
-	{
-		LOG_FATAL("EventManager::trigger_event(): EventManager doesn't know about event with ID {}", event.get_type_id())
-	}
+		return;
 
 	for (auto& handler : it->second)
 	{
@@ -56,9 +54,7 @@ void EventManager::dispatch_events()
 		IEvent* event = _eventsQueue.front().get();
 		auto it = _handlersByEventID.find(event->get_type_id());
 		if (it == _handlersByEventID.end())
-		{
-			LOG_FATAL("EntityManager::dispatch_events(): EventManager doesn't know about event with ID {}", event->get_type_id())
-		}
+			continue;
 		
 		auto& handlers = it->second;
 		for (auto& handler : handlers)

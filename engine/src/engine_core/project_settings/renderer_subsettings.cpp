@@ -17,6 +17,11 @@ void RendererSubsettings::deserialize(Section& section)
 	deserialize_graphics_api(section);
 }
 
+void RendererSubsettings::setup_default_values()
+{
+	_graphicsAPI = GraphicsAPI::VULKAN;
+}
+
 void RendererSubsettings::serialize_graphics_api(Section& section)
 {
 	switch (_graphicsAPI)

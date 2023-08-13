@@ -16,6 +16,7 @@ namespace ad_astris::resource
 		io::URI path;
 		ResourceType type{ ResourceType::UNDEFINED };
 		ecore::ObjectName* objectName{ nullptr };
+		bool isBuiltin{ false };
 	};
 
 	struct ResourceData

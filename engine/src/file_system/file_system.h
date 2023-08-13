@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -40,6 +41,18 @@ namespace ad_astris::io
 				return strcmp(data, uri.data) == 0;
 			}
 
+			URI& operator+(const URI& uri)
+			{
+				strcat(data, uri.data);
+				return *this;
+			}
+
+			URI& operator+=(const URI& uri)
+			{
+				strcat(data, uri.data);
+				return *this;
+			}
+
 			const char* c_str() const { return data; }
 			bool empty() const { return data[0] == '\x0'; }
 
@@ -64,9 +77,27 @@ namespace ad_astris::io
 			virtual bool close(Stream* stream) = 0;
 			virtual void* map_to_read(const URI& uri, size_t& size, const char* mode = "rb") = 0;
 			virtual bool unmap_after_reading(void* data) = 0;
-			virtual URI get_root_path() = 0;
+		
+			URI get_engine_root_path()
+			{
+				return _engineRootPath.string().c_str();
+			}
+		
+			void set_project_root_path(const URI& projectRootPath)
+			{
+				_projectRootPath = projectRootPath.c_str();
+			}
+		
+			URI get_project_root_path()
+			{
+				return _projectRootPath.string().c_str(); 
+			}
 
 			virtual ~FileSystem() {}
+
+		protected:
+			std::filesystem::path _engineRootPath;
+			std::filesystem::path _projectRootPath;
 	};
 }
 

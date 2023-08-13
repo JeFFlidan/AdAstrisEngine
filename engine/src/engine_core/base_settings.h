@@ -25,6 +25,12 @@ namespace ad_astris::ecore
 	{\
 		create_subsettings_builder_internal<__VA_ARGS__>();\
 	}
+
+	template<typename T>
+	struct DefaultSettingsContext
+	{
+		
+	};
 	
 	class BaseSettings
 	{
@@ -56,7 +62,7 @@ namespace ad_astris::ecore
 			{
 				if (add_new_subsettings_common<T>())
 				{
-					T* newSubsettings = _subsettingsByItsHash[T::get_type_id_static()].get();
+					T* newSubsettings = static_cast<T*>(_subsettingsByItsHash[T::get_type_id_static()].get());
 					*newSubsettings = subsettings;
 				}
 			}
@@ -91,8 +97,9 @@ namespace ad_astris::ecore
 			std::unordered_map<std::string, SubsettingsBuilder> _builtinSubsettingsBuildersByName;
 
 			template<typename T>
-			bool add_new_subsettings_common(uint64_t hash)
+			bool add_new_subsettings_common()
 			{
+				uint64_t hash = T::get_type_id_static();
 				auto it1 = _subsettingsByItsHash.find(hash);
 				auto it2 = _customSubsettingsConfigByName.find(get_type_name<T>());
 				if (it1 != _subsettingsByItsHash.end() || it2 != _customSubsettingsConfigByName.end())

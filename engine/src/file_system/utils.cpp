@@ -29,7 +29,15 @@ std::string io::Utils::get_file_extension(const URI& path)
 io::URI io::Utils::get_relative_path_to_file(FileSystem* fileSystem, const URI& pathToFile)
 {
 	std::filesystem::path filePath(pathToFile.c_str());
-	std::filesystem::path projPath(fileSystem->get_root_path().c_str());
+	std::filesystem::path projPath(fileSystem->get_engine_root_path().c_str());
+	std::filesystem::path relativePath = std::filesystem::relative(filePath, projPath);
+	return relativePath.string().c_str();
+}
+
+io::URI io::Utils::get_relative_path_to_file(const URI& baseFolder, const URI& pathToFile)
+{
+	std::filesystem::path filePath(pathToFile.c_str());
+	std::filesystem::path projPath(baseFolder.c_str());
 	std::filesystem::path relativePath = std::filesystem::relative(filePath, projPath);
 	return relativePath.string().c_str();
 }
@@ -37,7 +45,15 @@ io::URI io::Utils::get_relative_path_to_file(FileSystem* fileSystem, const URI& 
 io::URI io::Utils::get_absolute_path_to_file(FileSystem* fileSystem, const URI& relativePath)
 {
 	std::filesystem::path cppPath(relativePath.c_str());
-	std::filesystem::path rootPath(fileSystem->get_root_path().c_str());
+	std::filesystem::path rootPath(fileSystem->get_engine_root_path().c_str());
+	std::filesystem::path absolutePath = rootPath / cppPath; 
+	return URI(absolutePath.string().c_str());
+}
+
+io::URI io::Utils::get_absolute_path_to_file(const URI& baseFolder, const URI& relativePath)
+{
+	std::filesystem::path cppPath(relativePath.c_str());
+	std::filesystem::path rootPath(baseFolder.c_str());
 	std::filesystem::path absolutePath = rootPath / cppPath; 
 	return URI(absolutePath.string().c_str());
 }
@@ -59,4 +75,15 @@ bool io::Utils::exists(FileSystem* fileSystem, const URI& path)
 
 	URI newPath = get_absolute_path_to_file(fileSystem, path);
 	return std::filesystem::exists(std::filesystem::path(newPath.c_str()));
+}
+
+io::URI io::Utils::find_file_with_specific_extension(const URI& folderPath, const std::string& extension)
+{
+	for (const auto& entry : std::filesystem::directory_iterator(folderPath.c_str()))
+	{
+		if (std::filesystem::is_regular_file(entry) && entry.path().extension() == extension)
+			return entry.path().string().c_str();
+	}
+
+	return URI();
 }

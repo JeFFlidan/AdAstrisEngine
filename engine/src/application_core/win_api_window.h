@@ -11,7 +11,7 @@ namespace ad_astris::acore::impl
 	{
 		public:
 			WinApiWindow() = default;
-			WinApiWindow(const char* windowTitle, events::EventManager* eventManager);
+			WinApiWindow(WindowCreationContext& creationContext, events::EventManager* eventManager);
 			~WinApiWindow();
 			WinApiWindow(const WinApiWindow&) = delete;
 			WinApiWindow& operator=(const WinApiWindow&) = delete;

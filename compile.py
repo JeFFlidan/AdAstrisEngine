@@ -78,7 +78,7 @@ def compile_module(name):
 
 def compile_modules(flags):
     if (len(flags) == 2 or (len(flags) == 3 and '-engine' in flags)):
-        moduleNames = ["src\\vulkan_rhi", "src\\render_core", "devtools\\project_launcher"]
+        moduleNames = ["src\\vulkan_rhi", "src\\render_core", "devtools\\project_launcher", "src\\engine\\engine_module"]
 
         for name in moduleNames:
             compile_module(name)
@@ -96,6 +96,9 @@ def compile_modules(flags):
         
     if '-project_launcher' in flags:
         compile_module('devtools\\project_launcher')
+        
+    if '-engine_module' in flags:
+        compile_module('src\\engine\\engine_module')
 
 
 def compile_engine():

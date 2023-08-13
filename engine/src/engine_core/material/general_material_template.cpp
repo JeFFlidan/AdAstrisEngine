@@ -1,6 +1,4 @@
 #include "general_material_template.h"
-#include "general_material_template.h"
-#include "rhi/resources.h"
 #include "shader.h"
 
 using namespace ad_astris;

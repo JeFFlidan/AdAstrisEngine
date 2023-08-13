@@ -22,16 +22,12 @@ namespace ad_astris::io
 	class EngineFileSystem : public FileSystem
 	{
 		public:
-			EngineFileSystem(const char* path);
+			EngineFileSystem(const char* engineRootPath);
 			virtual ~EngineFileSystem() final;
 
 			virtual EngineFileStream* open(const URI& path, const char* mode) final;
 			virtual bool close(Stream* stream) final;
 			virtual void* map_to_read(const URI& uri, size_t& size, const char* mode = "rb") final;
 			virtual bool unmap_after_reading(void* data) final;
-			virtual URI get_root_path() final;
-		
-		private:
-			std::filesystem::path _rootPath;
 	};
 }

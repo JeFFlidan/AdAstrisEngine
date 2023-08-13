@@ -3,7 +3,7 @@ add_library(logger INTERFACE)
 # Add source to this project's executable.
 
 file(GLOB ENGINE_FILES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/application/project_launcher_module.*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/application/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/application_core/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine/*.h"

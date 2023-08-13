@@ -157,7 +157,6 @@ std::map<std::string, ecore::NameIDTable> ecore::ObjectName::_nameTable;
 
 ecore::ObjectName::ObjectName(const char* newName)
 {
-	LOG_WARNING("FIRST CONSTRUCTOR OF OBJECTNAME")
 	if (strlen(newName) > MAX_NAME_LENGTH)
 	{
 		LOG_ERROR("ObjectName::ObjectName(): New name is too long")

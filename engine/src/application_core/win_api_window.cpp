@@ -100,7 +100,7 @@ LRESULT CALLBACK window_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-WinApiWindow::WinApiWindow(const char* windowTitle, events::EventManager* eventManager)
+WinApiWindow::WinApiWindow(WindowCreationContext& creationContext, events::EventManager* eventManager)
 	: _hInstance(GetModuleHandle(nullptr)), _eventManager(eventManager)
 {
 	_className = "WinApi Window";
@@ -116,8 +116,8 @@ WinApiWindow::WinApiWindow(const char* windowTitle, events::EventManager* eventM
 
 	DWORD style = WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_THICKFRAME | WS_MAXIMIZEBOX;
 
-	int width = 700;
-	int height = 400;
+	int32_t width = creationContext.width;
+	int32_t height = creationContext.height;
 	
 	RECT rect;
 	rect.left = 100;
@@ -131,7 +131,7 @@ WinApiWindow::WinApiWindow(const char* windowTitle, events::EventManager* eventM
 	_hWnd = CreateWindowEx(
 		0,
 		_className,
-		windowTitle,
+		creationContext.windowTitle.c_str(),
 		style,
 		rect.left,
 		rect.top,

@@ -26,7 +26,7 @@ resource::ResourceDataTable::~ResourceDataTable()
 
 void resource::ResourceDataTable::load_table(BuiltinResourcesContext& context)
 {
-	io::URI path = io::Utils::get_absolute_path_to_file(_fileSystem, "configs/resource_table.ini");
+	io::URI path = _fileSystem->get_project_root_path() + "/configs/resource_table.ini";
 	_config.load_from_file(path);
 
 	for (auto section : _config)
@@ -35,7 +35,7 @@ void resource::ResourceDataTable::load_table(BuiltinResourcesContext& context)
 		uint32_t nameID = section.get_option_value<uint64_t>("NameID");
 		std::string name = section.get_option_value<std::string>("Name");
 		ResourceData resData{};
-		resData.metadata.path = io::Utils::get_absolute_path_to_file(_fileSystem, section.get_name().c_str());
+		resData.metadata.path = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), section.get_name().c_str());
 		resData.metadata.type = Utils::get_enum_resource_type(section.get_option_value<std::string>("Type"));
 		resData.metadata.objectName = _resourcePool->allocate<ecore::ObjectName>(name.c_str(), nameID);
 		if (resData.metadata.type == ResourceType::MATERIAL_TEMPLATE)
@@ -44,6 +44,25 @@ void resource::ResourceDataTable::load_table(BuiltinResourcesContext& context)
 		_nameToUUID[resData.metadata.objectName->get_full_name()] = uuid;
 	}
 	_config.unload();
+
+	path = _fileSystem->get_engine_root_path() + "/configs/builtin_resource_table.ini";
+	Config builtinResourcesConfig;
+	builtinResourcesConfig.load_from_file(path);
+	for (auto section : builtinResourcesConfig)
+	{
+		UUID uuid = section.get_option_value<uint64_t>("UUID");
+		uint32_t nameID = section.get_option_value<uint64_t>("NameID");
+		std::string name = section.get_option_value<std::string>("Name");
+		ResourceData resData{};
+		resData.metadata.path = io::Utils::get_absolute_path_to_file(_fileSystem->get_engine_root_path(), section.get_name().c_str());
+		resData.metadata.type = Utils::get_enum_resource_type(section.get_option_value<std::string>("Type"));
+		resData.metadata.objectName = _resourcePool->allocate<ecore::ObjectName>(name.c_str(), nameID);
+		resData.metadata.isBuiltin = true;
+		if (resData.metadata.type == ResourceType::MATERIAL_TEMPLATE)
+			context.materialTemplateNames.push_back(uuid);
+		_uuidToResourceData[uuid] = resData;
+		_nameToUUID[resData.metadata.objectName->get_full_name()] = uuid;
+	}
 }
 
 void resource::ResourceDataTable::save_table()
@@ -51,7 +70,10 @@ void resource::ResourceDataTable::save_table()
 	for (auto& data : _uuidToResourceData)
 	{
 		ResourceData& resData = data.second;
-		io::URI relativePath = io::Utils::get_relative_path_to_file(_fileSystem, resData.metadata.path);
+		if (resData.metadata.isBuiltin)
+			continue;
+		
+		io::URI relativePath = io::Utils::get_relative_path_to_file(_fileSystem->get_project_root_path(), resData.metadata.path);
 		io::Utils::replace_back_slash_to_forward(relativePath);
 		Section newSection(relativePath.c_str());
 		
@@ -73,13 +95,12 @@ void resource::ResourceDataTable::save_resources()
 		LOG_INFO("Start saving")
 		ResourceData& resourceData = pair.second;
 
+		if (resourceData.metadata.isBuiltin || !resourceData.object)
+			continue;
 		
 		io::IFile* file = resourceData.file;
 		ecore::Object* object = resourceData.object;
 		ResourceMetadata& metadata = resourceData.metadata;
-		
-		if (resourceData.metadata.type == ResourceType::SHADER || !object)
-			continue;
 
 		uint8_t* data{ nullptr };
 		uint64_t size = 0;

@@ -27,6 +27,7 @@ namespace ad_astris::ecore
 			virtual ~ISubsettings() { }
 			virtual void serialize(Config& config) = 0;
 			virtual void deserialize(Section& section) = 0;
+			virtual void setup_default_values() = 0;
 			virtual uint64_t get_type_id() = 0; 
 	};
 }

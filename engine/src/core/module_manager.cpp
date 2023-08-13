@@ -30,7 +30,6 @@ void ModuleManager::cleanup()
 
 IModule* ModuleManager::load_module(const std::string& moduleName)
 {
-	LOG_INFO("Start loading module")
 	auto moduleInfoFromMap = _loadedModules.find(moduleName);
 	if (moduleInfoFromMap != _loadedModules.end())
 		return moduleInfoFromMap->second.module;
