@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "..\..\src\core\custom_objects_to_json.h"
+#include "core/custom_objects_to_json.h"
 #include "public/api.h"
 #include "public/archetype_types.h"
 #include "public/archetype.h"
@@ -30,8 +30,8 @@ namespace ad_astris::ecs
  			Component(T* componentValue)
  			{
  				_memory = componentValue;
- 				_size = ComponentTypeIDTable::get_type_size<T>();
- 				_id = ComponentTypeIDTable::get_type_id<T>();
+ 				_size = TypeInfoTable::get_component_size<T>();
+ 				_id = TypeInfoTable::get_component_id<T>();
  			}
  		
 			T* get_memory()
@@ -115,12 +115,15 @@ namespace ad_astris::ecs
 					}																						\
 			};																								\
 																											\
+		}																									\
+		namespace registration																				\
+		{																									\
 			static bool Type##Register = []()																\
 			{																								\
-				ComponentTypeIDTable::add_component_info<Type>();											\
+				TypeInfoTable::add_component_info<Type>();													\
 				factories::BaseFactory* factory = new factories::Type##Factory();							\
 				factories::FactoriesTable::get_instance()->add_factory<Type>(factory);						\
-				BaseSerializer* serializer = new Type##Serializer();										\
+				serializers::BaseSerializer* serializer = new serializers::Type##Serializer();				\
 				serializers::get_table()->add_serializer<Type>(serializer);									\
 				return true;																				\
 			}();																							\
@@ -130,16 +133,16 @@ namespace ad_astris::ecs
 
 #define ECS_TAG(Type)										\
 namespace ecs {												\
-namespace tags {											\
+namespace registration {									\
 	static bool Type##Register = []()						\
 	{														\
-		::ad_astris::ecs::TagTypeIDTable::add_tag<Type>();	\
+		TypeInfoTable::add_tag<Type>();						\
 		return true;										\
 	}();													\
 }}
 
-#define ECS_SYSTEM(Type)																		\
-	namespace ecs {																				\
-	namespace systems {																			\
-		static bool Type##Result = SystemStorage::SystemRegistrar<Type>::register_system();		\
+#define ECS_SYSTEM(Type)																				\
+	namespace ecs {																						\
+	namespace registration {																			\
+		static bool Type##Register = SystemStorage::SystemRegistrar<Type>::register_system();			\
 	}}

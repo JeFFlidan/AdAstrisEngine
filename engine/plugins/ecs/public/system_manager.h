@@ -22,14 +22,14 @@ namespace ad_astris::ecs
 			{
 				System* system = new T();
 				system->configure_query();
-				_idToSystem[SystemTypeIDTable::get_type_id<T>()] = system;
+				_idToSystem[TypeInfoTable::get_system_id<T>()] = system;
  			}
 
 			// Returns a pointer to the existing system. You can get custom systems or engine default systems
 			template<typename T>
 			T* get_system()
 			{
-				return reinterpret_cast<T*>(_idToSystem[SystemTypeIDTable::get_type_id<T>()]);
+				return reinterpret_cast<T*>(_idToSystem[TypeInfoTable::get_system_id<T>()]);
 			}
 
 			/** Main purpose is changing default engine system to custom one. 
@@ -42,7 +42,7 @@ namespace ad_astris::ecs
 				// TODO I have to think about locks or something like that.
 				// Maybe, it is a good idea to implement queue for updating for the next frame?
 				// And should think about generating new execution order
-				uint32_t oldSystemID = SystemTypeIDTable::get_type_id(oldSystemName);
+				uint32_t oldSystemID = TypeInfoTable::get_system_id(oldSystemName);
 				_idToSystem[oldSystemID] = new T();
 			}
 

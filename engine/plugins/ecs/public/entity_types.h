@@ -3,7 +3,7 @@
 #include "api.h"
 #include "engine_core/uuid.h"
 #include "profiler/logger.h"
-#include "type_id_tables.h"
+#include "type_info_table.h"
 
 #include <unordered_map>
 #include <vector>
@@ -119,7 +119,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			void add_tag()
 			{
-				uint32_t id = TagTypeIDTable::get_type_id<T>();
+				uint32_t id = TypeInfoTable::get_tag_id<T>();
 				if (!check_tag(id))
 					return;
 
@@ -129,7 +129,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			void add_component(T& value)
 			{
-				uint32_t typeId = ComponentTypeIDTable::get_type_id<T>();
+				uint32_t typeId = TypeInfoTable::get_component_id<T>();
 				
 				if (!check_component(typeId, sizeof(T)))
 					return;
@@ -139,12 +139,12 @@ namespace ad_astris::ecs
 					_componentsData = new uint8_t[constants::MAX_CHUNK_SIZE];
 				}
 				
-				_allComponentsSize += ComponentTypeIDTable::get_type_size<T>();
+				_allComponentsSize += TypeInfoTable::get_component_size<T>();
 
 				uint8_t* dataPtr = get_ptr_for_data();
 				memcpy(dataPtr, &value, sizeof(T));
 
-				uint32_t size = ComponentTypeIDTable::get_type_size<T>();
+				uint32_t size = TypeInfoTable::get_component_size<T>();
 				IComponent* tempComponent = new UntypedComponent(dataPtr, size, typeId);
 				_componentsMap[typeId] = tempComponent;
 				_typeIdToSize[typeId] = size;
@@ -154,7 +154,7 @@ namespace ad_astris::ecs
 			template<typename T, typename ...ARGS>
 			void add_component(ARGS&&... args)
 			{
-				uint32_t typeId = ComponentTypeIDTable::get_type_id<T>();
+				uint32_t typeId = TypeInfoTable::get_component_id<T>();
 				
 				if (!check_component(typeId, sizeof(T)))
 					return;
@@ -164,12 +164,12 @@ namespace ad_astris::ecs
 					_componentsData = new uint8_t[constants::MAX_CHUNK_SIZE];
 				}
 				
-				_allComponentsSize += ComponentTypeIDTable::get_type_size<T>();
+				_allComponentsSize += TypeInfoTable::get_component_size<T>();
 
 				uint8_t* dataPtr = get_ptr_for_data();
 				new(dataPtr) T(std::forward<ARGS>(args)...);
 
-				uint32_t size = ComponentTypeIDTable::get_type_size<T>();
+				uint32_t size = TypeInfoTable::get_component_size<T>();
 				IComponent* tempComponent = new UntypedComponent(dataPtr, size, typeId);
 				
 				_componentsMap[typeId] = tempComponent;
@@ -208,7 +208,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			void set_component(T& value)
 			{
-				uint32_t id = ComponentTypeIDTable::get_type_id<T>();
+				uint32_t id = TypeInfoTable::get_component_id<T>();
 				
 				if (!check_component(id, sizeof(T)))
 					return;
@@ -220,7 +220,7 @@ namespace ad_astris::ecs
 			template<typename T, typename ...ARGS>
 			void set_component(ARGS&&... args)
 			{
-				uint32_t id = ComponentTypeIDTable::get_type_id<T>();
+				uint32_t id = TypeInfoTable::get_component_id<T>();
 				
 				if (!check_component(id, sizeof(T)))
 					return;
@@ -239,7 +239,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			void remove_component()
 			{
-				uint32_t typeID = ComponentTypeIDTable::get_type_id<T>();
+				uint32_t typeID = TypeInfoTable::get_component_id<T>();
 				
 				if (!is_component_added(typeID))
 				{
@@ -295,7 +295,7 @@ namespace ad_astris::ecs
 			{
 				if (std::find(_tagIDs.begin(), _tagIDs.end(), id) != _tagIDs.end())
 				{
-					LOG_ERROR("EntityCreationContext::add_tag():: Tag of this type was added")
+					LOG_ERROR("EntityCreationContext::add_tag(): Tag of this type was added")
 					return false;
 				}
 

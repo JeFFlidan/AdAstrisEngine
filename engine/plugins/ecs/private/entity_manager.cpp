@@ -149,14 +149,14 @@ Entity EntityManager::build_entity_from_json(UUID& uuid, std::string& json)
 	for (auto& componentInfo : componentsData.items())
 	{
 		std::string componentName = componentInfo.key();
-		uint32_t typeId = ComponentTypeIDTable::get_type_id(componentName);
+		uint32_t typeId = TypeInfoTable::get_component_id(componentName);
 		factories::BaseFactory* factory = factories::get_table()->get_factory(typeId);
 		factory->build(creationContext, typeId, componentName, componentsData);
 	}
 
 	for (auto& tagName : tagNames)
 	{
-		creationContext._tagIDs.push_back(TagTypeIDTable::get_type_id(tagName));
+		creationContext._tagIDs.push_back(TypeInfoTable::get_tag_id(tagName));
 	}
 
 	Entity entity = create_entity(creationContext, uuid);
@@ -190,7 +190,7 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 	tagNames.reserve(tagIDs.size());
 	for (auto& tagID : tagIDs)
 	{
-		tagNames.push_back(TagTypeIDTable::get_tag_name(tagID));
+		tagNames.push_back(TypeInfoTable::get_tag_name(tagID));
 	}
 
 	entityJson["tags"] = tagNames;

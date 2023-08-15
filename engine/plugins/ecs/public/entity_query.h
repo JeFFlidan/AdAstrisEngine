@@ -1,7 +1,7 @@
 #pragma once
 
 #include "api.h"
-#include "type_id_tables.h"
+#include "type_info_table.h"
 
 #include <vector>
 #include <functional>
@@ -26,10 +26,10 @@ namespace ad_astris::ecs
 			template<typename T>
 			void add_component_requirement(ComponentAccess componentAccess)
 			{
-				if (!ComponentTypeIDTable::check_in_table<T>())
-					ComponentTypeIDTable::add_component_info<T>();
+				if (!TypeInfoTable::check_component_in_table<T>())
+					TypeInfoTable::add_component_info<T>();
 				
-				uint32_t id = ComponentTypeIDTable::get_type_id<T>();
+				uint32_t id = TypeInfoTable::get_component_id<T>();
 				_componentIDToAccess[id] = componentAccess;
 				_requiredComponentIDs.push_back(id);
 			}
@@ -37,10 +37,10 @@ namespace ad_astris::ecs
 			template<typename T>
 			void add_tag_requirement()
 			{
-				if (!TagTypeIDTable::check_in_table<T>())
-					TagTypeIDTable::add_tag<T>();
+				if (!TypeInfoTable::check_tag_in_table<T>())
+					TypeInfoTable::add_tag<T>();
 					
-				_requiredTagIDs.push_back(TagTypeIDTable::get_type_id<T>());
+				_requiredTagIDs.push_back(TypeInfoTable::get_tag_id<T>());
 			}
 
 		protected:

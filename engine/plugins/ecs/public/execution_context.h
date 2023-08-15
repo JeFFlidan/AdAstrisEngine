@@ -3,10 +3,11 @@
 #include "api.h"
 #include "entity_query.h"
 #include "archetype.h"
-#include "type_id_tables.h"
+#include "type_info_table.h"
 
 #include "profiler/logger.h"
 #include "core/reflection.h"
+#include "core/array_view.h"
 
 #include <vector>
 #include <unordered_map>
@@ -15,67 +16,61 @@ namespace ad_astris::ecs
 {
 	class ECS_API ExecutionContext
 	{
-		friend class SystemManager;
-		
 		public:
-			ExecutionContext(Archetype* archetype);
+			ExecutionContext(Archetype* archetype, std::unordered_map<uint32_t, ComponentAccess>& accessByComponentID);
 		
 			template<typename T>
-			std::vector<T> get_immutable_components()
+			ConstArrayView<T> get_immutable_components()
 			{
 				std::string componentName = get_type_name<T>();
 				
-				uint32_t id = ComponentTypeIDTable::get_type_id<T>();
-				auto it = _componentIDToAccess.find(id);
-				if (it == _componentIDToAccess.end())
+				uint32_t id = TypeInfoTable::get_component_id<T>();
+				auto it = _accessByComponentID.find(id);
+				if (it == _accessByComponentID.end())
 				{
-					LOG_ERROR("ExecutionContext::get_immutable_components(): No component with type {}", componentName);
-					return std::vector<T>();
+					LOG_FATAL("ExecutionContext::get_immutable_components(): No component with type {}", componentName)
 				}
 				
 				ComponentAccess access = it->second;
 
 				if (access != ComponentAccess::READ_ONLY)
 				{
-					LOG_ERROR("ExectutionContext::get_immutable_components(): {} component should be mutable", componentName);
-					return std::vector<T>();
+					LOG_FATAL("ExectutionContext::get_immutable_components(): {} component should be mutable", componentName);
 				}
 
 				load_subchunks<T>();
 				Subchunk* subchunk = &_loadedSubchunks[id][_chunkIndex];
 
 				uint32_t entitiesCount = _archetype->get_entities_count_per_chunk(_chunkIndex);
-				std::vector<T> components(entitiesCount);
-				memcpy(components.data(), subchunk->get_ptr(), entitiesCount * subchunk->get_structure_size());
-				return components;
+				ConstArrayView<T> componentsView(reinterpret_cast<T*>(subchunk->get_ptr()), entitiesCount);
+				return componentsView;
 			}
 
 			template<typename T>
-			T* get_mutable_components()
+			ThreadSafeArrayView<T> get_mutable_components()
 			{
 				std::string componentName = get_type_name<T>();
 				
-				uint32_t id = ComponentTypeIDTable::get_type_id<T>();
-				auto it = _componentIDToAccess.find(id);
-				if (it == _componentIDToAccess.end())
+				uint32_t id = TypeInfoTable::get_component_id<T>();
+				auto it = _accessByComponentID.find(id);
+				if (it == _accessByComponentID.end())
 				{
-					LOG_ERROR("ExecutionContext::get_immutable_components(): No component with type {}", componentName);
-					return nullptr;
+					LOG_FATAL("ExecutionContext::get_immutable_components(): No component with type {}", componentName);
 				}
 				
 				ComponentAccess access = it->second;
 
 				if (access != ComponentAccess::READ_WRITE)
 				{
-					LOG_ERROR("ExectutionContext::get_immutable_components(): {} component should be immutable", componentName);
-					return nullptr;
+					LOG_FATAL("ExectutionContext::get_immutable_components(): {} component should be immutable", componentName);
 				}
 
 				load_subchunks<T>();
 				Subchunk* subchunk = &_loadedSubchunks[id][_chunkIndex];
 
-				T* components = reinterpret_cast<T*>(subchunk->get_ptr());
-				return components;
+				uint32_t entitiesCount = _archetype->get_entities_count_per_chunk(_chunkIndex);
+				ThreadSafeArrayView<T> componentsView(reinterpret_cast<T*>(subchunk->get_ptr()), entitiesCount);
+				return componentsView;
 			}
 		
 			void clear_loaded_subchunks();
@@ -84,7 +79,7 @@ namespace ad_astris::ecs
 			uint32_t get_entities_count();
 
 		private:
-			std::unordered_map<uint32_t, ComponentAccess> _componentIDToAccess;
+			std::unordered_map<uint32_t, ComponentAccess>& _accessByComponentID;
 			std::unordered_map<uint32_t, std::vector<Subchunk>> _loadedSubchunks;
 			Archetype* _archetype;
 			uint32_t _chunkIndex{ 0 };
@@ -92,7 +87,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			void load_subchunks()
 			{
-				uint32_t typeID = ComponentTypeIDTable::get_type_id<T>();
+				uint32_t typeID = TypeInfoTable::get_component_id<T>();
 				if (_loadedSubchunks.find(typeID) != _loadedSubchunks.end())
 					return;
 

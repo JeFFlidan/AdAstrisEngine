@@ -2,9 +2,10 @@
 
 using namespace ad_astris::ecs;
 
-ExecutionContext::ExecutionContext(Archetype* archetype)
+ExecutionContext::ExecutionContext(Archetype* archetype, std::unordered_map<uint32_t, ComponentAccess>& accessByComponentID)
+	: _accessByComponentID(accessByComponentID), _archetype(archetype)
 {
-	_archetype = archetype;
+
 }
 
 void ExecutionContext::set_chunk_index(uint32_t chunkIndex)

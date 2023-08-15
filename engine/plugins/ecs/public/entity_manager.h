@@ -132,7 +132,7 @@ namespace ad_astris::ecs
 				_entityToItsInfoInArchetype[entity] = newEntityInArchetype;
 			}
 
-			/**
+			/** TODO MAKE THREAD SAFE
 			 * 
 			 */
 			template<typename T>
@@ -141,7 +141,7 @@ namespace ad_astris::ecs
 				set_up_component_common(entity, &value);
 			}
 
-			/**
+			/**  TODO MAKE THREAD SAFE
 			 * 
 			 */
 			template<typename T, typename ...ARGS>
@@ -183,7 +183,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			void set_up_component_common(Entity& entity, T* componentValue)
 			{
-				UntypedComponent component(componentValue, ComponentTypeIDTable::get_type_size<T>(), ComponentTypeIDTable::get_type_id<T>());
+				UntypedComponent component(componentValue, TypeInfoTable::get_component_size<T>(), TypeInfoTable::get_component_id<T>());
 				EntityInArchetypeInfo& entityInArchetype = _entityToItsInfoInArchetype[entity];
 				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
 				archetype.set_component(entity, entityInArchetype.column, &component);

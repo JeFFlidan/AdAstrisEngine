@@ -101,7 +101,7 @@ namespace ad_astris::ecs
 				std::vector<Subchunk> subchunks;
 				for (auto& chunk : _chunks)
 				{
-					((subchunks.push_back(chunk.get_subchunk(ComponentTypeIDTable::get_type_id<TYPES>()))), ...);
+					((subchunks.push_back(chunk.get_subchunk(TypeInfoTable::get_component_id<TYPES>()))), ...);
 				}
 
 				return subchunks;
@@ -113,7 +113,7 @@ namespace ad_astris::ecs
 				std::vector<Subchunk> subchunks;
 				for (auto& chunk : _chunks)
 				{
-					subchunks.push_back(chunk.get_subchunk(ComponentTypeIDTable::get_type_id<T>()));
+					subchunks.push_back(chunk.get_subchunk(TypeInfoTable::get_component_id<T>()));
 				}
 
 				return subchunks;
@@ -123,7 +123,7 @@ namespace ad_astris::ecs
 			T* get_entity_component(Entity& entity, uint32_t columnIndex)
 			{
 				ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
-				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, ComponentTypeIDTable::get_type_id<T>()));
+				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, TypeInfoTable::get_component_id<T>()));
 			}
 
 			template<typename ...ARGS>
@@ -169,7 +169,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			T* get_converted_component(ArchetypeChunk& chunk, uint32_t columnIndex)
 			{
-				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, ComponentTypeIDTable::get_type_id<T>()));
+				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, TypeInfoTable::get_component_id<T>()));
 			}
 	};
 }
