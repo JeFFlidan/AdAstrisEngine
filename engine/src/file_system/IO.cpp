@@ -43,9 +43,13 @@ namespace ad_astris
 	io::EngineFileSystem::EngineFileSystem(const char* engineRootPath)
 	{
 		_engineRootPath = std::filesystem::path(engineRootPath);
+		_streamPool.allocate_new_pool(512);
 	}
 
-	io::EngineFileSystem::~EngineFileSystem() {}
+	io::EngineFileSystem::~EngineFileSystem()
+	{
+		_streamPool.cleanup();
+	}
 
 	io::EngineFileStream* io::EngineFileSystem::open(const io::URI& uri, const char* mode)
 	{
@@ -67,13 +71,13 @@ namespace ad_astris
 			
 		FILE* file = fopen(path.string().c_str(), mode);
 		assert(file && "EngineFileSystem::File is invalid after opening");
-		return new EngineFileStream(file);
+		return _streamPool.allocate(file);
 	}
 
 	bool io::EngineFileSystem::close(io::Stream* stream)
 	{
 		assert(stream);
-		delete stream;
+		_streamPool.free(static_cast<EngineFileStream*>(stream));
 		return true;
 	}
 
@@ -92,8 +96,9 @@ namespace ad_astris
 			LOG_ERROR("File {} is empty", path.c_str())
 			return nullptr;
 		}
-
+		
 		uint8_t* data = new uint8_t[size];
+
 		size_t readElements = stream->read(data, sizeof(uint8_t), size);
 		assert(readElements == size && ("Data " + std::string(path.c_str()) + " is invalid").c_str());
 		assert(data && ("Data " + std::string(path.c_str()) + " is invalid").c_str());
