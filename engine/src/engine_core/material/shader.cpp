@@ -1,6 +1,7 @@
 ﻿#include "shader.h"
 #include "profiler/logger.h"
 #include "file_system/utils.h"
+#include "resource_manager/resource_visitor.h"
 
 using namespace ad_astris;
 using namespace ecore;
@@ -38,6 +39,11 @@ shader::CompilationContext Shader::get_compilation_context()
 	compilationContext.shaderName = _name;
 	compilationContext.isCompiled = _isCompiled;
 	return compilationContext;
+}
+
+inline void Shader::accept(resource::IResourceVisitor& resourceVisitor)
+{
+	resourceVisitor.visit(this);
 }
 
 rhi::ShaderType Shader::get_shader_type_by_file_ext(const io::URI& path)

@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "engine_core/model/static_model.h"
 #include "engine_core/texture/texture2D.h"
+#include "resource_manager/resource_visitor.h"
 #include "profiler/logger.h"
 
 #include <lz4.h>
@@ -53,7 +54,7 @@ io::ResourceFile::ResourceFile(const URI& uri)
 	_path = uri;
 }
 
-io::ResourceFile::~ResourceFile()
+inline io::ResourceFile::~ResourceFile()
 {
 	delete[] _binBlob;
 }
@@ -107,33 +108,37 @@ void io::ResourceFile::deserialize(uint8_t* data, uint64_t size)
 	}
 }
 
-bool io::ResourceFile::is_valid()
+inline bool io::ResourceFile::is_valid()
 {
 	return _binBlob && !_metaData.empty();
 }
 
-
-uint8_t* io::ResourceFile::get_binary_blob()
+inline uint8_t* io::ResourceFile::get_binary_blob()
 {
 	return _binBlob;
 }
 
-void io::ResourceFile::set_binary_blob(uint8_t* blob, uint64_t blobSize)
+inline void io::ResourceFile::set_binary_blob(uint8_t* blob, uint64_t blobSize)
 {
 	_binBlob = new uint8_t[blobSize];
 	memcpy(_binBlob, blob, blobSize);
 	_binBlobSize = blobSize;
 }
 
-uint64_t io::ResourceFile::get_binary_blob_size()
+inline uint64_t io::ResourceFile::get_binary_blob_size()
 {
 	return _binBlobSize;
 }
 
-void io::ResourceFile::destroy_binary_blob()
+inline void io::ResourceFile::destroy_binary_blob()
 {
 	delete[] _binBlob;
 	_binBlob = nullptr;
+}
+
+inline void io::ResourceFile::accept(resource::IResourceVisitor& resourceVisitor)
+{
+	resourceVisitor.visit(this);
 }
 
 io::LevelFile::LevelFile(const URI& uri)
@@ -165,17 +170,22 @@ void io::LevelFile::deserialize(uint8_t* data, uint64_t size)
 	memcpy(_metaData.data(), data + sizeof(uint64_t), metadataSize);
 }
 
-bool io::LevelFile::is_valid()
+inline bool io::LevelFile::is_valid()
 {
 	return !_metaData.empty();
 }
 
-uint8_t* io::LevelFile::get_binary_blob()
+inline uint8_t* io::LevelFile::get_binary_blob()
 {
 	return nullptr;
 }
 
-uint64_t io::LevelFile::get_binary_blob_size()
+inline uint64_t io::LevelFile::get_binary_blob_size()
 {
 	return 0;
+}
+
+inline void io::LevelFile::accept(resource::IResourceVisitor& resourceVisitor)
+{
+	resourceVisitor.visit(this);
 }

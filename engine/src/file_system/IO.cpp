@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <string>
 
+#include "vulkan_rhi/vulkan_command_manager.h"
+
 namespace ad_astris
 {
 	io::EngineFileStream::EngineFileStream(FILE* file)
@@ -117,6 +119,19 @@ namespace ad_astris
 		data = nullptr;
 
 		return true;
+	}
+
+	void io::EngineFileSystem::write(const URI& uri, void* data, size_t objectSize, size_t count, const char* mode)
+	{
+		if (!data || count == 0 || objectSize == 0)
+		{
+			LOG_ERROR("FileSystem::write(): Can't write file when data or size is invalid")
+			return;
+		}
+		
+		EngineFileStream* stream = open(uri, mode);
+		stream->write(data, objectSize, count);
+		close(stream);
 	}
 }
 

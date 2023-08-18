@@ -5,6 +5,11 @@
 #include <stdint.h>
 #include <string>
 
+namespace ad_astris::resource
+{
+	class IResourceVisitor;
+}
+
 namespace ad_astris::io
 {
 	template<typename T>
@@ -31,6 +36,7 @@ namespace ad_astris::io
 			virtual uint8_t* get_binary_blob() = 0;
 			virtual void destroy_binary_blob() { }
 			virtual uint64_t get_binary_blob_size() = 0;
+			virtual void accept(resource::IResourceVisitor& resourceVisitor) = 0;
 		
 			URI get_file_path();
 			std::string get_file_name();
@@ -60,6 +66,7 @@ namespace ad_astris::io
 			virtual uint8_t* get_binary_blob() final override;
 			virtual void destroy_binary_blob() override;
 			virtual uint64_t get_binary_blob_size() final override;
+			virtual void accept(resource::IResourceVisitor& resourceVisitor) final override;
 			
 		private:
 			uint8_t* _binBlob{ nullptr };
@@ -80,6 +87,7 @@ namespace ad_astris::io
 			virtual bool is_valid() final override;
 			virtual uint8_t* get_binary_blob() final override;
 			virtual uint64_t get_binary_blob_size() final override;
+			virtual void accept(resource::IResourceVisitor& resourceVisitor) final override;
 	};
 
 	// class ConfigFile : public IFile

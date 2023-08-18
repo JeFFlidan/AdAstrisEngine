@@ -1,6 +1,7 @@
 #include "level.h"
 #include "engine_core/world.h"
 #include "file_system/utils.h"
+#include "resource_manager/resource_visitor.h"
 
 using namespace ad_astris;
 using namespace ecore;
@@ -23,12 +24,12 @@ void Level::set_owning_world(World* world)
 	_entityManager = _owningWorld->get_entity_manager();
 }
 
-ecs::EntityManager* Level::get_entity_manager()
+inline ecs::EntityManager* Level::get_entity_manager()
 {
 	return _entityManager;
 }
 
-void Level::add_entity(ecs::Entity& entity)
+inline void Level::add_entity(ecs::Entity& entity)
 {
 	_entities.push_back(entity);
 }
@@ -76,29 +77,34 @@ void Level::build_entities()
 	}
 }
 
-uint64_t Level::get_size()
+inline uint64_t Level::get_size()
 {
 	// TODO
 }
 
-bool Level::is_resource()
+inline bool Level::is_resource()
 {
 	return false;
 }
 
-UUID Level::get_uuid()
+inline UUID Level::get_uuid()
 {
 	return _levelInfo.uuid;
 }
 
-std::string Level::get_description()
+inline std::string Level::get_description()
 {
 	// TODO
 }
 
-std::string Level::get_type()
+inline std::string Level::get_type()
 {
 	return "level";
+}
+
+inline void Level::accept(resource::IResourceVisitor& resourceVisitor)
+{
+	resourceVisitor.visit(this);
 }
 
 void Level::rename_in_engine(ObjectName& newName)

@@ -54,6 +54,8 @@ namespace ad_astris::ecore
 				return "material_template";
 			}
 
+			virtual void accept(resource::IResourceVisitor& resourceVisitor) override;
+
 			// ========== End Object interface ==========
 	};
 }

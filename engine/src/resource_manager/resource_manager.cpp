@@ -44,7 +44,7 @@ ResourceAccessor<ecore::Level> ResourceManager::create_level(io::URI& path)
 	resourceData.metadata.objectName = levelName;
 
 	_resourceDataTable.add_resource(&resourceData);
-
+	
 	return level;
 }
 
@@ -88,7 +88,7 @@ void ResourceManager::load_builtin_resources()
 				load_shader(shaderUUID, handleContext);
 			}
 		}
-		LOG_INFO("ResourceManager::load_builting_resources(): Loaded material template: {}", materialTemplate->get_name()->get_full_name())
+		LOG_INFO("ResourceManager::load_builtin_resources(): Loaded material template: {}", materialTemplate->get_name()->get_full_name())
 	}
 
 	_builtinResourcesContext.clear();
@@ -155,6 +155,11 @@ void ResourceManager::save_resources()
 	LOG_INFO("ResourceMangaer::save_resources(): Saved resource table")
 	_resourceDataTable.save_resources();
 	LOG_INFO("ResourceManager::save_resources(): Saved resources")
+}
+
+void ResourceManager::destroy_resource(UUID uuid)
+{
+	_resourceDataTable.destroy_resource(uuid);
 }
 
 /** @warning MEMORY LEAK, uint8_t* data, should be tested if everything works correct after delete[]

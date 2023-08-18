@@ -1,11 +1,13 @@
 #pragma once
 
 #include "resource_pool.h"
+#include "resource_visitor.h"
 #include "file_system/file_system.h"
 #include "engine_core/object.h"
 #include "resource_formats.h"
-
 #include "core/config_base.h"
+#include <mutex>
+#include <memory>
 
 namespace ad_astris::resource
 {
@@ -34,6 +36,19 @@ namespace ad_astris::resource
 			ResourceDataTable() = default;
 			ResourceDataTable(io::FileSystem* fileSystem, ResourcePool* resourcePool);
 			~ResourceDataTable();
+
+			ResourceDataTable& operator=(const ResourceDataTable& other)
+			{
+				if (this == &other)
+					return *this;
+				_fileSystem = other._fileSystem;
+				_resourcePool = other._resourcePool;
+				_resourceDeleterVisitor = other._resourceDeleterVisitor;
+				_uuidToResourceData = other._uuidToResourceData;
+				_nameToUUID = other._nameToUUID;
+				_config = other._config;
+				return *this;
+			}
 			
 			// Load uuids and paths from aarestable file
 			void load_table(BuiltinResourcesContext& context);
@@ -71,8 +86,10 @@ namespace ad_astris::resource
 		private:
 			io::FileSystem* _fileSystem{ nullptr };
 			ResourcePool* _resourcePool{ nullptr };
+			ResourceDeleterVisitor _resourceDeleterVisitor;
 			std::map<std::string, UUID> _nameToUUID;
 			std::map<UUID, ResourceData> _uuidToResourceData;
 			Config _config;
+			std::mutex _mutex;
 	};
 }

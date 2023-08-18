@@ -1,4 +1,5 @@
 #include "static_model.h"
+#include "resource_manager/resource_visitor.h"
 #include "profiler/logger.h"
 
 #include <json.hpp>
@@ -15,22 +16,22 @@ ecore::StaticModelData ecore::StaticModel::get_model_data()
 	return data;
 }
 
-ecore::model::ModelBounds ecore::StaticModel::get_model_bounds()
+inline ecore::model::ModelBounds ecore::StaticModel::get_model_bounds()
 {
 	return _modelInfo.bounds;
 }
 
-ecore::model::VertexFormat ecore::StaticModel::get_vertex_format()
+inline ecore::model::VertexFormat ecore::StaticModel::get_vertex_format()
 {
 	return _modelInfo.vertexFormat;
 }
 
-std::string ecore::StaticModel::get_original_file()
+inline std::string ecore::StaticModel::get_original_file()
 {
 	return _modelInfo.originalFile;
 }
 
-std::vector<std::string> ecore::StaticModel::get_materials_name()
+inline std::vector<std::string> ecore::StaticModel::get_materials_name()
 {
 	return _modelInfo.materialsName;
 }
@@ -53,35 +54,40 @@ void ecore::StaticModel::deserialize(io::IFile* file, ObjectName* objectName)
 	_path = file->get_file_path();
 }
 
-uint64_t ecore::StaticModel::get_size()
+inline uint64_t ecore::StaticModel::get_size()
 {
 	return _modelInfo.vertexBufferSize + _modelInfo.indexBufferSize;
 }
 
-bool ecore::StaticModel::is_resource()
+inline bool ecore::StaticModel::is_resource()
 {
 	return true;
 }
 
-UUID ecore::StaticModel::get_uuid()
+inline UUID ecore::StaticModel::get_uuid()
 {
 	return _modelInfo.uuid;
 }
 
-std::string ecore::StaticModel::get_description()
+inline std::string ecore::StaticModel::get_description()
 {
 	// TODO
 	return std::string();
 }
 
-void ecore::StaticModel::rename_in_engine(ObjectName& newName)
+inline void ecore::StaticModel::rename_in_engine(ObjectName& newName)
 {
 	// TODO
 }
 
-std::string ecore::StaticModel::get_type()
+inline std::string ecore::StaticModel::get_type()
 {
 	return "model";
+}
+
+inline void ecore::StaticModel::accept(resource::IResourceVisitor& resourceVisitor)
+{
+	resourceVisitor.visit(this);
 }
 
 void io::ConversionContext<ecore::StaticModel>::get_data(std::string& metadata, uint8_t*& binBlob, uint64_t& binBlobSize, URI& path)

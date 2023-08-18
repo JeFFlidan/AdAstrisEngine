@@ -1,5 +1,6 @@
 #include "general_material_template.h"
 #include "shader.h"
+#include "resource_manager/resource_visitor.h"
 
 using namespace ad_astris;
 using namespace ecore;
@@ -21,4 +22,9 @@ void GeneralMaterialTemplate::deserialize(io::IFile* file, ObjectName* templateN
 	_templateInfo = material::Utils::unpack_general_material_template_info(file->get_metadata());
 	_name = templateName;
 	_path = file->get_file_path();
+}
+
+inline void GeneralMaterialTemplate::accept(resource::IResourceVisitor& resourceVisitor)
+{
+	resourceVisitor.visit(this);
 }

@@ -83,6 +83,8 @@ namespace ad_astris::ecore
 				return "shader";
 			}
 
+			virtual void accept(resource::IResourceVisitor& resourceVisitor) override;
+
 			// ========== End Object interface ==========
 	};
 }

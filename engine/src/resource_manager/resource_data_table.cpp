@@ -14,7 +14,7 @@
 using namespace ad_astris;
 
 resource::ResourceDataTable::ResourceDataTable(io::FileSystem* fileSystem, ResourcePool* resourcePool)
-	: _fileSystem(fileSystem), _resourcePool(resourcePool)
+	: _fileSystem(fileSystem), _resourcePool(resourcePool), _resourceDeleterVisitor(resourcePool)
 {
 
 }
@@ -124,6 +124,7 @@ void resource::ResourceDataTable::save_resources()
 
 bool resource::ResourceDataTable::check_resource_in_table(UUID& uuid)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	auto it = _uuidToResourceData.find(uuid);
 	if (it != _uuidToResourceData.end() && it->second.object)
 		return true;
@@ -132,6 +133,7 @@ bool resource::ResourceDataTable::check_resource_in_table(UUID& uuid)
 
 bool resource::ResourceDataTable::check_name_in_table(io::URI& path)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	std::string name = io::Utils::get_file_name(path);
 	auto it = _nameToUUID.find(name);
 	if (it != _nameToUUID.end())
@@ -141,7 +143,7 @@ bool resource::ResourceDataTable::check_name_in_table(io::URI& path)
 
 bool resource::ResourceDataTable::check_name_in_table(const std::string& name)
 {
-	// TODO maybe I should change name.get_full_name() to name.get_full_name_without_id()
+	std::scoped_lock<std::mutex> lock(_mutex);
 	auto it = _nameToUUID.find(name);
 	if (it != _nameToUUID.end())
 		return true;
@@ -150,6 +152,7 @@ bool resource::ResourceDataTable::check_name_in_table(const std::string& name)
 
 bool resource::ResourceDataTable::check_uuid_in_table(UUID& uuid)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	auto it = _uuidToResourceData.find(uuid);
 	if (it != _uuidToResourceData.end())
 		return true;
@@ -158,6 +161,7 @@ bool resource::ResourceDataTable::check_uuid_in_table(UUID& uuid)
 
 UUID resource::ResourceDataTable::get_uuid_by_name(io::URI& path)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	std::string name = io::Utils::get_file_name(path);
 	auto it = _nameToUUID.find(name);
 	return it->second;
@@ -165,20 +169,24 @@ UUID resource::ResourceDataTable::get_uuid_by_name(io::URI& path)
 
 UUID resource::ResourceDataTable::get_uuid_by_name(const std::string& name)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	auto it = _nameToUUID.find(name);
 	return it->second;
 }
 
 void resource::ResourceDataTable::add_resource(ResourceData* resource)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	UUID uuid = resource->object->get_uuid();
 	auto it = _uuidToResourceData.find(uuid);
 	if (it != _uuidToResourceData.end() && resource)
 	{
 		if (it->second.object)
-			delete it->second.object;
+			it->second.object->accept(_resourceDeleterVisitor);
 		if (it->second.file)
-			delete it->second.file;
+			it->second.file->accept(_resourceDeleterVisitor);
+		if (it->second.metadata.objectName)
+			_resourcePool->free(it->second.metadata.objectName);
 		
 		it->second = *resource;
 		//io::URI path = resource->file->get_file_path();
@@ -193,49 +201,60 @@ void resource::ResourceDataTable::add_resource(ResourceData* resource)
 
 void resource::ResourceDataTable::destroy_resource(UUID& uuid)
 {
-	// Should test it
+	std::scoped_lock<std::mutex> lock(_mutex);
 	auto it = _uuidToResourceData.find(uuid);
 	if (it == _uuidToResourceData.end())
 	{
 		LOG_ERROR("ResourceDataTable::destroy_resource(): Invalid UUID")
 		return;
 	}
+
+	if (io::Utils::exists(_fileSystem, it->second.object->get_path()))
+		remove(it->second.object->get_path().c_str());
 	
 	ResourceData resourceData = it->second;
-	std::string name = io::Utils::get_file_name(resourceData.file->get_file_path());
+	std::string name = it->second.metadata.objectName->get_full_name();
 	_nameToUUID.erase(_nameToUUID.find(name));
-	delete resourceData.file;			// HAVE TO THINK HOW TO FREE FILE OBJECT BECAUSE I HAVE RESOURCE FILE AND LEVEL FILE
-	delete resourceData.object;			// HAVE TO THINK HOW TO FREE RESOURCE OBJECT
+	resourceData.object->accept(_resourceDeleterVisitor);
+	resourceData.object->accept(_resourceDeleterVisitor);
+	_resourcePool->free(resourceData.metadata.objectName);
+	
 	_uuidToResourceData.erase(it);
+	LOG_INFO("ResourceDataTable::destroy_resource(): Destroyed resource {}", name)
 }
 
 // No if statement to check resource state cause it's implemented in ResourceManager where I use func
 // check_resource_in_cache() and make async loading
 io::IFile* resource::ResourceDataTable::get_resource_file(UUID& uuid)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	auto it = _uuidToResourceData.find(uuid);
 	return it->second.file;
 }
 
 ecore::Object* resource::ResourceDataTable::get_resource_object(UUID& uuid)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	auto it = _uuidToResourceData.find(uuid);
 	return it->second.object;
 }
 
 resource::ResourceData* resource::ResourceDataTable::get_resource_data(UUID& uuid)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	return &_uuidToResourceData.find(uuid)->second;
 }
 
 resource::ResourceType resource::ResourceDataTable::get_resource_type(UUID& uuid)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	auto it = _uuidToResourceData.find(uuid);
 	return it->second.metadata.type;
 }
 
 io::URI resource::ResourceDataTable::get_resource_path(UUID& uuid)
 {
+	std::scoped_lock<std::mutex> lock(_mutex);
 	auto it = _uuidToResourceData.find(uuid);
 	return it->second.metadata.path;
 }

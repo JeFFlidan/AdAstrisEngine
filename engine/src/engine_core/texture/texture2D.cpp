@@ -1,6 +1,8 @@
 #include "texture2D.h"
 #include <utility>
 
+#include "resource_manager/resource_visitor.h"
+
 using namespace ad_astris;
 
 void ecore::Texture2D::serialize(io::IFile* file)
@@ -17,34 +19,39 @@ void ecore::Texture2D::deserialize(io::IFile* file, ObjectName* objectName)
 	_name = objectName;
 }
 
-uint64_t ecore::Texture2D::get_size()
+inline uint64_t ecore::Texture2D::get_size()
 {
 	return _textureInfo.size;
 }
 
-bool ecore::Texture2D::is_resource()
+inline bool ecore::Texture2D::is_resource()
 {
 	return true;
 }
 
-UUID ecore::Texture2D::get_uuid()
+inline UUID ecore::Texture2D::get_uuid()
 {
 	return _textureInfo.uuid;
 }
 
-std::string ecore::Texture2D::get_description()
+inline std::string ecore::Texture2D::get_description()
 {
 	// TODO
 }
 
-void ecore::Texture2D::rename_in_engine(ObjectName& newName)
+inline void ecore::Texture2D::rename_in_engine(ObjectName& newName)
 {
 	// TODO
 }
 
-std::string ecore::Texture2D::get_type()
+inline std::string ecore::Texture2D::get_type()
 {
 	return "texture";
+}
+
+inline void ecore::Texture2D::accept(resource::IResourceVisitor& resourceVisitor)
+{
+	resourceVisitor.visit(this);
 }
 
 void io::ConversionContext<ecore::Texture2D>::get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize,URI& path)

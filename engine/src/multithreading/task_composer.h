@@ -17,6 +17,11 @@ namespace ad_astris::tasks
 			void dispatch(TaskGroup& taskGroup, uint32_t taskCount, uint32_t groupSize, const TaskHandler& taskHandler);
 			bool is_busy(TaskGroup& taskGroup);
 			void wait(TaskGroup& taskGroup);
+
+			uint32_t get_thread_count()
+			{
+				return _threadCount;
+			}
 		
 		private:
 			std::unique_ptr<TaskQueueGroup> _taskQueueGroup{ nullptr };

@@ -2,6 +2,7 @@
 #include "profiler/logger.h"
 #include "core/timer.h"
 #include <cassert>
+#include <exception>
 #include <stdio.h>
 
 #ifdef _WIN32
@@ -109,7 +110,7 @@ void TaskComposer::wait(TaskGroup& taskGroup)
 
 		while (is_busy(taskGroup))
 		{
-			//std::this_thread::yield();
+			std::this_thread::yield();
 		}
 	}
 }
@@ -132,7 +133,14 @@ void TaskComposer::execute_tasks(uint32_t beginningQueueIndex)
 				executionInfo.taskIndexRelativeToSubgroup = taskIndex - task.taskSubgroupBeginning;
 				executionInfo.isFirstTaskInSubgroup = taskIndex == task.taskSubgroupBeginning;
 				executionInfo.isLastTaskInSubgroup = taskIndex == task.taskSubgroupEnd - 1;
-				task.taskHandler(executionInfo);
+				try
+				{
+					task.taskHandler(executionInfo);
+				}
+				catch (std::bad_function_call)
+				{
+					LOG_FATAL("TaskComposer::execute_tasks(): Bad function call. Task index: {}", executionInfo.globalTaskIndex)
+				}
 			}
 			
 			task.taskGroup->pendingTaskCount.fetch_sub(1);

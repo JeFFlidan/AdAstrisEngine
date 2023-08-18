@@ -17,7 +17,7 @@ namespace ad_astris::tasks
 		bool isLastTaskInSubgroup;
 	};
 
-	using TaskHandler = std::function<void(TaskExecutionInfo&)>;
+	using TaskHandler = std::function<void(TaskExecutionInfo)>;
 	
 	struct TaskGroup
 	{

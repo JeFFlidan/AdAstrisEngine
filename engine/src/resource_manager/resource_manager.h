@@ -118,13 +118,14 @@ namespace ad_astris::resource
 					_resourceConverter.convert_to_aares_file(path, &conversionContext);
 				}
 				
-				io::URI relPath = std::string("assets\\" + io::Utils::get_file_name(path) + ".aares").c_str();
-				io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem, relPath);
+				io::URI relPath = std::string("content\\" + io::Utils::get_file_name(path) + ".aares").c_str();
+				io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), relPath);
 				conversionContext.filePath = absolutePath.c_str();
 
 				/** TODO have to fix resource name in deserialize. If object is existed, name should be taken
 				 from this existed object and passed to deserialize method*/
 				ResourceData resourceData{};
+				resourceData.metadata.isBuiltin = false;
 				resourceData.metadata.path = absolutePath;
 				resourceData.metadata.objectName = existedObjectName ? existedObjectName : _resourcePool.allocate<ecore::ObjectName>(io::Utils::get_file_name(absolutePath).c_str());
 				
@@ -190,6 +191,7 @@ namespace ad_astris::resource
 			ResourceAccessor<T> create_new_resource(FirstCreationContext<T>& creationContext);
 
 			void save_resources();
+			void destroy_resource(UUID uuid);
 		
 		private:
 			io::FileSystem* _fileSystem;

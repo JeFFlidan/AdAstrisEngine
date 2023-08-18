@@ -1,5 +1,6 @@
 #pragma once
 
+#include "fwd.h"
 #include "object_name.h"
 #include "file_system/file.h"
 #include "uuid.h"
@@ -54,6 +55,8 @@ namespace ad_astris::ecore
 			{
 				return std::string{""};
 			}
+
+			virtual void accept(resource::IResourceVisitor& resourceVisitor) { }
 
 			bool rename(io::FileSystem* fileSystem, std::string newName);
 

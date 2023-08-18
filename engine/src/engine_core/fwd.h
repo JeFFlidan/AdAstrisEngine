@@ -6,6 +6,8 @@ namespace ad_astris
 	{
 		template<typename T>
 		class ResourceAccessor;
+
+		class IResourceVisitor;
 	}
 
 	namespace ecore
