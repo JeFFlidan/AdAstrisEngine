@@ -39,11 +39,6 @@ inline std::string ecore::Texture2D::get_description()
 	// TODO
 }
 
-inline void ecore::Texture2D::rename_in_engine(ObjectName& newName)
-{
-	// TODO
-}
-
 inline std::string ecore::Texture2D::get_type()
 {
 	return "texture";

@@ -45,9 +45,6 @@ namespace ad_astris::ecore
 			virtual std::string get_description() override;
 			virtual std::string get_type() override;
 			virtual void accept(resource::IResourceVisitor& resourceVisitor) override;
-			
-		protected:
-			virtual void rename_in_engine(ObjectName& newName) override;
 
 			// ========== End Object interface ==========
 	};

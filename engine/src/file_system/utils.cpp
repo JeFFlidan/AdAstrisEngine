@@ -1,6 +1,7 @@
 #include "utils.h"
+#include "profiler/logger.h"
 
-#include "algorithm"
+#include <algorithm>
 #include <filesystem>
 
 using namespace ad_astris;
@@ -12,10 +13,29 @@ void io::Utils::replace_back_slash_to_forward(URI& path)
 	path = strPath.c_str();
 }
 
+void io::Utils::replace_filename(URI& path, const std::string& newFileName)
+{
+	std::filesystem::path stdPath(path.c_str());
+	if (stdPath.has_extension())
+	{
+		std::string fileNameWithExtension = newFileName + '.' + get_file_extension(path);
+		path = stdPath.replace_filename(fileNameWithExtension).string().c_str();
+	}
+	else if (std::filesystem::path(newFileName).has_extension())
+	{
+		path = stdPath.replace_filename(newFileName).string().c_str();
+	}
+	else
+	{
+		LOG_ERROR("io::Utils::replace_filename(): Can't change filename when extension is undefined")
+	}
+}
+
 std::string io::Utils::get_file_name(const URI& path)
 {
 	std::string strPath = std::filesystem::path(path.c_str()).filename().string();
-	strPath.erase(strPath.find("."), strPath.size());
+	if (strPath.find(".") != std::string::npos)
+		strPath.erase(strPath.find("."), strPath.size());
 	return strPath;
 }
 
@@ -66,6 +86,11 @@ bool io::Utils::is_absolute(const URI& path)
 bool io::Utils::is_relative(const URI& path)
 {
 	return std::filesystem::path(path.c_str()).is_relative();
+}
+
+bool io::Utils::has_extension(const URI& path)
+{
+	return std::filesystem::path(path.c_str()).has_extension();
 }
 
 bool io::Utils::exists(FileSystem* fileSystem, const URI& path)

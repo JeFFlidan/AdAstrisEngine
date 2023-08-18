@@ -75,11 +75,6 @@ inline std::string ecore::StaticModel::get_description()
 	return std::string();
 }
 
-inline void ecore::StaticModel::rename_in_engine(ObjectName& newName)
-{
-	// TODO
-}
-
 inline std::string ecore::StaticModel::get_type()
 {
 	return "model";

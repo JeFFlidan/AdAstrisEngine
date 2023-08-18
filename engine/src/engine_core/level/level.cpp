@@ -106,8 +106,3 @@ inline void Level::accept(resource::IResourceVisitor& resourceVisitor)
 {
 	resourceVisitor.visit(this);
 }
-
-void Level::rename_in_engine(ObjectName& newName)
-{
-	
-}
