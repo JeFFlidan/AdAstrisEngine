@@ -36,7 +36,6 @@ add_library(core_libs STATIC)
 target_link_libraries(core_libs ecs)
 target_include_directories(core_libs PUBLIC
     ${ENGINE_SRC_PATH}/resource_manager
-    ${ENGINE_SRC_PATH}/file_system
     ${ENGINE_SRC_PATH}/core
     ${THIRD_PARTY_PATH}/fmt_lib
     ${THIRD_PARTY_PATH}/inicpp
@@ -49,6 +48,7 @@ target_include_directories(core_libs PUBLIC
 )
 file(GLOB ENGINE_LIBS_FILES
     ${ENGINE_SRC_PATH}/resource_manager/*
+    ${ENGINE_SRC_PATH}/multithreading/*
     ${ENGINE_SRC_PATH}/engine_core/model/*
     ${ENGINE_SRC_PATH}/engine_core/project_settings/*
     ${ENGINE_SRC_PATH}/engine_core/texture/*
@@ -67,9 +67,10 @@ file(GLOB ENGINE_LIBS_FILES
     ${ENGINE_SRC_PATH}/engine_core/subsettings.*
     ${ENGINE_SRC_PATH}/engine_core/uuid.*
     ${ENGINE_SRC_PATH}/engine_core/world.*
-    ${ENGINE_SRC_PATH}/file_system/*
-    ${ENGINE_SRC_PATH}/events/*
     ${ENGINE_SRC_PATH}/core/*
+    ${ENGINE_SRC_PATH}/file_system/utils.*
+    ${ENGINE_SRC_PATH}/file_system/file.*
+    ${ENGINE_SRC_PATH}/events/*
     ${THIRD_PARTY_PATH}/inicpp/*
     ${THIRD_PARTY_PATH}/json/*
     ${THIRD_PARTY_PATH}/glm/*
@@ -80,17 +81,17 @@ file(GLOB ENGINE_LIBS_FILES
 )
 target_sources(core_libs PRIVATE ${ENGINE_LIBS_FILES})
 
-add_library(module_manager STATIC)
-target_include_directories(module_manager PUBLIC 
-    ${ENGINE_SRC_PATH}/core 
-    ${THIRD_PARTY_PATH}/fmt_lib
-)
-file(GLOB FILE_SYSTEM_FILES
-	${ENGINE_SRC_PATH}/core/module_manager.h
-	${ENGINE_SRC_PATH}/core/module_manager.cpp
-	${THIRD_PARTY_PATH}/fmt_lib/fmt/*
-	${THIRD_PARTY_PATH}/inicpp/*)
-target_sources(module_manager PRIVATE ${FILE_SYSTEM_FILES})
+# add_library(module_manager STATIC)
+# target_include_directories(module_manager PUBLIC 
+#     ${ENGINE_SRC_PATH}/core 
+#     ${THIRD_PARTY_PATH}/fmt_lib
+# )
+# file(GLOB FILE_SYSTEM_FILES
+# 	${ENGINE_SRC_PATH}/core/module_manager.h
+# 	${ENGINE_SRC_PATH}/core/module_manager.cpp
+# 	${THIRD_PARTY_PATH}/fmt_lib/fmt/*
+# 	${THIRD_PARTY_PATH}/inicpp/*)
+# target_sources(module_manager PRIVATE ${FILE_SYSTEM_FILES})
 
 add_library(fmt_lib STATIC)
 target_include_directories(fmt_lib PUBLIC ${THIRD_PARTY_PATH}/fmt_lib)
@@ -101,4 +102,4 @@ include_directories(${ENGINE_SRC_PATH})
 include_directories(${THIRD_PARTY_PATH}/inicpp)
 include_directories(${THIRD_PARTY_PATH}/vma)
 
-target_link_libraries(engine Vulkan::Vulkan fmt_lib core_libs module_manager)
+target_link_libraries(engine Vulkan::Vulkan core_libs fmt_lib)

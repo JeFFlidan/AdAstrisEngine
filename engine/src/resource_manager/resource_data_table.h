@@ -18,7 +18,7 @@ namespace ad_astris::resource
 		io::URI path;
 		ResourceType type{ ResourceType::UNDEFINED };
 		ecore::ObjectName* objectName{ nullptr };
-		bool isBuiltin{ false };
+		bool builtin{ false };
 	};
 
 	struct ResourceData
@@ -70,6 +70,7 @@ namespace ad_astris::resource
 			bool check_uuid_in_table(UUID& uuid);
 
 			void add_resource(ResourceData* resource);
+			void add_empty_resource(ResourceData* resource, UUID uuid);
 
 			// After destroying resource, its path won't be in aarestable file. 
 			void destroy_resource(UUID& uuid);

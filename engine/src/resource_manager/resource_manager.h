@@ -125,7 +125,6 @@ namespace ad_astris::resource
 				/** TODO have to fix resource name in deserialize. If object is existed, name should be taken
 				 from this existed object and passed to deserialize method*/
 				ResourceData resourceData{};
-				resourceData.metadata.isBuiltin = false;
 				resourceData.metadata.path = absolutePath;
 				resourceData.metadata.objectName = existedObjectName ? existedObjectName : _resourcePool.allocate<ecore::ObjectName>(io::Utils::get_file_name(absolutePath).c_str());
 				
@@ -234,7 +233,7 @@ namespace ad_astris::resource
 			void send_resource_event(T* resourceObject);
 		
 			void load_builtin_resources();
-			void add_shader_to_handle_context(io::URI& shaderPath, ResourceAccessor<ecore::Shader>& shaderHandle);
+			void add_shader_to_uuid_context(io::URI& shaderPath, ecore::material::ShaderUUIDContext& shaderUUIDContext);
 			void load_shader(UUID& shaderUUID, ecore::material::ShaderHandleContext& shaderContext);
 	};
 }

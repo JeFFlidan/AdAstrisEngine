@@ -14,14 +14,17 @@ namespace ad_astris::ecore
 			// Need this constructor to create new material template.
 			GeneralMaterialTemplate(material::GeneralMaterialTemplateInfo& templateInfo, ObjectName* objectName);
 
-			std::unordered_map<std::string, material::ShaderPass>& get_shader_passes()
+			std::unordered_map<material::ShaderPassType, material::ShaderPass>& get_shader_passes()
 			{
-				return _templateInfo.shaderPassByItsName;
+				return _templateInfo.shaderPassByItsType;
 			}
 
-			std::vector<std::string> get_shader_passes_order()
+			material::ShaderPass get_shader_pass(material::ShaderPassType shaderPassType)
 			{
-				return _templateInfo.shaderPassesOrder;
+				auto it = _templateInfo.shaderPassByItsType.find(shaderPassType);
+				if (it == _templateInfo.shaderPassByItsType.end())
+					LOG_FATAL("GeneralMaterialTemplate::get_shader_pass(): Material template {} doesn't have shader pass {}", _name->get_full_name(), material::Utils::get_str_shader_pass_type(shaderPassType))
+				return it->second;
 			}
 
 		private:

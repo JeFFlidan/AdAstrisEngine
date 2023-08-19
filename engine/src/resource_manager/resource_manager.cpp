@@ -114,28 +114,32 @@ ResourceAccessor<ecore::GeneralMaterialTemplate> ResourceManager::create_new_res
 	templateInfo.uuid = UUID();
 	for (auto& shaderPassInfo : creationContext.shaderPassCreateInfos)
 	{
-		ecore::material::ShaderHandleContext handleContext;
-		add_shader_to_handle_context(shaderPassInfo.vertexShaderPath, handleContext.vertexShader);
-		add_shader_to_handle_context(shaderPassInfo.fragmentShaderPath, handleContext.fragmentShader);
-		add_shader_to_handle_context(shaderPassInfo.tessControlShader, handleContext.tessControlShader);
-		add_shader_to_handle_context(shaderPassInfo.tessEvaluationShader, handleContext.tessEvaluationShader);
-		add_shader_to_handle_context(shaderPassInfo.geometryShader, handleContext.geometryShader);
-		add_shader_to_handle_context(shaderPassInfo.computeShader, handleContext.computeShader);
-		add_shader_to_handle_context(shaderPassInfo.meshShader, handleContext.meshShader);
-		add_shader_to_handle_context(shaderPassInfo.taskShader, handleContext.taskShader);
-		add_shader_to_handle_context(shaderPassInfo.rayGenerationShader, handleContext.rayGenerationShader);
-		add_shader_to_handle_context(shaderPassInfo.rayIntersectionShader, handleContext.rayIntersectionShader);
-		add_shader_to_handle_context(shaderPassInfo.rayAnyHitShader, handleContext.rayAnyHitShader);
-		add_shader_to_handle_context(shaderPassInfo.rayClosestHit, handleContext.rayClosestHitShader);
-		add_shader_to_handle_context(shaderPassInfo.rayMiss, handleContext.rayMissShader);
-		add_shader_to_handle_context(shaderPassInfo.rayCallable, handleContext.rayCallableShader);
-		ecore::material::ShaderPass shaderPass(handleContext, shaderPassInfo.passName);
-		templateInfo.shaderPassByItsName[shaderPass.get_name()] = shaderPass;
-		templateInfo.shaderPassesOrder.push_back(shaderPass.get_name());
+		ecore::material::ShaderUUIDContext uuidContext;
+		add_shader_to_uuid_context(shaderPassInfo.vertexShaderPath, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.fragmentShaderPath, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.tessControlShader, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.tessEvaluationShader, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.geometryShader, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.computeShader, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.meshShader, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.taskShader, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.rayGenerationShader, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.rayIntersectionShader, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.rayAnyHitShader, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.rayClosestHit, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.rayMiss, uuidContext);
+		add_shader_to_uuid_context(shaderPassInfo.rayCallable, uuidContext);
+		ecore::material::ShaderPass shaderPass(uuidContext, shaderPassInfo.passType);
+		ecore::material::ShaderHandleContext& handleContext = shaderPass.get_shader_handle_context();
+		for (auto& uuid : shaderPass.get_shader_uuid_context().shaderUUIDs)
+		{
+			load_shader(uuid, handleContext);
+		}
+		templateInfo.shaderPassByItsType[shaderPass.get_type()] = shaderPass;
 	}
 	
-	std::string relativePath = "assets/" + creationContext.materialTemplateName + ".aares";
-	io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem, relativePath.c_str());
+	std::string relativePath = "content/builtin/" + creationContext.materialTemplateName + ".aares";
+	io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), relativePath.c_str());
 	
 	ResourceData resData{};
 	resData.metadata.path = absolutePath;
@@ -194,13 +198,13 @@ io::IFile* ResourceManager::read_from_disk(io::URI& path, bool isShader)
 	return file;
 }
 
-void ResourceManager::add_shader_to_handle_context(io::URI& shaderPath, ResourceAccessor<ecore::Shader>& shaderHandle)
+void ResourceManager::add_shader_to_uuid_context(io::URI& shaderPath, ecore::material::ShaderUUIDContext& shaderContext)
 {
 	if (std::string(shaderPath.c_str()).empty())
 	{
 		return;
 	}
-	LOG_INFO("Shader path: {}", shaderPath.c_str())
+
 	io::URI absolutePath = shaderPath;
 	if (io::Utils::is_relative(shaderPath.c_str()))
 	{
@@ -213,12 +217,9 @@ void ResourceManager::add_shader_to_handle_context(io::URI& shaderPath, Resource
 		return;
 	}
 
-	LOG_INFO("Absolute path {}", absolutePath.c_str())
-
 	if (_resourceDataTable.check_name_in_table(shaderPath.c_str()))
 	{
-		UUID uuid = _resourceDataTable.get_uuid_by_name(shaderPath.c_str());
-		shaderHandle = ResourceAccessor<ecore::Shader>(_resourceDataTable.get_resource_object(uuid));
+		shaderContext.shaderUUIDs.push_back(_resourceDataTable.get_uuid_by_name(shaderPath.c_str()));
 		return;
 	}
 
@@ -226,10 +227,9 @@ void ResourceManager::add_shader_to_handle_context(io::URI& shaderPath, Resource
 	resData.metadata.type = ResourceType::SHADER;
 	resData.metadata.path = absolutePath;
 	resData.metadata.objectName = _resourcePool.allocate<ecore::ObjectName>(shaderPath.c_str());
-	resData.object = _resourcePool.allocate<ecore::Shader>(resData.metadata.objectName);
-
-	_resourceDataTable.add_resource(&resData);
-	shaderHandle = ResourceAccessor<ecore::Shader>(resData.object);
+	resData.metadata.builtin = true;
+	shaderContext.shaderUUIDs.push_back(UUID());
+	_resourceDataTable.add_empty_resource(&resData, shaderContext.shaderUUIDs.back());
 }
 
 void ResourceManager::load_shader(UUID& shaderUUID, ecore::material::ShaderHandleContext& shaderContext)

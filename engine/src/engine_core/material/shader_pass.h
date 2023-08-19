@@ -8,9 +8,9 @@ namespace ad_astris::ecore::material
 	{
 		public:
 			ShaderPass() = default;
-			ShaderPass(const std::string& shaderPassName);
+			ShaderPass(ShaderPassType shaderPassType);
 			// Need this constructor to create new shader pass for GeneralMaterialTemplate
-			ShaderPass(ShaderHandleContext& shaderHandleContext, std::string& shaderPassName);
+			ShaderPass(ShaderUUIDContext& shaderUUIDContext, ShaderPassType shaderPassType);
 
 			ShaderHandleContext& get_shader_handle_context()
 			{
@@ -25,13 +25,12 @@ namespace ad_astris::ecore::material
 			std::string serialize();
 			void deserialize(std::string& metadata);
 
-			std::string get_name()
+			ShaderPassType get_type()
 			{
-				return _name;
+				return _shaderPassInfo.type;
 			}
 		
 		private:
 			ShaderPassInfo _shaderPassInfo;
-			std::string _name;
 	};
 }

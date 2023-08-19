@@ -11,12 +11,11 @@ using namespace material;
 std::string Utils::pack_general_material_template_info(GeneralMaterialTemplateInfo& info)
 {
 	nlohmann::json templateMetadata;
-	templateMetadata["passes_order"] = info.shaderPassesOrder;
 	templateMetadata["uuid"] = (uint64_t)info.uuid;
 
-	for (auto& pair : info.shaderPassByItsName)
+	for (auto& pair : info.shaderPassByItsType)
 	{
-		templateMetadata[pair.first] = pair.second.serialize();
+		templateMetadata[get_str_shader_pass_type(pair.first)] = pair.second.serialize();
 	}
 
 	return templateMetadata.dump();
@@ -34,16 +33,12 @@ GeneralMaterialTemplateInfo Utils::unpack_general_material_template_info(std::st
 		{
 			templateInfo.uuid = UUID(keyAndValue.value().get<uint64_t>());
 		}
-		else if (keyAndValue.key() == "passes_order")
-		{
-			templateInfo.shaderPassesOrder = keyAndValue.value().get<std::vector<std::string>>();
-		}
 		else
 		{
-			ShaderPass shaderPass(keyAndValue.key());
+			ShaderPass shaderPass(get_enum_shader_pass_type(keyAndValue.key()));
 			std::string shaderPassMetadata = keyAndValue.value().get<std::string>();
 			shaderPass.deserialize(shaderPassMetadata);
-			templateInfo.shaderPassByItsName[shaderPass.get_name()] = shaderPass;
+			templateInfo.shaderPassByItsType[shaderPass.get_type()] = shaderPass;
 		}
 	}
 
@@ -135,4 +130,60 @@ void ShaderHandleContext::get_all_valid_shader_handles(std::vector<ShaderHandle>
 	{
 		shaderHandles.push_back(rayCallableShader);
 	}
+}
+
+std::string Utils::get_str_shader_pass_type(ShaderPassType shaderPassType)
+{
+	if (shaderPassType == ShaderPassType::GBUFFER)
+		return "GBuffer";
+	if (shaderPassType == ShaderPassType::DEFERRED_LIGHTING)
+		return "DeferredLighting";
+	if (shaderPassType == ShaderPassType::OIT_PREPASS)
+		return "OITPrepass";
+	if (shaderPassType == ShaderPassType::OIT)
+		return "OIT";
+	if (shaderPassType == ShaderPassType::TAA)
+		return "TAA";
+	if (shaderPassType == ShaderPassType::DIRECTIONAL_LIGHT_SHADOWS)
+		return "DirectionalLightShadows";
+	if (shaderPassType == ShaderPassType::POINT_LIGHT_SHADOWS)
+		return "PointLightShadows";
+	if (shaderPassType == ShaderPassType::SPOT_LIGHT_SHADOWS)
+		return "SpotLightShadows";
+	if (shaderPassType == ShaderPassType::COMPOSITE)
+		return "Composite";
+	if (shaderPassType == ShaderPassType::POSTPROCESSING)
+		return "Postprocessing";
+	if (shaderPassType == ShaderPassType::CULLING)
+		return "Culling";
+	if (shaderPassType == ShaderPassType::REDUCE_DEPTH)
+		return "ReduceDepth";
+}
+
+ShaderPassType Utils::get_enum_shader_pass_type(const std::string& shaderPassName)
+{
+	if (shaderPassName == "GBuffer")
+		return ShaderPassType::GBUFFER;
+	if (shaderPassName == "DeferredLighting")
+		return ShaderPassType::DEFERRED_LIGHTING;
+	if (shaderPassName == "OITPrepass")
+		return ShaderPassType::OIT_PREPASS;
+	if (shaderPassName == "OIT")
+		return ShaderPassType::OIT;
+	if (shaderPassName == "TAA")
+		return ShaderPassType::TAA;
+	if (shaderPassName == "DirectionalLightShadows")
+		return ShaderPassType::DIRECTIONAL_LIGHT_SHADOWS;
+	if (shaderPassName == "PointLightShadows")
+		return ShaderPassType::POINT_LIGHT_SHADOWS;
+	if (shaderPassName == "SpotLightShadows")
+		return ShaderPassType::SPOT_LIGHT_SHADOWS;
+	if (shaderPassName == "Composite")
+		return ShaderPassType::COMPOSITE;
+	if (shaderPassName == "Postprocessing")
+		return ShaderPassType::POSTPROCESSING;
+	if (shaderPassName == "Culling")
+		return ShaderPassType::CULLING;
+	if (shaderPassName == "ReduceDepth")
+		return ShaderPassType::REDUCE_DEPTH;
 }

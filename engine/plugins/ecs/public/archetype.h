@@ -47,7 +47,8 @@ namespace ad_astris::ecs
 	{
 		std::vector<uint32_t> componentIds;
 		std::unordered_map<uint32_t, uint16_t> componentIdToSize;	// should be sorted
-		std::vector<uint32_t> tagIDs; 
+		std::vector<uint32_t> tagIDs;
+		uint32_t entityCount;
 	};
 	
 	class ECS_API ArchetypeChunk

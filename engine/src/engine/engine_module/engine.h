@@ -8,7 +8,9 @@
 #include "events/event_manager.h"
 #include "engine/renderer_module.h"
 #include "resource_manager/resource_manager.h"
+#include "multithreading/task_composer.h"
 #include "file_system/file_system.h"
+#include "ecs.h"
 #include <memory>
 
 namespace ad_astris::engine::impl
@@ -17,6 +19,7 @@ namespace ad_astris::engine::impl
 	{
 		public:
 			virtual void init(EngineInitializationContext& initializationContext) override;
+			virtual void execute() override;
 			virtual void save_and_cleanup(bool needToSave) override;
 
 		private:
@@ -25,11 +28,14 @@ namespace ad_astris::engine::impl
 			events::EventManager* _eventManager{ nullptr };
 			acore::IWindow* _mainWindow{ nullptr };
 			std::unique_ptr<resource::ResourceManager> _resourceManager{ nullptr };
+			std::unique_ptr<ecs::SystemManager> _systemManager{ nullptr };
+			std::unique_ptr<tasks::TaskComposer> _taskComposer{ nullptr };
 			renderer::IRenderer* _renderer{ nullptr };
 			std::unique_ptr<ecore::World> _world{ nullptr };
 			std::unique_ptr<ecore::ProjectSettings> _projectSettings{ nullptr };
 		
 			void create_new_blank_project();
 			void load_existing_project();
+			void create_material_templates();
 	};
 }

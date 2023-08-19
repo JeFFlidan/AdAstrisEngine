@@ -4,14 +4,15 @@
 
 using namespace ad_astris::ecore::material;
 
-ShaderPass::ShaderPass(const std::string& shaderPassName) : _name(shaderPassName)
+ShaderPass::ShaderPass(ShaderPassType shaderPassType)
 {
-	
+	_shaderPassInfo.type = shaderPassType;
 }
 
-ShaderPass::ShaderPass(ShaderHandleContext& shaderHandleContext, std::string& shaderPassName) : _name(shaderPassName)
+ShaderPass::ShaderPass(ShaderUUIDContext& shaderUUIDContext, ShaderPassType shaderPassType)
 {
-	_shaderPassInfo.shaderHandleContext = shaderHandleContext;
+	_shaderPassInfo.shaderUUIDContext = shaderUUIDContext;
+	_shaderPassInfo.type = shaderPassType;
 }
 
 std::string ShaderPass::serialize()
@@ -21,5 +22,7 @@ std::string ShaderPass::serialize()
 
 void ShaderPass::deserialize(std::string& metadata)
 {
+	ShaderPassType shaderPassType = _shaderPassInfo.type;
 	_shaderPassInfo = Utils::unpack_shader_pass_info(metadata);
+	_shaderPassInfo.type = shaderPassType;
 }

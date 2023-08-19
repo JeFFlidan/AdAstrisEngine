@@ -47,10 +47,16 @@ namespace ad_astris::ecs
 				((set_up_tag<TYPES>(), ...));
 				std::sort(_tagIDs.begin(), _tagIDs.end());
 			}
+
+			void set_entity_count(uint32_t entityCount)
+			{
+				_entityCount = entityCount;
+			}
 			
 		protected:
 			std::unordered_map<uint32_t, uint16_t> _idToSize;
 			uint32_t _allComponentsSize{ 0 };
+			uint32_t _entityCount{ 1024 };
 			std::vector<uint32_t> _componentIDs;
 			std::vector<uint32_t> _tagIDs;
 

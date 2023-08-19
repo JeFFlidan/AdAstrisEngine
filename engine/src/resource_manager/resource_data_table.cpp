@@ -32,37 +32,31 @@ void resource::ResourceDataTable::load_table(BuiltinResourcesContext& context)
 	for (auto section : _config)
 	{
 		UUID uuid = section.get_option_value<uint64_t>("UUID");
+		LOG_INFO("UUID: {}", uuid)
+		if (check_uuid_in_table(uuid))
+			continue;
 		uint32_t nameID = section.get_option_value<uint64_t>("NameID");
 		std::string name = section.get_option_value<std::string>("Name");
+		LOG_INFO("NAME: {}", name)
+		bool builtin = section.get_option_value<bool>("Builtin");
 		ResourceData resData{};
-		resData.metadata.path = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), section.get_name().c_str());
+		if (builtin)
+		{
+			resData.metadata.path = io::Utils::get_absolute_path_to_file(_fileSystem->get_engine_root_path(), section.get_name().c_str());
+		}
+		else
+		{
+			resData.metadata.path = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), section.get_name().c_str());
+		}
 		resData.metadata.type = Utils::get_enum_resource_type(section.get_option_value<std::string>("Type"));
 		resData.metadata.objectName = _resourcePool->allocate<ecore::ObjectName>(name.c_str(), nameID);
+		resData.metadata.builtin = builtin;
 		if (resData.metadata.type == ResourceType::MATERIAL_TEMPLATE)
 			context.materialTemplateNames.push_back(uuid);
 		_uuidToResourceData[uuid] = resData;
 		_nameToUUID[resData.metadata.objectName->get_full_name()] = uuid;
 	}
 	_config.unload();
-
-	path = _fileSystem->get_engine_root_path() + "/configs/builtin_resource_table.ini";
-	Config builtinResourcesConfig;
-	builtinResourcesConfig.load_from_file(path);
-	for (auto section : builtinResourcesConfig)
-	{
-		UUID uuid = section.get_option_value<uint64_t>("UUID");
-		uint32_t nameID = section.get_option_value<uint64_t>("NameID");
-		std::string name = section.get_option_value<std::string>("Name");
-		ResourceData resData{};
-		resData.metadata.path = io::Utils::get_absolute_path_to_file(_fileSystem->get_engine_root_path(), section.get_name().c_str());
-		resData.metadata.type = Utils::get_enum_resource_type(section.get_option_value<std::string>("Type"));
-		resData.metadata.objectName = _resourcePool->allocate<ecore::ObjectName>(name.c_str(), nameID);
-		resData.metadata.isBuiltin = true;
-		if (resData.metadata.type == ResourceType::MATERIAL_TEMPLATE)
-			context.materialTemplateNames.push_back(uuid);
-		_uuidToResourceData[uuid] = resData;
-		_nameToUUID[resData.metadata.objectName->get_full_name()] = uuid;
-	}
 }
 
 void resource::ResourceDataTable::save_table()
@@ -70,17 +64,26 @@ void resource::ResourceDataTable::save_table()
 	for (auto& data : _uuidToResourceData)
 	{
 		ResourceData& resData = data.second;
-		if (resData.metadata.isBuiltin)
-			continue;
 		
-		io::URI relativePath = io::Utils::get_relative_path_to_file(_fileSystem->get_project_root_path(), resData.metadata.path);
+		io::URI relativePath;
+		if (resData.metadata.builtin)
+		{
+			relativePath = io::Utils::get_relative_path_to_file(_fileSystem->get_engine_root_path(), resData.metadata.path);
+		}
+		else
+		{
+			relativePath = io::Utils::get_relative_path_to_file(_fileSystem->get_project_root_path(), resData.metadata.path);
+		}
+			
 		io::Utils::replace_back_slash_to_forward(relativePath);
 		Section newSection(relativePath.c_str());
 		
 		newSection.set_option("UUID", (uint64_t)data.first);
 		newSection.set_option("Type", Utils::get_str_resource_type(resData.metadata.type));
+		newSection.set_option("Builtin", resData.metadata.builtin);
 		newSection.set_option("Name", resData.metadata.objectName->get_name_without_id());
 		newSection.set_option("NameID", (uint64_t)resData.metadata.objectName->get_name_id());
+		
 		_config.set_section(newSection);
 	}
 
@@ -92,10 +95,9 @@ void resource::ResourceDataTable::save_resources()
 {
 	for (auto& pair : _uuidToResourceData)
 	{
-		LOG_INFO("Start saving")
 		ResourceData& resourceData = pair.second;
 
-		if (resourceData.metadata.isBuiltin || !resourceData.object)
+		if (resourceData.metadata.type == ResourceType::SHADER || !resourceData.object)
 			continue;
 		
 		io::IFile* file = resourceData.file;
@@ -104,7 +106,7 @@ void resource::ResourceDataTable::save_resources()
 
 		uint8_t* data{ nullptr };
 		uint64_t size = 0;
-		LOG_INFO("Before object serialization")
+		LOG_INFO("Before object serialization {}", object->get_name()->get_full_name())
 		object->serialize(file);
 		LOG_INFO("File metadata: {}", file->get_metadata())
 		LOG_INFO("Before file serialization")
@@ -196,6 +198,21 @@ void resource::ResourceDataTable::add_resource(ResourceData* resource)
 	{
 		_uuidToResourceData[uuid] = *resource;
 		_nameToUUID[resource->object->get_name()->get_full_name()] = uuid;
+	}
+}
+
+void resource::ResourceDataTable::add_empty_resource(ResourceData* resource, UUID uuid)
+{
+	std::scoped_lock<std::mutex> lock(_mutex);
+	auto it = _uuidToResourceData.find(uuid);
+	if (it == _uuidToResourceData.end())
+	{
+		_uuidToResourceData[uuid] = *resource;
+		_nameToUUID[resource->metadata.objectName->get_full_name()] = uuid;
+	}
+	else
+	{
+		LOG_ERROR("ResourceDataTable::add_empty_resource(): Can't add an empty resource with UUID {} because resource with this UUID was created earlier", (uint64_t)uuid)
 	}
 }
 

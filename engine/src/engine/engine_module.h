@@ -22,6 +22,7 @@ namespace ad_astris::engine
 		public:
 			virtual ~IEngine() { }
 			virtual void init(EngineInitializationContext& initializationContext) = 0;
+			virtual void execute() = 0;
 			virtual void save_and_cleanup(bool needToSave) = 0;
 	};
 	
