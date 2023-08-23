@@ -16,12 +16,16 @@ namespace ad_astris
 		class Texture2D;
 		class Shader;
 		class Level;
-		class GeneralMaterialTemplate;
+		class MaterialTemplate;
+		class OpaquePBRMaterial;
+		class TransparentMaterial;
 
 		typedef resource::ResourceAccessor<StaticModel> StaticModelHandle;
 		typedef resource::ResourceAccessor<Texture2D> Texture2DHandle;
 		typedef resource::ResourceAccessor<Shader> ShaderHandle;
-		typedef resource::ResourceAccessor<GeneralMaterialTemplate> GeneralMaterialTemplateHandle;
+		typedef resource::ResourceAccessor<MaterialTemplate> MaterialTemplateHandle;
 		typedef resource::ResourceAccessor<Level> LevelHandle;
+		typedef resource::ResourceAccessor<OpaquePBRMaterial> OpaquePBRMaterialHandle;
+		typedef resource::ResourceAccessor<TransparentMaterial> TransparentMaterialHandle;
 	}
 }

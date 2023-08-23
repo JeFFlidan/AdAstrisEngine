@@ -7,12 +7,12 @@
 
 namespace ad_astris::ecore
 {
-	class GeneralMaterialTemplate : public Object
+	class MaterialTemplate : public Object
 	{
 		public:
-			GeneralMaterialTemplate() = default;
+			MaterialTemplate() = default;
 			// Need this constructor to create new material template.
-			GeneralMaterialTemplate(material::GeneralMaterialTemplateInfo& templateInfo, ObjectName* objectName);
+			MaterialTemplate(material::MaterialTemplateInfo& templateInfo, ObjectName* objectName);
 
 			std::unordered_map<material::ShaderPassType, material::ShaderPass>& get_shader_passes()
 			{
@@ -28,7 +28,7 @@ namespace ad_astris::ecore
 			}
 
 		private:
-			material::GeneralMaterialTemplateInfo _templateInfo;
+			material::MaterialTemplateInfo _templateInfo;
 		
 		public:
 			// ========== Begin Object interface ==========
@@ -66,7 +66,7 @@ namespace ad_astris::ecore
 namespace ad_astris::resource
 {
 	template<>
-	struct FirstCreationContext<ecore::GeneralMaterialTemplate>
+	struct FirstCreationContext<ecore::MaterialTemplate>
 	{
 		std::vector<ecore::material::ShaderPassCreateInfo> shaderPassCreateInfos;
 		std::string materialTemplateName;

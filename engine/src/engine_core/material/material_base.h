@@ -1,13 +1,21 @@
 ﻿#pragma once
 
 #include "engine_core/object.h"
+#include "material_settings.h"
+#include <memory>
 
 namespace ad_astris::ecore
 {
-	class Material : public Object
+	class MaterialBase : public Object
 	{
 		public:
-			Material() = default;
+			MaterialBase() = default;
+			MaterialBase(ObjectName* materialName, UUID generalMaterialTemplateUUID);
+
+		protected:
+			std::unique_ptr<IMaterialSettings> _materialSettings;
+			UUID _materialUUID;
+			UUID _materialTemplateUUID;
 
 		public:
 			// ========== Begin Object interface ==========
@@ -21,7 +29,7 @@ namespace ad_astris::ecore
 		
 			virtual UUID get_uuid() override
 			{
-				
+				return _materialUUID;
 			}
 		
 			virtual std::string get_description() override
@@ -34,9 +42,6 @@ namespace ad_astris::ecore
 			{
 				return "material";
 			}
-
-		protected:
-			virtual void rename_in_engine(ObjectName& newName) override;
 
 			// ========== End Object interface ==========
 	};

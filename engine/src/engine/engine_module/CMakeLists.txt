@@ -44,6 +44,7 @@ target_include_directories(core_libs PUBLIC
     ${THIRD_PARTY_PATH}/lz4
     ${THIRD_PARTY_PATH}/cgltf
     ${THIRD_PARTY_PATH}/stb_image
+    ${THIRD_PARTY_PATH}/reflection
     ${THIRD_PARTY_PATH}/tinyobjloader
 )
 file(GLOB ENGINE_LIBS_FILES
@@ -77,6 +78,7 @@ file(GLOB ENGINE_LIBS_FILES
     ${THIRD_PARTY_PATH}/lz4/*
     ${THIRD_PARTY_PATH}/cgltf/*
     ${THIRD_PARTY_PATH}/stb_image/*
+    ${THIRD_PARTY_PATH}/reflection/*
     ${THIRD_PARTY_PATH}/tinyobjloader/*
 )
 target_sources(core_libs PRIVATE ${ENGINE_LIBS_FILES})
@@ -101,5 +103,6 @@ target_sources(fmt_lib PRIVATE ${FMT_FILES})
 include_directories(${ENGINE_SRC_PATH})
 include_directories(${THIRD_PARTY_PATH}/inicpp)
 include_directories(${THIRD_PARTY_PATH}/vma)
+include_directories(${THIRD_PARTY_PATH}/reflection)
 
 target_link_libraries(engine Vulkan::Vulkan core_libs fmt_lib)

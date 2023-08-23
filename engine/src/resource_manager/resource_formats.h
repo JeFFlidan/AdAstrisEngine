@@ -3,7 +3,6 @@
 #include "engine_core/uuid.h"
 #include <vector>
 #include <string>
-#include <map>
 
 namespace ad_astris::resource
 {

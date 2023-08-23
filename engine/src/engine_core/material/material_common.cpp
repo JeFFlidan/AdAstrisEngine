@@ -8,10 +8,14 @@ using namespace ad_astris;
 using namespace ecore;
 using namespace material;
 
-std::string Utils::pack_general_material_template_info(GeneralMaterialTemplateInfo& info)
+std::string Utils::pack_general_material_template_info(MaterialTemplateInfo& info)
 {
 	nlohmann::json templateMetadata;
 	templateMetadata["uuid"] = (uint64_t)info.uuid;
+	templateMetadata["material_domain"] = get_str_material_domain(info.domain);
+	templateMetadata["material_blend_mode"] = get_str_material_blend_mode(info.blendMode);
+	templateMetadata["material_shading_model"] = get_str_material_shading_model(info.shadingModel);
+	templateMetadata["material_type"] = get_str_material_type(info.materialType);
 
 	for (auto& pair : info.shaderPassByItsType)
 	{
@@ -21,17 +25,33 @@ std::string Utils::pack_general_material_template_info(GeneralMaterialTemplateIn
 	return templateMetadata.dump();
 }
 
-GeneralMaterialTemplateInfo Utils::unpack_general_material_template_info(std::string& metadata)
+MaterialTemplateInfo Utils::unpack_general_material_template_info(std::string& metadata)
 {
 	nlohmann::json jsonMetadata = nlohmann::json::parse(metadata);
 
-	GeneralMaterialTemplateInfo templateInfo;
+	MaterialTemplateInfo templateInfo;
 
 	for (auto& keyAndValue : jsonMetadata.items())
 	{
 		if (keyAndValue.key() == "uuid")
 		{
 			templateInfo.uuid = UUID(keyAndValue.value().get<uint64_t>());
+		}
+		else if (keyAndValue.key() == "material_domain")
+		{
+			templateInfo.domain = get_enum_material_domain(keyAndValue.value());
+		}
+		else if (keyAndValue.key() == "material_blend_mode")
+		{
+			templateInfo.blendMode = get_enum_material_blend_mode(keyAndValue.value());
+		}
+		else if (keyAndValue.key() == "material_shading_model")
+		{
+			templateInfo.shadingModel = get_enum_material_shading_model(keyAndValue.value());
+		}
+		else if (keyAndValue.key() == "material_type")
+		{
+			templateInfo.materialType = get_enum_material_type(keyAndValue.value());
 		}
 		else
 		{
@@ -134,56 +154,156 @@ void ShaderHandleContext::get_all_valid_shader_handles(std::vector<ShaderHandle>
 
 std::string Utils::get_str_shader_pass_type(ShaderPassType shaderPassType)
 {
-	if (shaderPassType == ShaderPassType::GBUFFER)
-		return "GBuffer";
-	if (shaderPassType == ShaderPassType::DEFERRED_LIGHTING)
-		return "DeferredLighting";
-	if (shaderPassType == ShaderPassType::OIT_PREPASS)
-		return "OITPrepass";
-	if (shaderPassType == ShaderPassType::OIT)
-		return "OIT";
-	if (shaderPassType == ShaderPassType::TAA)
-		return "TAA";
-	if (shaderPassType == ShaderPassType::DIRECTIONAL_LIGHT_SHADOWS)
-		return "DirectionalLightShadows";
-	if (shaderPassType == ShaderPassType::POINT_LIGHT_SHADOWS)
-		return "PointLightShadows";
-	if (shaderPassType == ShaderPassType::SPOT_LIGHT_SHADOWS)
-		return "SpotLightShadows";
-	if (shaderPassType == ShaderPassType::COMPOSITE)
-		return "Composite";
-	if (shaderPassType == ShaderPassType::POSTPROCESSING)
-		return "Postprocessing";
-	if (shaderPassType == ShaderPassType::CULLING)
-		return "Culling";
-	if (shaderPassType == ShaderPassType::REDUCE_DEPTH)
-		return "ReduceDepth";
+	switch (shaderPassType)
+	{
+		case ShaderPassType::GBUFFER:
+			return "gbuffer";
+		case ShaderPassType::DEFERRED_LIGHTING:
+			return "deferred_lighting";
+		case ShaderPassType::OIT_PREPASS:
+			return "oit_prepass";
+		case ShaderPassType::OIT:
+			return "oit";
+		case ShaderPassType::TAA:
+			return "taa";
+		case ShaderPassType::DIRECTIONAL_LIGHT_SHADOWS:
+			return "directional_light_shadows";
+		case ShaderPassType::POINT_LIGHT_SHADOWS:
+			return "point_light_shadows";
+		case ShaderPassType::SPOT_LIGHT_SHADOWS:
+			return "spot_light_shadows";
+		case ShaderPassType::COMPOSITE:
+			return "composite";
+		case ShaderPassType::POSTPROCESSING:
+			return "postprocessing";
+		case ShaderPassType::CULLING:
+			return "culling";
+		case ShaderPassType::REDUCE_DEPTH:
+			return "reduce_depth";
+	}
 }
 
-ShaderPassType Utils::get_enum_shader_pass_type(const std::string& shaderPassName)
+ShaderPassType Utils::get_enum_shader_pass_type(const std::string& shaderPassType)
 {
-	if (shaderPassName == "GBuffer")
+	if (shaderPassType == "gbuffer")
 		return ShaderPassType::GBUFFER;
-	if (shaderPassName == "DeferredLighting")
+	if (shaderPassType == "deferred_lighting")
 		return ShaderPassType::DEFERRED_LIGHTING;
-	if (shaderPassName == "OITPrepass")
+	if (shaderPassType == "oit_prepass")
 		return ShaderPassType::OIT_PREPASS;
-	if (shaderPassName == "OIT")
+	if (shaderPassType == "oit")
 		return ShaderPassType::OIT;
-	if (shaderPassName == "TAA")
+	if (shaderPassType == "taa")
 		return ShaderPassType::TAA;
-	if (shaderPassName == "DirectionalLightShadows")
+	if (shaderPassType == "directional_light_shadows")
 		return ShaderPassType::DIRECTIONAL_LIGHT_SHADOWS;
-	if (shaderPassName == "PointLightShadows")
+	if (shaderPassType == "point_light_shadows")
 		return ShaderPassType::POINT_LIGHT_SHADOWS;
-	if (shaderPassName == "SpotLightShadows")
+	if (shaderPassType == "spot_light_shadows")
 		return ShaderPassType::SPOT_LIGHT_SHADOWS;
-	if (shaderPassName == "Composite")
+	if (shaderPassType == "composite")
 		return ShaderPassType::COMPOSITE;
-	if (shaderPassName == "Postprocessing")
+	if (shaderPassType == "postprocessing")
 		return ShaderPassType::POSTPROCESSING;
-	if (shaderPassName == "Culling")
+	if (shaderPassType == "culling")
 		return ShaderPassType::CULLING;
-	if (shaderPassName == "ReduceDepth")
+	if (shaderPassType == "reduce_depth")
 		return ShaderPassType::REDUCE_DEPTH;
 }
+
+std::string Utils::get_str_material_domain(MaterialDomain materialDomain)
+{
+	switch (materialDomain)
+	{
+		case MaterialDomain::UNDEFINED:
+			return "undefined";
+		case MaterialDomain::SURFACE:
+			return "surface";
+		case MaterialDomain::DEFERRED_DECAL:
+			return "deferred_decal";
+		case MaterialDomain::POSTPROCESSING:
+			return "postprocessing";
+	}
+}
+
+MaterialDomain Utils::get_enum_material_domain(const std::string& materialDomain)
+{
+	if (materialDomain == "undefined")
+		return MaterialDomain::UNDEFINED;
+	if (materialDomain == "surface")
+		return MaterialDomain::SURFACE;
+	if (materialDomain == "deferred_decal")
+		return MaterialDomain::DEFERRED_DECAL;
+	if (materialDomain == "postprocessing")
+		return MaterialDomain::POSTPROCESSING;
+}
+
+std::string Utils::get_str_material_blend_mode(MaterialBlendMode materialBlendMode)
+{
+	switch (materialBlendMode)
+	{
+		case MaterialBlendMode::UNDEFINED:
+			return "undefined";
+		case MaterialBlendMode::OPAQUE:
+			return "opaque";
+		case MaterialBlendMode::TRANSPARENT:
+			return "transparent";
+	}
+}
+
+MaterialBlendMode Utils::get_enum_material_blend_mode(const std::string& materialBlendMode)
+{
+	if (materialBlendMode == "undefined")
+		return MaterialBlendMode::UNDEFINED;
+	if (materialBlendMode == "opaque")
+		return MaterialBlendMode::OPAQUE;
+	if (materialBlendMode == "transparent")
+		return MaterialBlendMode::TRANSPARENT;
+}
+
+std::string Utils::get_str_material_shading_model(MaterialShadingModel materialShadingModel)
+{
+	switch (materialShadingModel)
+	{
+		case MaterialShadingModel::UNDEFINED:
+			return "undefined";
+		case MaterialShadingModel::UNLIT:
+			return "unlit";
+		case MaterialShadingModel::DEFAULT_LIT:
+			return "default_lit";
+	}
+}
+
+MaterialShadingModel Utils::get_enum_material_shading_model(const std::string& materialShadingModel)
+{
+	if (materialShadingModel == "undefined")
+		return MaterialShadingModel::UNDEFINED;
+	if (materialShadingModel == "unlit")
+		return MaterialShadingModel::UNLIT;
+	if (materialShadingModel == "default_lit")
+		return MaterialShadingModel::DEFAULT_LIT;
+}
+
+std::string Utils::get_str_material_type(MaterialType materialType)
+{
+	switch (materialType)
+	{
+		case MaterialType::GRAPHICS:
+			return "graphics";
+		case MaterialType::RAY_TRACING:
+			return "ray_tracing";
+		case MaterialType::COMPUTE:
+			return "compute";
+	}
+}
+
+MaterialType Utils::get_enum_material_type(const std::string& materialType)
+{
+	if (materialType == "graphics")
+		return MaterialType::GRAPHICS;
+	if (materialType == "ray_tracing")
+		return MaterialType::RAY_TRACING;
+	if (materialType == "compute")
+		return MaterialType::COMPUTE;
+}
+

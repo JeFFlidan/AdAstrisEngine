@@ -8,9 +8,11 @@ namespace ad_astris
 	{
 		class StaticModel;
 		class Texture2D;
-		class GeneralMaterialTemplate;
+		class MaterialTemplate;
 		class Shader;
 		class Level;
+		class OpaquePBRMaterial;
+		class TransparentMaterial;
 	}
 
 	namespace io
@@ -28,9 +30,11 @@ namespace ad_astris::resource
 			virtual ~IResourceVisitor() { }
 			virtual void visit(ecore::StaticModel* staticModel) = 0;
 			virtual void visit(ecore::Texture2D* texture2D) = 0;
-			virtual void visit(ecore::GeneralMaterialTemplate* materialTemplate) = 0;
+			virtual void visit(ecore::MaterialTemplate* materialTemplate) = 0;
 			virtual void visit(ecore::Shader* shader) = 0;
 			virtual void visit(ecore::Level* level) = 0;
+			virtual void visit(ecore::OpaquePBRMaterial* material) = 0;
+			virtual void visit(ecore::TransparentMaterial* material) = 0;
 			virtual void visit(io::ResourceFile* resourceFile) = 0;
 			virtual void visit(io::LevelFile* levelFile) = 0;
 	};
@@ -43,9 +47,11 @@ namespace ad_astris::resource
 
 			virtual void visit(ecore::StaticModel* staticModel) override;
 			virtual void visit(ecore::Texture2D* texture2D) override;
-			virtual void visit(ecore::GeneralMaterialTemplate* materialTemplate) override;
+			virtual void visit(ecore::MaterialTemplate* materialTemplate) override;
 			virtual void visit(ecore::Shader* shader) override;
 			virtual void visit(ecore::Level* level) override;
+			virtual void visit(ecore::OpaquePBRMaterial* material) override;
+			virtual void visit(ecore::TransparentMaterial* material) override;
 			virtual void visit(io::ResourceFile* resourceFile) override;
 			virtual void visit(io::LevelFile* levelFile) override;
 

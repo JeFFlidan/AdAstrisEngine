@@ -7,7 +7,6 @@
 #include "resource_formats.h"
 #include "core/config_base.h"
 #include <mutex>
-#include <memory>
 
 namespace ad_astris::resource
 {

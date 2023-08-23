@@ -1,5 +1,6 @@
 #include "resource_manager.h"
-#include "engine_core/material/general_material_template.h"
+#include "engine_core/material/material_template.h"
+#include "engine_core/material/materials.h"
 #include "engine_core/material/shader.h"
 #include "profiler/logger.h"
 #include "utils.h"
@@ -77,7 +78,7 @@ void ResourceManager::load_builtin_resources()
 {
 	for (auto& uuid : _builtinResourcesContext.materialTemplateNames)
 	{
-		ecore::GeneralMaterialTemplate* materialTemplate = get_resource<ecore::GeneralMaterialTemplate>(uuid).get_resource();
+		ecore::MaterialTemplate* materialTemplate = get_resource<ecore::MaterialTemplate>(uuid).get_resource();
 		for (auto& pair : materialTemplate->get_shader_passes())
 		{
 			ecore::material::ShaderPass& shaderPass = pair.second;
@@ -101,16 +102,16 @@ ResourceAccessor<T> ResourceManager::create_new_resource(FirstCreationContext<T>
 }
 
 template<>
-ResourceAccessor<ecore::GeneralMaterialTemplate> ResourceManager::create_new_resource(
-	FirstCreationContext<ecore::GeneralMaterialTemplate>& creationContext)
+ResourceAccessor<ecore::MaterialTemplate> ResourceManager::create_new_resource(
+	FirstCreationContext<ecore::MaterialTemplate>& creationContext)
 {
 	if (_resourceDataTable.check_name_in_table(creationContext.materialTemplateName))
 	{
 		UUID uuid = _resourceDataTable.get_uuid_by_name(creationContext.materialTemplateName);
-		return get_resource<ecore::GeneralMaterialTemplate>(uuid);
+		return get_resource<ecore::MaterialTemplate>(uuid);
 	}
 
-	ecore::material::GeneralMaterialTemplateInfo templateInfo;
+	ecore::material::MaterialTemplateInfo templateInfo;
 	templateInfo.uuid = UUID();
 	for (auto& shaderPassInfo : creationContext.shaderPassCreateInfos)
 	{
@@ -145,8 +146,52 @@ ResourceAccessor<ecore::GeneralMaterialTemplate> ResourceManager::create_new_res
 	resData.metadata.path = absolutePath;
 	resData.metadata.type = ResourceType::MATERIAL_TEMPLATE;
 	resData.metadata.objectName = _resourcePool.allocate<ecore::ObjectName>(creationContext.materialTemplateName.c_str());
-	resData.object = _resourcePool.allocate<ecore::GeneralMaterialTemplate>(templateInfo, resData.metadata.objectName);
+	resData.object = _resourcePool.allocate<ecore::MaterialTemplate>(templateInfo, resData.metadata.objectName);
 	resData.file = _resourcePool.allocate<io::ResourceFile>(absolutePath);
+
+	_resourceDataTable.add_resource(&resData);
+
+	return resData.object;
+}
+
+template<>
+ResourceAccessor<ecore::OpaquePBRMaterial> ResourceManager::create_new_resource(
+	FirstCreationContext<ecore::OpaquePBRMaterial>& creationContext)
+{
+	ecore::ObjectName* objectName = _resourcePool.allocate<ecore::ObjectName>(creationContext.materialName.c_str());
+	
+	io::URI absoluteMaterialPath = creationContext.materialPath + "/" + objectName->get_full_name().c_str() + ".aares";
+	if (io::Utils::is_relative(absoluteMaterialPath))
+		absoluteMaterialPath = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), absoluteMaterialPath);
+
+	ResourceData resData{};
+	resData.metadata.path = absoluteMaterialPath;
+	resData.metadata.type = ResourceType::MATERIAL;
+	resData.metadata.objectName = objectName;
+	resData.object = _resourcePool.allocate<ecore::OpaquePBRMaterial>(creationContext.materialSettings, objectName, creationContext.materialTemplateUUID);
+	resData.file = _resourcePool.allocate<io::ResourceFile>(absoluteMaterialPath);
+
+	_resourceDataTable.add_resource(&resData);
+
+	return resData.object;
+}
+
+template<>
+ResourceAccessor<ecore::TransparentMaterial> ResourceManager::create_new_resource(
+	FirstCreationContext<ecore::TransparentMaterial>& creationContext)
+{
+	ecore::ObjectName* objectName = _resourcePool.allocate<ecore::ObjectName>(creationContext.materialName.c_str());
+	
+	io::URI absoluteMaterialPath = creationContext.materialPath + "/" + objectName->get_full_name().c_str() + ".aares";
+	if (io::Utils::is_relative(absoluteMaterialPath))
+		absoluteMaterialPath = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), absoluteMaterialPath);
+	
+	ResourceData resData{};
+	resData.metadata.path = absoluteMaterialPath;
+	resData.metadata.type = ResourceType::MATERIAL;
+	resData.metadata.objectName = objectName;
+	resData.object = _resourcePool.allocate<ecore::TransparentMaterial>(creationContext.materialSettings, objectName, creationContext.materialTemplateUUID);
+	resData.file = _resourcePool.allocate<io::ResourceFile>(absoluteMaterialPath);
 
 	_resourceDataTable.add_resource(&resData);
 
@@ -309,6 +354,12 @@ void ResourceManager::send_resource_event(ecore::Texture2D* resourceObject)
 	LOG_INFO("Sending texture2D event")
 	Texture2DLoadedEvent event(resourceObject);
 	_eventManager->trigger_event(event);
+}
+
+template<>
+void ResourceManager::send_resource_event(ecore::OpaquePBRMaterial* materialObject)
+{
+	
 }
 
 void BuiltinResourcesContext::clear()

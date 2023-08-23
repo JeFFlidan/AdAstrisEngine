@@ -1,11 +1,9 @@
 #include "resource_data_table.h"
 #include "file_system/utils.h"
-#include "core/reflection.h"
 #include "utils.h"
 
 #include <lz4.h>
 
-#include <algorithm>
 #include <execution>
 #include <future>
 
@@ -232,7 +230,6 @@ void resource::ResourceDataTable::destroy_resource(UUID& uuid)
 	ResourceData resourceData = it->second;
 	std::string name = it->second.metadata.objectName->get_full_name();
 	_nameToUUID.erase(_nameToUUID.find(name));
-	resourceData.object->accept(_resourceDeleterVisitor);
 	resourceData.object->accept(_resourceDeleterVisitor);
 	_resourcePool->free(resourceData.metadata.objectName);
 	

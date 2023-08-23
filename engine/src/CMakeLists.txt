@@ -24,6 +24,8 @@ file(GLOB ENGINE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/rhi/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/vulkan_renderer/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/events/*.*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/multithreading/*.*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.*"
     "${CMAKE_CURRENT_SOURCE_DIR}/*.*")
  
 add_executable(AdAstrisEngine ${ENGINE_FILES})
@@ -45,4 +47,4 @@ target_sources(logger PRIVATE profiler/logger.h)
 target_include_directories(AdAstrisEngine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(AdAstrisEngine vkbootstrap spirv_reflect vma glm cgltf json lz4 tinyobjloader imgui stb_image fmt_lib logger)
 
-target_link_libraries(AdAstrisEngine Vulkan::Vulkan sdl2 assetlib tinyobjloader inicpp ecs)
+target_link_libraries(AdAstrisEngine Vulkan::Vulkan sdl2 assetlib tinyobjloader inicpp ecs reflection)

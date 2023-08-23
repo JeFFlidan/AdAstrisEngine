@@ -1,6 +1,7 @@
-﻿#include "engine.h"
+﻿#include "engine_core/material/materials.h"
+#include "engine_core/material/material_template.h"
 #include "engine_core/fwd.h"
-#include "engine_core/material/general_material_template.h"
+#include "engine.h"		// Really strange bug with this include. For now I placed it under all other includes, however, I must fix this bug properly in the future
 
 using namespace ad_astris::engine::impl;
 
@@ -118,12 +119,12 @@ void Engine::create_material_templates()
 	deferredShaderPassCreateInfo.vertexShaderPath = "shaders/deferred/deferred_lighting.vert";
 	deferredShaderPassCreateInfo.fragmentShaderPath = "shaders/deferred/deferred_lighting.frag";
 	deferredShaderPassCreateInfo.passType = ShaderPassType::DEFERRED_LIGHTING;
-
+	
 	ShaderPassCreateInfo oitPrepassShaderPassCreateInfo;
 	oitPrepassShaderPassCreateInfo.vertexShaderPath = "shaders/oit/oit_geometry.vert";
 	oitPrepassShaderPassCreateInfo.fragmentShaderPath = "shaders/oit/oit_geometry.frag";
 	oitPrepassShaderPassCreateInfo.passType = ShaderPassType::OIT_PREPASS;
-
+	
 	ShaderPassCreateInfo oitShaderPassCreateInfo;
 	oitShaderPassCreateInfo.vertexShaderPath = "shaders/oit/transparency.vert";
 	oitShaderPassCreateInfo.fragmentShaderPath = "shaders/oit/transparency.frag";
@@ -148,26 +149,26 @@ void Engine::create_material_templates()
 	spotLightShaderPassCreateInfo.vertexShaderPath = "shaders/shadow_mapping/spot_light_depth_map.vert";
 	spotLightShaderPassCreateInfo.fragmentShaderPath = "shaders/shadow_mapping/depth_map.frag";
 	spotLightShaderPassCreateInfo.passType = ShaderPassType::SPOT_LIGHT_SHADOWS;
-
+	
 	ShaderPassCreateInfo compositeShaderPassCreateInfo;
 	compositeShaderPassCreateInfo.vertexShaderPath = "shaders/common_shaders/quad.vert";
 	compositeShaderPassCreateInfo.fragmentShaderPath = "shaders/postprocessing/composite.frag";
 	compositeShaderPassCreateInfo.passType = ShaderPassType::COMPOSITE;
-
+	
 	ShaderPassCreateInfo postprocessingShaderPassCreateInfo;
 	postprocessingShaderPassCreateInfo.vertexShaderPath = "shaders/common_shaders/quad.vert";
 	postprocessingShaderPassCreateInfo.fragmentShaderPath = "shaders/postprocessing/postprocessing.frag";
 	postprocessingShaderPassCreateInfo.passType = ShaderPassType::POSTPROCESSING;
-
+	
 	ShaderPassCreateInfo cullingShaderPassCreateInfo;
 	cullingShaderPassCreateInfo.computeShader = "shaders/compute/draw_cull.comp";
 	cullingShaderPassCreateInfo.passType = ShaderPassType::CULLING;
-
+	
 	ShaderPassCreateInfo reduceDepthShaderPassCreateInfo;
 	reduceDepthShaderPassCreateInfo.computeShader = "shaders/compute/reduce_depth.comp";
 	reduceDepthShaderPassCreateInfo.passType = ShaderPassType::REDUCE_DEPTH;
-
-	resource::FirstCreationContext<ecore::GeneralMaterialTemplate> opaquePBRTemplate;
+	
+	resource::FirstCreationContext<ecore::MaterialTemplate> opaquePBRTemplate;
 	opaquePBRTemplate.shaderPassCreateInfos = {
 		directionalLightShaderPassCreateInfo,
 		pointLightShaderPassCreateInfo,
@@ -176,49 +177,85 @@ void Engine::create_material_templates()
 		deferredShaderPassCreateInfo
 	};
 	opaquePBRTemplate.materialTemplateName = "OpaquePBRMaterialTemplate";
-
-	resource::FirstCreationContext<ecore::GeneralMaterialTemplate> oitTemplate;
+	
+	resource::FirstCreationContext<ecore::MaterialTemplate> oitTemplate;
 	oitTemplate.shaderPassCreateInfos = {
 		oitPrepassShaderPassCreateInfo,
 		oitShaderPassCreateInfo
 	};
 	oitTemplate.materialTemplateName = "OITMaterialTemplate";
-
-	resource::FirstCreationContext<ecore::GeneralMaterialTemplate> taaTemplate;
+	
+	resource::FirstCreationContext<ecore::MaterialTemplate> taaTemplate;
 	taaTemplate.shaderPassCreateInfos = {
 		taaShaderPassCreateInfo
 	};
 	taaTemplate.materialTemplateName = "TAAMaterialTemplate";
-
-	resource::FirstCreationContext<ecore::GeneralMaterialTemplate> compositeTemplate;
+	
+	resource::FirstCreationContext<ecore::MaterialTemplate> compositeTemplate;
 	compositeTemplate.shaderPassCreateInfos = {
 		compositeShaderPassCreateInfo
 	};
 	compositeTemplate.materialTemplateName = "CompositeMaterialTemplate";
-
-	resource::FirstCreationContext<ecore::GeneralMaterialTemplate> postprocessingTemplate;
+	
+	resource::FirstCreationContext<ecore::MaterialTemplate> postprocessingTemplate;
 	postprocessingTemplate.shaderPassCreateInfos = {
 		postprocessingShaderPassCreateInfo
 	};
 	postprocessingTemplate.materialTemplateName = "PostprocessingMaterialTemplate";
-
-	resource::FirstCreationContext<ecore::GeneralMaterialTemplate> cullingTemplate;
+	
+	resource::FirstCreationContext<ecore::MaterialTemplate> cullingTemplate;
 	cullingTemplate.shaderPassCreateInfos = {
 		cullingShaderPassCreateInfo
 	};
 	cullingTemplate.materialTemplateName = "CullingMaterialTemplate";
-
-	resource::FirstCreationContext<ecore::GeneralMaterialTemplate> reduceDepthTemplate;
+	
+	resource::FirstCreationContext<ecore::MaterialTemplate> reduceDepthTemplate;
 	reduceDepthTemplate.shaderPassCreateInfos = {
 		reduceDepthShaderPassCreateInfo
 	};
 	reduceDepthTemplate.materialTemplateName = "ReduceDepthMaterialTemplate";
 	
-	_resourceManager->create_new_resource(opaquePBRTemplate);
-	_resourceManager->create_new_resource(oitTemplate);
+	ecore::MaterialTemplateHandle opaqueTemplateHandle = _resourceManager->create_new_resource(opaquePBRTemplate);
+	ecore::MaterialTemplateHandle oitTemplateHandle = _resourceManager->create_new_resource(oitTemplate);
 	_resourceManager->create_new_resource(taaTemplate);
 	_resourceManager->create_new_resource(compositeTemplate);
 	_resourceManager->create_new_resource(postprocessingTemplate);
 	_resourceManager->create_new_resource(cullingTemplate);
 	_resourceManager->create_new_resource(reduceDepthTemplate);
+
+	ecore::OpaquePBRMaterialSettings opaquePBRMaterialSettings;
+	opaquePBRMaterialSettings.baseColorTextureUUID = UUID();
+	opaquePBRMaterialSettings.roughnessTextureUUID = UUID();
+	opaquePBRMaterialSettings.metallicTextureUUID = UUID();
+	opaquePBRMaterialSettings.ambientOcclusionTextureUUID = UUID();
+	opaquePBRMaterialSettings.normalTextureUUID = UUID();
+	opaquePBRMaterialSettings.useRoughnessValue = true;
+	opaquePBRMaterialSettings.roughnessValue = 0.5f;
+	opaquePBRMaterialSettings.useMetallicValue = true;
+	opaquePBRMaterialSettings.metallicValue = 0.5f;
+	
+	resource::FirstCreationContext<ecore::OpaquePBRMaterial> opaquePBRMaterialCreationContext;
+	opaquePBRMaterialCreationContext.materialName = "DefaultPBR";
+	opaquePBRMaterialCreationContext.materialPath = "content/materials";
+	opaquePBRMaterialCreationContext.materialSettings = opaquePBRMaterialSettings;
+	opaquePBRMaterialCreationContext.materialTemplateUUID = opaqueTemplateHandle.get_resource()->get_uuid();
+	
+	ecore::OpaquePBRMaterialHandle opaquePbrMaterialHandle = _resourceManager->create_new_resource(opaquePBRMaterialCreationContext);
+	LOG_INFO("Created opaque material: {}", opaquePbrMaterialHandle.get_resource()->get_name()->get_full_name())
+	
+	ecore::TransparentMaterialSettings transparentMaterialSettings;
+	transparentMaterialSettings.baseColorTextureUUID = UUID();
+	transparentMaterialSettings.ambientOcclusionTextureUUID = UUID();
+	transparentMaterialSettings.opacityTextureUUID = UUID();
+	transparentMaterialSettings.useOpacityValue = true;
+	transparentMaterialSettings.opacityValue = 0.3f;
+	
+	resource::FirstCreationContext<ecore::TransparentMaterial> transparentMaterialCreationContext;
+	transparentMaterialCreationContext.materialName = "DefaultTransparent";
+	transparentMaterialCreationContext.materialPath = "content/materials";
+	transparentMaterialCreationContext.materialSettings = transparentMaterialSettings;
+	transparentMaterialCreationContext.materialTemplateUUID = oitTemplateHandle.get_resource()->get_uuid();
+	
+	ecore::TransparentMaterialHandle transparentMaterialHandle = _resourceManager->create_new_resource(transparentMaterialCreationContext);
+	LOG_INFO("Created transparent material: {}", transparentMaterialHandle.get_resource()->get_name()->get_full_name())
 }
