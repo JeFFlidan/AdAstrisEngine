@@ -1,4 +1,5 @@
 #include "entity_manager.h"
+#include "serializers.h"
 #include "core/utils.h"
 
 using namespace ad_astris::ecs;
@@ -142,16 +143,16 @@ Entity EntityManager::build_entity_from_json(UUID& uuid, std::string& json)
 {
 	nlohmann::json entityJson = nlohmann::json::parse(json);
 	std::string componentsStr = entityJson["components"];
-	nlohmann::json componentsData = nlohmann::json::parse(componentsStr);
+	nlohmann::json jsonWithComponents = nlohmann::json::parse(componentsStr);
 	std::vector<std::string> tagNames = entityJson["tags"].get<std::vector<std::string>>();
 	EntityCreationContext creationContext;
 	
-	for (auto& componentInfo : componentsData.items())
+	for (auto& componentInfo : jsonWithComponents.items())
 	{
 		std::string componentName = componentInfo.key();
 		uint32_t typeId = TypeInfoTable::get_component_id(componentName);
-		factories::BaseFactory* factory = factories::get_table()->get_factory(typeId);
-		factory->build(creationContext, typeId, componentName, componentsData);
+		serializers::BaseSerializer* serializer = serializers::get_table()->get_serializer(typeId);
+		serializer->deserialize(creationContext, componentInfo.value());
 	}
 
 	for (auto& tagName : tagNames)

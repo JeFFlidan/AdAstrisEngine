@@ -5,7 +5,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-namespace ad_astris
+namespace ad_astris::ecore
 {
 	struct TransformComponent
 	{
@@ -13,92 +13,96 @@ namespace ad_astris
 		glm::vec3 rotation{ 0.0f };
 		glm::vec3 scale{ 1.0f };
 	};
-	ECS_COMPONENT(TransformComponent, glm::vec3, glm::vec3, glm::vec3)
 	
 	struct ModelComponent
 	{
-		UUID uuid;
+		UUID modelUUID;
 	};
-	ECS_COMPONENT(ModelComponent, UUID)
+
+	struct TextureComponent
+	{
+		UUID textureUUID;
+	};
 
 	struct LuminanceIntensityComponent
 	{
 		float intensity;
 	};
-	ECS_COMPONENT(LuminanceIntensityComponent, float)
 
 	struct CandelaIntensityComponent
 	{
 		float intensity;
 	};
-	ECS_COMPONENT(CandelaIntensityComponent, float)
 
 	struct ColorComponent
 	{
-		glm::vec3 color;
+		glm::vec4 color;
 	};
-	ECS_COMPONENT(ColorComponent, glm::vec3)
 
 	struct AttenuationRadiusComponent
 	{
 		float attenuationRadius;
 	};
-	ECS_COMPONENT(AttenuationRadiusComponent, float)
 
 	struct InnerConeAngleComponent
 	{
 		float angle;
 	};
-	ECS_COMPONENT(InnerConeAngleComponent, float)
 	
 	struct OuterConeAngleComponent
 	{
 		float angle;
 	};
-	ECS_COMPONENT(OuterConeAngleComponent, float)
 
 	struct UseLightTemperatureComponent
 	{
 		bool isTemperatureUsed;
 	};
-	ECS_COMPONENT(UseLightTemperatureComponent, bool)
 
 	struct LightTemperatureComponent
 	{
 		float temperature;
 	};
-	ECS_COMPONENT(LightTemperatureComponent, float)
 
 	struct CastShadowComponent
 	{
 		bool isShadowCast;
 	};
-	ECS_COMPONENT(CastShadowComponent, bool)
 
 	struct AffectWorldComponent
 	{
 		bool isWorldAffected;
 	};
-	ECS_COMPONENT(AffectWorldComponent, bool)
 
 	struct VisibleComponent
 	{
 		bool isVisible;
 	};
-	ECS_COMPONENT(VisibleComponent, bool)
 
 	struct StaticObjectTag { };
-	ECS_TAG(StaticObjectTag)
-
 	struct MovableObjectTag { };
-	ECS_TAG(MovableObjectTag)
-
 	struct PointLightTag { };
-	ECS_TAG(PointLightTag)
-
 	struct DirectionalLightTag { };
-	ECS_TAG(DirectionalLightTag)
-
 	struct SpotLightTag { };
-	ECS_TAG(SpotLightTag)
 }
+
+REGISTER_TAG(MovableObjectTag, ad_astris::ecore::MovableObjectTag)
+REGISTER_TAG(PointLightTag, ad_astris::ecore::PointLightTag)
+REGISTER_TAG(DirectionalLightTag, ad_astris::ecore::DirectionalLightTag)
+REGISTER_TAG(StaticObjectTag, ad_astris::ecore::StaticObjectTag)
+REGISTER_TAG(SpotLightTag, ad_astris::ecore::SpotLightTag)
+
+REGISTER_COMPONENT(TransformComponent, ad_astris::ecore::TransformComponent, location, rotation, scale)
+REGISTER_COMPONENT(ModelComponent, ad_astris::ecore::ModelComponent, modelUUID)
+REGISTER_COMPONENT(TextureComponent, ad_astris::ecore::TextureComponent, textureUUID)
+REGISTER_COMPONENT(LuminanceIntensityComponent, ad_astris::ecore::LuminanceIntensityComponent, intensity)
+REGISTER_COMPONENT(CandelaIntensityComponent, ad_astris::ecore::CandelaIntensityComponent, intensity)
+REGISTER_COMPONENT(ColorComponent, ad_astris::ecore::ColorComponent, color)
+REGISTER_COMPONENT(AttenuationRadiusComponent, ad_astris::ecore::AttenuationRadiusComponent, attenuationRadius)
+REGISTER_COMPONENT(InnerConeAngleComponent, ad_astris::ecore::InnerConeAngleComponent, angle)
+REGISTER_COMPONENT(OuterConeAngleComponent, ad_astris::ecore::OuterConeAngleComponent, angle)
+REGISTER_COMPONENT(UseLightTemperatureComponent, ad_astris::ecore::UseLightTemperatureComponent, isTemperatureUsed)
+REGISTER_COMPONENT(LightTemperatureComponent, ad_astris::ecore::LightTemperatureComponent, temperature)
+REGISTER_COMPONENT(CastShadowComponent, ad_astris::ecore::CastShadowComponent, isShadowCast)
+REGISTER_COMPONENT(AffectWorldComponent, ad_astris::ecore::AffectWorldComponent, isWorldAffected)
+REGISTER_COMPONENT(VisibleComponent, ad_astris::ecore::VisibleComponent, isVisible)

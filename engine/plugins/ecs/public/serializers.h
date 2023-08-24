@@ -16,7 +16,7 @@ namespace ad_astris::ecs
 		{
 			public:
 				virtual void serialize(void* component, nlohmann::json& jsonForComponents) = 0;
-				virtual void* deserialize(std::string& componentName, nlohmann::json& jsonWithComponents) = 0;
+				virtual void deserialize(EntityCreationContext& entityCreationContext, const std::string& componentInfo) = 0;
 		};
 
 		class ECS_API SerializersTable

@@ -8,16 +8,11 @@
 
 #pragma once
 
-#include "core/custom_objects_to_json.h"
-#include "public/api.h"
-#include "public/archetype_types.h"
-#include "public/archetype.h"
-#include "public/entity_manager.h"
+#include "core/serialization.h"
+#include "core/reflection.h"
 #include "public/entity_types.h"
-#include "public/factories.h"
 #include "public/serializers.h"
 #include "public/system_manager.h"
-#include "core/utils.h"
 
 namespace ad_astris::ecs
 {
@@ -41,6 +36,14 @@ namespace ad_astris::ecs
 	};
 }
 
+#define H1(s,i,x)   (x*65599u+(uint8_t)s[(i)<strlen(s)?strlen(s)-1-(i):strlen(s)])
+#define H4(s,i,x)   H1(s,i,H1(s,i+1,H1(s,i+2,H1(s,i+3,x))))
+#define H16(s,i,x)  H4(s,i,H4(s,i+4,H4(s,i+8,H4(s,i+12,x))))
+#define H64(s,i,x)  H16(s,i,H16(s,i+16,H16(s,i+32,H16(s,i+48,x))))
+#define H256(s,i,x) H64(s,i,H64(s,i+64,H64(s,i+128,H64(s,i+192,x))))
+
+#define HASH(s)    ((uint32_t)(H256(s,0,0)^(H256(s,0,0)>>16)))
+
 /**
  * @brief COMPONENT Macro
  *
@@ -59,90 +62,54 @@ namespace ad_astris::ecs
  * @param Type The name of the component type.
  * @param Fields The data types of the component fields.
  */
-#define ECS_COMPONENT(Type, ...)																			\
-	namespace ecs																							\
+#define REGISTER_COMPONENT(Type, TypeWithNamespace, ...)															\
+	REFLECT_SERIALIZABLE_FIELDS(TypeWithNamespace, __VA_ARGS__)											\
+	namespace ad_astris::ecs																				\
 	{																										\
-		namespace factories																					\
+		namespace																							\
 		{																									\
-			class Type##Factory : public BaseFactory														\
-			{																								\
-				protected:																					\
-					void build_object(																		\
-						EntityCreationContext& creationContext,												\
-						std::string& componentName,															\
-						nlohmann::json& jsonWithComponents,													\
-						serializers::BaseSerializer* serializer) override									\
-					{																						\
-						void* tupleVoid = serializer->deserialize(componentName, jsonWithComponents);		\
-						std::tuple<__VA_ARGS__>* tuplePtr = static_cast<std::tuple<__VA_ARGS__>*>(tupleVoid);\
-						Type newObj = std::apply(copy_data<Type, __VA_ARGS__>, *tuplePtr);					\
-						creationContext.add_component<Type>(newObj);										\
-						delete tuplePtr;																	\
-					}																						\
-			};																								\
-																											\
-		}																									\
-																											\
-		namespace serializers																				\
-		{																									\
-			class Type##Serializer : public BaseSerializer													\
+			class Type##Serializer : public serializers::BaseSerializer										\
 			{																								\
 				public:																						\
 					void serialize(void* component, nlohmann::json& jsonForComponents) override				\
 					{																						\
-						serialize_internal(component, jsonForComponents);									\
+						TypeWithNamespace* typedComponent = static_cast<TypeWithNamespace*>(component);		\
+						std::string typeName = get_type_name<TypeWithNamespace>();							\
+						jsonForComponents[typeName] = serialization::serialize_to_json(*typedComponent);	\
 					}																						\
 																											\
-					void* deserialize(																		\
-						std::string& componentName,															\
-						nlohmann::json& jsonWithComponents) override										\
+					void deserialize(																		\
+						EntityCreationContext& entityCreationContext,										\
+						const std::string& componentInfo) override												\
 					{																						\
-						std::tuple<__VA_ARGS__>* tuplePtr = new std::tuple<__VA_ARGS__>();					\
-						std::tuple<__VA_ARGS__> tempTuple = jsonWithComponents[componentName]				\
-							.get<std::tuple<__VA_ARGS__>>();												\
-						*tuplePtr = tempTuple;																\
-						return tuplePtr;																	\
-					}																						\
-				private:																					\
-					template<typename ...ARGS>																\
-					void serialize_internal(void* component, nlohmann::json& jsonForComponents)				\
-					{																						\
-						Type* typedComponent = static_cast<Type*>(component);								\
-						constexpr size_t argCount = CoreUtils::count_args<__VA_ARGS__>();					\
-						auto tuple = CoreUtils::custom_data_type_to_tuple<argCount>(*typedComponent);		\
-						std::string typeName = get_type_name<Type>();										\
-						jsonForComponents[typeName] = tuple;												\
+						TypeWithNamespace component;														\
+						serialization::deserialize_from_json(componentInfo, component);						\
+						entityCreationContext.add_component(component);										\
 					}																						\
 			};																								\
-																											\
-		}																									\
-		namespace registration																				\
-		{																									\
 			static bool Type##Register = []()																\
 			{																								\
-				TypeInfoTable::add_component_info<Type>();													\
-				factories::BaseFactory* factory = new factories::Type##Factory();							\
-				factories::FactoriesTable::get_instance()->add_factory<Type>(factory);						\
-				serializers::BaseSerializer* serializer = new serializers::Type##Serializer();				\
-				serializers::get_table()->add_serializer<Type>(serializer);									\
+				TypeInfoTable::add_component_info<TypeWithNamespace>();										\
+				serializers::BaseSerializer* serializer = new Type##Serializer();							\
+				serializers::get_table()->add_serializer<TypeWithNamespace>(serializer);					\
 				return true;																				\
 			}();																							\
 		}																									\
 	}
 
 
-#define ECS_TAG(Type)										\
-namespace ecs {												\
-namespace registration {									\
+#define REGISTER_TAG(Type, TypeWithNamespace)				\
+namespace ad_astris::ecs {									\
+namespace {													\
 	static bool Type##Register = []()						\
 	{														\
-		TypeInfoTable::add_tag<Type>();						\
+		TypeInfoTable::add_tag<TypeWithNamespace>();		\
 		return true;										\
 	}();													\
 }}
 
-#define ECS_SYSTEM(Type)																				\
-	namespace ecs {																						\
-	namespace registration {																			\
-		static bool Type##Register = SystemStorage::SystemRegistrar<Type>::register_system();			\
+#define REGISTER_SYSTEM(Type, TypeWithNamespace)																					\
+	namespace ad_astris::ecs {																								\
+	namespace {																												\
+		static bool Type##Register = registration::SystemStorage::SystemRegistrar<TypeWithNamespace>::register_system();	\
 	}}

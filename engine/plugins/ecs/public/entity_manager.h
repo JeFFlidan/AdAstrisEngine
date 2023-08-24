@@ -4,11 +4,8 @@
 #include "entity_types.h"
 #include "archetype_types.h"
 #include "archetype.h"
-#include "core/tuple.h"
 #include <vector>
 #include <unordered_map>
-
-#include "factories.h"
 
 namespace ad_astris::ecs
 {

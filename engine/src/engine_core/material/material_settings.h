@@ -1,8 +1,8 @@
 ﻿#pragma once
 
+#include "core/serialization.h"
 #include "core/reflection.h"
 #include "engine_core/uuid.h"
-#include <refl.hpp>
 
 namespace ad_astris::ecore
 {

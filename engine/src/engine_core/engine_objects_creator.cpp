@@ -131,7 +131,7 @@ void ad_astris::ecore::EngineObjectsCreator::setup_basic_model_components(
 	transformComponent.location = objectCreationContext.location;
 	entityCreationContext.add_component(transformComponent);
 	ModelComponent modelComponent;
-	modelComponent.uuid = objectCreationContext.uuid;
+	modelComponent.modelUUID = objectCreationContext.uuid;
 	entityCreationContext.add_component(modelComponent);
 	CastShadowComponent castShadowComponent;
 	castShadowComponent.isShadowCast = true;
@@ -149,7 +149,7 @@ void ad_astris::ecore::EngineObjectsCreator::setup_basic_light_components(
 	transformComponent.location = objectCreationContext.location;
 	entityCreationContext.add_component(transformComponent);
 	ColorComponent colorComponent;
-	colorComponent.color = glm::vec3(1.0f);
+	colorComponent.color = glm::vec4(1.0f);
 	entityCreationContext.add_component(colorComponent);
 	UseLightTemperatureComponent useLightTemperatureComponent;
 	useLightTemperatureComponent.isTemperatureUsed = false;
