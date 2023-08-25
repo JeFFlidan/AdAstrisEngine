@@ -1,16 +1,10 @@
 ﻿#pragma once
 
 #include "resources.h"
+#include "application_core/window.h"
 #include "file_system/file_system.h"
 #include <vector>
 #include <array>
-#include <vulkan/vulkan.h>
-#include "vk_mem_alloc.h"
-
-namespace ad_astris::vulkan
-{
-	class VulkanDevice;
-}
 
 namespace ad_astris::rhi
 {
@@ -19,11 +13,13 @@ namespace ad_astris::rhi
 		public:
 			virtual ~IEngineRHI() = default;
 		
-			virtual void init(void* window, io::FileSystem* fileSystem) = 0;
+			virtual void init(acore::IWindow* window, io::FileSystem* fileSystem) = 0;
 			virtual void cleanup() = 0;
 
 			virtual void create_swap_chain(SwapChain* swapChain, SwapChainInfo* info) = 0;
 			virtual void destroy_swap_chain(SwapChain* swapChain) = 0;
+
+			virtual bool acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex) = 0;
 
 			// Can create an empty buffer or buffer with data
 			virtual void create_buffer(Buffer* buffer, BufferInfo* info, void* data = nullptr) = 0;
@@ -86,12 +82,5 @@ namespace ad_astris::rhi
 			virtual void dispatch(CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
 			virtual void fill_buffer(CommandBuffer* cmd, Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data) = 0;
 			virtual void add_pipeline_barriers(CommandBuffer* cmd, std::vector<PipelineBarrier>& barriers) = 0;
-
-
-			// ONLY FOR TESTS
-			virtual VkInstance get_instance() = 0;
-			virtual vulkan::VulkanDevice* get_device() = 0;
-			virtual VmaAllocator get_allocator() = 0;
-			virtual VkDebugUtilsMessengerEXT get_messenger() = 0;
 	};
 }

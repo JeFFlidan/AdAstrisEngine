@@ -2,21 +2,29 @@
 
 #include "engine_core/project_settings/project_settings.h"
 #include "resource_manager/resource_manager.h"
+#include "events/event_manager.h"
+#include "multithreading/task_composer.h"
 #include "application_core/window.h"
 #include "core/module_manager.h"
 
 namespace ad_astris::renderer
 {
+	struct RendererInitializationContext
+	{
+		ModuleManager* moduleManager;
+		tasks::TaskComposer* taskComposer;
+		ecore::ProjectSettings* projectSettings;
+		resource::ResourceManager* resourceManager;
+		events::EventManager* eventManager;
+		acore::IWindow* mainWindow;
+	};
+	
 	class IRenderer
 	{
 		public:
 			virtual ~IRenderer() { }
 		
-			virtual void init(
-				ModuleManager* moduleManager,
-				resource::ResourceManager* resourceManager,
-				acore::IWindow* window,
-				ecore::ProjectSettings& projectSettings) = 0;
+			virtual void init(RendererInitializationContext& initializationContext) = 0;
 			virtual void cleanup() = 0;
 
 			virtual void bake() = 0;

@@ -140,6 +140,7 @@ void CreateNewGameBrowser::create_folders(std::string& projectPath, std::string&
 {
 	std::filesystem::create_directories(projectPath + "/icons");
 	std::filesystem::create_directories(projectPath + "/configs");
+	std::filesystem::create_directories(projectPath + "/intermediate");
 	std::filesystem::create_directories(projectPath + "/content/levels");
 	std::filesystem::create_directories(projectPath + "/content/builtin");
 	std::filesystem::create_directories(projectPath + "/content/materials");

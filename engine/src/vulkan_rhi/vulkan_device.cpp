@@ -1,14 +1,17 @@
 ﻿#include "vulkan_device.h"
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+	#include <vulkan/vulkan_win32.h>
+#endif
+
 #include "vulkan_queue.h"
 #include "profiler/logger.h"
 #include "vulkan_common.h"
-#include <SDL_video.h>
-#include <SDL_vulkan.h>
 #include <algorithm>
 
 using namespace ad_astris;
 
-vulkan::VulkanDevice::VulkanDevice(vkb::Instance& instance, void* window)
+vulkan::VulkanDevice::VulkanDevice(vkb::Instance& instance, acore::IWindow* window)
 {
 	LOG_INFO("Start initing Device class (Vulkan)")
 
@@ -45,10 +48,10 @@ vulkan::VulkanDevice::VulkanDevice(vkb::Instance& instance, void* window)
 	LOG_INFO("Finished initing Device class (Vulkan)")
 }
 
-IVulkanQueue* vulkan::VulkanDevice::get_graphics_queue() { return _graphicsQueue; }
-IVulkanQueue* vulkan::VulkanDevice::get_present_queue() { return _presentQueue; }
-IVulkanQueue* vulkan::VulkanDevice::get_compute_queue() { return _computeQueue; }
-IVulkanQueue* vulkan::VulkanDevice::get_transfer_queue() { return _transferQueue; }
+vulkan::VulkanQueue* vulkan::VulkanDevice::get_graphics_queue() { return _graphicsQueue; }
+vulkan::VulkanQueue* vulkan::VulkanDevice::get_present_queue() { return _presentQueue; }
+vulkan::VulkanQueue* vulkan::VulkanDevice::get_compute_queue() { return _computeQueue; }
+vulkan::VulkanQueue* vulkan::VulkanDevice::get_transfer_queue() { return _transferQueue; }
 
 void vulkan::VulkanDevice::cleanup()
 {
@@ -60,16 +63,18 @@ void vulkan::VulkanDevice::cleanup()
 	vkDestroyDevice(_device, nullptr);
 }
 
-void vulkan::VulkanDevice::create_surface(VkInstance instance, void* window)
+void vulkan::VulkanDevice::create_surface(VkInstance instance, acore::IWindow* window)
 {
-	LOG_INFO("Start creating surface")
+	LOG_INFO("VulkanDevice::VulkanDevice(): Start creating surface")
 #ifdef _WIN32
-	SDL_Window* sdlWindow = static_cast<SDL_Window*>(window);
-	SDL_bool valid = SDL_Vulkan_CreateSurface(sdlWindow, instance, &_surface);
-	if (!valid)
-		LOG_FATAL("Failed to create Vulkan Surface for SDL window")
+	VkWin32SurfaceCreateInfoKHR createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	createInfo.hwnd = window->get_hWnd();
+	createInfo.hinstance = GetModuleHandle(nullptr);
+	if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &_surface) != VK_SUCCESS)
+		LOG_FATAL("VulkanDevice::VulkanDevice(): Failed to create vulkan surface")
 #endif
-	LOG_INFO("Finish creating surface")
+	LOG_INFO("VulkanDevice::VulkanDevice(): Finish creating surface")
 }
 
 vkb::PhysicalDevice vulkan::VulkanDevice::pick_physical_device(vkb::Instance& instance)

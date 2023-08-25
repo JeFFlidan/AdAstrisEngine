@@ -26,11 +26,13 @@ namespace ad_astris::vulkan
 			// TODO Create custom destructor
 			~VulkanRHI() final override = default;
 
-			virtual void init(void* window, io::FileSystem* fileSystem) final override;
+			virtual void init(acore::IWindow* window, io::FileSystem* fileSystem) final override;
 			virtual void cleanup() final override;
 
 			virtual void create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info) final override;
 			virtual void destroy_swap_chain(rhi::SwapChain* swapChain) final override;
+
+			virtual bool acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex) final override;
 		
 			virtual void create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data = nullptr) final override;
 
@@ -92,12 +94,6 @@ namespace ad_astris::vulkan
 			virtual void dispatch(rhi::CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) final override;
 			virtual void fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data) final override;
 			virtual void add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vector<rhi::PipelineBarrier>& barriers) final override;
-		
-			// Only for tests. Will be removed in the final implementation
-			VkInstance get_instance() { return _instance; }
-			VulkanDevice* get_device() { return _vulkanDevice.get(); }
-			VmaAllocator get_allocator() { return _allocator; }
-			VkDebugUtilsMessengerEXT get_messenger() { return _debugMessenger; }
 		
 		private:
 			io::FileSystem* _fileSystem{ nullptr };

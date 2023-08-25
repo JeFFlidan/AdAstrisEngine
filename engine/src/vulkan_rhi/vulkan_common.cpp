@@ -17,6 +17,15 @@ void vulkan::create_semaphore(VkDevice device, VkSemaphore* semaphore)
 	VK_CHECK(vkCreateSemaphore(device, &info, nullptr, semaphore));
 }
 
+VkFence vulkan::create_fence(VkDevice device)
+{
+	VkFenceCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	VkFence fence;
+	VK_CHECK(vkCreateFence(device, &info, nullptr, &fence));
+	return fence;
+}
+
 VkFormat vulkan::get_format(rhi::Format format)
 {
 	switch (format)

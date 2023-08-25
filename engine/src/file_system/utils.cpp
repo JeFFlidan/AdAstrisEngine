@@ -93,6 +93,12 @@ bool io::Utils::has_extension(const URI& path)
 	return std::filesystem::path(path.c_str()).has_extension();
 }
 
+bool io::Utils::exists(const URI& baseFolder, const URI& relativePath)
+{
+	URI newPath = get_absolute_path_to_file(baseFolder, relativePath);
+	return std::filesystem::exists(std::filesystem::path(newPath.c_str()));
+}
+
 bool io::Utils::exists(FileSystem* fileSystem, const URI& path)
 {
 	if (is_absolute(path))

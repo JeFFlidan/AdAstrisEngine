@@ -5,8 +5,8 @@
 #include "vulkan_device.h"
 #include "vulkan_swap_chain.h"
 #include <vulkan/vulkan.h>
-#include <map>
 #include <vector>
+#include <memory>
 
 // Maybe temporary solution. I will decide how much threads renderer should have
 #define RENDER_THREAD_COUNT 4
@@ -37,7 +37,7 @@ namespace ad_astris::vulkan
 			std::vector<VkSemaphore> _waitSemaphores;
 			std::vector<VkPipelineStageFlags> _waitFlags;
 			// Need to solve problem with fences
-			VkFence _cmdFence;
+			// VkFence _cmdFence;
 	};
 
 	// One VulkanCommandPool per queue per thread per frame
@@ -47,7 +47,7 @@ namespace ad_astris::vulkan
 		friend VulkanQueue;
 		
 		public:
-			VulkanCommandPool(VulkanDevice* device, IVulkanQueue* queue);
+			VulkanCommandPool(VulkanDevice* device, VulkanQueue* queue);
 			~VulkanCommandPool();
 
 			VulkanCommandBuffer* get_cmd_buffer();
@@ -60,14 +60,14 @@ namespace ad_astris::vulkan
 			VulkanDevice* _device{ nullptr };
 			VkCommandPool _cmdPool;
 			VkPipelineStageFlags _waitFlag;
-			std::vector<VulkanCommandBuffer*> _freeCmdBuffers;
-			std::vector<VulkanCommandBuffer*> _usedCmdBuffers;
-			std::vector<VulkanCommandBuffer*> _submittedCmdBuffers;
+			std::vector<std::unique_ptr<VulkanCommandBuffer>> _freeCmdBuffers;
+			std::vector<std::unique_ptr<VulkanCommandBuffer>> _usedCmdBuffers;
+			std::vector<std::unique_ptr<VulkanCommandBuffer>> _submittedCmdBuffers;
 	};
 	
 	void VK_RHI_API clear_after_submission(
-		std::vector<VulkanCommandPool*>& freePools,
-		std::vector<VulkanCommandPool*>& lockedPools);
+		std::vector<std::unique_ptr<VulkanCommandPool>>& freePools,
+		std::vector<std::unique_ptr<VulkanCommandPool>>& lockedPools);
 	
 	class VK_RHI_API VulkanCommandManager
 	{
@@ -87,16 +87,25 @@ namespace ad_astris::vulkan
 			 * @param imageIndex should be received from vkAcquireNextImageKHR
 			 */
 			void flush_cmd_buffers(uint32_t imageIndex);
+
+			bool acquire_next_image(
+				VulkanSwapChain* swapChain,
+				uint32_t& nextImageIndex,
+				uint32_t currentFrameIndex);
+
+			VkFence get_free_fence();
+		
 		private:
 			VulkanDevice* _device;
 			std::vector<VkSemaphore> _acquireSemaphores;
-			VkFence fence;		// Need to be remade
-			std::vector<std::vector<VulkanCommandPool*>> _freeGraphicsCmdPools;
-			std::vector<std::vector<VulkanCommandPool*>> _lockedGraphicsCmdPools;
-			std::vector<std::vector<VulkanCommandPool*>> _freeTransferCmdPools;
-			std::vector<std::vector<VulkanCommandPool*>> _lockedTransferCmdPools;
-			std::vector<std::vector<VulkanCommandPool*>> _freeComputeCmdPools;
-			std::vector<std::vector<VulkanCommandPool*>> _lockedComputeCmdPools;
+			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _freeGraphicsCmdPools;
+			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedGraphicsCmdPools;
+			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _freeTransferCmdPools;
+			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedTransferCmdPools;
+			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _freeComputeCmdPools;
+			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedComputeCmdPools;
+			std::vector<std::vector<VkFence>> _freeFences;
+			std::vector<std::vector<VkFence>> _lockedFences;
 			uint32_t _imageIndex;
 	};
 }

@@ -26,6 +26,7 @@
 namespace ad_astris::vulkan
 {
 	void create_semaphore(VkDevice device, VkSemaphore* semaphore);
+	VkFence create_fence(VkDevice device);
 	
 	VkFormat VK_RHI_API get_format(rhi::Format format);
 	VkSampleCountFlagBits VK_RHI_API get_sample_count(rhi::SampleCount sampleCount);

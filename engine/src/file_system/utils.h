@@ -20,6 +20,7 @@ namespace ad_astris::io
 			static bool is_absolute(const URI& path);
 			static bool is_relative(const URI& path);
 			static bool has_extension(const URI& path);
+			static bool exists(const URI& baseFolder, const URI& relativePath);
 			static bool exists(FileSystem* fileSystem, const URI& path);
 			static URI find_file_with_specific_extension(const URI& folderPath, const std::string& extension);
 	};

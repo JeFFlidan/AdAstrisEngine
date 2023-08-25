@@ -25,7 +25,7 @@ vulkan::VulkanCommandBuffer::~VulkanCommandBuffer()
 	vkDestroySemaphore(_device->get_device(), _signalSemaphore, nullptr);
 }
 
-vulkan::VulkanCommandPool::VulkanCommandPool(VulkanDevice* device, IVulkanQueue* queue) : _device(device)
+vulkan::VulkanCommandPool::VulkanCommandPool(VulkanDevice* device, VulkanQueue* queue) : _device(device)
 {
 	VkCommandPoolCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -57,12 +57,6 @@ vulkan::VulkanCommandPool::VulkanCommandPool(VulkanDevice* device, IVulkanQueue*
 vulkan::VulkanCommandPool::~VulkanCommandPool()
 {
 	vkDestroyCommandPool(_device->get_device(), _cmdPool, nullptr);
-	for (auto& buffer : _freeCmdBuffers)
-		delete buffer;
-	for (auto& buffer : _usedCmdBuffers)
-		delete buffer;
-	for (auto& buffer : _submittedCmdBuffers)
-		delete buffer;
 }
 
 vulkan::VulkanCommandBuffer* vulkan::VulkanCommandPool::get_cmd_buffer()
@@ -70,14 +64,14 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandPool::get_cmd_buffer()
 	VulkanCommandBuffer* cmdBuffer;
 	if (!_freeCmdBuffers.empty())
 	{
-		cmdBuffer = _freeCmdBuffers.back();
+		cmdBuffer = _freeCmdBuffers.back().get();
+		_usedCmdBuffers.emplace_back(std::move(_freeCmdBuffers.back()));
 		_freeCmdBuffers.pop_back();
-		_usedCmdBuffers.push_back(cmdBuffer);
 	}
 	else
 	{
-		cmdBuffer = new VulkanCommandBuffer(_device, _cmdPool, _waitFlag);
-		_usedCmdBuffers.push_back(cmdBuffer);
+		_usedCmdBuffers.emplace_back(new VulkanCommandBuffer(_device, _cmdPool, _waitFlag));
+		cmdBuffer = _usedCmdBuffers.back().get();
 	}
 	return cmdBuffer;
 }
@@ -89,7 +83,7 @@ void vulkan::VulkanCommandPool::clear_after_submission()
 		cmdBuffer->_waitSemaphores.clear();
 		cmdBuffer->_waitFlags.clear();
 	}
-	_submittedCmdBuffers = std::move(_usedCmdBuffers);
+	_submittedCmdBuffers = std::move(_usedCmdBuffers);			// TODO FIX BUG
 }
 
 void vulkan::VulkanCommandPool::flush_submitted_cmd_buffers()
@@ -100,52 +94,47 @@ void vulkan::VulkanCommandPool::flush_submitted_cmd_buffers()
 
 vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanSwapChain* swapChain) : _device(device)
 {
-	IVulkanQueue* graphicsQueue = _device->get_graphics_queue();
-	IVulkanQueue* computeQueue = _device->get_compute_queue();
-	IVulkanQueue* transferQueue = _device->get_transfer_queue();
+	VulkanQueue* graphicsQueue = _device->get_graphics_queue();
+	VulkanQueue* computeQueue = _device->get_compute_queue();
+	VulkanQueue* transferQueue = _device->get_transfer_queue();
 
 	size_t buffersCount = swapChain->get_texture_views().size();
 	size_t poolsPerQueue = RENDER_THREAD_COUNT * buffersCount;
 	
 	for (int i = 0; i != 3; ++i)
 	{
-		std::vector<VulkanCommandPool*> tempPools;
+		std::vector<std::unique_ptr<VulkanCommandPool>> tempPools;
 		for (size_t j = 1; j <= poolsPerQueue; ++j)
 		{
-			VulkanCommandPool* commandPool;
-			
 			switch (i)
 			{
 				case 0:
 				{
-					commandPool = new VulkanCommandPool(_device, graphicsQueue);
-					tempPools.push_back(commandPool);
+					tempPools.emplace_back(new VulkanCommandPool(_device, graphicsQueue));
 					if (tempPools.size() == poolsPerQueue / buffersCount)
 					{
-						_freeGraphicsCmdPools.push_back(tempPools);
-						tempPools.clear();
+						_freeGraphicsCmdPools.push_back(std::move(tempPools));
+						//tempPools.clear();
 					}
 					break;
 				}
 				case 1:
 				{
-					commandPool = new VulkanCommandPool(_device, computeQueue);
-					tempPools.push_back(commandPool);
+					tempPools.emplace_back(new VulkanCommandPool(_device, computeQueue));
 					if (tempPools.size() == poolsPerQueue / buffersCount)
 					{
-						_freeComputeCmdPools.push_back(tempPools);
-						tempPools.clear();
+						_freeComputeCmdPools.push_back(std::move(tempPools));
+						//tempPools.clear();
 					}
 					break;
 				}
 				case 2:
 				{
-					commandPool = new VulkanCommandPool(_device, transferQueue);
-					tempPools.push_back(commandPool);
+					tempPools.emplace_back(new VulkanCommandPool(_device, transferQueue));
 					if (tempPools.size() == poolsPerQueue / buffersCount)
 					{
-						_freeTransferCmdPools.push_back(tempPools);
-						tempPools.clear();
+						_freeTransferCmdPools.push_back(std::move(tempPools));
+						//tempPools.clear();
 					}
 					break;
 				}
@@ -171,22 +160,13 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 
 void vulkan::VulkanCommandManager::cleanup()
 {
-	for (size_t i = 0; i != _imageIndex; ++i)
+	for (auto& semaphore : _acquireSemaphores)
 	{
-		for (auto& pool : _freeGraphicsCmdPools[i])
-		{
-			delete pool;
-		}
-		for (auto& pool : _freeComputeCmdPools[i])
-		{
-			delete pool;
-		}
-		for (auto& pool : _freeTransferCmdPools[i])
-		{
-			delete pool;
-		}
-		vkDestroySemaphore(_device->get_device(), _acquireSemaphores[i], nullptr);
+		vkDestroySemaphore(_device->get_device(), semaphore, nullptr);
 	}
+
+	for (auto& fence : _freeFences[_imageIndex])
+		vkDestroyFence(_device->get_device(), fence, nullptr);
 }
 
 vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rhi::QueueType queueType)
@@ -201,10 +181,9 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 				LOG_FATAL("VulkanCommandManage::get_command_buffer(): Can't dedicate more than 4 threads")
 			}
 
-			VulkanCommandPool* cmdPool = _freeGraphicsCmdPools[_imageIndex].back();
+			cmdBuffer = _freeGraphicsCmdPools[_imageIndex].back()->get_cmd_buffer();
+			_lockedGraphicsCmdPools[_imageIndex].push_back(std::move(_freeGraphicsCmdPools[_imageIndex].back()));
 			_freeGraphicsCmdPools.pop_back();
-			_lockedGraphicsCmdPools[_imageIndex].push_back(cmdPool);
-			cmdBuffer = cmdPool->get_cmd_buffer();
 			break;
 		}
 		case rhi::QueueType::COMPUTE:
@@ -214,10 +193,9 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 				LOG_FATAL("VulkanCommandManage::get_command_buffer(): Can't dedicate more than 4 threads")
 			}
 
-			VulkanCommandPool* cmdPool = _freeComputeCmdPools[_imageIndex].back();
+			cmdBuffer = _freeComputeCmdPools[_imageIndex].back()->get_cmd_buffer();
+			_lockedComputeCmdPools[_imageIndex].push_back(std::move(_freeComputeCmdPools[_imageIndex].back()));
 			_freeComputeCmdPools.pop_back();
-			_lockedComputeCmdPools[_imageIndex].push_back(cmdPool);
-			cmdBuffer = cmdPool->get_cmd_buffer();
 			break;
 		}
 		case rhi::QueueType::TRANSFER:
@@ -227,10 +205,9 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 				LOG_FATAL("VulkanCommandManage::get_command_buffer(): Can't dedicate more than 4 threads")
 			}
 
-			VulkanCommandPool* cmdPool = _freeTransferCmdPools[_imageIndex].back();
+			cmdBuffer = _freeTransferCmdPools[_imageIndex].back()->get_cmd_buffer();
+			_lockedTransferCmdPools[_imageIndex].push_back(std::move(_freeTransferCmdPools[_imageIndex].back()));
 			_freeTransferCmdPools.pop_back();
-			_lockedTransferCmdPools[_imageIndex].push_back(cmdPool);
-			cmdBuffer = cmdPool->get_cmd_buffer();
 			break;
 		}
 	}
@@ -261,24 +238,24 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
 		case rhi::QueueType::GRAPHICS:
 		{
 			_device->get_graphics_queue()->submit(*this);
-			std::vector<VulkanCommandPool*>& lockedPools = _lockedGraphicsCmdPools[_imageIndex];
-			std::vector<VulkanCommandPool*>& freePools = _freeGraphicsCmdPools[_imageIndex];
+			auto& lockedPools = _lockedGraphicsCmdPools[_imageIndex];
+			auto& freePools = _freeGraphicsCmdPools[_imageIndex];
 			clear_after_submission(freePools, lockedPools);
 			break;
 		}
 		case rhi::QueueType::COMPUTE:
 		{
 			_device->get_compute_queue()->submit(*this);
-			std::vector<VulkanCommandPool*>& lockedPools = _lockedComputeCmdPools[_imageIndex];
-			std::vector<VulkanCommandPool*>& freePools = _freeComputeCmdPools[_imageIndex];
+			auto& lockedPools = _lockedComputeCmdPools[_imageIndex];
+			auto& freePools = _freeComputeCmdPools[_imageIndex];
 			clear_after_submission(freePools, lockedPools);
 			break;
 		}
 		case rhi::QueueType::TRANSFER:
 		{
 			_device->get_transfer_queue()->submit(*this);
-			std::vector<VulkanCommandPool*>& lockedPools = _lockedTransferCmdPools[_imageIndex];
-			std::vector<VulkanCommandPool*>& freePools = _freeTransferCmdPools[_imageIndex];
+			auto& lockedPools = _lockedTransferCmdPools[_imageIndex];
+			auto& freePools = _freeTransferCmdPools[_imageIndex];
 			clear_after_submission(freePools, lockedPools);
 			break;
 		}
@@ -288,9 +265,9 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
 void vulkan::VulkanCommandManager::flush_cmd_buffers(uint32_t imageIndex)
 {
 	_imageIndex = imageIndex;
-	std::vector<VulkanCommandPool*>& graphicsPools = _freeGraphicsCmdPools[_imageIndex];
-	std::vector<VulkanCommandPool*>& transferPools = _freeTransferCmdPools[_imageIndex];
-	std::vector<VulkanCommandPool*>& computePools = _freeComputeCmdPools[_imageIndex];
+	auto& graphicsPools = _freeGraphicsCmdPools[_imageIndex];
+	auto& transferPools = _freeTransferCmdPools[_imageIndex];
+	auto& computePools = _freeComputeCmdPools[_imageIndex];
 
 	for (int i = 0; i != RENDER_THREAD_COUNT; ++i)
 	{
@@ -300,14 +277,40 @@ void vulkan::VulkanCommandManager::flush_cmd_buffers(uint32_t imageIndex)
 	}
 }
 
-void vulkan::clear_after_submission(
-	std::vector<VulkanCommandPool*>& freePools,
-	std::vector<VulkanCommandPool*>& lockedPools)
+bool vulkan::VulkanCommandManager::acquire_next_image(VulkanSwapChain* swapChain, uint32_t& nextImageIndex, uint32_t currentFrameIndex)
 {
-	for (auto pool : lockedPools)
+	uint32_t lockedFencesCount = _lockedFences[currentFrameIndex].size();
+	VK_CHECK(vkWaitForFences(_device->get_device(), lockedFencesCount, _lockedFences[currentFrameIndex].data(), true, 1000000000));
+	VK_CHECK(vkResetFences(_device->get_device(), lockedFencesCount, _lockedFences[currentFrameIndex].data()));
+	
+	if (vkAcquireNextImageKHR(_device->get_device(), swapChain->get_swap_chain(), 1000000000, _acquireSemaphores[currentFrameIndex], VK_NULL_HANDLE, &nextImageIndex) == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		return false;
+	}
+
+	_imageIndex = nextImageIndex;
+
+	return true;
+}
+
+VkFence vulkan::VulkanCommandManager::get_free_fence()
+{
+	std::vector<VkFence>& freeFences = _freeFences[_imageIndex];
+	if (freeFences.empty())
+		freeFences.push_back(create_fence(_device->get_device()));
+	VkFence fence = _freeFences[_imageIndex].back();
+	_freeFences[_imageIndex].pop_back();
+	return fence;
+}
+
+void vulkan::clear_after_submission(
+	std::vector<std::unique_ptr<VulkanCommandPool>>& freePools,
+	std::vector<std::unique_ptr<VulkanCommandPool>>& lockedPools)
+{
+	for (auto& pool : lockedPools)
 	{
 		pool->clear_after_submission();
-		freePools.push_back(pool);
+		freePools.push_back(std::move(pool));
 	}
 	lockedPools.clear();
 }

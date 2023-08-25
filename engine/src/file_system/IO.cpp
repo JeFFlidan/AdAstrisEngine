@@ -3,8 +3,6 @@
 #include <filesystem>
 #include <string>
 
-#include "vulkan_rhi/vulkan_command_manager.h"
-
 namespace ad_astris
 {
 	io::EngineFileStream::EngineFileStream(FILE* file)

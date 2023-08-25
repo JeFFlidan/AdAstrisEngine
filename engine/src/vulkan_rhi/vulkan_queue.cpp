@@ -13,7 +13,7 @@ vulkan::VulkanQueue::VulkanQueue(QueueData queueData)
 
 void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager)
 {
-	std::vector<VulkanCommandPool*>* cmdPools;
+	std::vector<std::unique_ptr<VulkanCommandPool>>* cmdPools;
 	switch (_queueType)
 	{
 		case rhi::QueueType::GRAPHICS:
@@ -36,7 +36,7 @@ void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager)
 	std::vector<VkSubmitInfo> submitInfos;
 	for (auto& pool : *cmdPools)
 	{
-		VulkanCommandBuffer* cmdBuffer = pool->_usedCmdBuffers[0];
+		VulkanCommandBuffer* cmdBuffer = pool->_usedCmdBuffers[0].get();
 		vkEndCommandBuffer(cmdBuffer->get_handle());
 		VkSubmitInfo info{};
 		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -51,7 +51,7 @@ void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager)
 	}
 
 	// TODO need to use the correct fence
-	VK_CHECK(vkQueueSubmit(_queue, submitInfos.size(), submitInfos.data(), cmdManager.fence));
+	VK_CHECK(vkQueueSubmit(_queue, submitInfos.size(), submitInfos.data(), cmdManager.get_free_fence()));
 }
 
 void vulkan::VulkanQueue::present()

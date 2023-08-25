@@ -44,9 +44,17 @@ void Engine::init(EngineInitializationContext& initializationContext)
 		}
 	}
 
-	//auto rendererModule = _moduleManager->load_module<renderer::IRendererModule>("Renderer");
-	//_renderer = rendererModule->get_renderer();
-	//_renderer->init(_moduleManager, _resourceManager.get(), window, *_engineSettings.get());
+	renderer::RendererInitializationContext rendererInitializationContext;
+	rendererInitializationContext.eventManager = _eventManager;
+	rendererInitializationContext.mainWindow = _mainWindow;
+	rendererInitializationContext.moduleManager = _moduleManager;
+	rendererInitializationContext.projectSettings = _projectSettings.get();
+	rendererInitializationContext.resourceManager = _resourceManager.get();
+	rendererInitializationContext.taskComposer = _taskComposer.get();
+	auto rendererModule = _moduleManager->load_module<renderer::IRendererModule>("Renderer");
+	_renderer = rendererModule->get_renderer();
+	_renderer->init(rendererInitializationContext);
+	LOG_INFO("Engine::init(): Loaded and initialized Renderer module")
 
 	LOG_INFO("Engine::init(): Engine initialization completed")
 }

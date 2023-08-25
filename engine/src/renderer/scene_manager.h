@@ -2,6 +2,8 @@
 
 #include "rhi/resources.h"
 #include "rhi/engine_rhi.h"
+#include "events/event_handler.h"
+#include "resource_manager/resource_events.h"
 
 namespace ad_astris::renderer
 {
@@ -13,5 +15,10 @@ namespace ad_astris::renderer
 		
 		private:
 			rhi::IEngineRHI* _rhi;
+
+			events::EventHandler<resource::StaticModelLoadedEvent> _staticModelLoadedDelegate;
+			events::EventHandler<resource::Texture2DLoadedEvent> _texture2DLoadedDelegate;
+
+			void setup_event_delegates();
 	};
 }

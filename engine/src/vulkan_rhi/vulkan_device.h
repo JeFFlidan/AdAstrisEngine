@@ -1,9 +1,15 @@
 ﻿#pragma once
 
+#ifdef _WIN32
+	#ifndef VK_USE_PLATFORM_WIN32_KHR
+		#define VK_USE_PLATFORM_WIN32_KHR
+	#endif
+#endif
+
 #include "api.h"
+#include "application_core/window.h"
 #include "profiler/logger.h"
 #include "engine/vulkan_rhi_module.h"
-#include <vulkan/vulkan.h>
 #include <VkBootstrap.h>
 #include <vector>
 #include <string>
@@ -17,10 +23,10 @@ namespace ad_astris::vulkan
 
 	class VulkanQueue;
 
-	class VK_RHI_API VulkanDevice : public IVulkanDevice
+	class VK_RHI_API VulkanDevice
 	{
 		public:
-			VulkanDevice(vkb::Instance& instance, void* window);
+			VulkanDevice(vkb::Instance& instance, acore::IWindow* window);
 
 			void cleanup();
 
@@ -31,10 +37,10 @@ namespace ad_astris::vulkan
 
 			uint32_t get_max_multiview_view_count() { return _maxMultiviewView; }
 
-			IVulkanQueue* get_graphics_queue();
-			IVulkanQueue* get_present_queue();
-			IVulkanQueue* get_compute_queue();
-			IVulkanQueue* get_transfer_queue();
+			VulkanQueue* get_graphics_queue();
+			VulkanQueue* get_present_queue();
+			VulkanQueue* get_compute_queue();
+			VulkanQueue* get_transfer_queue();
 		
 		private:
 			VkSurfaceKHR _surface{ VK_NULL_HANDLE };
@@ -62,7 +68,7 @@ namespace ad_astris::vulkan
 			 @param instance should be valid Vulkan instance
 			 @param window should be pointer to the window: SDL for Linux or WinApi for Windows.
 			 */
-			void create_surface(VkInstance instance, void* window);
+			void create_surface(VkInstance instance, acore::IWindow* window);
 			vkb::PhysicalDevice pick_physical_device(vkb::Instance& instance);
 			vkb::Device pick_device(vkb::PhysicalDevice& physicalDevice);
 			bool check_needed_extensions(std::vector<std::string>& supportedExt, const std::string& extName);

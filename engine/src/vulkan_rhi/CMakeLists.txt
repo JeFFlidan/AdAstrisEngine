@@ -41,24 +41,12 @@ file(GLOB FMT_FILES "${THIRD_PARTY_PATH}/fmt_lib/fmt/*")
 target_sources(fmt_lib PRIVATE ${FMT_FILES})
 
 add_library(file_system STATIC)
-target_include_directories(file_system PUBLIC ${ENGINE_SRC_PATH}/file_system)
+target_include_directories(file_system PUBLIC ${THIRD_PARTY_PATH}/fmt_lib)
 file(GLOB FILE_SYSTEM_FILES
+	"${THIRD_PARTY_PATH}/fmt_lib/fmt/*"
 	"${ENGINE_SRC_PATH}/file_system/utils.h"
 	"${ENGINE_SRC_PATH}/file_system/utils.cpp")
 target_sources(file_system PRIVATE ${FILE_SYSTEM_FILES})
-
-add_library(sdl2 INTERFACE)
-set(sdl2_DIR ${THIRD_PARTY_PATH}/SDL)
-
-if (WIN32)
-target_include_directories(sdl2 INTERFACE ${sdl2_DIR}/include ${sdl2_image_DIR}/include)
-target_link_directories(sdl2 INTERFACE ${sdl2_DIR}/lib/x64 ${sdl2_image_DIR}/lib/x64)
-elseif (UNIX)
-target_include_directories(sdl2 INTERFACE ${sdl2_DIR}/include/SDL2 ${sdl2_image_DIR}/include/SDL2)
-target_link_directories(sdl2 INTERFACE ${sdl2_DIR}/lib ${sdl2_image_DIR}/lib)
-endif()
-
-target_link_libraries(sdl2 INTERFACE SDL2main SDL2)
 
 add_library(spirv_reflect STATIC)
 target_include_directories(spirv_reflect PUBLIC ${THIRD_PARTY_PATH}/spirv_reflect)
@@ -70,5 +58,5 @@ target_sources(spirv_reflect PRIVATE
 include_directories(${ENGINE_SRC_PATH})
 include_directories(${THIRD_PARTY_PATH}/vma)
 
-target_link_libraries(vulkan_rhi vkbootstrap spirv_reflect fmt_lib Vulkan::Vulkan sdl2 file_system)
+target_link_libraries(vulkan_rhi vkbootstrap spirv_reflect fmt_lib Vulkan::Vulkan file_system)
 
