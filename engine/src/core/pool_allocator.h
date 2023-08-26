@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <cstdint>
+#include <functional>
 
 // Pool allocators were taken from https://github.com/Themaister/Granite/tree/master
 namespace ad_astris

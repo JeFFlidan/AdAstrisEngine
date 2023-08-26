@@ -1,4 +1,5 @@
 #include "resource_manager.h"
+#include "resource_events.h"
 #include "engine_core/material/material_template.h"
 #include "engine_core/material/materials.h"
 #include "engine_core/material/shader.h"
@@ -90,6 +91,8 @@ void ResourceManager::load_builtin_resources()
 			}
 		}
 		LOG_INFO("ResourceManager::load_builtin_resources(): Loaded material template: {}", materialTemplate->get_name()->get_full_name())
+		MaterialTemplateLoadedEvent event(materialTemplate);
+		_eventManager->trigger_event(event);
 	}
 
 	_builtinResourcesContext.clear();

@@ -24,6 +24,7 @@ namespace ad_astris::events
 	{
 		public:
 			virtual ~IEvent() { }
-			virtual uint64_t get_type_id() = 0; 
+			virtual uint64_t get_type_id() = 0;
+			virtual void cleanup() { }
 	};
 }

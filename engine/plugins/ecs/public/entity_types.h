@@ -206,6 +206,15 @@ namespace ad_astris::ecs
 			}
 
 			template<typename T>
+			T get_component()
+			{
+				auto it = _componentsMap.find(TypeInfoTable::get_component_id<T>());
+				if (it == _componentsMap.end())
+					LOG_ERROR("EntityCreationContext::get_component(): Creation context doesn't contain component {}", get_type_name<T>())
+				return *static_cast<T*>(it->second->get_raw_memory());
+			}
+
+			template<typename T>
 			void set_component(T& value)
 			{
 				uint32_t id = TypeInfoTable::get_component_id<T>();

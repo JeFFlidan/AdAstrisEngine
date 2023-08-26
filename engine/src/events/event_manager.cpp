@@ -45,6 +45,7 @@ void EventManager::trigger_event(IEvent& event)
 	{
 		handler->execute(event);
 	}
+	event.cleanup();
 }
 
 void EventManager::dispatch_events()
@@ -62,6 +63,7 @@ void EventManager::dispatch_events()
 			handler->execute(*event);
 		}
 
+		event->cleanup();
 		_eventsQueue.pop();
 	}
 }

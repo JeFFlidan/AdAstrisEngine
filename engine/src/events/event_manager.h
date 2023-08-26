@@ -43,9 +43,8 @@ namespace ad_astris::events
 			template<typename CustomEvent>
 			void enqueue_event(CustomEvent& event)
 			{
-				std::unique_ptr<CustomEvent> eventPtr(new CustomEvent(event));
-				std::lock_guard<std::mutex> locker(_eventQueueMutex);
-				_eventsQueue.emplace(std::move(eventPtr));
+				std::scoped_lock<std::mutex> locker(_eventQueueMutex);
+				_eventsQueue.emplace(new CustomEvent(event));
 			}
 		
 			void trigger_event(IEvent& event);
