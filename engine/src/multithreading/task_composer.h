@@ -18,6 +18,16 @@ namespace ad_astris::tasks
 			bool is_busy(TaskGroup& taskGroup);
 			void wait(TaskGroup& taskGroup);
 
+			TaskGroup* allocate_task_group()
+			{
+				return _taskGroupPool.allocate();
+			}
+
+			void free_task_group(TaskGroup* taskGroup)
+			{
+				return _taskGroupPool.free(taskGroup);
+			}
+
 			uint32_t get_thread_count()
 			{
 				return _threadCount;
@@ -25,6 +35,7 @@ namespace ad_astris::tasks
 		
 		private:
 			std::unique_ptr<TaskQueueGroup> _taskQueueGroup{ nullptr };
+			ThreadSafePoolAllocator<TaskGroup> _taskGroupPool;
 			std::vector<std::thread> _threads;
 			std::condition_variable _wakeCondition;
 			std::mutex _mutex;

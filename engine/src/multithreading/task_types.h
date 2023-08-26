@@ -1,10 +1,12 @@
 ﻿#pragma once
 
+#include "profiler/logger.h"
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
 #include <deque>
 #include <functional>
+#include <unordered_set>
 
 namespace ad_astris::tasks
 {
@@ -19,9 +21,62 @@ namespace ad_astris::tasks
 
 	using TaskHandler = std::function<void(TaskExecutionInfo)>;
 	
-	struct TaskGroup
+	class TaskGroup
 	{
-		std::atomic<uint32_t> pendingTaskCount{ 0 };
+		public:
+			void increase_task_count(uint32_t taskCount)
+			{
+				_pendingTaskCount.fetch_add(taskCount);
+				_isDependenciesResolved = false;
+			}
+
+			void decrease_task_count(uint32_t taskCount)
+			{
+				_pendingTaskCount.fetch_sub(taskCount);
+				if (_pendingTaskCount.load() == 0)
+				{
+					_waitCondition.notify_all();
+					_isDependenciesResolved = true;
+				}
+			}
+
+			uint32_t get_pending_task_count()
+			{
+				return _pendingTaskCount.load();
+			}
+
+			void wait_for_other_groups()
+			{
+				if (!_isDependenciesResolved)
+				{
+					for (auto& dependency : _dependencies)
+					{
+						std::unique_lock<std::mutex> lock(dependency->_mutex);
+						dependency->_waitCondition.wait(lock);
+					}
+				}
+			}
+
+			void add_dependency(TaskGroup* taskGroup)
+			{
+				if (taskGroup)
+					_dependencies.insert(taskGroup);
+			}
+
+			void remove_dependency(TaskGroup* taskGroup)
+			{
+				auto it = _dependencies.find(taskGroup);
+				if (it == _dependencies.end())
+					LOG_FATAL("TaskGroup::remove_dependency(): Task group doesn't have dependency that you want to remove")
+				_dependencies.erase(taskGroup);
+			}
+		
+		private:
+			std::atomic<uint32_t> _pendingTaskCount{ 0 };
+			std::condition_variable _waitCondition;
+			std::mutex _mutex;
+			std::unordered_set<TaskGroup*> _dependencies;		// Task group waits for these task groups
+			bool _isDependenciesResolved{ true };
 	};
 	
 	struct Task

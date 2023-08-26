@@ -35,6 +35,8 @@ TaskComposer::TaskComposer(uint32_t maxThreadCount)
 			}
 		});
 	}
+
+	_taskGroupPool.allocate_new_pool(128);
 }
 
 TaskComposer::~TaskComposer()
@@ -59,7 +61,7 @@ TaskComposer::~TaskComposer()
 
 void TaskComposer::execute(TaskGroup& taskGroup, const TaskHandler& taskHandler)
 {
-	taskGroup.pendingTaskCount.fetch_add(1);
+	taskGroup.increase_task_count(1);
 
 	Task task;
 	task.taskHandler = taskHandler;
@@ -78,7 +80,7 @@ void TaskComposer::dispatch(TaskGroup& taskGroup, uint32_t taskCount, uint32_t g
 		return;
 
 	uint32_t groupCount = calculate_group_count(taskCount, groupSize);
-	taskGroup.pendingTaskCount.fetch_add(groupCount);
+	taskGroup.increase_task_count(groupCount);
 
 	//Task* task = _taskPool.allocate();
 	Task task;
@@ -98,7 +100,7 @@ void TaskComposer::dispatch(TaskGroup& taskGroup, uint32_t taskCount, uint32_t g
 
 bool TaskComposer::is_busy(TaskGroup& taskGroup)
 {
-	return taskGroup.pendingTaskCount.load() > 0;
+	return taskGroup.get_pending_task_count() > 0;
 }
 
 void TaskComposer::wait(TaskGroup& taskGroup)
@@ -124,6 +126,7 @@ void TaskComposer::execute_tasks(uint32_t beginningQueueIndex)
 		while (!taskQueue.empty())
 		{
 			Task& task = taskQueue.pop_front();
+			task.taskGroup->wait_for_other_groups();
 			//TaskExecutionInfo* executionInfo = _taskExecutionInfoPool.allocate();
 			executionInfo.taskSubgroupID = task.taskSubgroupID;
 
@@ -143,7 +146,7 @@ void TaskComposer::execute_tasks(uint32_t beginningQueueIndex)
 				}
 			}
 			
-			task.taskGroup->pendingTaskCount.fetch_sub(1);
+			task.taskGroup->decrease_task_count(1);
 			//_taskPool.free(task);
 			//_taskExecutionInfoPool.free(executionInfo);
 		}
