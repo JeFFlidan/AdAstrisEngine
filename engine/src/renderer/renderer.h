@@ -1,6 +1,7 @@
 #pragma once
 
 #include "api.h"
+#include "material_manager.h"
 #include "engine/renderer_module.h"
 #include "resource_manager/resource_manager.h"
 #include "engine/render_core_module.h"
@@ -24,6 +25,7 @@ namespace ad_astris::renderer::impl
 			virtual void bake() override;
 		
 		private:
+			std::unique_ptr<MaterialManager> _materialManager{ nullptr };
 			ecore::RendererSubsettings* _rendererSubsettings{ nullptr };
 			rhi::IEngineRHI* _rhi{ nullptr };
 			rcore::IRenderGraph* _renderGraph{ nullptr };

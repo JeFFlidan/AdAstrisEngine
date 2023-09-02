@@ -100,7 +100,7 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 	result = cgltf_load_buffers(&options, data, path.c_str());
 	assert(result == cgltf_result_success && "Failed to load buffers");
 
-	std::vector<ecore::model::VertexF32> vertexData;
+	std::vector<ecore::model::VertexF32PNTC> vertexData;
 	std::vector<uint32_t> modelIndices;
 	
 	cgltf_mesh* meshes = data->meshes;
@@ -177,11 +177,11 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 				}
 			}
 
-			ecore::model::VertexF32 threeVertices[3];
+			ecore::model::VertexF32PNTC threeVertices[3];
 			size_t index = 0;
 			for (size_t g = 0; g != count; ++g)
 			{
-				ecore::model::VertexF32 vertex;
+				ecore::model::VertexF32PNTC vertex;
 				vertex.position.x = position[g].x;
 				vertex.normal.x = normal[g].x;
 				if (isBlender)
@@ -247,12 +247,12 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 
 	context->modelBounds = ecore::model::Utils::calculate_model_bounds(vertexData.data(), vertexData.size());
 	
-	uint64_t vertexBufferSize = vertexData.size() * sizeof(ecore::model::VertexF32);
+	uint64_t vertexBufferSize = vertexData.size() * sizeof(ecore::model::VertexF32PNTC);
 	uint64_t indexBufferSize = modelIndices.size() * sizeof(uint32_t);
 	context->vertexBufferSize = vertexBufferSize;
 	context->indexBufferSize = indexBufferSize;
 	context->buffer = new uint8_t[vertexBufferSize + indexBufferSize];
-	context->vertexFormat = ecore::model::VertexFormat::F32;
+	context->vertexFormat = ecore::model::VertexFormat::F32_PNTC;
 	memcpy(context->buffer, vertexData.data(), vertexBufferSize);
 	memcpy(context->buffer + vertexBufferSize, modelIndices.data(), indexBufferSize);
 }
@@ -275,9 +275,9 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 	}
 
 	// Can't use vector because of the strange behavior of LZ4 compression
-	ecore::model::VertexF32 threeVertices[3];
+	ecore::model::VertexF32PNTC threeVertices[3];
 	size_t index = 0;
-	std::vector<ecore::model::VertexF32> vertexData;
+	std::vector<ecore::model::VertexF32PNTC> vertexData;
 	std::vector<uint32_t> indices;
 
 	for (size_t i = 0; i != shapes.size(); ++i)
@@ -290,7 +290,7 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 			{
 				tinyobj::index_t idx = shapes[i].mesh.indices[indexOffset + q];
 
-				ecore::model::VertexF32 vertex;
+				ecore::model::VertexF32PNTC vertex;
 
 				vertex.position.x = attrib.vertices[3 * idx.vertex_index + 0];
 				vertex.position.y = attrib.vertices[3 * idx.vertex_index + 1];
@@ -329,12 +329,12 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 
 	context->modelBounds = ecore::model::Utils::calculate_model_bounds(vertexData.data(), vertexData.size());
 	
-	uint64_t vertexBufferSize = vertexData.size() * sizeof(ecore::model::VertexF32);
+	uint64_t vertexBufferSize = vertexData.size() * sizeof(ecore::model::VertexF32PNTC);
 	uint64_t indexBufferSize = indices.size() * sizeof(uint32_t);
 	context->vertexBufferSize = vertexBufferSize;
 	context->indexBufferSize = indexBufferSize;
 	context->buffer = new uint8_t[vertexBufferSize + indexBufferSize];
-	context->vertexFormat = ecore::model::VertexFormat::F32;
+	context->vertexFormat = ecore::model::VertexFormat::F32_PNTC;
 	memcpy(context->buffer, vertexData.data(), vertexBufferSize);
 	memcpy(context->buffer + vertexBufferSize, indices.data(), indexBufferSize);
 }

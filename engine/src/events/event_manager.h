@@ -37,6 +37,12 @@ namespace ad_astris::events
 
 				_handlersByEventID[eventID].emplace_back(std::move(eventHandler));
 			}
+
+			template<typename EventType>
+			void subscribe(EventDelegate<EventType>& eventDelegate)
+			{
+				subscribe(EventType::get_type_id_static(), eventDelegate);
+			}
 		
 			void unsubscribe(uint64_t eventID, const std::string& eventHandlerTypeName);
 

@@ -1,5 +1,6 @@
 #include "renderer.h"
 
+#include "render_pass_context.h"
 #include "engine/vulkan_rhi_module.h"
 
 using namespace ad_astris;
@@ -41,6 +42,15 @@ void Renderer::init(RendererInitializationContext& initializationContext)
 	_renderGraph->init(_rhi);
 	_shaderCompiler->init(_resourceManager->get_file_system());
 	LOG_INFO("Renderer::init(): Loaded and initialized RenderCore module")
+
+	MaterialManagerInitializationContext materialManagerInitContext;
+	materialManagerInitContext.eventManager = _eventManager;
+	materialManagerInitContext.resourceManager = _resourceManager;
+	materialManagerInitContext.shaderCompiler = _shaderCompiler;
+	materialManagerInitContext.taskComposer = _taskComposer;
+	materialManagerInitContext.rhi = _rhi;
+	_materialManager = std::make_unique<MaterialManager>(materialManagerInitContext);
+	LOG_INFO("Renderer::init(): Initialized material system")
 }
 
 void Renderer::cleanup()
@@ -51,5 +61,7 @@ void Renderer::cleanup()
 
 void Renderer::bake()
 {
-	// TODO
+	auto renderPassContext = std::make_unique<RenderPassContext>(_renderGraph);
+	_materialManager->create_material_templates(renderPassContext.get());
+	LOG_INFO("Renderer::bake(): Created renderer material templates")
 }

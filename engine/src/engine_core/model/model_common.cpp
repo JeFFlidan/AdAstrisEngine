@@ -8,8 +8,8 @@ std::string model::Utils::get_str_vertex_format(VertexFormat format)
 {
 	switch (format)
 	{
-		case VertexFormat::F32:
-			return "f32";
+		case VertexFormat::F32_PNTC:
+			return "f32_pntc";
 		case VertexFormat::UNKNOWN:
 			return "unknown";
 	}
@@ -17,8 +17,8 @@ std::string model::Utils::get_str_vertex_format(VertexFormat format)
 
 model::VertexFormat model::Utils::get_enum_vertex_format(std::string format)
 {
-	if (format == "f32")
-		return VertexFormat::F32;
+	if (format == "f32_pntc")
+		return VertexFormat::F32_PNTC;
 	if (format == "unknown")
 		return VertexFormat::UNKNOWN;
 }
@@ -68,7 +68,7 @@ model::StaticModelInfo model::Utils::unpack_static_model_info(std::string& strMe
 	return info;
 }
 
-model::ModelBounds model::Utils::calculate_model_bounds(VertexF32* vertices, uint64_t count)
+model::ModelBounds model::Utils::calculate_model_bounds(VertexF32PNTC* vertices, uint64_t count)
 {
 	ModelBounds bounds;
 	
@@ -111,11 +111,11 @@ model::ModelBounds model::Utils::calculate_model_bounds(VertexF32* vertices, uin
 	return bounds;
 }
 
-void model::Utils::calculate_tangent(VertexF32* vertices)
+void model::Utils::calculate_tangent(VertexF32PNTC* vertices)
 {
-	VertexF32& firstVert = vertices[0];
-	VertexF32& secondVert = vertices[1];
-	VertexF32& thirdVert = vertices[2];
+	VertexF32PNTC& firstVert = vertices[0];
+	VertexF32PNTC& secondVert = vertices[1];
+	VertexF32PNTC& thirdVert = vertices[2];
 	float vertPos1[3] = { firstVert.position.x, firstVert.position.y, firstVert.position.z };
 	float vertPos2[3] = { secondVert.position.x, secondVert.position.y, secondVert.position.z };
 	float vertPos3[3] = { thirdVert.position.x, thirdVert.position.y, thirdVert.position.z };
@@ -141,3 +141,66 @@ void model::Utils::calculate_tangent(VertexF32* vertices)
 	thirdVert.tangent.y = tangent[1];
 	thirdVert.tangent.z = tangent[2];
 }
+
+void model::Utils::setup_f32_pntc_format_description(
+	std::vector<rhi::VertexBindingDescription>& bindingDescriptions,
+	std::vector<rhi::VertexAttributeDescription>& attributeDescriptions)
+{
+	rhi::VertexBindingDescription vertexBindingDesc;
+	vertexBindingDesc.binding = 0;
+	vertexBindingDesc.stride = sizeof(VertexF32PNTC);
+	bindingDescriptions.push_back(vertexBindingDesc);
+
+	rhi::VertexAttributeDescription positionAttributeDesc;
+	positionAttributeDesc.binding = 0;
+	positionAttributeDesc.format = rhi::Format::R32G32B32A32_SFLOAT;
+	positionAttributeDesc.location = 0;
+	positionAttributeDesc.offset = offsetof(VertexF32PNTC, position);
+	attributeDescriptions.push_back(positionAttributeDesc);
+
+	rhi::VertexAttributeDescription normalAttributeDesc;
+	normalAttributeDesc.binding = 0;
+	normalAttributeDesc.format = rhi::Format::R32G32B32A32_SFLOAT;
+	normalAttributeDesc.location = 1;
+	normalAttributeDesc.offset = offsetof(VertexF32PNTC, normal);
+	attributeDescriptions.push_back(normalAttributeDesc);
+
+	rhi::VertexAttributeDescription tangentAttributeDesc;
+	tangentAttributeDesc.binding = 0;
+	tangentAttributeDesc.format = rhi::Format::R32G32B32A32_SFLOAT;
+	tangentAttributeDesc.location = 2;
+	tangentAttributeDesc.offset = offsetof(VertexF32PNTC, tangent);
+	attributeDescriptions.push_back(tangentAttributeDesc);
+	
+	rhi::VertexAttributeDescription texCoordAttributeDesc;
+	texCoordAttributeDesc.binding = 0;
+	texCoordAttributeDesc.format = rhi::Format::R32G32B32A32_SFLOAT;
+	texCoordAttributeDesc.location = 3;
+	texCoordAttributeDesc.offset = offsetof(VertexF32PNTC, texCoord);
+	attributeDescriptions.push_back(texCoordAttributeDesc);
+}
+
+void model::Utils::setup_f32_pc_format_description(
+	std::vector<rhi::VertexBindingDescription>& bindingDescriptions,
+	std::vector<rhi::VertexAttributeDescription>& attributeDescriptions)
+{
+	rhi::VertexBindingDescription vertexBindingDesc;
+	vertexBindingDesc.binding = 0;
+	vertexBindingDesc.stride = sizeof(VertexF32PC);
+	bindingDescriptions.push_back(vertexBindingDesc);
+
+	rhi::VertexAttributeDescription positionAttributeDesc;
+	positionAttributeDesc.binding = 0;
+	positionAttributeDesc.format = rhi::Format::R32G32B32A32_SFLOAT;
+	positionAttributeDesc.location = 0;
+	positionAttributeDesc.offset = offsetof(VertexF32PC, position);
+	attributeDescriptions.push_back(positionAttributeDesc);
+
+	rhi::VertexAttributeDescription texCoordAttributeDesc;
+	texCoordAttributeDesc.binding = 0;
+	texCoordAttributeDesc.format = rhi::Format::R32G32B32A32_SFLOAT;
+	texCoordAttributeDesc.location = 1;
+	texCoordAttributeDesc.offset = offsetof(VertexF32PC, texCoord);
+	attributeDescriptions.push_back(texCoordAttributeDesc);
+}
+

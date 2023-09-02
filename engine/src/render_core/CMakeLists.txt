@@ -25,34 +25,27 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES OUTPUT_NAME ${LIBRARY_NAME})
 
 find_package(Vulkan REQUIRED) ## TESTS
 
-add_library(object_name STATIC)
-target_include_directories(object_name PUBLIC ${ENGINE_SRC_PATH}/engine_core ${THIRD_PARTY_PATH}/fmt_lib)
-file(GLOB OBJECT_NAME_FILES
-	${ENGINE_SRC_PATH}/engine_core/object_name.h
-	${ENGINE_SRC_PATH}/engine_core/object_name.cpp
-	${THIRD_PARTY_PATH}/fmt_lib/fmt/*)
-target_sources(object_name PRIVATE ${OBJECT_NAME_FILES})
-
 add_library(fmt_lib STATIC)
 target_include_directories(fmt_lib PUBLIC ${THIRD_PARTY_PATH}/fmt_lib)
 file(GLOB FMT_FILES "${THIRD_PARTY_PATH}/fmt_lib/fmt/*")
 target_sources(fmt_lib PRIVATE ${FMT_FILES})
 
-add_library(file_system STATIC)
-target_include_directories(file_system PUBLIC ${ENGINE_SRC_PATH}/file_system)
-file(GLOB FILE_SYSTEM_FILES
-	"${ENGINE_SRC_PATH}/file_system/utils.h"
-	"${ENGINE_SRC_PATH}/file_system/utils.cpp")
-target_sources(file_system PRIVATE ${FILE_SYSTEM_FILES})
-
-add_library(module_manager STATIC)
-target_include_directories(module_manager PUBLIC ${ENGINE_SRC_PATH}/core ${THIRD_PARTY_PATH}/fmt_lib)
-file(GLOB FILE_SYSTEM_FILES
-	"${ENGINE_SRC_PATH}/core/module_manager.h"
-	"${ENGINE_SRC_PATH}/core/module_manager.cpp"
-	"${THIRD_PARTY_PATH}/fmt_lib/fmt/*"
-	"${THIRD_PARTY_PATH}/inicpp/*")
-target_sources(module_manager PRIVATE ${FILE_SYSTEM_FILES})
+add_library(engine_libs STATIC)
+target_include_directories(engine_libs PUBLIC
+    ${THIRD_PARTY_PATH}/fmt_lib
+    ${THIRD_PARTY_PATH}/inicpp
+)
+file(GLOB ENGINE_LIBS_FILES
+    ${ENGINE_SRC_PATH}/events/*
+    ${ENGINE_SRC_PATH}/multithreading/*
+    ${ENGINE_SRC_PATH}/engine_core/object_name.*
+    ${ENGINE_SRC_PATH}/file_system/utils.*
+    ${ENGINE_SRC_PATH}/core/module_manager.*
+	${ENGINE_SRC_PATH}/core/pool_allocator.*
+    #${THIRD_PARTY_PATH}/fmt_lib/fmt/*
+    ${THIRD_PARTY_PATH}/inicpp/*
+)
+target_sources(engine_libs PRIVATE ${ENGINE_LIBS_FILES})
 
 add_library(shaderc STATIC IMPORTED)
 set_target_properties(shaderc PROPERTIES IMPORTED_LOCATION ${THIRD_PARTY_PATH}/shaderc/lib/libshaderc_combined.a)
@@ -62,4 +55,4 @@ include_directories(${THIRD_PARTY_PATH}/vma)
 include_directories(${THIRD_PARTY_PATH}/glm)
 include_directories(${THIRD_PARTY_PATH}/inicpp)
 
-target_link_libraries(render_core Vulkan::Vulkan fmt_lib module_manager file_system object_name shaderc)
+target_link_libraries(render_core Vulkan::Vulkan fmt_lib engine_libs shaderc)

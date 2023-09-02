@@ -47,6 +47,8 @@ target_include_directories(engine_libs PUBLIC
     ${THIRD_PARTY_PATH}/tinyobjloader
 )
 file(GLOB ENGINE_LIBS_FILES
+    ${ENGINE_SRC_PATH}/events/*
+    ${ENGINE_SRC_PATH}/multithreading/*
     ${ENGINE_SRC_PATH}/resource_manager/*
     ${ENGINE_SRC_PATH}/engine_core/model/*
     ${ENGINE_SRC_PATH}/engine_core/texture/*

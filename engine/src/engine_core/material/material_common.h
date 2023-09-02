@@ -98,7 +98,8 @@ namespace ad_astris::ecore::material
 
 	enum class MaterialType
 	{
-		GRAPHICS = 0,
+		UNDEFINED = 0,
+		GRAPHICS,
 		RAY_TRACING,
 		COMPUTE
 	};
@@ -110,7 +111,7 @@ namespace ad_astris::ecore::material
 		MaterialDomain domain{ MaterialDomain::UNDEFINED };
 		MaterialBlendMode blendMode{ MaterialBlendMode::UNDEFINED };
 		MaterialShadingModel shadingModel{ MaterialShadingModel::UNDEFINED };
-		MaterialType materialType;
+		MaterialType materialType{ MaterialType::UNDEFINED };
 	};
 	
 	class Utils

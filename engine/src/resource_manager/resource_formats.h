@@ -4,6 +4,7 @@
 #include "engine_core/uuid.h"
 #include <vector>
 #include <string>
+#include <functional>
 
 namespace ad_astris::resource
 {
@@ -11,27 +12,27 @@ namespace ad_astris::resource
 	class ResourceAccessor
 	{
 		public:
-		ResourceAccessor(void* resource) : _resource(resource) {}
+			ResourceAccessor(void* resource) : _resource(resource) {}
 
-		T* get_resource()
-		{
-			if (is_valid())
+			T* get_resource()
 			{
-				return static_cast<T*>(_resource);
+				if (is_valid())
+				{
+					return static_cast<T*>(_resource);
+				}
+				LOG_ERROR("ResourceAccessor::get_resource(): Invalid pointer to the resource")
+				return nullptr;
 			}
-			LOG_ERROR("ResourceAccessor::get_resource(): Invalid pointer to the resource")
-			return nullptr;
-		}
 
-		bool is_valid()
-		{
-			if (_resource == nullptr)
-				return false;
-			return true;
-		}
+			bool is_valid()
+			{
+				if (_resource == nullptr)
+					return false;
+				return true;
+			}
 		
 		private:
-		void* _resource{ nullptr };
+			void* _resource{ nullptr };
 	};
 
 	

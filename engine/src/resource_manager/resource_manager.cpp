@@ -21,8 +21,8 @@ ResourceManager::ResourceManager(io::FileSystem* fileSystem, events::EventManage
 	_resourceDataTable = ResourceDataTable(_fileSystem, &_resourcePool);
 	_resourceDataTable.load_table(_builtinResourcesContext);
 	LOG_INFO("ResourceManager::ResourceManager(): Initialized resource table")
-	load_builtin_resources();
-	LOG_INFO("ResourceManager::ResourceManager(): Loaded builtin resources")
+	// load_builtin_resources();
+	// LOG_INFO("ResourceManager::ResourceManager(): Loaded builtin resources")
 }
 
 ResourceManager::~ResourceManager()
@@ -116,6 +116,7 @@ ResourceAccessor<ecore::MaterialTemplate> ResourceManager::create_new_resource(
 
 	ecore::material::MaterialTemplateInfo templateInfo;
 	templateInfo.uuid = UUID();
+	templateInfo.materialType = creationContext.materialType;
 	for (auto& shaderPassInfo : creationContext.shaderPassCreateInfos)
 	{
 		ecore::material::ShaderUUIDContext uuidContext;
@@ -153,6 +154,9 @@ ResourceAccessor<ecore::MaterialTemplate> ResourceManager::create_new_resource(
 	resData.file = _resourcePool.allocate<io::ResourceFile>(absolutePath);
 
 	_resourceDataTable.add_resource(&resData);
+
+	MaterialTemplateCreatedEvent event(static_cast<ecore::MaterialTemplate*>(resData.object));
+	_eventManager->trigger_event(event);
 
 	return resData.object;
 }
@@ -335,6 +339,9 @@ void ResourceManager::load_shader(UUID& shaderUUID, ecore::material::ShaderHandl
 			shaderContext.rayClosestHitShader = shaderHandle;
 			break;
 	}
+
+	ShaderLoadedEvent event(shaderObject);
+	_eventManager->trigger_event(event);
 }
 
 template <typename T>

@@ -165,7 +165,8 @@ void ShaderCompiler::compile_shader_into_spv(ecore::shader::CompilationContext& 
 
 	rhi::ShaderInfo* shaderInfo = compilationContext.compiledShaderInfo;
 	auto& nonCompiledShader = compilationContext.nonCompiledShaderData;
-	const char* strShaderName = compilationContext.shaderName->get_full_name().c_str();
+	std::string strShaderName = compilationContext.shaderName->get_full_name();
+	strShaderName.erase(0, strShaderName.find_last_of("/") + 1);
 
 	shaderc_shader_kind shaderKind = get_shader_kind(shaderInfo->shaderType);
 	shaderc_compilation_result_t preprocessResult = nullptr;
@@ -174,13 +175,13 @@ void ShaderCompiler::compile_shader_into_spv(ecore::shader::CompilationContext& 
 		static_cast<char*>(nonCompiledShader.data),
 		nonCompiledShader.size,
 		shaderKind,
-		strShaderName,
+		strShaderName.c_str(),
 		"main",
 		_options);
 
 	if (shaderc_result_get_compilation_status(preprocessResult) != shaderc_compilation_status_success)
 	{
-		LOG_ERROR("ShaderCompiler::compile_to_spirv(): failed to precompile shader {}", strShaderName)
+		LOG_ERROR("ShaderCompiler::compile_shader_into_spv(): failed to precompile shader {}", strShaderName)
 		LOG_ERROR("Compilation error: {}", shaderc_result_get_error_message(preprocessResult))
 		shaderc_result_release(preprocessResult);
 		return;
@@ -195,15 +196,14 @@ void ShaderCompiler::compile_shader_into_spv(ecore::shader::CompilationContext& 
 		codeBin,
 		codeLength,
 		shaderKind,
-		strShaderName,
+		strShaderName.c_str(),
 		"main",
 		_options);
-	
 	shaderc_result_release(preprocessResult);
 	
 	if (shaderc_result_get_compilation_status(finalResult) != shaderc_compilation_status_success)
 	{
-		LOG_ERROR("ShaderCompiler::compile_to_spirv(): failed to compile shader {}", strShaderName)
+		LOG_ERROR("ShaderCompiler::compile_shader_into_spv(): failed to compile shader {}", strShaderName)
 		LOG_ERROR("Compilation error: {}", shaderc_result_get_error_message(finalResult))
 		shaderc_result_release(finalResult);
 		return;

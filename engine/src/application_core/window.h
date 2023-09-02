@@ -1,10 +1,11 @@
 ﻿#pragma once
 
 #include <string>
-#ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
+
+#ifdef _WIN32
+	struct HWND__;
+	typedef HWND__* HWND;
 #endif
-#include <windows.h>
 
 namespace ad_astris::acore
 {

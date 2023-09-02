@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine_core/uuid.h"
-#include "file_system/file_system.h"
+#include "rhi/resources.h"
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <vector>
@@ -9,7 +9,15 @@
 
 namespace ad_astris::ecore::model
 {
-	struct VertexF32
+	// Describes vertex with position and tex coord
+	struct VertexF32PC
+	{
+		glm::vec3 position;
+		glm::vec2 texCoord;
+	};
+
+	// Describes vertex with position, normal, tangent and tex coord
+	struct VertexF32PNTC
 	{
 		glm::vec3 position;
 		glm::vec3 normal;
@@ -20,7 +28,8 @@ namespace ad_astris::ecore::model
 	enum class VertexFormat
 	{
 		UNKNOWN = 0,
-		F32,
+		F32_PNTC,
+		F32_PC
 	};
 
 	struct ModelBounds
@@ -49,7 +58,14 @@ namespace ad_astris::ecore::model
 			static VertexFormat get_enum_vertex_format(std::string format);
 			static std::string pack_static_model_info(StaticModelInfo* info);
 			static StaticModelInfo unpack_static_model_info(std::string& strMetaData);
-			static ModelBounds calculate_model_bounds(VertexF32* vertices, uint64_t count);
-			static void calculate_tangent(VertexF32* vertices);
+			static ModelBounds calculate_model_bounds(VertexF32PNTC* vertices, uint64_t count);
+			static void calculate_tangent(VertexF32PNTC* vertices);
+			static void setup_f32_pntc_format_description(
+				std::vector<rhi::VertexBindingDescription>& bindingDescriptions,
+				std::vector<rhi::VertexAttributeDescription>& attributeDescriptions);
+			// Must be used with deferred lighting pass, postprocessing, etc.
+			static void setup_f32_pc_format_description(
+				std::vector<rhi::VertexBindingDescription>& bindingDescriptions,
+				std::vector<rhi::VertexAttributeDescription>& attributeDescriptions);
 	};
 }

@@ -157,6 +157,8 @@ namespace ad_astris::resource
 				return load_resource<T>(uuid);
 			}
 
+			void load_builtin_resources();
+		
 			template<typename T>
 			ResourceAccessor<T> create_new_resource(FirstCreationContext<T>& creationContext);
 
@@ -203,7 +205,6 @@ namespace ad_astris::resource
 			template<typename T>
 			void send_resource_event(T* resourceObject);
 		
-			void load_builtin_resources();
 			void add_shader_to_uuid_context(io::URI& shaderPath, ecore::material::ShaderUUIDContext& shaderUUIDContext);
 			void load_shader(UUID& shaderUUID, ecore::material::ShaderHandleContext& shaderContext);
 	};

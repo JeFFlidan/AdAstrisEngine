@@ -4,6 +4,7 @@
 #include "events/event.h"
 #include "engine_core/model/static_model.h"
 #include "engine_core/texture/texture2D.h"
+#include "engine_core/material/shader.h"
 
 namespace ad_astris::resource
 {
@@ -49,5 +50,20 @@ namespace ad_astris::resource
 		public:
 			EVENT_TYPE_DECL(MaterialTemplateCreatedEvent)
 			MaterialTemplateCreatedEvent(ecore::MaterialTemplate* materialTemplate) : MaterialTemplateEvent(materialTemplate) { }
+	};
+
+	class ShaderLoadedEvent : public events::IEvent
+	{
+		public:
+			EVENT_TYPE_DECL(ShaderLoadedEvent)
+			ShaderLoadedEvent(ecore::Shader* shader) : _shader(shader) { }
+
+			ecore::ShaderHandle get_shader_handle()
+			{
+				return _shader;
+			}
+
+		private:
+			ecore::Shader* _shader{ nullptr };
 	};
 }

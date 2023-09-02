@@ -11,7 +11,7 @@ namespace ad_astris::resource::impl
 		public:
 			MaterialTemplateEvent(ecore::MaterialTemplate* materialTemplate) : _materialTemplate(materialTemplate) { }
 
-			ResourceAccessor<ecore::MaterialTemplate> get_material_template()
+			ResourceAccessor<ecore::MaterialTemplate> get_material_template_handle()
 			{
 				return _materialTemplate;
 			}

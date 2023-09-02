@@ -27,6 +27,19 @@ namespace ad_astris::ecore
 				return it->second;
 			}
 
+			material::MaterialType get_material_type()
+			{
+				return _templateInfo.materialType;
+			}
+
+			bool has_shader_pass(material::ShaderPassType shaderPassType)
+			{
+				auto it = _templateInfo.shaderPassByItsType.find(shaderPassType);
+				if (it == _templateInfo.shaderPassByItsType.end())
+					return false;
+				return true; 
+			}
+
 		private:
 			material::MaterialTemplateInfo _templateInfo;
 		
@@ -70,5 +83,6 @@ namespace ad_astris::resource
 	{
 		std::vector<ecore::material::ShaderPassCreateInfo> shaderPassCreateInfos;
 		std::string materialTemplateName;
+		ecore::material::MaterialType materialType;
 	};
 }
