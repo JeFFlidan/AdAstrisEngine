@@ -35,6 +35,7 @@ namespace ad_astris::vulkan
 			virtual bool acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex) final override;
 		
 			virtual void create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data = nullptr) final override;
+			virtual void destroy_buffer(rhi::Buffer* buffer) final override;
 
 			virtual void update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data) final override;
 			virtual void create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo) final override;

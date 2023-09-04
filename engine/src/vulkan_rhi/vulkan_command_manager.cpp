@@ -88,8 +88,16 @@ void vulkan::VulkanCommandPool::clear_after_submission()
 
 void vulkan::VulkanCommandPool::flush_submitted_cmd_buffers()
 {
+	if (_submittedCmdBuffers.empty())
+		return;
 	vkResetCommandPool(_device->get_device(), _cmdPool, 0);
-	_freeCmdBuffers = std::move(_submittedCmdBuffers);
+	//_freeCmdBuffers = std::move(_submittedCmdBuffers);
+	// TODO Think how to make it faster
+	for (auto& cmdBuffer : _submittedCmdBuffers)
+	{
+		_freeCmdBuffers.push_back(std::move(cmdBuffer));
+		_submittedCmdBuffers.pop_back();
+	}
 }
 
 vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanSwapChain* swapChain) : _device(device)
@@ -150,6 +158,12 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 	LOG_INFO("First frame compute: {}", _freeComputeCmdPools[0].size())
 	LOG_INFO("Second frame compute: {}", _freeComputeCmdPools[1].size())
 
+	_lockedGraphicsCmdPools.resize(buffersCount);
+	_lockedComputeCmdPools.resize(buffersCount);
+	_lockedTransferCmdPools.resize(buffersCount);
+	_freeFences.resize(buffersCount);
+	_lockedFences.resize(buffersCount);
+
 	for (size_t i = 0; i != buffersCount; ++i)
 	{
 		VkSemaphore semaphore;
@@ -176,46 +190,50 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 	{
 		case rhi::QueueType::GRAPHICS:
 		{
-			if (!_freeGraphicsCmdPools[_imageIndex].empty())
+			if (_freeGraphicsCmdPools[_imageIndex].empty())
 			{
 				LOG_FATAL("VulkanCommandManage::get_command_buffer(): Can't dedicate more than 4 threads")
 			}
 
 			cmdBuffer = _freeGraphicsCmdPools[_imageIndex].back()->get_cmd_buffer();
 			_lockedGraphicsCmdPools[_imageIndex].push_back(std::move(_freeGraphicsCmdPools[_imageIndex].back()));
-			_freeGraphicsCmdPools.pop_back();
+			_freeGraphicsCmdPools[_imageIndex].pop_back();
+			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 			break;
 		}
 		case rhi::QueueType::COMPUTE:
 		{
-			if (!_freeComputeCmdPools[_imageIndex].empty())
+			// TODO Think about adding acquire semaphore and pipeline flags
+			if (_freeComputeCmdPools[_imageIndex].empty())
 			{
 				LOG_FATAL("VulkanCommandManage::get_command_buffer(): Can't dedicate more than 4 threads")
 			}
 
 			cmdBuffer = _freeComputeCmdPools[_imageIndex].back()->get_cmd_buffer();
 			_lockedComputeCmdPools[_imageIndex].push_back(std::move(_freeComputeCmdPools[_imageIndex].back()));
-			_freeComputeCmdPools.pop_back();
+			_freeComputeCmdPools[_imageIndex].pop_back();
+			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 			break;
 		}
 		case rhi::QueueType::TRANSFER:
 		{
-			if (!_freeTransferCmdPools[_imageIndex].empty())
+			if (_freeTransferCmdPools[_imageIndex].empty())
 			{
 				LOG_FATAL("VulkanCommandManage::get_command_buffer(): Can't dedicate more than 4 threads")
 			}
-
+			
 			cmdBuffer = _freeTransferCmdPools[_imageIndex].back()->get_cmd_buffer();
 			_lockedTransferCmdPools[_imageIndex].push_back(std::move(_freeTransferCmdPools[_imageIndex].back()));
-			_freeTransferCmdPools.pop_back();
+			_freeTransferCmdPools[_imageIndex].pop_back();
+			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_TRANSFER_BIT);
 			break;
 		}
 	}
 
 	// TODO VkPipelineStageFlags. Maybe I have to remove it because the same flag is set up in get_cmd_buffer method of VulkanCommandPool
 	cmdBuffer->_waitSemaphores.push_back(_acquireSemaphores[_imageIndex]);
-	VkPipelineStageFlags flag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	cmdBuffer->_waitFlags.push_back(flag);
+	// VkPipelineStageFlags flag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	// cmdBuffer->_waitFlags.push_back(flag);
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -262,9 +280,44 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
 	}
 }
 
-void vulkan::VulkanCommandManager::flush_cmd_buffers(uint32_t imageIndex)
+bool vulkan::VulkanCommandManager::acquire_next_image(VulkanSwapChain* swapChain, uint32_t& nextImageIndex, uint32_t currentFrameIndex)
 {
-	_imageIndex = imageIndex;
+	uint32_t lockedFencesCount = _lockedFences[currentFrameIndex].size();
+	LOG_INFO("Locked fences count: {}", lockedFencesCount)
+	if (lockedFencesCount)
+	{
+		VK_CHECK(vkWaitForFences(_device->get_device(), lockedFencesCount, _lockedFences[currentFrameIndex].data(), true, 1000000000));
+		VK_CHECK(vkResetFences(_device->get_device(), lockedFencesCount, _lockedFences[currentFrameIndex].data()));
+		for (auto& fence : _lockedFences[currentFrameIndex])
+			_freeFences[currentFrameIndex].push_back(fence);
+		_lockedFences[currentFrameIndex].clear();
+	}
+	
+	if (vkAcquireNextImageKHR(_device->get_device(), swapChain->get_swap_chain(), 1000000000, _acquireSemaphores[currentFrameIndex], VK_NULL_HANDLE, &nextImageIndex) == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		return false;
+	}
+
+	_imageIndex = nextImageIndex;
+	flush_cmd_buffers();
+	
+	return true;
+}
+
+VkFence vulkan::VulkanCommandManager::get_free_fence()
+{
+	LOG_INFO("GET FREE FENCE")
+	std::vector<VkFence>& freeFences = _freeFences[_imageIndex];
+	if (freeFences.empty())
+		freeFences.push_back(create_fence(_device->get_device()));
+	VkFence fence = _freeFences[_imageIndex].back();
+	_lockedFences[_imageIndex].push_back(fence);
+	_freeFences[_imageIndex].pop_back();
+	return fence;
+}
+
+void vulkan::VulkanCommandManager::flush_cmd_buffers()
+{
 	auto& graphicsPools = _freeGraphicsCmdPools[_imageIndex];
 	auto& transferPools = _freeTransferCmdPools[_imageIndex];
 	auto& computePools = _freeComputeCmdPools[_imageIndex];
@@ -275,32 +328,6 @@ void vulkan::VulkanCommandManager::flush_cmd_buffers(uint32_t imageIndex)
 		transferPools[i]->flush_submitted_cmd_buffers();
 		computePools[i]->flush_submitted_cmd_buffers();
 	}
-}
-
-bool vulkan::VulkanCommandManager::acquire_next_image(VulkanSwapChain* swapChain, uint32_t& nextImageIndex, uint32_t currentFrameIndex)
-{
-	uint32_t lockedFencesCount = _lockedFences[currentFrameIndex].size();
-	VK_CHECK(vkWaitForFences(_device->get_device(), lockedFencesCount, _lockedFences[currentFrameIndex].data(), true, 1000000000));
-	VK_CHECK(vkResetFences(_device->get_device(), lockedFencesCount, _lockedFences[currentFrameIndex].data()));
-	
-	if (vkAcquireNextImageKHR(_device->get_device(), swapChain->get_swap_chain(), 1000000000, _acquireSemaphores[currentFrameIndex], VK_NULL_HANDLE, &nextImageIndex) == VK_ERROR_OUT_OF_DATE_KHR)
-	{
-		return false;
-	}
-
-	_imageIndex = nextImageIndex;
-
-	return true;
-}
-
-VkFence vulkan::VulkanCommandManager::get_free_fence()
-{
-	std::vector<VkFence>& freeFences = _freeFences[_imageIndex];
-	if (freeFences.empty())
-		freeFences.push_back(create_fence(_device->get_device()));
-	VkFence fence = _freeFences[_imageIndex].back();
-	_freeFences[_imageIndex].pop_back();
-	return fence;
 }
 
 void vulkan::clear_after_submission(

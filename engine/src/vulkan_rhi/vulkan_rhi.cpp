@@ -8,7 +8,9 @@
 #ifndef VMA_IMPLEMENTATION
 	#define VMA_IMPLEMENTATION
 #endif
-#include "vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
+
+#include <algorithm>
 
 using namespace ad_astris;
 
@@ -124,6 +126,17 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufI
 		return;
 	}
 	vulkanBuffer->copy_from(&_allocator, data, bufInfo->size);
+}
+
+void vulkan::VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
+{
+	VulkanBuffer* vulkanBuffer = get_vk_obj(buffer);
+	vulkanBuffer->destroy_buffer(&_allocator);
+	_vulkanBuffers.erase(std::remove_if(_vulkanBuffers.begin(), _vulkanBuffers.end(), [&](auto& object)
+	{
+		return vulkanBuffer == object.get();
+	}), _vulkanBuffers.end());
+	buffer->data = nullptr;
 }
 
 void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data)
@@ -433,9 +446,9 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 }
 
 // TODO Queue type for command buffer
-void vulkan::VulkanRHI::begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType)
+void vulkan::VulkanRHI::begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType)
 {
-	cmd->handle = _cmdManager->get_command_buffer();
+	cmd->handle = _cmdManager->get_command_buffer(queueType);
 }
 
 void vulkan::VulkanRHI::wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd)

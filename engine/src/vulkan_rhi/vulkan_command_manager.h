@@ -81,12 +81,6 @@ namespace ad_astris::vulkan
 			// cmd waits for waitForCmd
 			void wait_for_cmd_buffer(VulkanCommandBuffer* cmd, VulkanCommandBuffer* waitForCmd);
 			void submit(rhi::QueueType queueType);
-		
-			/** Reset all command buffers which are dedicated for particular frame.
-			 * Should be called only in the beginning of the frame.
-			 * @param imageIndex should be received from vkAcquireNextImageKHR
-			 */
-			void flush_cmd_buffers(uint32_t imageIndex);
 
 			bool acquire_next_image(
 				VulkanSwapChain* swapChain,
@@ -106,6 +100,8 @@ namespace ad_astris::vulkan
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedComputeCmdPools;
 			std::vector<std::vector<VkFence>> _freeFences;
 			std::vector<std::vector<VkFence>> _lockedFences;
-			uint32_t _imageIndex;
+			uint32_t _imageIndex{ 0 };
+		
+			void flush_cmd_buffers();
 	};
 }
