@@ -97,6 +97,8 @@ ecs::Archetype::Archetype(ArchetypeCreationContext& context)
 	_chunkStructure.componentIds = std::move(context._componentIDs);
 	_chunkStructure.componentIdToSize = std::move(context._idToSize);
 	_chunkStructure.tagIDs = std::move(context._tagIDs);
+	for (auto& tagID : _chunkStructure.tagIDs)
+		_chunkStructure.tagIDsSet.insert(tagID);
 }
 
 uint32_t ecs::Archetype::add_entity(Entity& entity)

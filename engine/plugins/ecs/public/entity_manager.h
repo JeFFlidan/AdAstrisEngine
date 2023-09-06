@@ -164,6 +164,22 @@ namespace ad_astris::ecs
 			{
 				return _archetypes.size();
 			}
+
+			template<typename ComponentType>
+			bool does_entity_have_component(Entity& entity)
+			{
+				auto it = _entityToItsInfoInArchetype.find(entity);
+				Archetype& archetype = _archetypes[it->second.archetypeId];
+				return archetype.has_component<ComponentType>();
+			}
+
+			template<typename TagType>
+			bool does_entity_have_tag(Entity& entity)
+			{
+				auto it = _entityToItsInfoInArchetype.find(entity);
+				Archetype& archetype = _archetypes[it->second.archetypeId];
+				return archetype.has_tag<TagType>();
+			}
 		
 		private:
 			struct EntityInArchetypeInfo

@@ -5,7 +5,7 @@ using namespace ecore;
 
 void World::init()
 {
-
+	_entityManager = std::make_unique<ecs::EntityManager>();
 }
 
 void World::cleanup()

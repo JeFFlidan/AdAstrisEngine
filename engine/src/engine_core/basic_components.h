@@ -72,7 +72,7 @@ namespace ad_astris::ecore
 
 	struct CastShadowComponent
 	{
-		bool isShadowCast;
+		bool castShadows;
 	};
 
 	struct AffectWorldComponent
@@ -83,6 +83,12 @@ namespace ad_astris::ecore
 	struct VisibleComponent
 	{
 		bool isVisible;
+	};
+
+	struct ExtentComponent
+	{
+		uint32_t width;
+		uint32_t height;
 	};
 	
 	struct StaticObjectTag { };
@@ -108,6 +114,7 @@ REGISTER_COMPONENT(AttenuationRadiusComponent, ad_astris::ecore::AttenuationRadi
 REGISTER_COMPONENT(InnerConeAngleComponent, ad_astris::ecore::InnerConeAngleComponent, angle)
 REGISTER_COMPONENT(OuterConeAngleComponent, ad_astris::ecore::OuterConeAngleComponent, angle)
 REGISTER_COMPONENT(LightTemperatureComponent, ad_astris::ecore::LightTemperatureComponent, isTemperatureUsed, temperature)
-REGISTER_COMPONENT(CastShadowComponent, ad_astris::ecore::CastShadowComponent, isShadowCast)
+REGISTER_COMPONENT(CastShadowComponent, ad_astris::ecore::CastShadowComponent, castShadows)
 REGISTER_COMPONENT(AffectWorldComponent, ad_astris::ecore::AffectWorldComponent, isWorldAffected)
 REGISTER_COMPONENT(VisibleComponent, ad_astris::ecore::VisibleComponent, isVisible)
+REGISTER_COMPONENT(ExtentComponent, ad_astris::ecore::ExtentComponent, width, height)

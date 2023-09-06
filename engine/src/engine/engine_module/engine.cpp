@@ -19,7 +19,11 @@ void Engine::init(EngineInitializationContext& initializationContext)
 	LOG_INFO("Engine::init(): Initialized resource manager")
 
 	_world = std::make_unique<ecore::World>();
+	_world->init();
 	LOG_INFO("Engine::init(): Initialized world")
+
+	_engineObjectsCreator = std::make_unique<ecore::EngineObjectsCreator>(_world->get_entity_manager(), _eventManager);
+	LOG_INFO("Engine::init(): Initialized engine objects creator")
 
 	_systemManager = std::make_unique<ecs::SystemManager>();
 	_systemManager->init();
@@ -51,17 +55,33 @@ void Engine::init(EngineInitializationContext& initializationContext)
 	rendererInitializationContext.projectSettings = _projectSettings.get();
 	rendererInitializationContext.resourceManager = _resourceManager.get();
 	rendererInitializationContext.taskComposer = _taskComposer.get();
+	rendererInitializationContext.engineObjectsCreator = _engineObjectsCreator.get();
 	auto rendererModule = _moduleManager->load_module<renderer::IRendererModule>("Renderer");
 	_renderer = rendererModule->get_renderer();
 	_renderer->init(rendererInitializationContext);
 	LOG_INFO("Engine::init(): Loaded and initialized Renderer module")
+
+	if (initializationContext.projectInfo->newProjectTemplate == devtools::NewProjectTemplate::OLD_PROJECT)
+	{
+		_resourceManager->load_builtin_resources();
+		LOG_INFO("Engine::init(): Loaded builtin resources")
+	}
+	else
+	{
+		create_material_templates();
+		LOG_INFO("Engine::init(): Created material templates for new project")
+	}
+
+	_renderer->bake();
+	LOG_INFO("Engine::init(): Baked renderer")
 
 	LOG_INFO("Engine::init(): Engine initialization completed")
 }
 
 void Engine::execute()
 {
-	
+	_renderer->draw();
+	_eventManager->dispatch_events();
 }
 
 void Engine::save_and_cleanup(bool needToSave)
@@ -91,8 +111,7 @@ void Engine::create_new_blank_project()
 	_projectSettings->setup_default_settings(defaultSettingsContext);
 	_projectSettings->deserialize(_fileSystem->get_project_root_path() + "/configs/project_settings.ini");
 	_projectSettings->serialize(_fileSystem);
-	LOG_INFO("BEFORE CREATE MATERIAL TEMPLATES")
-	create_material_templates();
+	//create_material_templates();
 	LOG_INFO("Engine::init(): Saved project with default settings")
 }
 
@@ -185,6 +204,7 @@ void Engine::create_material_templates()
 		deferredShaderPassCreateInfo
 	};
 	opaquePBRTemplate.materialTemplateName = "OpaquePBRMaterialTemplate";
+	opaquePBRTemplate.materialType = MaterialType::GRAPHICS;
 	
 	resource::FirstCreationContext<ecore::MaterialTemplate> oitTemplate;
 	oitTemplate.shaderPassCreateInfos = {
@@ -192,36 +212,42 @@ void Engine::create_material_templates()
 		oitShaderPassCreateInfo
 	};
 	oitTemplate.materialTemplateName = "OITMaterialTemplate";
+	oitTemplate.materialType = MaterialType::GRAPHICS;
 	
 	resource::FirstCreationContext<ecore::MaterialTemplate> taaTemplate;
 	taaTemplate.shaderPassCreateInfos = {
 		taaShaderPassCreateInfo
 	};
 	taaTemplate.materialTemplateName = "TAAMaterialTemplate";
+	taaTemplate.materialType = MaterialType::GRAPHICS;
 	
 	resource::FirstCreationContext<ecore::MaterialTemplate> compositeTemplate;
 	compositeTemplate.shaderPassCreateInfos = {
 		compositeShaderPassCreateInfo
 	};
 	compositeTemplate.materialTemplateName = "CompositeMaterialTemplate";
+	compositeTemplate.materialType = MaterialType::GRAPHICS;
 	
 	resource::FirstCreationContext<ecore::MaterialTemplate> postprocessingTemplate;
 	postprocessingTemplate.shaderPassCreateInfos = {
 		postprocessingShaderPassCreateInfo
 	};
 	postprocessingTemplate.materialTemplateName = "PostprocessingMaterialTemplate";
+	postprocessingTemplate.materialType = MaterialType::GRAPHICS;
 	
 	resource::FirstCreationContext<ecore::MaterialTemplate> cullingTemplate;
 	cullingTemplate.shaderPassCreateInfos = {
 		cullingShaderPassCreateInfo
 	};
 	cullingTemplate.materialTemplateName = "CullingMaterialTemplate";
+	cullingTemplate.materialType = MaterialType::COMPUTE;
 	
 	resource::FirstCreationContext<ecore::MaterialTemplate> reduceDepthTemplate;
 	reduceDepthTemplate.shaderPassCreateInfos = {
 		reduceDepthShaderPassCreateInfo
 	};
 	reduceDepthTemplate.materialTemplateName = "ReduceDepthMaterialTemplate";
+	reduceDepthTemplate.materialType = MaterialType::COMPUTE;
 	
 	ecore::MaterialTemplateHandle opaqueTemplateHandle = _resourceManager->create_new_resource(opaquePBRTemplate);
 	ecore::MaterialTemplateHandle oitTemplateHandle = _resourceManager->create_new_resource(oitTemplate);

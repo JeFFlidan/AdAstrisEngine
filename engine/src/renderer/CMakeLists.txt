@@ -18,8 +18,10 @@ string(REPLACE "/engine/src/renderer" "/bin" BIN_PATH ${BIN_PATH})
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${BIN_PATH}")
 
 file(GLOB RENDERER_FILES
-	"${CMAKE_SOURCE_DIR}/*.cpp"
-	"${CMAKE_SOURCE_DIR}/*.h"
+	${CMAKE_SOURCE_DIR}/*.cpp
+	${CMAKE_SOURCE_DIR}/*.h
+    ${CMAKE_SOURCE_DIR}/*/*.cpp
+    ${CMAKE_SOURCE_DIR}/*/*.h
 )
 
 find_package(Vulkan REQUIRED) ## I have to remove it later after finishing changing engine architecture
@@ -58,6 +60,7 @@ file(GLOB ENGINE_LIBS_FILES
     ${ENGINE_SRC_PATH}/engine_core/object_name.*
     ${ENGINE_SRC_PATH}/engine_core/uuid.*
     ${ENGINE_SRC_PATH}/engine_core/fwd.h
+    ${ENGINE_SRC_PATH}/engine_core/engine_objects_creator.*
     ${ENGINE_SRC_PATH}/file_system/*
     ${ENGINE_SRC_PATH}/core/*
     #${THIRD_PARTY_PATH}/fmt_lib/fmt/*

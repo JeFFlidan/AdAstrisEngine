@@ -21,7 +21,7 @@ inline ecore::model::ModelBounds ecore::StaticModel::get_model_bounds()
 	return _modelInfo.bounds;
 }
 
-inline ecore::model::VertexFormat ecore::StaticModel::get_vertex_format()
+ecore::model::VertexFormat ecore::StaticModel::get_vertex_format()
 {
 	return _modelInfo.vertexFormat;
 }

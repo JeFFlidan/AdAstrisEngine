@@ -13,6 +13,7 @@ namespace ad_astris::rcore
 	class ResourceDesc;
 	class BufferDesc;
 	class TextureDesc;
+	class TextureGroupDesc;
 	
 	
 	// Do I need this enum?
@@ -73,6 +74,10 @@ namespace ad_astris::rcore
 				rhi::TextureInfo* textureInfo,
 				rhi::ShaderType shaderStages = rhi::ShaderType::UNDEFINED) = 0;
 
+			virtual TextureGroupDesc* add_texture_group_input(
+				const std::string& inputName,
+				rhi::ShaderType shaderStages = rhi::ShaderType::UNDEFINED) = 0;
+
 			virtual TextureDesc* add_storage_texture_input(const std::string& inputName) = 0;
 			virtual TextureDesc* add_storage_texture_output(
 				const std::string& outputName,
@@ -124,6 +129,7 @@ namespace ad_astris::rcore
 			virtual void log() = 0;
 		
 			virtual TextureDesc* get_texture_desc(const std::string& textureName) = 0;
+			virtual TextureGroupDesc* get_texture_group_desc(const std::string& textureGroupName) = 0;
 			virtual BufferDesc* get_buffer_desc(const std::string& bufferName) = 0;
 
 			virtual rhi::TextureView* get_physical_texture(TextureDesc* textureDesc) = 0;

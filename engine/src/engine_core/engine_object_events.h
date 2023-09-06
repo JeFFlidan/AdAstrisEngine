@@ -27,6 +27,7 @@ namespace ad_astris::ecore
 		public:
 			struct ComponentContext
 			{
+				ecs::Entity entity;
 				TransformComponent transformComponent;
 				ModelComponent modelComponent;
 				CastShadowComponent castShadowComponent;
@@ -41,6 +42,7 @@ namespace ad_astris::ecore
 		public:
 			struct ComponentContext
 			{
+				ecs::Entity entity;
 				TransformComponent transformComponent;
 				ModelComponent modelComponent;
 				CastShadowComponent castShadowComponent;
@@ -55,6 +57,7 @@ namespace ad_astris::ecore
 		public:
 			struct ComponentContext
 			{
+				ecs::Entity entity;
 				TransformComponent transformComponent;
 				LuminanceIntensityComponent luminanceIntensityComponent;
 				ColorComponent colorComponent;
@@ -63,6 +66,7 @@ namespace ad_astris::ecore
 				CastShadowComponent castShadowComponent;
 				VisibleComponent visibleComponent;
 				AffectWorldComponent affectWorldComponent;
+				ExtentComponent extentComponent;
 			};
 			
 			IMPLEMENT_ENGINE_OBJECT_EVENT(PointLightCreatedEvent)
@@ -73,6 +77,7 @@ namespace ad_astris::ecore
 		public:
 			struct ComponentContext
 			{
+				ecs::Entity entity;
 				TransformComponent transformComponent;
 				CandelaIntensityComponent candelaIntensityComponent;
 				ColorComponent colorComponent;
@@ -80,6 +85,7 @@ namespace ad_astris::ecore
 				CastShadowComponent castShadowComponent;
 				VisibleComponent visibleComponent;
 				AffectWorldComponent affectWorldComponent;
+				ExtentComponent extentComponent;
 			};
 		
 			IMPLEMENT_ENGINE_OBJECT_EVENT(DirectionalLightCreatedEvent)
@@ -90,6 +96,7 @@ namespace ad_astris::ecore
 		public:
 			struct ComponentContext
 			{
+				ecs::Entity entity;
 				TransformComponent transformComponent;
 				LuminanceIntensityComponent luminanceIntensityComponent;
 				ColorComponent colorComponent;
@@ -100,14 +107,9 @@ namespace ad_astris::ecore
 				AffectWorldComponent affectWorldComponent;
 				OuterConeAngleComponent outerConeAngleComponent;
 				InnerConeAngleComponent innerConeAngleComponent;
+				ExtentComponent extentComponent;
 			};
 
 			IMPLEMENT_ENGINE_OBJECT_EVENT(SpotLightCreatedEvent)
-	};
-
-	class TestEvent : public events::IEvent
-	{
-		public:
-			EVENT_TYPE_DECL(TestEvent)
 	};
 }

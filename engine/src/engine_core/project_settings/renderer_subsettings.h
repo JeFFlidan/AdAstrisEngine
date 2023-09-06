@@ -33,11 +33,41 @@ namespace ad_astris::ecore
 			{
 				return _graphicsAPI;
 			}
+
+			bool is_triple_buffering_used()
+			{
+				return _swapChainDesc.useTripleBuffering;
+			}
+
+			bool is_vsync_used()
+			{
+				return _swapChainDesc.useVSync;
+			}
+
+			uint32_t get_render_area_width()
+			{
+				return _swapChainDesc.width;
+			}
+
+			uint32_t get_render_area_height()
+			{
+				return _swapChainDesc.height;
+			}
 		
 		private:
 			GraphicsAPI _graphicsAPI{ GraphicsAPI::UNDEFINED };
+
+			struct
+			{
+				uint64_t width;
+				uint64_t height;
+				bool useVSync;
+				bool useTripleBuffering;
+			} _swapChainDesc;
 				
 			void serialize_graphics_api(Section& section);
 			void deserialize_graphics_api(Section& section);
+			void serialize_swap_chain_desc(Section& section);
+			void deserialize_swap_chain_desc(Section& section);
 	};
 }

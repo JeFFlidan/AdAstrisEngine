@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "engine_core/project_settings/project_settings.h"
+#include "engine_core/engine_objects_creator.h"
 #include "resource_manager/resource_manager.h"
 #include "events/event_manager.h"
 #include "multithreading/task_composer.h"
@@ -17,6 +18,7 @@ namespace ad_astris::renderer
 		resource::ResourceManager* resourceManager;
 		events::EventManager* eventManager;
 		acore::IWindow* mainWindow;
+		ecore::EngineObjectsCreator* engineObjectsCreator;
 	};
 	
 	class IRenderer
@@ -28,6 +30,7 @@ namespace ad_astris::renderer
 			virtual void cleanup() = 0;
 
 			virtual void bake() = 0;
+			virtual void draw() = 0;
 	};
 
 	class IRendererModule : public IModule

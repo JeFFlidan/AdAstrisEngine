@@ -14,7 +14,7 @@ namespace ad_astris::resource
 			EVENT_TYPE_DECL(ModelLoadedEvent)
 			StaticModelLoadedEvent(ecore::StaticModel* staticModel) : _staticModel(staticModel) { }
 
-			ecore::StaticModel* get_model()
+			ecore::StaticModelHandle get_model_handle()
 			{
 				return _staticModel;
 			}
@@ -29,7 +29,7 @@ namespace ad_astris::resource
 			EVENT_TYPE_DECL(Texture2DLoadedEvent)
 			Texture2DLoadedEvent(ecore::Texture2D* texture) : _texture(texture) { }
 
-			ecore::Texture2D* get_texture()
+			ecore::Texture2DHandle get_texture_handle()
 			{
 				return _texture;
 			}

@@ -73,8 +73,9 @@ void AdAstrisEngine::execute()
 	while (running)
 	{
 		running = _mainWindow->process_messages();
+		_engine->execute();
 		_eventManager->dispatch_events();
-		Sleep(10);
+		Sleep(1);
 	}
 }
 

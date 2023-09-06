@@ -4,6 +4,7 @@
 #include "entity_types.h"
 #include "core/tuple.h"
 #include <vector>
+#include <unordered_set>
 
 namespace ad_astris::ecs
 {
@@ -48,6 +49,7 @@ namespace ad_astris::ecs
 		std::vector<uint32_t> componentIds;
 		std::unordered_map<uint32_t, uint16_t> componentIdToSize;	// should be sorted
 		std::vector<uint32_t> tagIDs;
+		std::unordered_set<uint32_t> tagIDsSet;
 		uint32_t entityCount;
 	};
 	
@@ -149,6 +151,20 @@ namespace ad_astris::ecs
 			bool check_requirements_match(
 				std::vector<uint32_t>& requiredComponentIDs,
 				std::vector<uint32_t>& requiredTagIDs);
+
+			template<typename T>
+			bool has_component()
+			{
+				auto it = _chunkStructure.componentIdToSize.find(TypeInfoTable::get_component_id<T>());
+				return it == _chunkStructure.componentIdToSize.end() ? false : true;
+			}
+
+			template<typename T>
+			bool has_tag()
+			{
+				auto it = _chunkStructure.componentIdToSize.find(TypeInfoTable::get_tag_id<T>());
+				return it == _chunkStructure.tagIDsSet.end() ? false : true;
+			}
 		
 		private:
 			std::unordered_map<Entity, uint16_t> _entityToChunk;

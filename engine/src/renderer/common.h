@@ -6,7 +6,7 @@
 #include <glm/vec2.hpp>
 
 // GPU means that data is for shaders, CPU means that data shouldn't be sent to the GPU
-namespace ad_astris::renderer
+namespace ad_astris::renderer::impl
 {
 	struct GPUCameraData
 	{
@@ -80,5 +80,50 @@ namespace ad_astris::renderer
 		glm::vec3 aabbmax;
 		glm::mat4 projMatrix;
 		glm::mat4 viewMatrix;
+	};
+
+	struct PointLight
+	{
+		glm::vec4 color;
+		glm::vec4 locationAndAttenuationRadius;
+		glm::mat4 lightSpaceMat[6];
+		float intensity;		// In lm
+		bool castShadows;
+		bool isVisible;
+		bool isWorldAffected;
+		bool isTemperatureUsed;
+		float temperature;
+		float farPlane;
+		int32_t emptyPlace1{ 0 };
+	};
+
+	struct DirectionalLight
+	{
+		glm::vec4 color;
+		glm::vec4 direction;
+		glm::mat4 lightSpaceMat;
+		float intensity;		// In candelas
+		bool isVisible;
+		bool castShadows;
+		bool isWorldAffected;
+		bool isTemperatureUsed;
+		float temperature;
+		int32_t emptyPlace1{ 0 }, emptyPlace2{ 0 };
+	};
+
+	struct SpotLight
+	{
+		glm::vec4 color;
+		glm::vec4 locationAndDistance;
+		glm::vec4 rotationAndInnerConeRadius;
+		glm::mat4 lightSpaceMat;
+		float intensity;		// In lm
+		float outerConeRadius;
+		bool castShadows;
+		bool isVisible;
+		bool isWorldAffected;
+		bool isTemperatureUsed;
+		float temperature;
+		float farPlane;
 	};
 }

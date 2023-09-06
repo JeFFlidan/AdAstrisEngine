@@ -23,11 +23,14 @@ ad_astris::ecs::Entity ad_astris::ecore::EngineObjectsCreator::create_static_mod
 	componentContext->transformComponent = entityCreationContext.get_component<TransformComponent>();
 	componentContext->visibleComponent = entityCreationContext.get_component<VisibleComponent>();
 	componentContext->castShadowComponent = entityCreationContext.get_component<CastShadowComponent>();
+
+	ecs::Entity entity = _entityManager->create_entity(entityCreationContext);
+	componentContext->entity = entity;
 	
 	StaticModelCreatedEvent event(componentContext, _staticModelComponentContextPool);
 	_eventManager->enqueue_event(event);
 	
-	return _entityManager->create_entity(entityCreationContext);
+	return entity;
 }
 
 ad_astris::ecs::Entity ad_astris::ecore::EngineObjectsCreator::create_skeletal_model(
@@ -42,11 +45,14 @@ ad_astris::ecs::Entity ad_astris::ecore::EngineObjectsCreator::create_skeletal_m
 	componentContext->transformComponent = entityCreationContext.get_component<TransformComponent>();
 	componentContext->visibleComponent = entityCreationContext.get_component<VisibleComponent>();
 	componentContext->castShadowComponent = entityCreationContext.get_component<CastShadowComponent>();
+
+	ecs::Entity entity = _entityManager->create_entity(entityCreationContext);
+	componentContext->entity = entity;
 	
 	SkeletalModelCreatedEvent event(componentContext, _skeletalModelComponentContextPool);
 	_eventManager->enqueue_event(event);
 	
-	return _entityManager->create_entity(entityCreationContext);
+	return entity;
 }
 
 ad_astris::ecs::Entity ad_astris::ecore::EngineObjectsCreator::create_point_light(
@@ -72,11 +78,15 @@ ad_astris::ecs::Entity ad_astris::ecore::EngineObjectsCreator::create_point_ligh
 	componentContext->castShadowComponent = entityCreationContext.get_component<CastShadowComponent>();
 	componentContext->visibleComponent = entityCreationContext.get_component<VisibleComponent>();
 	componentContext->affectWorldComponent = entityCreationContext.get_component<AffectWorldComponent>();
+	componentContext->extentComponent = entityCreationContext.get_component<ExtentComponent>();
+
+	ecs::Entity entity = _entityManager->create_entity(entityCreationContext);
+	componentContext->entity = entity;
 
 	PointLightCreatedEvent event(componentContext, _pointLightComponentContextPool);
 	_eventManager->enqueue_event(event);
 	
-	return _entityManager->create_entity(entityCreationContext);
+	return entity;
 }
 
 ad_astris::ecs::Entity ad_astris::ecore::EngineObjectsCreator::create_directional_light(
@@ -98,11 +108,15 @@ ad_astris::ecs::Entity ad_astris::ecore::EngineObjectsCreator::create_directiona
 	componentContext->castShadowComponent = entityCreationContext.get_component<CastShadowComponent>();
 	componentContext->visibleComponent = entityCreationContext.get_component<VisibleComponent>();
 	componentContext->affectWorldComponent = entityCreationContext.get_component<AffectWorldComponent>();
+	componentContext->extentComponent = entityCreationContext.get_component<ExtentComponent>();
+
+	ecs::Entity entity = _entityManager->create_entity(entityCreationContext);
+	componentContext->entity = entity;
 
 	DirectionalLightCreatedEvent event(componentContext, _directionalLightComponentContextPool);
 	_eventManager->enqueue_event(event);
 	
-	return _entityManager->create_entity(entityCreationContext);
+	return entity;
 }
 
 ad_astris::ecs::Entity ad_astris::ecore::EngineObjectsCreator::create_spot_light(
@@ -136,11 +150,15 @@ ad_astris::ecs::Entity ad_astris::ecore::EngineObjectsCreator::create_spot_light
 	componentContext->affectWorldComponent = entityCreationContext.get_component<AffectWorldComponent>();
 	componentContext->outerConeAngleComponent = entityCreationContext.get_component<OuterConeAngleComponent>();
 	componentContext->innerConeAngleComponent = entityCreationContext.get_component<InnerConeAngleComponent>();
+	componentContext->extentComponent = entityCreationContext.get_component<ExtentComponent>();
+
+	ecs::Entity entity = _entityManager->create_entity(entityCreationContext);
+	componentContext->entity = entity;
 
 	SpotLightCreatedEvent event(componentContext, _spotLightComponentContextPool);
 	_eventManager->enqueue_event(event);
 	
-	return _entityManager->create_entity(entityCreationContext);
+	return entity;
 }
 
 void ad_astris::ecore::EngineObjectsCreator::setup_static_model_archetype()
@@ -163,7 +181,7 @@ void ad_astris::ecore::EngineObjectsCreator::setup_point_light_archetype()
 {
 	ecs::ArchetypeCreationContext context;
 	context.add_components<TransformComponent, LuminanceIntensityComponent, ColorComponent, AttenuationRadiusComponent,
-		LightTemperatureComponent, CastShadowComponent, VisibleComponent, AffectWorldComponent>();
+		LightTemperatureComponent, CastShadowComponent, VisibleComponent, AffectWorldComponent, ExtentComponent>();
 	context.add_tags<StaticObjectTag, PointLightTag>();
 	_entityManager->create_archetype(context);
 }
@@ -172,7 +190,7 @@ void ad_astris::ecore::EngineObjectsCreator::setup_directional_light_archetype()
 {
 	ecs::ArchetypeCreationContext context;
 	context.add_components<TransformComponent, CandelaIntensityComponent, ColorComponent,
-		LightTemperatureComponent, CastShadowComponent, VisibleComponent, AffectWorldComponent>();
+		LightTemperatureComponent, CastShadowComponent, VisibleComponent, AffectWorldComponent, ExtentComponent>();
 	context.add_tags<StaticObjectTag, DirectionalLightTag>();
 	_entityManager->create_archetype(context);
 }
@@ -182,7 +200,7 @@ void ad_astris::ecore::EngineObjectsCreator::setup_spot_light_archetype()
 	ecs::ArchetypeCreationContext context;
 	context.add_components<TransformComponent, LuminanceIntensityComponent, ColorComponent, AttenuationRadiusComponent,
 		LightTemperatureComponent, CastShadowComponent, VisibleComponent, AffectWorldComponent,
-		OuterConeAngleComponent, InnerConeAngleComponent>();
+		OuterConeAngleComponent, InnerConeAngleComponent, ExtentComponent>();
 	context.add_tags<StaticObjectTag, SpotLightTag>();
 	_entityManager->create_archetype(context);
 }
@@ -207,7 +225,7 @@ void ad_astris::ecore::EngineObjectsCreator::setup_basic_model_components(
 	modelComponent.modelUUID = objectCreationContext.uuid;
 	entityCreationContext.add_component(modelComponent);
 	CastShadowComponent castShadowComponent;
-	castShadowComponent.isShadowCast = true;
+	castShadowComponent.castShadows = true;
 	entityCreationContext.add_component(castShadowComponent);
 	VisibleComponent visibleComponent;
 	visibleComponent.isVisible = true;
@@ -229,7 +247,7 @@ void ad_astris::ecore::EngineObjectsCreator::setup_basic_light_components(
 	lightTemperatureComponent.isTemperatureUsed = false;
 	entityCreationContext.add_component(lightTemperatureComponent);
 	CastShadowComponent castShadowComponent;
-	castShadowComponent.isShadowCast = true;
+	castShadowComponent.castShadows = true;
 	entityCreationContext.add_component(castShadowComponent);
 	VisibleComponent visibleComponent;
 	visibleComponent.isVisible = true;
@@ -237,4 +255,8 @@ void ad_astris::ecore::EngineObjectsCreator::setup_basic_light_components(
 	AffectWorldComponent affectWorldComponent;
 	affectWorldComponent.isWorldAffected = true;
 	entityCreationContext.add_component(affectWorldComponent);
+	ExtentComponent extentComponent;
+	extentComponent.width = 2048;
+	extentComponent.height = 2048;
+	entityCreationContext.add_component(extentComponent);
 }

@@ -33,6 +33,7 @@ namespace ad_astris::engine::impl
 			renderer::IRenderer* _renderer{ nullptr };
 			std::unique_ptr<ecore::World> _world{ nullptr };
 			std::unique_ptr<ecore::ProjectSettings> _projectSettings{ nullptr };
+			std::unique_ptr<ecore::EngineObjectsCreator> _engineObjectsCreator{ nullptr };
 		
 			void create_new_blank_project();
 			void load_existing_project();
