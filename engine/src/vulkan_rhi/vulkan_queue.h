@@ -20,7 +20,7 @@ namespace ad_astris::vulkan
 			VulkanQueue(QueueData queueData);
 		
 			void submit(VulkanCommandManager& cmdManager);
-			void present();
+			void present(VulkanSwapChain* swapChain, uint32_t currentImageIndex);
 
 			VkQueue get_queue() { return _queue; }
 			uint32_t get_family() { return _family; }
@@ -31,6 +31,7 @@ namespace ad_astris::vulkan
 			VkQueue _queue;
 			uint32_t _family;
 			rhi::QueueType _queueType;
+			std::vector<VkSemaphore> _presentWaitSemaphores;
 
 			// See in UE5 code, maybe I'll remove it
 			uint32_t _submissionCounter;

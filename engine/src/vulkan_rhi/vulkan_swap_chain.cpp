@@ -1,4 +1,5 @@
 #include "vulkan_swap_chain.h"
+#include "vulkan_common.h"
 #include "profiler/logger.h"
 #include <VkBootstrap.h>
 
@@ -22,7 +23,7 @@ vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDev
 	}
 	else if (swapInfo->sync)
 	{
-		presentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+		presentMode = VK_PRESENT_MODE_FIFO_KHR;
 	}
 	else if (!swapInfo->sync)
 	{
@@ -45,24 +46,23 @@ vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDev
 		.value();
 
 	_swapChain = vkbSwapchain.swapchain;
-	_images = vkbSwapchain.get_images().value();
-	_imageViews = vkbSwapchain.get_image_views().value();
+	auto images = vkbSwapchain.get_images().value();
+	auto imageViews = vkbSwapchain.get_image_views().value();
+	swapInfo->buffersCount = imageViews.size();
 	_format = vkbSwapchain.image_format;
 
-	for (int i = 0; i != swapInfo->buffersCount; ++i)
+	for (int i = 0; i != imageViews.size(); ++i)
 	{
-		rhi::TextureInfo texInfo;
-		texInfo.samplesCount = rhi::SampleCount::BIT_1;
-		texInfo.width = swapInfo->width;
-		texInfo.height = swapInfo->height;
-		texInfo.format = rhi::Format::B8G8R8A8_SRGB;
-		rhi::Texture* text = new rhi::Texture();
-		text->textureInfo = texInfo;
-		VkImageView* view = new VkImageView();
-		*view = _imageViews[i];
+		_textures.emplace_back(new rhi::Texture());
+		_textures.back()->textureInfo.samplesCount = rhi::SampleCount::BIT_1;
+		_textures.back()->textureInfo.width = swapInfo->width;
+		_textures.back()->textureInfo.height = swapInfo->height;
+		_textures.back()->textureInfo.format = rhi::Format::B8G8R8A8_SRGB;
+		_vulkanTextureViews.emplace_back(new VulkanTextureView());
+		_vulkanTextureViews.back()->set_handle(imageViews[i]);
 		rhi::TextureView texView;
-		texView.texture = text;
-		texView.handle = view;
+		texView.texture = _textures.back().get();
+		texView.handle = _vulkanTextureViews.back().get();
 		_textureViews.push_back(texView);
 	}
 }
@@ -71,10 +71,8 @@ void vulkan::VulkanSwapChain::cleanup()
 {
 	for (auto& view : _textureViews)
 	{
-		VkImageView* imageView = static_cast<VkImageView*>(view.handle);
-		vkDestroyImageView(_device->get_device(), *imageView, nullptr);
-		delete imageView;
-		delete view.texture;
+		VulkanTextureView* vulkanTextureView = get_vk_obj(&view);
+		vkDestroyImageView(_device->get_device(), vulkanTextureView->get_handle(), nullptr);
 	}
 	vkDestroySwapchainKHR(_device->get_device(), _swapChain, nullptr);
 }

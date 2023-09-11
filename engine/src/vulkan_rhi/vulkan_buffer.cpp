@@ -3,17 +3,17 @@
 
 using namespace ad_astris;
 
-vulkan::VulkanBuffer::VulkanBuffer(VmaAllocator* allocator, uint64_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+vulkan::VulkanBuffer::VulkanBuffer(VmaAllocator* allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
 	allocate_buffer(allocator, allocSize, usage, memoryUsage);
 }
 
-void vulkan::VulkanBuffer::create_buffer(VmaAllocator* allocator, uint64_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+void vulkan::VulkanBuffer::create_buffer(VmaAllocator* allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
 	allocate_buffer(allocator, allocSize, usage, memoryUsage);
 }
 
-void vulkan::VulkanBuffer::copy_from(VmaAllocator* allocator, void* srcBuffer, uint64_t sizeInBytes)
+void vulkan::VulkanBuffer::copy_from(VmaAllocator* allocator, void* srcBuffer, size_t sizeInBytes)
 {
 	void* data;
 	vmaMapMemory(*allocator, _allocation, &data);
@@ -54,7 +54,7 @@ void vulkan::VulkanBuffer::destroy_buffer(VmaAllocator* allocator)
 
 void vulkan::VulkanBuffer::allocate_buffer(
 	VmaAllocator* allocator,
-	uint64_t allocSize,
+	size_t allocSize,
 	VkBufferUsageFlags usage,
 	VmaMemoryUsage memoryUsage)
 {

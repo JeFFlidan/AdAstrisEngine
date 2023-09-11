@@ -81,7 +81,6 @@ void Engine::init(EngineInitializationContext& initializationContext)
 void Engine::execute()
 {
 	_renderer->draw();
-	_eventManager->dispatch_events();
 }
 
 void Engine::save_and_cleanup(bool needToSave)
@@ -113,6 +112,12 @@ void Engine::create_new_blank_project()
 	_projectSettings->serialize(_fileSystem);
 	//create_material_templates();
 	LOG_INFO("Engine::init(): Saved project with default settings")
+
+	// io::URI uri = "C:/Users/zaver/materials/wedged-cobblestone-ue/wedged-cobblestone_albedo.png";
+	// io::URI aaresURI = "content";
+	// LOG_INFO("BEFORE LOADING TEXTURE")
+	// _resourceManager->convert_to_aares<ecore::Texture2D>(uri, aaresURI);
+	// LOG_INFO("AFTER LOADING TEXTURE")
 }
 
 void Engine::load_existing_project()

@@ -12,7 +12,12 @@
 
 #include <algorithm>
 
+#include "vulkan_queue.h"
+
 using namespace ad_astris;
+
+constexpr uint32_t MAX_VIEWPORT_COUNT = 16;
+constexpr uint32_t MAX_SCISSOR_COUNT = 16;
 
 void vulkan::VulkanRHI::init(acore::IWindow* window, io::FileSystem* fileSystem)
 {
@@ -20,14 +25,24 @@ void vulkan::VulkanRHI::init(acore::IWindow* window, io::FileSystem* fileSystem)
 	vkb::Instance vkbInstance = create_instance();
 	_instance = vkbInstance.instance;
 	_debugMessenger = vkbInstance.debug_messenger;
-	_vulkanDevice = std::make_unique<VulkanDevice>(vkbInstance, window);
+	_device = std::make_unique<VulkanDevice>(vkbInstance, window);
+	_descriptorManager = std::make_unique<VulkanDescriptorManager>(_device.get());
 	create_allocator();
 	create_pipeline_cache();
+
+	auto& properties = _device->get_physical_device_vulkan_1_2_properties();
+	auto& properties11 = _device->get_physical_device_vulkan_1_1_properties();
+	LOG_INFO("MAX SAMPLERS: {}", properties.maxDescriptorSetUpdateAfterBindSamplers)
+	LOG_INFO("MAX IMAGES: {}", properties.maxDescriptorSetUpdateAfterBindSampledImages);
+	LOG_INFO("MAX STORAGE IMAGES: {}", properties.maxDescriptorSetUpdateAfterBindStorageImages)
+	LOG_INFO("MAX STORAGE BUFFERS: {}", properties.maxDescriptorSetUpdateAfterBindStorageBuffers)
+	//LOG_INFO("TEST: {}", properties11.subgroupSize);
 }
 
 // TODO Must test it
 void vulkan::VulkanRHI::cleanup()
 {
+	_cmdManager->wait_all_fences();
 	save_pipeline_cache();
 	
 	for (auto& pipeline : _vulkanPipelines)
@@ -39,12 +54,11 @@ void vulkan::VulkanRHI::cleanup()
 	for (auto& renderPass : _vulkanRenderPasses)
 		renderPass->cleanup();
 	
-	VkDevice device = _vulkanDevice.get()->get_device();
 	for (auto& sampler : _vulkanSamplers)
-		vkDestroySampler(device, *sampler.get(), nullptr);
+		sampler->destroy(_device.get());
 	
-	for (auto& imageView : _vulkanImageViews)
-		vkDestroyImageView(device, *imageView.get(), nullptr);
+	for (auto& textureView : _vulkanTextureViews)
+		textureView->destroy(_device.get());
 	
 	for (auto& texture : _vulkanTextures)
 		texture->destroy_texture();
@@ -52,11 +66,12 @@ void vulkan::VulkanRHI::cleanup()
 	for (auto& buffer : _vulkanBuffers)
 		buffer->destroy_buffer(&_allocator);
 	
+	VkDevice device = _device.get()->get_device();
 	vkDestroyPipelineCache(device, _pipelineCache, nullptr);
 	vmaDestroyAllocator(_allocator);
 	_cmdManager->cleanup();
 	_swapChain->cleanup();
-	_vulkanDevice->cleanup();
+	_device->cleanup();
 	vkb::destroy_debug_utils_messenger(_instance, _debugMessenger, nullptr);
 	vkDestroyInstance(_instance, nullptr);
 }
@@ -68,9 +83,10 @@ void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapCh
 		LOG_ERROR("VulkanRHI::create_swap_chain(): Invalid pointers")
 		return;
 	}
-	_swapChain = std::make_unique<VulkanSwapChain>(info, _vulkanDevice.get());
-	_cmdManager = std::make_unique<VulkanCommandManager>(_vulkanDevice.get(), _swapChain.get());
+	_swapChain = std::make_unique<VulkanSwapChain>(info, _device.get());
+	_cmdManager = std::make_unique<VulkanCommandManager>(_device.get(), _swapChain.get());
 	swapChain->handle = _swapChain.get();
+	swapChain->info = *info;
 }
 
 void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
@@ -85,9 +101,17 @@ void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
 	swapChain->handle = nullptr;
 }
 
+void vulkan::VulkanRHI::get_swap_chain_texture_views(std::vector<rhi::TextureView>& textureViews)
+{
+	for (auto& textureView : _swapChain->get_texture_views())
+		textureViews.push_back(textureView);
+}
+
 bool vulkan::VulkanRHI::acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex)
 {
-	return _cmdManager->acquire_next_image(_swapChain.get(), nextImageIndex, currentFrameIndex);
+	_cmdManager->acquire_next_image(_swapChain.get(), nextImageIndex, currentFrameIndex);
+	_currentImageIndex = nextImageIndex;
+	return true;
 }
 
 void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data)
@@ -293,17 +317,24 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	createInfo.image = vkTexture->get_handle();
 	createInfo.format = format;
 	createInfo.subresourceRange.baseMipLevel = viewInfo->baseMipLevel;
-	createInfo.subresourceRange.levelCount = 1;
+	createInfo.subresourceRange.levelCount = texInfo.mipLevels;
 	createInfo.subresourceRange.baseArrayLayer = viewInfo->baseLayer;
 	createInfo.subresourceRange.layerCount = texInfo.layersCount;
 	createInfo.subresourceRange.aspectMask = aspectFlags;
 
-	_vulkanImageViews.emplace_back(new VkImageView());
-	VkImageView* view = _vulkanImageViews.back().get();
-	VK_CHECK(vkCreateImageView(_vulkanDevice->get_device(), &createInfo, nullptr, view));
-	textureView->handle = view;
+	_vulkanTextureViews.emplace_back(new VulkanTextureView(_device.get(), createInfo));
+	textureView->handle = _vulkanTextureViews.back().get();
 	textureView->viewInfo = *viewInfo;
 	textureView->texture = texture;
+
+	if ((imgUsage & VK_IMAGE_USAGE_SAMPLED_BIT) == VK_IMAGE_USAGE_SAMPLED_BIT)
+	{
+		_descriptorManager->allocate_bindless_descriptor(_vulkanTextureViews.back().get(), TextureDescriptorHeapType::TEXTURES);
+	}
+	else if ((imgUsage & VK_IMAGE_USAGE_STORAGE_BIT) == VK_IMAGE_USAGE_STORAGE_BIT)
+	{
+		_descriptorManager->allocate_bindless_descriptor(_vulkanTextureViews.back().get(), TextureDescriptorHeapType::STORAGE_TEXTURES);
+	}
 }
 
 void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo)
@@ -323,11 +354,7 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 		LOG_ERROR("VulkanRHI::create_sampler(): Undefined filter. Failed to create VkSampler")
 		return;
 	}
-	if (sampInfo->borderColor == rhi::BorderColor::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_sampler(): Undefined border color. Failed to create VkSampler")
-		return;
-	}
+
 	VkSamplerCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	get_filter(sampInfo->filter, createInfo);
@@ -372,11 +399,11 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 			break;
 	}
 
-	_vulkanSamplers.emplace_back(new VkSampler());
-	VkSampler* vkSampler = _vulkanSamplers.back().get();
-	VK_CHECK(vkCreateSampler(_vulkanDevice->get_device(), &createInfo, nullptr, vkSampler));
-	sampler->handle = vkSampler;
+	_vulkanSamplers.emplace_back(new VulkanSampler(_device.get(), createInfo));
+	sampler->handle = _vulkanSamplers.back().get();
 	sampler->sampInfo = *sampInfo;
+
+	_descriptorManager->allocate_bindless_descriptor(_vulkanSamplers.back().get());
 }
 
 void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shaderInfo)
@@ -392,7 +419,7 @@ void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shad
 		return;
 	}
 
-	_vulkanShaders.emplace_back(new VulkanShader(_vulkanDevice->get_device()));
+	_vulkanShaders.emplace_back(new VulkanShader(_device->get_device()));
 	VulkanShader* vulkanShader = _vulkanShaders.back().get();
 	vulkanShader->create_shader_module(shaderInfo);
 	shader->type = shaderInfo->shaderType;
@@ -406,7 +433,7 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Invalid pointers")
 		return;
 	}
-	_vulkanPipelines.emplace_back(new VulkanPipeline(_vulkanDevice.get(), info, _pipelineCache));
+	_vulkanPipelines.emplace_back(new VulkanPipeline(_device.get(), info, _pipelineCache));
 	pipeline->type = rhi::PipelineType::GRAPHICS;
 	pipeline->handle = _vulkanPipelines.back().get();
 }
@@ -418,14 +445,14 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid pointers")
 		return;
 	}
-	_vulkanPipelines.emplace_back(new VulkanPipeline(_vulkanDevice.get(), info, _pipelineCache));
+	_vulkanPipelines.emplace_back(new VulkanPipeline(_device.get(), info, _pipelineCache));
 	pipeline->type = rhi::PipelineType::COMPUTE;
 	pipeline->handle = _vulkanPipelines.back().get();
 }
 
 void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
 {
-	if (passInfo->renderTargets.empty())
+	if (passInfo->renderBuffers.empty())
 	{
 		LOG_ERROR("VulkanRHI::create_render_pass(): There are no render targets")
 		return;
@@ -441,8 +468,23 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 		return;
 	}
 
-	_vulkanRenderPasses.emplace_back(new VulkanRenderPass(_vulkanDevice.get(), passInfo));
+	_vulkanRenderPasses.emplace_back(new VulkanRenderPass(_device.get(), passInfo));
 	renderPass->handle = _vulkanRenderPasses.back().get();
+}
+
+uint32_t vulkan::VulkanRHI::get_descriptor_index(rhi::Buffer* buffer)
+{
+	return get_vk_obj(buffer)->get_descriptor_index();
+}
+
+uint32_t vulkan::VulkanRHI::get_descriptor_index(rhi::TextureView* textureView)
+{
+	return get_vk_obj(textureView)->get_descriptor_index();
+}
+
+uint32_t vulkan::VulkanRHI::get_descriptor_index(rhi::Sampler* sampler)
+{
+	return get_vk_obj(sampler)->get_descriptor_index();
 }
 
 // TODO Queue type for command buffer
@@ -461,6 +503,16 @@ void vulkan::VulkanRHI::wait_command_buffer(rhi::CommandBuffer* cmd, rhi::Comman
 void vulkan::VulkanRHI::submit(rhi::QueueType queueType)
 {
 	_cmdManager->submit(queueType);
+}
+
+void vulkan::VulkanRHI::present()
+{
+	_device->get_graphics_queue()->present(_swapChain.get(), _currentImageIndex);
+}
+
+void vulkan::VulkanRHI::wait_fences()
+{
+	_cmdManager->wait_fences();
 }
 
 void vulkan::VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Buffer* dstBuffer, uint32_t size, uint32_t srcOffset, uint32_t dstOffset)
@@ -622,37 +674,44 @@ void vulkan::VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buf
 		1, &imageBarrierToReadable);
 }
 
-void vulkan::VulkanRHI::set_viewport(rhi::CommandBuffer* cmd, float width, float height)
+void vulkan::VulkanRHI::set_viewports(rhi::CommandBuffer* cmd, std::vector<rhi::Viewport>& viewports)
 {
-	if (!cmd)
-	{
-		LOG_ERROR("VulkanRHI::set_viewport(): Invalid pointer")
-	}
-	VkViewport viewport;
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	viewport.width = width;
-	viewport.height = height;
+	VkViewport vulkanViewports[MAX_VIEWPORT_COUNT];
+	if (viewports.size() > MAX_VIEWPORT_COUNT)
+		LOG_FATAL("VulkanRHI::set_viewports(): You want to set {} viewports if there cannot be more than {} viewports", viewports.size(), MAX_VIEWPORT_COUNT)
 
-	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
-	vkCmdSetViewport(vkCmd->get_handle(), 0, 1, &viewport);
+	for (uint32_t i = 0; i != viewports.size(); ++i)
+	{
+		rhi::Viewport& viewport = viewports[i];
+		vulkanViewports[i].x = viewport.x;
+		vulkanViewports[i].y = viewport.y;
+		vulkanViewports[i].width = viewport.width;
+		vulkanViewports[i].height = viewport.height;
+		vulkanViewports[i].minDepth = viewport.minDepth;
+		vulkanViewports[i].maxDepth = viewport.maxDepth;
+	}
+
+	auto vulkanCmd = get_vk_obj(cmd);
+	vkCmdSetViewport(vulkanCmd->get_handle(), 0, viewports.size(), vulkanViewports);
 }
 
-void vulkan::VulkanRHI::set_scissor(rhi::CommandBuffer* cmd, uint32_t width, uint32_t height, int32_t offsetX, int32_t offsetY)
+void vulkan::VulkanRHI::set_scissors(rhi::CommandBuffer* cmd, std::vector<rhi::Scissor>& scissors)
 {
-	if (!cmd)
+	VkRect2D vulkanScissors[MAX_SCISSOR_COUNT];
+	if (scissors.size() > MAX_SCISSOR_COUNT)
+		LOG_FATAL("VulkanRHI::set_scissors(): You want to set {} scissors if there cannot be more than {} scissors", scissors.size(), MAX_SCISSOR_COUNT)
+
+	for (uint32_t i = 0; i != scissors.size(); ++i)
 	{
-		LOG_ERROR("VulkanRHI::set_scissor(): Invalid pointer")
-		return;
+		rhi::Scissor& scissor = scissors[i];
+		vulkanScissors[i].extent.width = abs(scissor.right - scissor.left);
+		vulkanScissors[i].extent.height = abs(scissor.bottom - scissor.top);
+		vulkanScissors[i].offset.x = std::max(0, scissor.left);
+		vulkanScissors[i].offset.y = std::max(0, scissor.top);
 	}
-	VkExtent2D extent = { width, height };
-	VkRect2D scissor;
-	scissor.extent = extent;
-	scissor.offset = { offsetX, offsetY };
-	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
-	vkCmdSetScissor(vkCmd->get_handle(), 0, 1, &scissor);
+
+	auto vulkanCmd = get_vk_obj(cmd);
+	vkCmdSetScissor(vulkanCmd->get_handle(), 0, scissors.size(), vulkanScissors);
 }
 
 void vulkan::VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
@@ -716,7 +775,7 @@ void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPa
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanRenderPass* pass = get_vk_obj(renderPass);
 
-	VkRenderPassBeginInfo beginInfo = pass->get_begin_info(clearValues);
+	VkRenderPassBeginInfo beginInfo = pass->get_begin_info(clearValues, _currentImageIndex);
 
 	vkCmdBeginRenderPass(vkCmd->get_handle(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
@@ -904,8 +963,8 @@ void vulkan::VulkanRHI::create_allocator()
 {
 	LOG_INFO("Start creating allocator")
 	VmaAllocatorCreateInfo allocatorInfo{};
-	allocatorInfo.physicalDevice = _vulkanDevice->get_physical_device();
-	allocatorInfo.device = _vulkanDevice->get_device();
+	allocatorInfo.physicalDevice = _device->get_physical_device();
+	allocatorInfo.device = _device->get_device();
 	allocatorInfo.instance = _instance;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
 	LOG_INFO("End creating allocator")
@@ -924,7 +983,7 @@ void vulkan::VulkanRHI::create_pipeline_cache()
 	createInfo.initialDataSize = size;
 	createInfo.pInitialData = data;
 
-	VK_CHECK(vkCreatePipelineCache(_vulkanDevice.get()->get_device(), &createInfo, nullptr, &_pipelineCache));
+	VK_CHECK(vkCreatePipelineCache(_device.get()->get_device(), &createInfo, nullptr, &_pipelineCache));
 
 	if (data)
 		_fileSystem->unmap_after_reading(data);
@@ -932,7 +991,7 @@ void vulkan::VulkanRHI::create_pipeline_cache()
 
 void vulkan::VulkanRHI::save_pipeline_cache()
 {
-	VkDevice device = _vulkanDevice.get()->get_device();
+	VkDevice device = _device.get()->get_device();
 	size_t cacheSize;
 	vkGetPipelineCacheData(device, _pipelineCache, &cacheSize, nullptr);
 	std::vector<uint8_t> cacheData(cacheSize);

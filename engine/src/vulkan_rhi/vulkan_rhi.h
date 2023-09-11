@@ -10,6 +10,7 @@
 #include "vulkan_pipeline.h"
 #include "vulkan_shader.h"
 #include "vulkan_swap_chain.h"
+#include "vulkan_descriptor_manager.h"
 #include <vulkan/vulkan.h>
 
 #include "vk_mem_alloc.h"
@@ -31,6 +32,7 @@ namespace ad_astris::vulkan
 
 			virtual void create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info) final override;
 			virtual void destroy_swap_chain(rhi::SwapChain* swapChain) final override;
+			virtual void get_swap_chain_texture_views(std::vector<rhi::TextureView>& textureViews) final override;
 
 			virtual bool acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex) final override;
 		
@@ -49,9 +51,15 @@ namespace ad_astris::vulkan
 			virtual void create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info) final override;
 			virtual void create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info) final override;
 
+			virtual uint32_t get_descriptor_index(rhi::Buffer* buffer) final override;
+			virtual uint32_t get_descriptor_index(rhi::TextureView* textureView) final override;
+			virtual uint32_t get_descriptor_index(rhi::Sampler* sampler) final override;
+
 			virtual void begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType = rhi::QueueType::GRAPHICS) final override;
 			virtual void wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd) final override;
 			virtual void submit(rhi::QueueType queueType = rhi::QueueType::GRAPHICS) final override;
+			virtual void present() final override;
+			virtual void wait_fences() final override;
 
 			virtual void copy_buffer(
 				rhi::CommandBuffer* cmd,
@@ -75,8 +83,8 @@ namespace ad_astris::vulkan
 				rhi::Buffer* srcBuffer,
 				rhi::Texture* dstTexture,
 				rhi::ResourceUsage textureUsage) final override;
-			virtual void set_viewport(rhi::CommandBuffer* cmd, float width, float height) final override;
-			virtual void set_scissor(rhi::CommandBuffer* cmd, uint32_t width, uint32_t height, int32_t offsetX = 0, int32_t offsetY = 0) final override;
+			virtual void set_viewports(rhi::CommandBuffer* cmd, std::vector<rhi::Viewport>& viewports) final override;
+			virtual void set_scissors(rhi::CommandBuffer* cmd, std::vector<rhi::Scissor>& scissors) final override;
 			virtual void bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;
 			virtual void bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;
 			virtual void bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline) final override;
@@ -101,18 +109,21 @@ namespace ad_astris::vulkan
 			VkInstance _instance{ VK_NULL_HANDLE };
 			VkDebugUtilsMessengerEXT _debugMessenger{ VK_NULL_HANDLE };
 			VmaAllocator _allocator;
-			std::unique_ptr<VulkanDevice> _vulkanDevice{ nullptr };
+			std::unique_ptr<VulkanDevice> _device{ nullptr };
 			std::unique_ptr<VulkanCommandManager> _cmdManager{ nullptr };
 			std::unique_ptr<VulkanSwapChain> _swapChain{ nullptr };
+			std::unique_ptr<VulkanDescriptorManager> _descriptorManager{ nullptr };
 			VkPipelineCache _pipelineCache;
 
 			std::vector<std::unique_ptr<VulkanPipeline>> _vulkanPipelines;
 			std::vector<std::unique_ptr<VulkanShader>> _vulkanShaders;
 			std::vector<std::unique_ptr<VulkanRenderPass>> _vulkanRenderPasses;
-			std::vector<std::unique_ptr<VkSampler>> _vulkanSamplers;
-			std::vector<std::unique_ptr<VkImageView>> _vulkanImageViews;
+			std::vector<std::unique_ptr<VulkanSampler>> _vulkanSamplers;
+			std::vector<std::unique_ptr<VulkanTextureView>> _vulkanTextureViews;
 			std::vector<std::unique_ptr<VulkanTexture>> _vulkanTextures;
 			std::vector<std::unique_ptr<VulkanBuffer>> _vulkanBuffers;
+
+			uint32_t _currentImageIndex{ 0 };
 
 			vkb::Instance create_instance();
 			void create_allocator();

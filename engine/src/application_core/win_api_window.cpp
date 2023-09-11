@@ -23,11 +23,11 @@ LRESULT CALLBACK window_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 			break;
 		}
-		case WM_CLOSE:
-		{
-			DestroyWindow(hWnd);
-			break;
-		}
+		// case WM_CLOSE:
+		// {
+		// 	DestroyWindow(hWnd);
+		// 	break;
+		// }
 		case WM_DESTROY:
 		{
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, 0);
@@ -157,8 +157,9 @@ bool WinApiWindow::process_messages()
 
 	while (PeekMessage(&msg, nullptr, 0u, 0u, PM_REMOVE))
 	{
-		if (msg.message == WM_QUIT)
+		if (msg.message == WM_QUIT || msg.message == WM_CLOSE)
 		{
+			LOG_INFO("FINISH WORK")
 			return false;
 		}
 		
@@ -167,6 +168,11 @@ bool WinApiWindow::process_messages()
 	}
 
 	return true;
+}
+
+void WinApiWindow::close()
+{
+	DestroyWindow(_hWnd);
 }
 
 void WinApiWindow::parse_keys(KeyEvent& keyEvent, WPARAM wParam)

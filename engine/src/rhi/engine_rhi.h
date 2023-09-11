@@ -18,6 +18,7 @@ namespace ad_astris::rhi
 
 			virtual void create_swap_chain(SwapChain* swapChain, SwapChainInfo* info) = 0;
 			virtual void destroy_swap_chain(SwapChain* swapChain) = 0;
+			virtual void get_swap_chain_texture_views(std::vector<TextureView>& textureViews) = 0;
 
 			virtual bool acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex) = 0;
 
@@ -33,9 +34,15 @@ namespace ad_astris::rhi
 			virtual void create_graphics_pipeline(Pipeline* pipeline, GraphicsPipelineInfo* info) = 0;
 			virtual void create_compute_pipeline(Pipeline* pipeline, ComputePipelineInfo* info) = 0;
 
+			virtual uint32_t get_descriptor_index(Buffer* buffer) = 0;
+			virtual uint32_t get_descriptor_index(TextureView* textureView) = 0;
+			virtual uint32_t get_descriptor_index(Sampler* sampler) = 0;
+
 			virtual void begin_command_buffer(CommandBuffer* cmd, QueueType queueType = QueueType::GRAPHICS) = 0;
 			virtual void wait_command_buffer(CommandBuffer* cmd, CommandBuffer* waitForCmd) = 0;
 			virtual void submit(QueueType queueType = QueueType::GRAPHICS) = 0;
+			virtual void present() = 0;
+			virtual void wait_fences() = 0;
 
 			// If size = 0 (default value), method will copy whole srcBuffer to dstBuffer
 			virtual void copy_buffer(
@@ -61,8 +68,8 @@ namespace ad_astris::rhi
 				Buffer* srcBuffer,
 				Texture* dstTexture,
 				ResourceUsage textureUsage) = 0;
-			virtual void set_viewport(CommandBuffer* cmd, float width, float height) = 0;
-			virtual void set_scissor(CommandBuffer* cmd, uint32_t width, uint32_t height, int32_t offsetX = 0, int32_t offsetY = 0) = 0;
+			virtual void set_viewports(CommandBuffer* cmd, std::vector<Viewport>& viewports) = 0;
+			virtual void set_scissors(CommandBuffer* cmd, std::vector<Scissor>& scissors) = 0 ;
 			// Can bind only one vertex buffer.
 			virtual void bind_vertex_buffer(CommandBuffer* cmd, Buffer* buffer) = 0;
 			virtual void bind_index_buffer(CommandBuffer* cmd, Buffer* buffer) = 0;

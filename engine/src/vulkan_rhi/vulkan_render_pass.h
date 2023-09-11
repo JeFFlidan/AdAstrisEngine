@@ -13,16 +13,22 @@ namespace ad_astris::vulkan
 
 			void cleanup();
 
-			VkRenderPassBeginInfo get_begin_info(rhi::ClearValues& rhiClearValue);
+			VkRenderPassBeginInfo get_begin_info(rhi::ClearValues& rhiClearValue, uint32_t imageIndex = 0);
+
+			VkRenderPass get_handle()
+			{
+				return _renderPass;
+			}
+		
 		private:
 			VulkanDevice* _device;
 			VkRenderPass _renderPass;
-			VkFramebuffer _framebuffer;
+			std::vector<VkFramebuffer> _framebuffers;
 			VkExtent2D _extent;
 			uint32_t _colorAttachCount{ 0 };
 			uint32_t _depthAttachCount{ 0 };
 
 			void create_render_pass(rhi::RenderPassInfo* passInfo);
-			void create_framebuffer(std::vector<rhi::RenderTarget>& renderTargets);
+			void create_framebuffer(std::vector<rhi::RenderBuffer>& renderBuffers);
 	};
 }

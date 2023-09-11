@@ -716,6 +716,10 @@ VkImageLayout vulkan::get_image_layout(rhi::ResourceLayout resourceLayout)
 	{
 		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	}
+	if (has_flag(resourceLayout, rhi::ResourceLayout::PRESENT_ATTACHMENT))
+	{
+		return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	}
 }
 
 VkAccessFlags vulkan::get_access(rhi::ResourceLayout resourceLayout)

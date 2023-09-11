@@ -50,7 +50,9 @@ namespace ad_astris::rhi
 		INDIRECT_COMMAND_BUFFER = 1 << 11,
 		VERTEX_BUFFER = 1 << 12,
 		INDEX_BUFFER = 1 << 13,
-		UNIFORM_BUFFER = 1 << 14
+		UNIFORM_BUFFER = 1 << 14,
+
+		PRESENT_ATTACHMENT = 1 << 15
 	};
 	
 	enum class ResourceUsage
@@ -306,6 +308,11 @@ namespace ad_astris::rhi
 		bool is_valid() { return data && size; }
 	};
 
+	struct SubresourceRange
+	{
+		
+	};
+
 	struct Buffer : public Resource
 	{
 		BufferInfo bufferInfo;
@@ -338,7 +345,7 @@ namespace ad_astris::rhi
 
 	struct SwapChain : public ObjectHandle
 	{
-
+		SwapChainInfo info;
 	};
 	
 	struct SamplerInfo
@@ -410,6 +417,11 @@ namespace ad_astris::rhi
 		ResourceLayout finalLayout;
 	};
 
+	struct RenderBuffer
+	{
+		std::vector<RenderTarget> renderTargets;
+	};
+
 	enum class PipelineType
 	{
 		UNDEFINED,
@@ -426,7 +438,7 @@ namespace ad_astris::rhi
 
 	struct RenderPassInfo
 	{
-		std::vector<RenderTarget> renderTargets;
+		std::vector<RenderBuffer> renderBuffers;
 		PipelineType pipelineType{ PipelineType::UNDEFINED };
 		MultiviewInfo multiviewInfo;	// not necessary
 	};
@@ -735,6 +747,24 @@ namespace ad_astris::rhi
 			pipelineBarrier.type = BarrierType::TEXTURE;
 			return pipelineBarrier;
 		}
+	};
+
+	struct Viewport
+	{
+		uint32_t x = 0;
+		uint32_t y = 0;
+		uint32_t width;
+		uint32_t height;
+		uint32_t minDepth = 0;
+		uint32_t maxDepth = 1;
+	};
+
+	struct Scissor
+	{
+		int32_t left = 0;
+		int32_t top = 0;
+		int32_t right = 0;
+		int32_t bottom = 0;
 	};
 }
 

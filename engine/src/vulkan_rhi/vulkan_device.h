@@ -41,12 +41,36 @@ namespace ad_astris::vulkan
 			VulkanQueue* get_present_queue();
 			VulkanQueue* get_compute_queue();
 			VulkanQueue* get_transfer_queue();
+
+			VkPhysicalDeviceProperties2& get_physical_device_properties()
+			{
+				return _properties2;
+			}
+
+			VkPhysicalDeviceVulkan11Properties& get_physical_device_vulkan_1_1_properties()
+			{
+				return _properties1_1;
+			}
+
+			VkPhysicalDeviceVulkan12Properties& get_physical_device_vulkan_1_2_properties()
+			{
+				return _properties1_2;
+			}
+
+			VkPhysicalDeviceVulkan13Properties& get_physical_device_vulkan_1_3_properties()
+			{
+				return _properties1_3;
+			}
 		
 		private:
 			VkSurfaceKHR _surface{ VK_NULL_HANDLE };
 			VkInstance _instance{ VK_NULL_HANDLE };
 			VkPhysicalDevice _physicalDevice{ VK_NULL_HANDLE };
 			VkDevice _device{ VK_NULL_HANDLE };
+			VkPhysicalDeviceProperties2 _properties2{};
+			VkPhysicalDeviceVulkan11Properties _properties1_1{};
+			VkPhysicalDeviceVulkan12Properties _properties1_2{};
+			VkPhysicalDeviceVulkan13Properties _properties1_3{};
 
 			std::vector<std::string> _requieredExtensions{
 				"VK_EXT_descriptor_indexing",
@@ -76,6 +100,7 @@ namespace ad_astris::vulkan
 				vkb::Instance& instance,
 				std::vector<std::string>& extensions,
 				VkPhysicalDeviceFeatures& features);
+			void get_properties();
 			void set_feature(VkBool32 supported, VkBool32& feature, std::string featureName);
 			void set_optional_extension(std::string& ext);
 	};

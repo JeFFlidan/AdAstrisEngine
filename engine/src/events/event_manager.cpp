@@ -55,7 +55,11 @@ void EventManager::dispatch_events()
 		IEvent* event = _eventsQueue.front().get();
 		auto it = _handlersByEventID.find(event->get_type_id());
 		if (it == _handlersByEventID.end())
+		{
+			event->cleanup();
+			_eventsQueue.pop();
 			continue;
+		}
 		
 		auto& handlers = it->second;
 		for (auto& handler : handlers)

@@ -106,8 +106,8 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 	VulkanQueue* computeQueue = _device->get_compute_queue();
 	VulkanQueue* transferQueue = _device->get_transfer_queue();
 
-	size_t buffersCount = swapChain->get_texture_views().size();
-	size_t poolsPerQueue = RENDER_THREAD_COUNT * buffersCount;
+	_bufferCount = swapChain->get_buffers_count();
+	size_t poolsPerQueue = RENDER_THREAD_COUNT * _bufferCount;
 	
 	for (int i = 0; i != 3; ++i)
 	{
@@ -119,7 +119,7 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 				case 0:
 				{
 					tempPools.emplace_back(new VulkanCommandPool(_device, graphicsQueue));
-					if (tempPools.size() == poolsPerQueue / buffersCount)
+					if (tempPools.size() == poolsPerQueue / _bufferCount)
 					{
 						_freeGraphicsCmdPools.push_back(std::move(tempPools));
 						//tempPools.clear();
@@ -129,7 +129,7 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 				case 1:
 				{
 					tempPools.emplace_back(new VulkanCommandPool(_device, computeQueue));
-					if (tempPools.size() == poolsPerQueue / buffersCount)
+					if (tempPools.size() == poolsPerQueue / _bufferCount)
 					{
 						_freeComputeCmdPools.push_back(std::move(tempPools));
 						//tempPools.clear();
@@ -139,7 +139,7 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 				case 2:
 				{
 					tempPools.emplace_back(new VulkanCommandPool(_device, transferQueue));
-					if (tempPools.size() == poolsPerQueue / buffersCount)
+					if (tempPools.size() == poolsPerQueue / _bufferCount)
 					{
 						_freeTransferCmdPools.push_back(std::move(tempPools));
 						//tempPools.clear();
@@ -158,29 +158,17 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 	LOG_INFO("First frame compute: {}", _freeComputeCmdPools[0].size())
 	LOG_INFO("Second frame compute: {}", _freeComputeCmdPools[1].size())
 
-	_lockedGraphicsCmdPools.resize(buffersCount);
-	_lockedComputeCmdPools.resize(buffersCount);
-	_lockedTransferCmdPools.resize(buffersCount);
-	_freeFences.resize(buffersCount);
-	_lockedFences.resize(buffersCount);
+	_lockedGraphicsCmdPools.resize(_bufferCount);
+	_lockedComputeCmdPools.resize(_bufferCount);
+	_lockedTransferCmdPools.resize(_bufferCount);
+	_tripleBufferingIndicesChain.resize(_bufferCount);
 
-	for (size_t i = 0; i != buffersCount; ++i)
-	{
-		VkSemaphore semaphore;
-		create_semaphore(_device->get_device(), &semaphore);
-		_acquireSemaphores.push_back(semaphore);
-	}
+	_syncManager.init(_device, _bufferCount);
 }
 
 void vulkan::VulkanCommandManager::cleanup()
 {
-	for (auto& semaphore : _acquireSemaphores)
-	{
-		vkDestroySemaphore(_device->get_device(), semaphore, nullptr);
-	}
-
-	for (auto& fence : _freeFences[_imageIndex])
-		vkDestroyFence(_device->get_device(), fence, nullptr);
+	_syncManager.cleanup(_device, _bufferCount);
 }
 
 vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rhi::QueueType queueType)
@@ -231,7 +219,8 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 	}
 
 	// TODO VkPipelineStageFlags. Maybe I have to remove it because the same flag is set up in get_cmd_buffer method of VulkanCommandPool
-	cmdBuffer->_waitSemaphores.push_back(_acquireSemaphores[_imageIndex]);
+	if (_firstSubmissionInFrame.load())
+		cmdBuffer->_waitSemaphores.push_back(_syncManager.get_acquire_semaphore(_imageIndex));
 	// VkPipelineStageFlags flag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	// cmdBuffer->_waitFlags.push_back(flag);
 
@@ -278,42 +267,39 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
 			break;
 		}
 	}
+
+	_firstSubmissionInFrame.store(false);
 }
 
 bool vulkan::VulkanCommandManager::acquire_next_image(VulkanSwapChain* swapChain, uint32_t& nextImageIndex, uint32_t currentFrameIndex)
 {
-	uint32_t lockedFencesCount = _lockedFences[currentFrameIndex].size();
-	LOG_INFO("Locked fences count: {}", lockedFencesCount)
-	if (lockedFencesCount)
-	{
-		VK_CHECK(vkWaitForFences(_device->get_device(), lockedFencesCount, _lockedFences[currentFrameIndex].data(), true, 1000000000));
-		VK_CHECK(vkResetFences(_device->get_device(), lockedFencesCount, _lockedFences[currentFrameIndex].data()));
-		for (auto& fence : _lockedFences[currentFrameIndex])
-			_freeFences[currentFrameIndex].push_back(fence);
-		_lockedFences[currentFrameIndex].clear();
-	}
-	
-	if (vkAcquireNextImageKHR(_device->get_device(), swapChain->get_swap_chain(), 1000000000, _acquireSemaphores[currentFrameIndex], VK_NULL_HANDLE, &nextImageIndex) == VK_ERROR_OUT_OF_DATE_KHR)
-	{
-		return false;
-	}
+	_syncManager.wait_fences(_device, currentFrameIndex);
+	VkSemaphore acquireSemaphore = _syncManager.get_acquire_semaphore(currentFrameIndex);
+	VkResult res = vkAcquireNextImageKHR(_device->get_device(), swapChain->get_swap_chain(), 1000000000, acquireSemaphore, VK_NULL_HANDLE, &nextImageIndex);
 
 	_imageIndex = nextImageIndex;
 	flush_cmd_buffers();
+	_firstSubmissionInFrame.store(true);
 	
 	return true;
 }
 
 VkFence vulkan::VulkanCommandManager::get_free_fence()
 {
-	LOG_INFO("GET FREE FENCE")
-	std::vector<VkFence>& freeFences = _freeFences[_imageIndex];
-	if (freeFences.empty())
-		freeFences.push_back(create_fence(_device->get_device()));
-	VkFence fence = _freeFences[_imageIndex].back();
-	_lockedFences[_imageIndex].push_back(fence);
-	_freeFences[_imageIndex].pop_back();
-	return fence;
+	return _syncManager.get_free_fence(_device, _imageIndex);
+}
+
+void vulkan::VulkanCommandManager::wait_fences()
+{
+	_syncManager.wait_fences(_device, _imageIndex);
+}
+
+void vulkan::VulkanCommandManager::wait_all_fences()
+{
+	for (uint32_t i = 0; i != _bufferCount; ++i)
+	{
+		_syncManager.wait_fences(_device, i);
+	}
 }
 
 void vulkan::VulkanCommandManager::flush_cmd_buffers()
@@ -328,6 +314,61 @@ void vulkan::VulkanCommandManager::flush_cmd_buffers()
 		transferPools[i]->flush_submitted_cmd_buffers();
 		computePools[i]->flush_submitted_cmd_buffers();
 	}
+}
+
+void vulkan::VulkanCommandManager::SynchronizationManager::init(VulkanDevice* device, uint32_t bufferCount)
+{
+	_freeFences.resize(bufferCount);
+	_lockedFences.resize(bufferCount);
+
+	for (uint32_t i = 0; i != bufferCount; ++i)
+	{
+		VkSemaphore semaphore;
+		create_semaphore(device->get_device(), &semaphore);
+		_acquireSemaphores.push_back(semaphore);
+	}
+}
+
+void vulkan::VulkanCommandManager::SynchronizationManager::cleanup(VulkanDevice* device, uint32_t bufferCount)
+{
+	for (auto& semaphore : _acquireSemaphores)
+		vkDestroySemaphore(device->get_device(), semaphore, nullptr);
+
+	for (uint32_t i = 0; i != bufferCount; ++i)
+	{
+		auto& fences = _freeFences[i];
+		for (auto& fence : fences)
+			vkDestroyFence(device->get_device(), fence, nullptr);
+	}
+}
+
+void vulkan::VulkanCommandManager::SynchronizationManager::wait_fences(VulkanDevice* device, uint32_t bufferIndex)
+{
+	//LOG_INFO("LOCKED FENCES COUNT: {}", _lockedFences[bufferIndex].size())
+	if (!_lockedFences[bufferIndex].empty())
+	{
+		VK_CHECK(vkWaitForFences(device->get_device(), _lockedFences[bufferIndex].size(), _lockedFences[bufferIndex].data(), true, 1000000000));
+		VK_CHECK(vkResetFences(device->get_device(), _lockedFences[bufferIndex].size(), _lockedFences[bufferIndex].data()));
+		for (auto& fence : _lockedFences[bufferIndex])
+			_freeFences[bufferIndex].push_back(fence);
+		_lockedFences[bufferIndex].clear();
+	}
+}
+
+VkFence vulkan::VulkanCommandManager::SynchronizationManager::get_free_fence(VulkanDevice* device, uint32_t bufferIndex)
+{
+	std::vector<VkFence>& freeFences = _freeFences[bufferIndex];
+	if (freeFences.empty())
+		freeFences.push_back(create_fence(device->get_device()));
+	VkFence fence = _freeFences[bufferIndex].back();
+	_lockedFences[bufferIndex].push_back(fence);
+	_freeFences[bufferIndex].pop_back();
+	return fence;
+}
+
+VkSemaphore vulkan::VulkanCommandManager::SynchronizationManager::get_acquire_semaphore(uint32_t bufferIndex)
+{
+	return _acquireSemaphores.at(bufferIndex);
 }
 
 void vulkan::clear_after_submission(

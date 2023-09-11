@@ -626,6 +626,17 @@ void RenderGraph::build_physical_passes()
 			physPassInfo.multiviewInfo = multiviewInfo;
 		}
 
+		rhi::RenderBuffer renderBuffer;
+		for (auto& colorOutput : logicalPass->get_color_outputs())
+		{
+			rhi::TextureView& textureView = *_physicalTextureViews[colorOutput->get_physical_index()].get();
+		
+			rhi::RenderTarget target;
+			setup_color_render_target(target, textureView);
+			
+			renderBuffer.renderTargets.push_back(target);
+		}
+		
 		{
 			TextureDesc* depthStencilOutput = logicalPass->get_depth_stencil_output();
 			if (depthStencilOutput)
@@ -635,19 +646,11 @@ void RenderGraph::build_physical_passes()
 				rhi::RenderTarget target;
 				setup_depth_stencil_render_target(target, textureView);
 
-				physPassInfo.renderTargets.push_back(target);
+				renderBuffer.renderTargets.push_back(target);
 			}
 		}
-		
-		for (auto& colorOutput : logicalPass->get_color_outputs())
-		{
-			rhi::TextureView& textureView = *_physicalTextureViews[colorOutput->get_physical_index()].get();
-		
-			rhi::RenderTarget target;
-			setup_color_render_target(target, textureView);
 
-			physPassInfo.renderTargets.push_back(target);
-		}
+		physPassInfo.renderBuffers.push_back(renderBuffer);
 
 		rhi::RenderPass physicalPass;
 		_engineRHI->create_render_pass(&physicalPass, &physPassInfo);

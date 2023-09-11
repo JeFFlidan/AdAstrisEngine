@@ -1,12 +1,13 @@
 ﻿#pragma once
 
 #include "api.h"
+#include "vulkan_descriptor.h"
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
 
 namespace ad_astris::vulkan
 {
-	class VK_RHI_API VulkanBuffer
+	class VK_RHI_API VulkanBuffer : public VulkanDescriptor
 	{
 		public:
 			VulkanBuffer() = default;
@@ -20,7 +21,7 @@ namespace ad_astris::vulkan
 				VkCommandBuffer cmd,
 				VulkanBuffer* srcBuffer,
 				VulkanBuffer* dstBuffer,
-				VkDeviceSize dstOffset = 0, 
+				VkDeviceSize dstOffset = 0,
 				VkDeviceSize srcOffset = 0);
 
 			VkBuffer* get_handle() { return &_buffer; }
@@ -29,8 +30,8 @@ namespace ad_astris::vulkan
 		private:
 			VkBuffer _buffer = VK_NULL_HANDLE;
 			VmaAllocation _allocation;
-
 			uint64_t _bufferSize = 0;
+		
 			void allocate_buffer(VmaAllocator* allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);		
 	};
 }

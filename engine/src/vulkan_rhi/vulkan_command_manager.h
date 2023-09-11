@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <memory>
+#include <atomic>
 
 // Maybe temporary solution. I will decide how much threads renderer should have
 #define RENDER_THREAD_COUNT 4
@@ -88,19 +89,39 @@ namespace ad_astris::vulkan
 				uint32_t currentFrameIndex);
 
 			VkFence get_free_fence();
+			void wait_fences();
+			void wait_all_fences();
 		
 		private:
 			VulkanDevice* _device;
-			std::vector<VkSemaphore> _acquireSemaphores;
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _freeGraphicsCmdPools;
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedGraphicsCmdPools;
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _freeTransferCmdPools;
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedTransferCmdPools;
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _freeComputeCmdPools;
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedComputeCmdPools;
-			std::vector<std::vector<VkFence>> _freeFences;
-			std::vector<std::vector<VkFence>> _lockedFences;
 			uint32_t _imageIndex{ 0 };
+			std::atomic_bool _firstSubmissionInFrame{ true };
+
+			class SynchronizationManager
+			{
+				public:
+					void init(VulkanDevice* device, uint32_t bufferCount);
+					void cleanup(VulkanDevice* device, uint32_t bufferCount);
+					void wait_fences(VulkanDevice* device, uint32_t bufferIndex);
+					//void wait_all_fences();
+					VkFence get_free_fence(VulkanDevice* device, uint32_t bufferIndex);
+					VkSemaphore get_acquire_semaphore(uint32_t bufferIndex);
+
+				private:
+					std::vector<std::vector<VkFence>> _freeFences;
+					std::vector<std::vector<VkFence>> _lockedFences;
+					std::vector<VkSemaphore> _acquireSemaphores;
+			};
+
+			SynchronizationManager _syncManager;
+			std::vector<uint32_t> _tripleBufferingIndicesChain;
+			uint32_t _bufferCount;
 		
 			void flush_cmd_buffers();
 	};

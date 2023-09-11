@@ -111,9 +111,9 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 
 	VkPipelineVertexInputStateCreateInfo inputState{};
 	inputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	inputState.pVertexBindingDescriptions = bindingDescriptions.data();
+	inputState.pVertexBindingDescriptions = !bindingDescriptions.empty() ? bindingDescriptions.data() : nullptr;
 	inputState.vertexBindingDescriptionCount = bindingDescriptions.size();
-	inputState.pVertexAttributeDescriptions = attributeDescriptions.data();
+	inputState.pVertexAttributeDescriptions = !attributeDescriptions.empty() ? attributeDescriptions.data() : nullptr;
 	inputState.vertexAttributeDescriptionCount = attributeDescriptions.size();
 
 	std::vector<VkDynamicState> dynamicStates;
@@ -261,7 +261,7 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.layout = _layout;
-	pipelineInfo.renderPass = *static_cast<VkRenderPass*>(info->renderPass.handle);
+	pipelineInfo.renderPass = get_vk_obj(&info->renderPass)->get_handle();
 	pipelineInfo.subpass = 0;
 	pipelineInfo.stageCount = pipelineStages.size();
 	pipelineInfo.pStages = pipelineStages.data();

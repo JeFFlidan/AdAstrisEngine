@@ -44,6 +44,7 @@ vulkan::VulkanDevice::VulkanDevice(vkb::Instance& instance, acore::IWindow* wind
 
 	_physicalDevice = vkbPhysDevice.physical_device;
 	_device = vkbDevice.device;
+	get_properties();
 
 	LOG_INFO("Finished initing Device class (Vulkan)")
 }
@@ -118,6 +119,10 @@ vkb::PhysicalDevice vulkan::VulkanDevice::pick_physical_device(vkb::Instance& in
 	features1_2.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
 	features1_2.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
 	features1_2.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+	features1_2.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+	features1_2.descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE;
+	features1_2.descriptorBindingStorageImageUpdateAfterBind = VK_TRUE;
+	features1_2.descriptorBindingUniformTexelBufferUpdateAfterBind = VK_TRUE;
 	features1_2.samplerFilterMinmax = VK_TRUE;
 	features1_2.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 	
@@ -201,6 +206,19 @@ void vulkan::VulkanDevice::get_supported_extensions_and_features(
 	vkGetPhysicalDeviceFeatures(physDevice, &features);
 	
 	LOG_INFO("Finish getting supported extensions and features")
+}
+
+void vulkan::VulkanDevice::get_properties()
+{
+	_properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	_properties1_1.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
+	_properties1_2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
+	_properties1_3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES;
+	_properties2.pNext = &_properties1_2;
+	//_properties1_1.pNext = &_properties1_2;
+	//_properties1_2.pNext = &_properties1_3;
+	//_properties1_3.pNext = nullptr;
+	vkGetPhysicalDeviceProperties2(_physicalDevice, &_properties2);
 }
 
 void vulkan::VulkanDevice::set_feature(VkBool32 supported, VkBool32& feature, std::string featureName)

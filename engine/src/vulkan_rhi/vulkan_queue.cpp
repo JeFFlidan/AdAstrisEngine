@@ -48,13 +48,36 @@ void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager)
 		info.pWaitSemaphores = cmdBuffer->_waitSemaphores.data();
 		info.pWaitDstStageMask = cmdBuffer->_waitFlags.data();
 		submitInfos.push_back(info);
+		_presentWaitSemaphores.push_back(cmdBuffer->_signalSemaphore);
 	}
 
 	// TODO need to use the correct fence
 	VK_CHECK(vkQueueSubmit(_queue, submitInfos.size(), submitInfos.data(), cmdManager.get_free_fence()));
 }
 
-void vulkan::VulkanQueue::present()
+void vulkan::VulkanQueue::present(VulkanSwapChain* swapChain, uint32_t currentImageIndex)
 {
-	// TODO
+	if (_queueType != rhi::QueueType::GRAPHICS)
+	{
+		LOG_INFO("VulkanQueue::present(): Can't present non graphics queue")
+		return;
+	}
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	VkSwapchainKHR swapchain = swapChain->get_swap_chain();
+	presentInfo.pSwapchains = &swapchain;
+	presentInfo.swapchainCount = 1;
+	presentInfo.pWaitSemaphores = _presentWaitSemaphores.data();
+	presentInfo.waitSemaphoreCount = _presentWaitSemaphores.size();
+	presentInfo.pImageIndices = &currentImageIndex;
+	VkResult result = vkQueuePresentKHR(_queue, &presentInfo);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		// TODO
+	}
+	else if (result != VK_SUCCESS)
+	{
+		// TODO
+	}
+	_presentWaitSemaphores.clear();
 }

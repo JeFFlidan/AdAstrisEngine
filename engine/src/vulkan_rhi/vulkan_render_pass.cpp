@@ -6,24 +6,28 @@ using namespace ad_astris;
 
 vulkan::VulkanRenderPass::VulkanRenderPass(VulkanDevice* device, rhi::RenderPassInfo* passInfo) : _device(device)
 {
-	_extent.width = passInfo->renderTargets[0].target->texture->textureInfo.width;
-	_extent.height = passInfo->renderTargets[0].target->texture->textureInfo.height;
+	_extent.width = passInfo->renderBuffers[0].renderTargets[0].target->texture->textureInfo.width;
+	_extent.height = passInfo->renderBuffers[0].renderTargets[0].target->texture->textureInfo.height;
 	create_render_pass(passInfo);
-	create_framebuffer(passInfo->renderTargets);
+	create_framebuffer(passInfo->renderBuffers);
 }
 
 void vulkan::VulkanRenderPass::cleanup()
 {
-	vkDestroyFramebuffer(_device->get_device(), _framebuffer, nullptr);
+	for (auto& framebuffer : _framebuffers)
+		vkDestroyFramebuffer(_device->get_device(), framebuffer, nullptr);
 	vkDestroyRenderPass(_device->get_device(), _renderPass, nullptr);
 }
 
-VkRenderPassBeginInfo vulkan::VulkanRenderPass::get_begin_info(rhi::ClearValues& rhiClearValue)
+VkRenderPassBeginInfo vulkan::VulkanRenderPass::get_begin_info(rhi::ClearValues& rhiClearValue, uint32_t imageIndex)
 {
 	VkRenderPassBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	beginInfo.renderPass = _renderPass;
-	beginInfo.framebuffer = _framebuffer;
+	if (_framebuffers.size() > 1)
+		beginInfo.framebuffer = _framebuffers[imageIndex];
+	else
+		beginInfo.framebuffer = _framebuffers[0];
 	beginInfo.renderArea.offset.x = 0;
 	beginInfo.renderArea.offset.y = 0;
 	beginInfo.renderArea.extent = _extent;
@@ -53,8 +57,9 @@ void vulkan::VulkanRenderPass::create_render_pass(rhi::RenderPassInfo* passInfo)
 	std::vector<VkAttachmentReference> colorAttachRefs;
 	VkAttachmentReference depthAttachRef;
 	bool oneDepth = false;
-	
-	for (auto& target: passInfo->renderTargets)
+
+	std::vector<rhi::RenderTarget>& renderTargets = passInfo->renderBuffers[0].renderTargets;
+	for (auto& target: renderTargets)
 	{
 		rhi::TextureInfo texInfo = target.target->texture->textureInfo;
 		VkAttachmentDescription attachInfo{};
@@ -172,24 +177,30 @@ void vulkan::VulkanRenderPass::create_render_pass(rhi::RenderPassInfo* passInfo)
 	VK_CHECK(vkCreateRenderPass(_device->get_device(), &renderPassInfo, nullptr, &_renderPass));
 }
 
-void vulkan::VulkanRenderPass::create_framebuffer(std::vector<rhi::RenderTarget>& renderTargets)
+void vulkan::VulkanRenderPass::create_framebuffer(std::vector<rhi::RenderBuffer>& renderBuffers)
 {
-	std::vector<VkImageView> attachViews;
-	for (auto& target : renderTargets)
+	for (auto& renderBuffer : renderBuffers)
 	{
-		VkImageView view = *static_cast<VkImageView*>(target.target->handle);
-		attachViews.push_back(view);
+		std::vector<rhi::RenderTarget>& renderTargets = renderBuffer.renderTargets;
+		std::vector<VkImageView> attachViews;
+		for (auto& target : renderTargets)
+		{
+			VkImageView view = get_vk_obj(target.target)->get_handle();
+			attachViews.push_back(view);
+		}
+	
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.layers = 1;
+		framebufferInfo.width = renderTargets[0].target->texture->textureInfo.width;
+		framebufferInfo.height = renderTargets[0].target->texture->textureInfo.height;
+		framebufferInfo.renderPass = _renderPass;
+		framebufferInfo.pAttachments = attachViews.data();
+		framebufferInfo.attachmentCount = attachViews.size();
+
+		VkFramebuffer framebuffer;
+		VK_CHECK(vkCreateFramebuffer(_device->get_device(), &framebufferInfo, nullptr, &framebuffer));
+		_framebuffers.push_back(framebuffer);
 	}
-	
-	VkFramebufferCreateInfo framebufferInfo{};
-	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	framebufferInfo.layers = 1;
-	framebufferInfo.width = renderTargets[0].target->texture->textureInfo.width;
-	framebufferInfo.height = renderTargets[0].target->texture->textureInfo.height;
-	framebufferInfo.renderPass = _renderPass;
-	framebufferInfo.pAttachments = attachViews.data();
-	framebufferInfo.attachmentCount = attachViews.size();
-	
-	VK_CHECK(vkCreateFramebuffer(_device->get_device(), &framebufferInfo, nullptr, &_framebuffer));
 }
 

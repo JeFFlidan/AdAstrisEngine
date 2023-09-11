@@ -79,13 +79,13 @@ namespace ad_astris::vulkan
 		return static_cast<VulkanTexture*>(texture->data);
 	}
 	
-	inline VkImageView VK_RHI_API get_vk_obj(rhi::TextureView* view)
+	inline VulkanTextureView* VK_RHI_API get_vk_obj(rhi::TextureView* view)
 	{
-		return *static_cast<VkImageView*>(view->handle);
+		return static_cast<VulkanTextureView*>(view->handle);
 	}
 	
-	inline VkSampler VK_RHI_API get_vk_obj(rhi::Sampler* sampler)
+	inline VulkanSampler* VK_RHI_API get_vk_obj(rhi::Sampler* sampler)
 	{
-		return *static_cast<VkSampler*>(sampler->handle);
+		return static_cast<VulkanSampler*>(sampler->handle);
 	}
 }

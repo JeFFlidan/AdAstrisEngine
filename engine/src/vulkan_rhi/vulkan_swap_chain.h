@@ -1,9 +1,11 @@
 #pragma once
 
 #include "rhi/resources.h"
+#include "vulkan_texture.h"
 #include "vulkan_device.h"
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <memory>
 
 namespace ad_astris::vulkan
 {
@@ -16,18 +18,16 @@ namespace ad_astris::vulkan
 			VkSwapchainKHR get_swap_chain() { return _swapChain; }
 			VkFormat get_format() { return _format; }
 			std::vector<rhi::TextureView>& get_texture_views() { return _textureViews; }
-
-			// Only for test
-			std::vector<VkImageView>& get_image_views() { return _imageViews; }
-			std::vector<VkImage> get_images() { return _images; }
+			uint32_t get_buffers_count() { return _textureViews.size(); }
+		
 		private:
-			VkSwapchainKHR _swapChain;
-			std::vector<rhi::TextureView> _textureViews; 
 			VulkanDevice* _device{ nullptr };
+			VkSwapchainKHR _swapChain;
+			std::vector<rhi::TextureView> _textureViews;
+			std::vector<std::unique_ptr<rhi::Texture>> _textures;
+			std::vector<std::unique_ptr<VulkanTextureView>> _vulkanTextureViews;
 
 			// Only for test
 			VkFormat _format;
-			std::vector<VkImageView> _imageViews;
-			std::vector<VkImage> _images;
 	};
 }

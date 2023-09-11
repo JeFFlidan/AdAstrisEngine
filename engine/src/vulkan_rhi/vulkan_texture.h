@@ -1,11 +1,14 @@
 ﻿#pragma once
 
 #include "api.h"
+#include "vulkan_descriptor.h"
 #include <vulkan/vulkan.h>
-#include "vk_mem_alloc.h"
+#include <vk_mem_alloc.h>
 
 namespace ad_astris::vulkan
 {
+	class VulkanDevice;
+	
 	class VK_RHI_API VulkanTexture
 	{
 		public:
@@ -27,5 +30,31 @@ namespace ad_astris::vulkan
 			uint32_t _mipLevels;
 		
 			void allocate_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);
+	};
+
+	class VulkanTextureView : public VulkanDescriptor
+	{
+		public:
+			VulkanTextureView() = default;
+			VulkanTextureView(VulkanDevice* device, VkImageViewCreateInfo& info);
+			void destroy(VulkanDevice* device);
+			
+			VkImageView get_handle() { return _imageView; }
+			void set_handle(VkImageView imageView) { _imageView = imageView; }
+		
+		private:
+			VkImageView _imageView{ VK_NULL_HANDLE };
+	};
+
+	class VulkanSampler : public VulkanDescriptor
+	{
+		public:
+			VulkanSampler(VulkanDevice* device, VkSamplerCreateInfo& info);
+			void destroy(VulkanDevice* device);
+
+			VkSampler get_handle() { return _sampler; }
+
+		private:
+			VkSampler _sampler{ VK_NULL_HANDLE };
 	};
 }

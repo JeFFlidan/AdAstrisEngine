@@ -22,6 +22,7 @@ namespace ad_astris::acore
 		public:
 			virtual ~IWindow() { }
 			virtual bool process_messages() = 0;
+			virtual void close() = 0;
 			virtual HWND get_hWnd() = 0;
 	};
 }

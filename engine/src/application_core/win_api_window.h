@@ -17,6 +17,7 @@ namespace ad_astris::acore::impl
 			WinApiWindow& operator=(const WinApiWindow&) = delete;
 
 			virtual bool process_messages() override;
+			virtual void close() override;
 			virtual HWND get_hWnd() override
 			{
 				return _hWnd;

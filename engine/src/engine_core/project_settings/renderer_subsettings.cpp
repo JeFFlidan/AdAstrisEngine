@@ -24,8 +24,8 @@ void RendererSubsettings::setup_default_values()
 	_graphicsAPI = GraphicsAPI::VULKAN;
 	_swapChainDesc.useTripleBuffering = false;
 	_swapChainDesc.useVSync = true;
-	_swapChainDesc.width = 1920;
-	_swapChainDesc.height = 1080;
+	_swapChainDesc.width = 1280;
+	_swapChainDesc.height = 720;
 }
 
 void RendererSubsettings::serialize_graphics_api(Section& section)

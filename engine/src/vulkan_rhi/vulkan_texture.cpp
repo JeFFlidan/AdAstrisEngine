@@ -1,4 +1,5 @@
 ﻿#include "vulkan_texture.h"
+#include "vulkan_device.h"
 #include "vulkan_common.h"
 #include "profiler/logger.h"
 
@@ -29,4 +30,28 @@ void vulkan::VulkanTexture::allocate_texture(VkImageCreateInfo info, VmaAllocato
 	imgAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);	// VMA allocate the image into VRAM in all situations
 
 	vmaCreateImage(*allocator, &info, &imgAllocInfo, &_image, &_allocation, nullptr);
+}
+
+vulkan::VulkanTextureView::VulkanTextureView(VulkanDevice* device, VkImageViewCreateInfo& info)
+{
+	VK_CHECK(vkCreateImageView(device->get_device(), &info, nullptr, &_imageView));
+}
+
+void vulkan::VulkanTextureView::destroy(VulkanDevice* device)
+{
+	if (_imageView != VK_NULL_HANDLE)
+		vkDestroyImageView(device->get_device(), _imageView, nullptr);
+	_imageView = VK_NULL_HANDLE;
+}
+
+vulkan::VulkanSampler::VulkanSampler(VulkanDevice* device, VkSamplerCreateInfo& info)
+{
+	VK_CHECK(vkCreateSampler(device->get_device(), &info, nullptr, &_sampler));
+}
+
+void vulkan::VulkanSampler::destroy(VulkanDevice* device)
+{
+	if (_sampler != VK_NULL_HANDLE)
+		vkDestroySampler(device->get_device(), _sampler, nullptr);
+	_sampler = VK_NULL_HANDLE;
 }
