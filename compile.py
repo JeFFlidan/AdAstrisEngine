@@ -11,11 +11,12 @@ class CompileManager:
         '-vulkan_rhi' : '-DBUILD_VULKAN_RHI',
         '-renderer' : '-DBUILD_RENDERER',
         '-render_core' : '-DBUILD_RENDER_CORE',
-        '-engine' : '-DBUILD_LOW_LEVEL_ENGINE'
+        '-engine' : '-DBUILD_LOW_LEVEL_ENGINE',
+        '-tests' : '-DBUILD_TESTS'
     }
     
     
-    fully_dependent_modules = { '-render_core', '-engine', '-renderer', '-app' }
+    fully_dependent_modules = { '-render_core', '-engine', '-renderer', '-app', '-tests' }
     partially_dependent_modules = { '-project_launcher', '-vulkan_rhi' }
     
     
@@ -29,7 +30,8 @@ class CompileManager:
         is_build_dir = os.path.isdir(self.build_path)
         if not is_build_dir:
             os.mkdir(self.build_path)
-            subprocess.check_call('cmake -G "MinGW Makefiles" -B ' + self.build_path, shell=True)
+           
+        subprocess.check_call('cmake -G "MinGW Makefiles" -B ' + self.build_path, shell=True)
             
         is_bin_dir = os.path.isdir(self.root_path + '\\bin')
         if not is_bin_dir:
