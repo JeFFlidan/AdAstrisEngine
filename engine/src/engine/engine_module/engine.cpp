@@ -22,7 +22,7 @@ void Engine::init(EngineInitializationContext& initializationContext)
 	_world->init();
 	LOG_INFO("Engine::init(): Initialized world")
 
-	_engineObjectsCreator = std::make_unique<ecore::EngineObjectsCreator>(_world->get_entity_manager(), _eventManager);
+	_engineObjectsCreator = std::make_unique<EngineObjectsCreator>(_world->get_entity_manager(), _eventManager);
 	LOG_INFO("Engine::init(): Initialized engine objects creator")
 
 	_systemManager = std::make_unique<ecs::SystemManager>();
@@ -55,7 +55,6 @@ void Engine::init(EngineInitializationContext& initializationContext)
 	rendererInitializationContext.projectSettings = _projectSettings.get();
 	rendererInitializationContext.resourceManager = _resourceManager.get();
 	rendererInitializationContext.taskComposer = _taskComposer.get();
-	rendererInitializationContext.engineObjectsCreator = _engineObjectsCreator.get();
 	auto rendererModule = _moduleManager->load_module<renderer::IRendererModule>("Renderer");
 	_renderer = rendererModule->get_renderer();
 	_renderer->init(rendererInitializationContext);

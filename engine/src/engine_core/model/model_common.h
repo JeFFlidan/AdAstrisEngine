@@ -2,8 +2,8 @@
 
 #include "engine_core/uuid.h"
 #include "rhi/resources.h"
-#include <glm/vec3.hpp>
-#include <glm/vec2.hpp>
+#include <glm/glm/vec3.hpp>
+#include <glm/glm/vec2.hpp>
 #include <vector>
 #include <string>
 

@@ -10,7 +10,7 @@
 #include "application_core/window.h"
 #include "profiler/logger.h"
 #include "engine/vulkan_rhi_module.h"
-#include <VkBootstrap.h>
+#include <vkbootstrap/VkBootstrap.h>
 #include <vector>
 #include <string>
 

@@ -2,8 +2,8 @@
 
 #include "application_core/window.h"
 
-#include <glad/glad.h>
-#include <glfw3.h>
+#include <glad/glad/glad.h>
+#include <glfw/glfw3.h>
 
 namespace ad_astris::acore
 {
@@ -13,6 +13,7 @@ namespace ad_astris::acore
 			GlfwWindow(WindowCreationContext& creationContext);
 			void cleanup();
 			virtual bool process_messages() override;
+			virtual void close() override { }
 			void swap_buffers();
 			void get_window_size(int* width, int* height);
 		

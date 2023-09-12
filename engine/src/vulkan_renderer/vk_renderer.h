@@ -15,8 +15,8 @@
 #include "vk_descriptors.h"
 #include "engine_core/camera.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <glm/glm/glm.hpp>
+#include <glm/glm/gtc/matrix_transform.hpp>
 
 #include <vector>
 #include <deque>
@@ -25,7 +25,6 @@
 #include <string>
 #include <vulkan/vulkan_core.h>
 #include "application_core/sdl_window.h"
-#include <ecs.h>
 
 //#define VK_RELEASE 1
 #define NODE_COUNT 6
@@ -38,24 +37,6 @@ struct MainCharacter
 
 namespace ad_astris
 {
-	struct FirstComponent
-	{
-		uint32_t data1;
-		float data2;
-	};
-
-	ECS_COMPONENT(FirstComponent, uint32_t, float)
-	ECS_TAG(MainCharacter)
-
-	struct SecondComponent
-	{
-		uint32_t data1;
-		uint32_t data2;
-		uint32_t data3;
-	};
-
-	ECS_COMPONENT(SecondComponent, uint32_t, uint32_t, uint32_t)
-	
 	struct DeletionQueue
 	{
 		std::deque<std::function<void()>> deletors;

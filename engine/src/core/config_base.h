@@ -3,7 +3,7 @@
 #include "file_system/file_system.h"
 #include "profiler/logger.h"
 
-#include <inicpp.h>
+#include <inicpp/inicpp.h>
 
 namespace ad_astris
 {

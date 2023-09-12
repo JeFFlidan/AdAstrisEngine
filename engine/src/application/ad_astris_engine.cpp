@@ -33,6 +33,15 @@ bool AdAstrisEngine::init()
 	_moduleManager->unload_module("ProjectLauncher");
 	LOG_INFO("AdAstrisEngine::init(): Unload ProjectLauncher module")
 
+	_moduleManager->load_module("VulkanRHI");
+	LOG_INFO("AFTER VULKAN RHI")
+	_moduleManager->load_module("RenderCore");
+	LOG_INFO("AFTER RENDER CORE")
+	_moduleManager->load_module("Renderer");
+	LOG_INFO("AFTER RENDERER")
+	_moduleManager->load_module("Engine");
+	LOG_INFO("AFTER ENGINE")
+
 	if (projectInfo.projectPath.empty())
 	{
 		LOG_INFO("AdAstrisEngine::init(): No project was chosen. Engine execution finished")
@@ -75,8 +84,8 @@ void AdAstrisEngine::execute()
 		running = _mainWindow->process_messages();
 		_engine->execute();
 		_eventManager->dispatch_events();
-		Sleep(1);
 	}
+	_mainWindow->close();
 }
 
 void AdAstrisEngine::save_and_cleanup()

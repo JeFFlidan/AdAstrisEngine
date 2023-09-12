@@ -6,7 +6,7 @@
 #include "profiler/logger.h"
 #include "utils.h"
 
-#include <lz4.h>
+#include <lz4/lz4.h>
 
 using namespace ad_astris;
 using namespace resource;
@@ -221,7 +221,7 @@ void ResourceManager::destroy_resource(UUID uuid)
 /** @warning MEMORY LEAK, uint8_t* data, should be tested if everything works correct after delete[]
  * 
  */
-void ResourceManager::write_to_disk(io::IFile* file, io::URI& originalPath)
+void ResourceManager::write_to_disk(io::IFile* file)
 {
 	io::URI path = file->get_file_path();		// temporary solution
 
@@ -345,31 +345,51 @@ void ResourceManager::load_shader(UUID& shaderUUID, ecore::material::ShaderHandl
 }
 
 template <typename T>
-void ResourceManager::send_resource_event(T* resourceObject)
+void ResourceManager::send_resource_loaded_event(T* resourceObject)
 {
 	
 }
 
 template<>
-void ResourceManager::send_resource_event(ecore::StaticModel* resourceObject)
+void ResourceManager::send_resource_loaded_event(ecore::StaticModel* resourceObject)
 {
 	LOG_INFO("Sending static model event")
 	StaticModelLoadedEvent event(resourceObject);
-	_eventManager->trigger_event(event);
+	_eventManager->enqueue_event(event);
 }
 
 template<>
-void ResourceManager::send_resource_event(ecore::Texture2D* resourceObject)
+void ResourceManager::send_resource_loaded_event(ecore::Texture2D* resourceObject)
 {
 	LOG_INFO("Sending texture2D event")
 	Texture2DLoadedEvent event(resourceObject);
-	_eventManager->trigger_event(event);
+	_eventManager->enqueue_event(event);
 }
 
 template<>
-void ResourceManager::send_resource_event(ecore::OpaquePBRMaterial* materialObject)
+void ResourceManager::send_resource_loaded_event(ecore::OpaquePBRMaterial* materialObject)
 {
 	
+}
+
+template <typename T>
+void ResourceManager::send_resource_created_event(T* resourceObject)
+{
+	
+}
+
+template<>
+void ResourceManager::send_resource_created_event(ecore::Texture2D* resourceObject)
+{
+	Texture2DCreatedEvent event(resourceObject);
+	_eventManager->enqueue_event(event);
+}
+
+template<>
+void ResourceManager::send_resource_created_event(ecore::StaticModel* resourceObject)
+{
+	StaticModelCreatedEvent event(resourceObject);
+	_eventManager->enqueue_event(event);
 }
 
 void BuiltinResourcesContext::clear()

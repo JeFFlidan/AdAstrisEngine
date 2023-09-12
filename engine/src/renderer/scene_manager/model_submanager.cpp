@@ -1,5 +1,6 @@
 ﻿#include "model_submanager.h"
 #include "engine_core/model/default_models.h"
+#include "engine_core/engine_object_events.h"
 
 using namespace ad_astris::renderer::impl;
 
@@ -19,15 +20,12 @@ void ModelSubmanager::update(rhi::CommandBuffer& cmdBuffer)
 	allocate_gpu_buffers(cmdBuffer);
 }
 
-void ModelSubmanager::reset_temp_arrays()
+void ModelSubmanager::cleanup_staging_buffers()
 {
 	_loadedModelsVertexArraySize_F32PNTC = 0;
 	_loadedModelsIndexArraySize_F32PNTC = 0;
 	_loadedStaticModelHandles.clear();
-}
-
-void ModelSubmanager::cleanup_staging_buffers()
-{
+	
 	for (auto& buffer : _stagingBuffersToDelete)
 		_rhi->destroy_buffer(buffer);
 	_stagingBuffersToDelete.clear();
@@ -40,12 +38,13 @@ bool ModelSubmanager::need_allocation()
 
 void ModelSubmanager::subscribe_to_events()
 {
-	events::EventDelegate<resource::StaticModelLoadedEvent> staticModelLoadedDelegate = [&](resource::StaticModelLoadedEvent& event)
+	events::EventDelegate<ecore::StaticModelCreatedEvent> staticModelLoadedDelegate = [&](ecore::StaticModelCreatedEvent& event)
 	{
-		_loadedStaticModelHandles.push_back(event.get_model_handle());
+		UUID modelUUID = event.get_component_context()->entity.get_uuid();
+		_loadedStaticModelHandles.push_back(_resourceManager->get_resource<ecore::StaticModel>(modelUUID));
 
-		ecore::StaticModelData modelData = event.get_model_handle().get_resource()->get_model_data();
-		switch (event.get_model_handle().get_resource()->get_vertex_format())
+		ecore::StaticModelData modelData = _loadedStaticModelHandles.back().get_resource()->get_model_data();
+		switch (_loadedStaticModelHandles.back().get_resource()->get_vertex_format())
 		{
 			case ecore::model::VertexFormat::F32_PC:
 			{

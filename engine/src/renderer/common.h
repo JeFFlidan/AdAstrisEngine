@@ -1,9 +1,8 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-#include <glm/mat4x4.hpp>
-#include <glm/vec4.hpp>
-#include <glm/vec2.hpp>
+#include <glm/glm/mat4x4.hpp>
+#include <glm/glm/vec4.hpp>
+#include <glm/glm/vec2.hpp>
 
 // GPU means that data is for shaders, CPU means that data shouldn't be sent to the GPU
 namespace ad_astris::renderer::impl
@@ -57,12 +56,12 @@ namespace ad_astris::renderer::impl
 		float aabbmax_z;	
 	};
 
-	struct GPUIndirectObject
-	{
-		VkDrawIndexedIndirectCommand command;
-		uint32_t objectID;
-		uint32_t batchID;
-	};
+	// struct GPUIndirectObject
+	// {
+	// 	VkDrawIndexedIndirectCommand command;
+	// 	uint32_t objectID;
+	// 	uint32_t batchID;
+	// };
 
 	struct GPUInstance
 	{

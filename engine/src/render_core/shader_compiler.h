@@ -5,7 +5,7 @@
 #include "engine/render_core_module.h"
 #include "file_system/file_system.h"
 #include "engine_core/material/shader_common.h"
-#include <shaderc/shaderc.h>
+#include <shaderc/shaderc/shaderc.h>
 
 namespace ad_astris::rcore::impl
 {

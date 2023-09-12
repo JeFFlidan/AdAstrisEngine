@@ -3,8 +3,8 @@
 #include "ui_core/utils.h"
 #include "ui_core/font_manager.h"
 
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
 
 using namespace ad_astris;
 using namespace devtools;

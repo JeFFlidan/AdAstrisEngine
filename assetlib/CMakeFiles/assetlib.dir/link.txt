@@ -1,2 +1,0 @@
-C:\msys64\mingw64\bin\ar.exe qc libassetlib.a CMakeFiles/assetlib.dir/mesh_asset.cpp.obj CMakeFiles/assetlib.dir/material_asset.cpp.obj CMakeFiles/assetlib.dir/texture_asset.cpp.obj CMakeFiles/assetlib.dir/prefab_asset.cpp.obj CMakeFiles/assetlib.dir/asset_loader.cpp.obj
-C:\msys64\mingw64\bin\ranlib.exe libassetlib.a

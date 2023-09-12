@@ -6,7 +6,7 @@
 #include <cassert>
 #include <iostream>
 
-#include <spirv_reflect.h>
+#include <spirv_reflect/spirv_reflect.h>
 #include <vulkan/vulkan_core.h>
 
 #include "fmt/color.h"

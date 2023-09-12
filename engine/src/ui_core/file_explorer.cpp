@@ -17,8 +17,6 @@ FileExplorer::FileExplorer(FileExplorerMode mode, const std::vector<FileFilter>&
 	}
 
 	_filterList.erase(_filterList.find_last_of(';'));
-
-	LOG_INFO("Filter: {}", _filterList);
 }
 
 bool FileExplorer::open_file_explorer(std::vector<std::string>& paths, const std::string& defaultPath)

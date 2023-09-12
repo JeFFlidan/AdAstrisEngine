@@ -2,8 +2,8 @@
 
 #include "vk_types.h"
 #include <vector>
-#include <glm/vec3.hpp>
-#include <glm/vec2.hpp>
+#include <glm/glm/vec3.hpp>
+#include <glm/glm/vec2.hpp>
 #include <mesh_asset.h>
 
 namespace ad_astris

@@ -1,18 +1,17 @@
 ﻿#include "vulkan_rhi.h"
+#include "vulkan_queue.h"
 #include "vulkan_common.h"
 
 #include "profiler/logger.h"
 #include "file_system/utils.h"
-#include <VkBootstrap.h>
+#include <vkbootstrap/VkBootstrap.h>
 
 #ifndef VMA_IMPLEMENTATION
 	#define VMA_IMPLEMENTATION
 #endif
-#include <vk_mem_alloc.h>
+#include <vma/vk_mem_alloc.h>
 
 #include <algorithm>
-
-#include "vulkan_queue.h"
 
 using namespace ad_astris;
 

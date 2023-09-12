@@ -3,8 +3,8 @@
 #ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 	#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #endif
-#include <imgui_impl_sdl2.h>
-#include <imgui_impl_vulkan.h>
+#include <imgui/imgui_impl_sdl2.h>
+#include <imgui/imgui_impl_vulkan.h>
 
 #include "proj_settings_window.h"
 #include "properties_window.h"
@@ -34,5 +34,4 @@ namespace ad_astris
 		
 			void setup_dark_theme();
 	};
-
 }

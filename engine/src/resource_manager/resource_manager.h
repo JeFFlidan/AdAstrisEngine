@@ -11,7 +11,7 @@
 #include "engine_core/level/level.h"
 
 #include <string>
-#include <json.hpp>
+#include <json/json.hpp>
 
 namespace ad_astris::ecore
 {
@@ -49,30 +49,31 @@ namespace ad_astris::resource
 				return _fileSystem;
 			}
 
-			/** Convert file from DCC tools to a custom '.aares' file. \n
-			 * Supported file formats for 3D-models: gltf, obj
-			 * Supported file formats for textures: tga, png, jpg, tiff
-			 * @param path should be a valid path. Otherwise, nullptr will be returned
+			/** Converts a file from DCC tools to a custom '.aares' file. \n
+			 * Supported 3D-model file formats: gltf, obj
+			 * Supported texture file formats: tga, png, jpg, tiff
+			 * @param originalResourcePath must be a valid path to resource with supported formats. Otherwise, nullptr will be returned
+			 * @param aaresPath must be a valid path to the folder where you want to save the new aares file
 			 */
 			template <typename T>
-			ResourceAccessor<T> convert_to_aares(io::URI& path)
+			ResourceAccessor<T> convert_to_aares(io::URI& originalResourcePath, io::URI& aaresPath)
 			{
-				if (!io::Utils::exists(_fileSystem, path))
+				if (!io::Utils::exists(_fileSystem, originalResourcePath))
 				{
-					LOG_ERROR("ResourceManager::convert_to_aares(): Invalid path {}", path.c_str())
+					LOG_ERROR("ResourceManager::convert_to_aares(): No file with path {}", originalResourcePath.c_str())
 					return nullptr;
 				}
 
-				if (io::Utils::is_relative(path))
+				if (io::Utils::is_relative(originalResourcePath))
 				{
-					path = io::Utils::get_absolute_path_to_file(_fileSystem, path);
+					originalResourcePath = io::Utils::get_absolute_path_to_file(_fileSystem, originalResourcePath);
 				}
 
 				ecore::Object* existedObject = nullptr;
 				ecore::ObjectName* existedObjectName = nullptr;
-				if (_resourceDataTable.check_name_in_table(path))
+				if (_resourceDataTable.check_name_in_table(originalResourcePath))
 				{
-					UUID uuid = _resourceDataTable.get_uuid_by_name(path);
+					UUID uuid = _resourceDataTable.get_uuid_by_name(originalResourcePath);
 
 					// Have to think is it a good idea to delete existing object and file before reloading
 					existedObject = _resourceDataTable.get_resource_object(uuid);
@@ -82,22 +83,34 @@ namespace ad_astris::resource
 				io::ConversionContext<T> conversionContext;
 				if (existedObject)
 				{
-					_resourceConverter.convert_to_aares_file(path, &conversionContext, existedObject);
+					_resourceConverter.convert_to_aares_file(originalResourcePath, &conversionContext, existedObject);
 				}
 				else
 				{
-					_resourceConverter.convert_to_aares_file(path, &conversionContext);
+					_resourceConverter.convert_to_aares_file(originalResourcePath, &conversionContext);
 				}
 				
-				io::URI relPath = std::string("content\\" + io::Utils::get_file_name(path) + ".aares").c_str();
-				io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), relPath);
-				conversionContext.filePath = absolutePath.c_str();
+				if (io::Utils::is_relative(aaresPath))
+				{
+					aaresPath = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), aaresPath);
+				}
+
+				ecore::ObjectName* newObjectName = nullptr;
+				if (existedObjectName)
+				{
+					conversionContext.filePath = (aaresPath + "/" + existedObjectName->get_full_name().c_str() + ".aares").c_str();
+				}
+				else
+				{
+					newObjectName = _resourcePool.allocate<ecore::ObjectName>(io::Utils::get_file_name(originalResourcePath).c_str());
+					conversionContext.filePath = (aaresPath + "/" + newObjectName->get_full_name().c_str() + ".aares").c_str();
+				}
 
 				/** TODO have to fix resource name in deserialize. If object is existed, name should be taken
 				 from this existed object and passed to deserialize method*/
 				ResourceData resourceData{};
-				resourceData.metadata.path = absolutePath;
-				resourceData.metadata.objectName = existedObjectName ? existedObjectName : _resourcePool.allocate<ecore::ObjectName>(io::Utils::get_file_name(absolutePath).c_str());
+				resourceData.metadata.path = aaresPath;
+				resourceData.metadata.objectName = existedObjectName ? existedObjectName : newObjectName;
 				
 				io::IFile* file = _resourcePool.allocate<io::ResourceFile>(conversionContext);
 				T* typedObject = _resourcePool.allocate<T>();
@@ -107,8 +120,8 @@ namespace ad_astris::resource
 				resourceData.object = typedObject;
 				resourceData.metadata.type = Utils::get_enum_resource_type(typedObject->get_type());
 				
-				send_resource_event(typedObject);			// I have to make it in another thread.
-				write_to_disk(resourceData.file, path);
+				send_resource_created_event(typedObject);			// I have to make it in another thread.
+				write_to_disk(resourceData.file);
 				
 				_resourceDataTable.add_resource(&resourceData);
 				
@@ -174,7 +187,7 @@ namespace ad_astris::resource
 
 			BuiltinResourcesContext _builtinResourcesContext;
 
-			void write_to_disk(io::IFile* file, io::URI& originalPath);
+			void write_to_disk(io::IFile* file);
 			io::IFile* read_from_disk(io::URI& path, bool isShader = false);
 		
 			template<typename T>
@@ -197,13 +210,16 @@ namespace ad_astris::resource
 				resource->file = file;
 				resource->object = typedObject;
 		
-				send_resource_event(typedObject);
+				send_resource_loaded_event(typedObject);
 				
 				return ResourceAccessor<T>(resource->object);
 			}
 
 			template<typename T>
-			void send_resource_event(T* resourceObject);
+			void send_resource_loaded_event(T* resourceObject);
+
+			template<typename T>
+			void send_resource_created_event(T* resourceObject);
 		
 			void add_shader_to_uuid_context(io::URI& shaderPath, ecore::material::ShaderUUIDContext& shaderUUIDContext);
 			void load_shader(UUID& shaderUUID, ecore::material::ShaderHandleContext& shaderContext);

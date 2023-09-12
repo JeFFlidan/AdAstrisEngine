@@ -24,30 +24,22 @@ SceneManager::~SceneManager()
 
 void SceneManager::setup_global_buffers()
 {
-	LOG_INFO("SETUP GLOBAL BUFFERS: {}", _submanagersToUpdate.size())
 	if (_submanagersToUpdate.empty())
 		return;
-	
-	_rhi->begin_command_buffer(&_transferCmdBuffer, rhi::QueueType::TRANSFER);
-	_wasCommandBufferBegun = true;
+
+	rhi::CommandBuffer transferCmdBuffer;
+	_rhi->begin_command_buffer(&transferCmdBuffer, rhi::QueueType::TRANSFER);
 
 	for (auto& submanagerName : _submanagersToUpdate)
-		_submanagerByItsName[submanagerName]->update(_transferCmdBuffer);
-}
-
-void SceneManager::execute_transfer_operations()
-{
-	if (!_wasCommandBufferBegun)
-		return;
+		_submanagerByItsName[submanagerName]->update(transferCmdBuffer);
 	
 	_rhi->submit(rhi::QueueType::TRANSFER);
+	_rhi->wait_fences();
 	for (auto& submanagerName : _submanagersToUpdate)
 	{
-		_submanagerByItsName[submanagerName]->reset_temp_arrays();
 		_submanagerByItsName[submanagerName]->cleanup_staging_buffers();
 	}
 	_submanagersToUpdate.clear();
-	_wasCommandBufferBegun = false;
 }
 
 void SceneManager::subscribe_to_events()

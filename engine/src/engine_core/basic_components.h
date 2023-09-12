@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ecs.h"
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include "ecs/ecs.h"
+#include <glm/glm/vec2.hpp>
+#include <glm/glm/vec3.hpp>
+#include <glm/glm/vec4.hpp>
 
 namespace ad_astris::ecore
 {

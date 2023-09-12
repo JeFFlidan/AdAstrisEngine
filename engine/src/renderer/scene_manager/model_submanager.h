@@ -13,7 +13,6 @@ namespace ad_astris::renderer::impl
 			ModelSubmanager(SceneSubmanagerInitializationContext& initContext);
 
 			virtual void update(rhi::CommandBuffer& cmdBuffer) override;
-			virtual void reset_temp_arrays() override;
 			virtual void cleanup_staging_buffers() override;
 			virtual bool need_allocation() override;
 

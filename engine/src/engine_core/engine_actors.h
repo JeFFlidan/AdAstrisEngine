@@ -1,6 +1,6 @@
 #pragma once
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp>
+#include <glm/glm/vec4.hpp>
+#include <glm/glm/mat4x4.hpp>
 
 namespace ad_astris::actors
 {	

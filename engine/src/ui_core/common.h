@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "internal/base_widget.h"
-#include <imgui.h>
+#include <imgui/imgui.h>
 #include <cstdint>
 #include <functional>
 

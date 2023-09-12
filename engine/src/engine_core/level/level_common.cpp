@@ -1,7 +1,7 @@
 #include "level.h"
 #include "level_common.h"
 
-#include <json.hpp>
+#include <json/json.hpp>
 
 using namespace ad_astris::ecore::level;
 

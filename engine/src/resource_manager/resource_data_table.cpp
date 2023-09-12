@@ -2,7 +2,7 @@
 #include "file_system/utils.h"
 #include "utils.h"
 
-#include <lz4.h>
+#include <lz4/lz4.h>
 
 #include <execution>
 #include <future>

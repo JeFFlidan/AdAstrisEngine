@@ -2,7 +2,7 @@
 
 #include "base_widget.h"
 #include "ui_core/common.h"
-#include <imgui.h>
+#include <imgui/imgui.h>
 
 namespace ad_astris::uicore::internal
 {

@@ -7,7 +7,7 @@
 #include "events/event_manager.h"
 #include "multithreading/task_composer.h"
 #include "core/reflection.h"
-#include "ecs.h"
+#include "ecs/ecs.h"
 
 namespace ad_astris::renderer::impl
 {
@@ -18,7 +18,6 @@ namespace ad_astris::renderer::impl
 			~SceneManager();
 
 			void setup_global_buffers();
-			void execute_transfer_operations();
 		
 			rhi::Buffer* get_vertex_buffer_f32pntc()
 			{
@@ -57,16 +56,6 @@ namespace ad_astris::renderer::impl
 
 			std::unordered_map<std::string, std::unique_ptr<SceneSubmanagerBase>> _submanagerByItsName;
 			std::unordered_set<std::string> _submanagersToUpdate;
-		
-			// AllocatedBuffer _pointLightStorageBuffer;
-			// AllocatedBuffer _directionalLightStorageBuffer;
-			// AllocatedBuffer _spotLightStorageBuffer;
-			rhi::CommandBuffer _transferCmdBuffer;
-			bool _wasCommandBufferBegun{ false };
-		
-			// ObjectCPUCollection<PointLight> _pointLightCollection;
-			// ObjectCPUCollection<DirectionalLight> _directionalLightCollection;
-			// ObjectCPUCollection<SpotLight> _spotLightCollection;
 
 			void subscribe_to_events();
 

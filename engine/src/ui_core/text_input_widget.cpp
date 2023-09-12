@@ -1,7 +1,7 @@
 ﻿#include "text_input_widget.h"
 
-#include <imgui.h>
-#include <imgui_stdlib.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_stdlib.h>
 
 using namespace ad_astris::uicore;
 

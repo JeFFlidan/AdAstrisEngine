@@ -1,7 +1,7 @@
 #include "vulkan_shader.h"
 #include "profiler/logger.h"
 
-#include <spirv_reflect.h>
+#include <spirv_reflect/spirv_reflect.h>
 
 #include <algorithm>
 #include <unordered_map>

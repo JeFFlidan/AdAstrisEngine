@@ -5,7 +5,7 @@
 
 #include <unordered_set>
 #include <memory>
-#include <ecs.h>
+#include "ecs/ecs.h"
 
 namespace ad_astris::ecore
 {

@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
-#include <glm/mat4x4.hpp>
+#include <glm/glm/mat4x4.hpp>
 #include "vk_mem_alloc.h"
 
 #include <vector>

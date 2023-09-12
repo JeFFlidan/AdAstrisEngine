@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "core/flags_operations.h"
-#include <nfd.h>
+#include <nfd/nfd.h>
 #include <vector>
 #include <string>
 

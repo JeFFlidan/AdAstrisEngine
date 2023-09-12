@@ -13,7 +13,6 @@ void Renderer::init(RendererInitializationContext& initializationContext)
 	_rendererSubsettings = initializationContext.projectSettings->get_subsettings<ecore::RendererSubsettings>();
 	_taskComposer = initializationContext.taskComposer;
 	_eventManager = initializationContext.eventManager;
-	_engineObjectsCreator = initializationContext.engineObjectsCreator;
 	ModuleManager* moduleManager = initializationContext.moduleManager;
 
 	switch (_rendererSubsettings->get_graphics_api())
@@ -50,8 +49,7 @@ void Renderer::init(RendererInitializationContext& initializationContext)
 	swapChainInfo.sync = _rendererSubsettings->is_vsync_used();
 	bool useTripleBuffering = _rendererSubsettings->is_triple_buffering_used();
 	swapChainInfo.buffersCount = useTripleBuffering ? 3 : 2;
-	rhi::SwapChain swapChain;
-	_rhi->create_swap_chain(&swapChain, &swapChainInfo);
+	_rhi->create_swap_chain(&_swapChain, &swapChainInfo);
 	LOG_INFO("Renderer::init(): Created swap chain")
 	
 	MaterialManagerInitializationContext materialManagerInitContext;
@@ -67,8 +65,12 @@ void Renderer::init(RendererInitializationContext& initializationContext)
 	sceneManagerInitContext.rhi = _rhi;
 	sceneManagerInitContext.eventManager = _eventManager;
 	sceneManagerInitContext.taskComposer = _taskComposer;
+	sceneManagerInitContext.resourceManager = _resourceManager;
 	_sceneManager = std::make_unique<SceneManager>(sceneManagerInitContext);
 	LOG_INFO("Renderer::init(): Initialized scene manager")
+
+	_triangleTest = std::make_unique<TriangleTest>(_rhi, _resourceManager->get_file_system());
+	LOG_INFO("Renderer::init(): Initialized triangle test")
 }
 
 void Renderer::cleanup()
@@ -82,7 +84,8 @@ void Renderer::bake()
 	auto renderPassContext = std::make_unique<RenderPassContext>(_renderGraph);
 	_materialManager->create_material_templates(renderPassContext.get());
 	LOG_INFO("Renderer::bake(): Created renderer material templates")
-	LOG_INFO("AFTER EXECUTING TRANSFER OPERATIONS")
+	//test_rhi();
+	LOG_INFO("AFTER CREATING SAMPLER")
 }
 
 void Renderer::draw()
@@ -91,30 +94,25 @@ void Renderer::draw()
 	uint32_t acquiredImageIndex;
 	_rhi->acquire_next_image(acquiredImageIndex, currentFrameIndex);
 	_sceneManager->setup_global_buffers();
-	_sceneManager->execute_transfer_operations();
-	test_light_submanager();
+	_triangleTest->draw();
+	_rhi->submit(rhi::QueueType::GRAPHICS);
+	_rhi->present();
 	++_frameNumber;
 }
 
 uint32_t Renderer::get_current_frame_index()
 {
-	uint32_t bufferCount = _rendererSubsettings->is_triple_buffering_used() ? 3 : 2;
-	return _frameNumber % bufferCount;
+	return _frameNumber % _swapChain.info.buffersCount;
 }
 
-void Renderer::test_light_submanager()
+void Renderer::test_rhi()
 {
-	if (_wasLightSubmanagerTested)
-		return;
-	ecore::EditorObjectCreationContext creationContext;
-	creationContext.location = glm::vec3(1.0f);
-	for (uint32_t i = 0; i != 70; ++i)
-	{
-		_engineObjectsCreator->create_point_light(creationContext);
-		_engineObjectsCreator->create_spot_light(creationContext);
-	}
-
-	for (uint32_t i = 0; i != 30; ++i)
-		_engineObjectsCreator->create_directional_light(creationContext);
-	_wasLightSubmanagerTested = true;
+	rhi::SamplerInfo samplerInfo;
+	samplerInfo.filter = rhi::Filter::MIN_MAG_MIP_LINEAR;
+	samplerInfo.addressMode = rhi::AddressMode::REPEAT;
+	samplerInfo.borderColor = rhi::BorderColor::UNDEFINED;
+	rhi::Sampler sampler;
+	LOG_INFO("BEFORE CREATING SAMPLER")
+	_rhi->create_sampler(&sampler, &samplerInfo);
+	LOG_INFO("AFTER CREATING SAMPLER. DESCRIPTOR INDEX: {}", _rhi->get_descriptor_index(&sampler));
 }

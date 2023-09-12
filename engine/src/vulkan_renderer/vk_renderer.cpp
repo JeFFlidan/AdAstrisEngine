@@ -38,37 +38,29 @@
 #include "vk_types.h"
 #include "vk_initializers.h"
 
-#include <VkBootstrap.h>
+#include <vkbootstrap/VkBootstrap.h>
 #include "vk_types.h"
-#include <glm/gtx/transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <glm/glm/gtx/transform.hpp>
+#include <glm/glm/gtc/type_ptr.hpp>
 
-#include <imgui.h>
+#include <imgui/imgui.h>
 
-#include <glm/vec3.hpp>
-#include <glm/vec2.hpp>
+#include <glm/glm/vec3.hpp>
+#include <glm/glm/vec2.hpp>
 #include <vulkan/vulkan_core.h>
-#include <spirv_reflect.h>
+#include <spirv_reflect/spirv_reflect.h>
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
 
 #include <iostream>
 #include <cmath>
-#include <algorithm>
-#include <fstream>
 #include <chrono>
 #include <filesystem>
 
-#include <ecs.h>
 #include <core/reflection.h>
-#include <engine_core/world.h>
-#include "core/config_base.h"
 
 #include "engine/vulkan_rhi_module.h"
-#include "render_core/render_graph_common.h"
-#include "engine_core/material/general_material_template.h"
-#include "engine_core/material/shader.h"
 
 #define VK_CHECK(x)													 \
 	do																 \
@@ -285,7 +277,7 @@ namespace ad_astris
 		multiviewInfo.viewCount = 6;
 
 		rhi::RenderPassInfo passInfo;
-		passInfo.renderTargets.push_back(target1);
+		passInfo.renderBuffers.push_back(target1);
 		passInfo.pipelineType = rhi::PipelineType::GRAPHICS;
 		passInfo.multiviewInfo = multiviewInfo;
 

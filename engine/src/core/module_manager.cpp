@@ -44,7 +44,7 @@ IModule* ModuleManager::load_module(const std::string& moduleName)
 	HMODULE hmodule = LoadLibraryA(modulePath.c_str());
 	if (hmodule == NULL)
 	{
-		LOG_FATAL("ModuleManager::load_module(): Failed to load module {}", moduleName)
+		LOG_FATAL("ModuleManager::load_module(): Failed to load module {}. Error: {}", moduleName, GetLastError())
 	}
 
 	moduleInfo.moduleHandler = hmodule;

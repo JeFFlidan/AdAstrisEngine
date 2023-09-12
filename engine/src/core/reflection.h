@@ -1,8 +1,8 @@
 #pragma once
 
 #include "macros_utils.h"
-#include <refl.hpp>
-#include <json.hpp>
+#include <reflection/refl.hpp>
+#include <json/json.hpp>
 #include <cstring>
 #include <string>
 #include <iostream>

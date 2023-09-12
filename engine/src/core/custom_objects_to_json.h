@@ -2,10 +2,10 @@
 
 #include "engine_core/uuid.h"
 
-#include <json.hpp>
-#include <glm/glm.hpp>
+#include <json/json.hpp>
+#include <glm/glm/glm.hpp>
 
-#include "glm/detail/type_quat.hpp"
+#include <glm/glm/detail/type_quat.hpp>
 
 namespace glm
 {

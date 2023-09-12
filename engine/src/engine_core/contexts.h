@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "uuid.h"
-#include <glm/vec3.hpp>
+#include <glm/glm/vec3.hpp>
 
 namespace ad_astris::ecore
 {

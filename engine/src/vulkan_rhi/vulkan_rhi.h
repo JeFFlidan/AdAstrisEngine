@@ -11,10 +11,10 @@
 #include "vulkan_shader.h"
 #include "vulkan_swap_chain.h"
 #include "vulkan_descriptor_manager.h"
-#include <vulkan/vulkan.h>
 
-#include "vk_mem_alloc.h"
-#include <VkBootstrap.h>
+#include <vulkan/vulkan.h>
+#include <vma/vk_mem_alloc.h>
+#include <vkbootstrap/VkBootstrap.h>
 
 #include <vector>
 #include <memory>

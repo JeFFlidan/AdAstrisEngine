@@ -2,7 +2,7 @@
 
 #include "rhi/resources.h"
 #include "events/event.h"
-#include <ecs.h>
+#include "ecs/ecs.h"
 #include <mutex>
 #include <vector>
 #include <unordered_map>

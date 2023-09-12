@@ -1,6 +1,7 @@
 #pragma once
 
 #include "api.h"
+#include "triangle_test.h"
 #include "material_manager.h"
 #include "scene_manager/scene_manager.h"
 #include "engine/renderer_module.h"
@@ -36,13 +37,15 @@ namespace ad_astris::renderer::impl
 			resource::ResourceManager* _resourceManager{ nullptr };
 			events::EventManager* _eventManager{ nullptr };
 			tasks::TaskComposer* _taskComposer{ nullptr };
-			ecore::EngineObjectsCreator* _engineObjectsCreator{ nullptr };
+
+			std::unique_ptr<TriangleTest> _triangleTest{ nullptr };
+
+			rhi::SwapChain _swapChain;
 
 			uint32_t _frameNumber{ 0 };
 
 			uint32_t get_current_frame_index();
-
-			void test_light_submanager();
-			bool _wasLightSubmanagerTested{ false };
+		
+			void test_rhi();
 	};
 }

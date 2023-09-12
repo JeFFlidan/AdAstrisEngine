@@ -5,7 +5,7 @@
 #include "resource_manager/resource_visitor.h"
 #include "profiler/logger.h"
 
-#include <lz4.h>
+#include <lz4/lz4.h>
 
 #include <vector>
 

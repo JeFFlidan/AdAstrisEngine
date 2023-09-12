@@ -1,6 +1,6 @@
 #include "model_common.h"
 #include "engine_core/object.h"
-#include <json.hpp>
+#include <json/json.hpp>
 
 using namespace ad_astris::ecore;
 

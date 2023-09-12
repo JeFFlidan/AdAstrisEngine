@@ -10,7 +10,7 @@
 
 #include <iostream>
 #include <vulkan/vulkan.h>
-#include <vk_mem_alloc.h>
+#include <vma/vk_mem_alloc.h>
 
 #define VK_CHECK(x)												 \
 	do																 \

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "api.h"
+#include "engine_objects_creator.h"
 #include "engine/engine_module.h"
 #include "application_core/window.h"
 #include "engine_core/project_settings/project_settings.h"
@@ -10,7 +11,7 @@
 #include "resource_manager/resource_manager.h"
 #include "multithreading/task_composer.h"
 #include "file_system/file_system.h"
-#include "ecs.h"
+#include "ecs/ecs.h"
 #include <memory>
 
 namespace ad_astris::engine::impl
@@ -33,7 +34,7 @@ namespace ad_astris::engine::impl
 			renderer::IRenderer* _renderer{ nullptr };
 			std::unique_ptr<ecore::World> _world{ nullptr };
 			std::unique_ptr<ecore::ProjectSettings> _projectSettings{ nullptr };
-			std::unique_ptr<ecore::EngineObjectsCreator> _engineObjectsCreator{ nullptr };
+			std::unique_ptr<EngineObjectsCreator> _engineObjectsCreator{ nullptr };
 		
 			void create_new_blank_project();
 			void load_existing_project();

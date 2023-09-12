@@ -5,8 +5,8 @@
 #include "material_system/material_system.h"
 #include "engine_core/engine_actors.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
+#include <glm/glm/glm.hpp>
+#include <glm/glm/gtx/transform.hpp>
 
 #include <array>
 #include <stdint.h>

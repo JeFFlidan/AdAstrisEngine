@@ -3,16 +3,16 @@
 #include "profiler/logger.h"
 #include "utils.h"
 
-#include <tiny_obj_loader.h>
+#include <tinyobjloader/tiny_obj_loader.h>
 #ifndef STB_IMAGE_IMPLEMENTATION
 	#define STB_IMAGE_IMPLEMENTATION
 #endif
-#include <stb_image.h>
+#include <stb_image/stb_image.h>
 #define CGLTF_IMPLEMENTATION
-#include <cgltf.h>
+#include <cgltf/cgltf.h>
 #include <complex>
-#include <json.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <json/json.hpp>
+#include <glm/glm/gtc/type_ptr.hpp>
 
 #include <filesystem>
 

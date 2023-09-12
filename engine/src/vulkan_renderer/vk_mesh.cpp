@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include <tiny_obj_loader.h>
+#include <tinyobjloader/tiny_obj_loader.h>
 
 #include "vk_mesh.h"
 

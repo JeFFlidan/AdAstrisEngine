@@ -1,11 +1,11 @@
 #pragma once
 
 #include <string_view>
-#include <fmt/os.h>
-#include <fmt/core.h>
-#include <fmt/color.h>
+#include <fmt_lib/fmt/os.h>
+#include <fmt_lib/fmt/core.h>
+#include <fmt_lib/fmt/color.h>
 #include <chrono>
-#include <fmt/chrono.h>
+#include <fmt_lib/fmt/chrono.h>
 
 #define LOG_FATAL_ENABLED 1
 #define LOG_ERROR_ENABLED 1

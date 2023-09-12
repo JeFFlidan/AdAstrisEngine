@@ -8,34 +8,32 @@
 
 namespace ad_astris::resource
 {
-	class StaticModelLoadedEvent : public events::IEvent
+	class StaticModelCreatedEvent : public events::IEvent, public impl::StaticModelEvent
 	{
 		public:
-			EVENT_TYPE_DECL(ModelLoadedEvent)
-			StaticModelLoadedEvent(ecore::StaticModel* staticModel) : _staticModel(staticModel) { }
-
-			ecore::StaticModelHandle get_model_handle()
-			{
-				return _staticModel;
-			}
-
-		private:
-			ecore::StaticModel* _staticModel{ nullptr };
+			EVENT_TYPE_DECL(StaticModelCreatedEvent)
+			StaticModelCreatedEvent(ecore::StaticModel* model) : StaticModelEvent(model) { }
+	};
+	
+	class StaticModelLoadedEvent : public events::IEvent, public impl::StaticModelEvent
+	{
+		public:
+			EVENT_TYPE_DECL(StaticModelLoadedEvent)
+			StaticModelLoadedEvent(ecore::StaticModel* model) : StaticModelEvent(model) { }
 	};
 
-	class Texture2DLoadedEvent : public events::IEvent
+	class Texture2DCreatedEvent : public events::IEvent, public impl::Texture2DEvent
+	{
+		public:
+			EVENT_TYPE_DECL(Texture2DCreatedEvent)
+			Texture2DCreatedEvent(ecore::Texture2D* texture) : Texture2DEvent(texture) { }
+	};
+
+	class Texture2DLoadedEvent : public events::IEvent, public impl::Texture2DEvent
 	{
 		public:
 			EVENT_TYPE_DECL(Texture2DLoadedEvent)
-			Texture2DLoadedEvent(ecore::Texture2D* texture) : _texture(texture) { }
-
-			ecore::Texture2DHandle get_texture_handle()
-			{
-				return _texture;
-			}
-
-		private:
-			ecore::Texture2D* _texture{ nullptr };
+			Texture2DLoadedEvent(ecore::Texture2D* texture) : Texture2DEvent(texture) { }
 	};
 
 	class MaterialTemplateLoadedEvent : public events::IEvent, public impl::MaterialTemplateEvent

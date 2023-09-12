@@ -2,7 +2,7 @@
 
 #include "engine_core/object.h"
 #include "level_common.h"
-#include "ecs.h"
+#include "ecs/ecs.h"
 
 #include <vector>
 

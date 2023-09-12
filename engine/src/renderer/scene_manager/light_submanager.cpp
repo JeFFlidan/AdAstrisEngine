@@ -38,19 +38,17 @@ void LightSubmanager::update(rhi::CommandBuffer& cmdBuffer)
 	allocate_gpu_buffers(cmdBuffer);
 }
 
-void LightSubmanager::reset_temp_arrays()
+void LightSubmanager::cleanup_staging_buffers()
 {
 	LOG_ERROR("RESET TEMP ARRAYS LIGHT SUBMANAGER")
 	_recentlyCreated.pointLights.clear();
 	_recentlyCreated.directionalLights.clear();
 	_recentlyCreated.spotLights.clear();
-}
-
-void LightSubmanager::cleanup_staging_buffers()
-{
+	
 	for (auto& buffer : _stagingBuffersToDelete)
 		_rhi->destroy_buffer(buffer);
 	_stagingBuffersToDelete.clear();
+	LOG_WARNING("FINISH TEMP ARRAY CLEANUPING")
 }
 
 bool LightSubmanager::need_allocation()
@@ -189,9 +187,8 @@ void LightSubmanager::allocate_gpu_buffers(rhi::CommandBuffer& cmdBuffer)
 
 void LightSubmanager::setup_point_lights_matrices(tasks::TaskGroup& taskGroup)
 {
-	_taskComposer->dispatch(taskGroup, _recentlyCreated.pointLights.size(), 10, [&](tasks::TaskExecutionInfo execInfo)
+	for (auto& pointLightTemp : _recentlyCreated.pointLights)
 	{
-		PointLightTemp& pointLightTemp = _recentlyCreated.pointLights[execInfo.globalTaskIndex];
 		PointLight& pointLight = _cpuCollections.pointLights[pointLightTemp.pointLightCollectionIndex];
         float aspect = (float)pointLightTemp.extent.width / (float)pointLightTemp.extent.height;
         float nearPlane = 0.1f;
@@ -204,14 +201,13 @@ void LightSubmanager::setup_point_lights_matrices(tasks::TaskGroup& taskGroup)
         {
         	pointLight.lightSpaceMat[i] = projMat * glm::lookAt(pos, pos + POINT_LIGHT_CENTER_VECTORS[i], POINT_LIGHT_UP_VECTORS[i]);
         }
-	});
+	}
 }
 
 void LightSubmanager::setup_directional_lights_matrices(tasks::TaskGroup& taskGroup)
 {
-	_taskComposer->dispatch(taskGroup, _recentlyCreated.directionalLights.size(), 10, [&](tasks::TaskExecutionInfo execInfo)
+	for (auto& dirLightTemp : _recentlyCreated.directionalLights)
 	{
-		DirectionalLightTemp& dirLightTemp = _recentlyCreated.directionalLights[execInfo.globalTaskIndex];
 		DirectionalLight& dirLight = _cpuCollections.directionalLights[dirLightTemp.directionalLightCollectionIndex];
 		float nearPlane = 0.01f;
 		float farPlane = 600.0f;
@@ -221,14 +217,13 @@ void LightSubmanager::setup_directional_lights_matrices(tasks::TaskGroup& taskGr
 		glm::vec3 pos = glm::vec3(dirLight.direction) * ((-farPlane) * 0.75f);
 		dirLight.lightSpaceMat = projMat * glm::lookAt(pos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	
-	});
+	}
 }
 
 void LightSubmanager::setup_spot_lights_matrices(tasks::TaskGroup& taskGroup)
 {
-	_taskComposer->dispatch(taskGroup, _recentlyCreated.spotLights.size(), 10, [&](tasks::TaskExecutionInfo execInfo)
+	for (auto& spotLightTemp : _recentlyCreated.spotLights)
 	{
-		SpotLightTemp& spotLightTemp = _recentlyCreated.spotLights[execInfo.globalTaskIndex];
 		SpotLight& spotLight = _cpuCollections.spotLights[spotLightTemp.spotLightCollectionIndex];
 		float aspect = (float)spotLightTemp.extent.width / (float)spotLightTemp.extent.height;
 		float nearPlane = 0.1f;
@@ -250,5 +245,5 @@ void LightSubmanager::setup_spot_lights_matrices(tasks::TaskGroup& taskGroup)
 		
 		glm::mat4 viewMat = glm::lookAt(pos, pos + dir, glm::vec3(0.0f, 1.0f, 0.0f));
 		spotLight.lightSpaceMat = projMat * viewMat;
-	});
+	}
 }

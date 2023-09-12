@@ -1,7 +1,7 @@
 #include "vulkan_swap_chain.h"
 #include "vulkan_common.h"
 #include "profiler/logger.h"
-#include <VkBootstrap.h>
+#include <vkbootstrap/VkBootstrap.h>
 
 #include "fmt/color.h"
 
