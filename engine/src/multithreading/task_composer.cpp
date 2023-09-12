@@ -120,12 +120,13 @@ void TaskComposer::wait(TaskGroup& taskGroup)
 void TaskComposer::execute_tasks(uint32_t beginningQueueIndex)
 {
 	TaskExecutionInfo executionInfo;
+	Task task;
 	for (auto i = 0; i != _threadCount; ++i)
 	{
 		TaskQueue& taskQueue = _taskQueueGroup->get_queue(beginningQueueIndex);
 		while (!taskQueue.empty())
 		{
-			Task& task = taskQueue.pop_front();
+			taskQueue.pop_front(task);
 			task.taskGroup->wait_for_other_groups();
 			//TaskExecutionInfo* executionInfo = _taskExecutionInfoPool.allocate();
 			executionInfo.taskSubgroupID = task.taskSubgroupID;
