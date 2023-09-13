@@ -17,7 +17,8 @@ ArchetypeHandle EntityManager::create_archetype(ArchetypeCreationContext& contex
 	size_t mainHash = idsHash ^ tagsHash;
 	
 	//auto inArchIt = _componentsHashToArchetypeId.find(mainHash);  Have a crush hear without any reason. In the future maybe I will investigate it.
-	
+
+	std::scoped_lock<std::mutex> locker(_archetypeMutex);
 	if (_componentsHashToArchetypeId.find(mainHash) != _componentsHashToArchetypeId.end())
 	{
 		return ArchetypeHandle(_componentsHashToArchetypeId.find(mainHash)->second);
@@ -34,6 +35,8 @@ ArchetypeHandle EntityManager::create_archetype(ArchetypeCreationContext& contex
 
 ArchetypeHandle EntityManager::create_archetype(ArchetypeExtensionContext& context)
 {
+	// TODO Maybe it's better to use lock after merging vectors
+	std::scoped_lock<std::mutex> locker(_archetypeMutex);
 	Archetype& oldArchetype = _archetypes[context._srcArchetype.get_id()];
 	ChunkStructure& oldArchetypeChunkStructure = oldArchetype._chunkStructure;
 	
@@ -98,6 +101,7 @@ Entity EntityManager::create_entity()
 
 Entity EntityManager::create_entity(ArchetypeHandle& archetypeHandle)
 {
+	std::scoped_lock<std::mutex> locker(_entityMutex);
 	Entity entity{ UUID() };
 	Archetype& archetype = _archetypes[archetypeHandle.get_id()];
 	uint32_t columnIndex = archetype.add_entity(entity);
@@ -126,7 +130,8 @@ Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID u
 
 	UUID newUUID = uuid ? uuid : UUID();
 	Entity entity{ newUUID };
-	
+
+	std::scoped_lock<std::mutex> locker(_entityMutex);
 	Archetype& archetype = _archetypes[archHandle.get_id()];
 	uint32_t entityColumn = archetype.add_entity(entity);
 	EntityInArchetypeInfo entityInArchetype;
@@ -195,6 +200,7 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 	}
 
 	entityJson["tags"] = tagNames;
+	std::scoped_lock<std::mutex> locker(_entityMutex);
 	levelJson[std::to_string(entity.get_uuid())] = entityJson.dump();
 }
 

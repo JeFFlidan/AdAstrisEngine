@@ -166,7 +166,7 @@ namespace ad_astris::ecs
 				_allComponentsSize += TypeInfoTable::get_component_size<T>();
 
 				uint8_t* dataPtr = get_ptr_for_data();
-				new(dataPtr) T(std::forward<ARGS>(args)...);
+				new(dataPtr) T{std::forward<ARGS>(args)...};
 
 				uint32_t size = TypeInfoTable::get_component_size<T>();
 				IComponent* tempComponent = new UntypedComponent(dataPtr, size, typeId);

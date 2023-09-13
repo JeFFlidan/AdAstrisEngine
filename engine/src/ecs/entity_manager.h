@@ -5,6 +5,7 @@
 #include "archetype.h"
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 
 namespace ad_astris::ecs
 {
@@ -86,7 +87,8 @@ namespace ad_astris::ecs
 
 				Archetype& oldArchetype = _archetypes[oldEntityInArchetype.archetypeId];
 				oldArchetype.destroy_entity(entity, oldEntityInArchetype.column);
-				
+
+				std::scoped_lock<std::mutex> locker(_entityMutex);
 				Archetype& newArchetype = _archetypes[newArchetypeHandle.get_id()];
 				uint32_t column = newArchetype.add_entity(entity);
 
@@ -117,7 +119,8 @@ namespace ad_astris::ecs
 
 				Archetype& oldArchetype = _archetypes[oldEntityInArchetype.archetypeId];
 				oldArchetype.destroy_entity(entity, oldEntityInArchetype.column);
-				
+
+				std::scoped_lock<std::mutex> locker(_entityMutex);
 				Archetype& newArchetype = _archetypes[newArchetypeHandle.get_id()];
 				uint32_t column = newArchetype.add_entity(entity);
 
@@ -153,6 +156,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			T get_entity_component(Entity& entity)
 			{
+				std::scoped_lock<std::mutex> locker(_entityMutex);
 				EntityInArchetypeInfo entityInArchetype = _entityToItsInfoInArchetype[entity];
 				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
 				T* component = archetype.get_entity_component<T>(entity, entityInArchetype.column);
@@ -161,12 +165,14 @@ namespace ad_astris::ecs
 
 			uint32_t get_archetypes_count()
 			{
+				std::scoped_lock<std::mutex> locker(_archetypeMutex);
 				return _archetypes.size();
 			}
 
 			template<typename ComponentType>
 			bool does_entity_have_component(Entity& entity)
 			{
+				std::scoped_lock<std::mutex> locker(_entityMutex);
 				auto it = _entityToItsInfoInArchetype.find(entity);
 				Archetype& archetype = _archetypes[it->second.archetypeId];
 				return archetype.has_component<ComponentType>();
@@ -175,6 +181,7 @@ namespace ad_astris::ecs
 			template<typename TagType>
 			bool does_entity_have_tag(Entity& entity)
 			{
+				std::scoped_lock<std::mutex> locker(_entityMutex);
 				auto it = _entityToItsInfoInArchetype.find(entity);
 				Archetype& archetype = _archetypes[it->second.archetypeId];
 				return archetype.has_tag<TagType>();
@@ -191,6 +198,9 @@ namespace ad_astris::ecs
 			std::vector<uint32_t> _lastCreatedArchetypes;
 			std::unordered_map<size_t, uint32_t> _componentsHashToArchetypeId;
 			std::unordered_map<Entity, EntityInArchetypeInfo> _entityToItsInfoInArchetype;
+			std::mutex _archetypeMutex;
+			std::mutex _entityMutex;
+			std::mutex _componentMutex;
 
 			template<typename T>
 			void set_up_component_common(Entity& entity, T* componentValue)
@@ -198,6 +208,7 @@ namespace ad_astris::ecs
 				UntypedComponent component(componentValue, TypeInfoTable::get_component_size<T>(), TypeInfoTable::get_component_id<T>());
 				EntityInArchetypeInfo& entityInArchetype = _entityToItsInfoInArchetype[entity];
 				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
+				std::scoped_lock<std::mutex> locker(_componentMutex);
 				archetype.set_component(entity, entityInArchetype.column, &component);
 			}
 

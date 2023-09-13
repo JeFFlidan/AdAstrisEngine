@@ -124,20 +124,20 @@ uint32_t ecs::Archetype::add_entity(Entity& entity)
 			chunkIndex = _chunks.size() - 1;
 	}
 
-	uint32_t rowIndex;
+	uint32_t columnIndex;
 	if (!_freeColumns.empty())
 	{
-		rowIndex = _freeColumns.back();
+		columnIndex = _freeColumns.back();
 		_freeColumns.pop_back();
 	}
 	else
 	{
-		rowIndex = requiredChunk->get_elements_count();
+		columnIndex = requiredChunk->get_elements_count();
 	}
 	
 	requiredChunk->add_instance();
 	_entityToChunk[entity] = chunkIndex;
-	return rowIndex;
+	return columnIndex;
 }
 
 void ecs::Archetype::destroy_entity(Entity& entity, uint32_t rowIndex)
