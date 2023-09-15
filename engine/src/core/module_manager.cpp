@@ -2,7 +2,6 @@
 #include "module_manager.h"
 #include "profiler/logger.h"
 #include "file_system/utils.h"
-
 #include <windows.h>
 
 using namespace ad_astris;
@@ -28,40 +27,42 @@ void ModuleManager::cleanup()
 	}
 }
 
+DLL_FUNC_PTR ModuleManager::load_third_party_module(const std::string& moduleName, const std::string& registerFuncName)
+{
+	auto moduleInfoFromMap = _loadedModules.find(moduleName);
+	if (moduleInfoFromMap != _loadedModules.end())
+		return moduleInfoFromMap->second.registerFuncHandler;
+
+	ModuleInternalState internalState;
+	load_module_internal(moduleName, registerFuncName, internalState);
+
+	ModuleInfo moduleInfo;
+	moduleInfo.moduleHandler = internalState.moduleHandler;
+	moduleInfo.registerFuncHandler = internalState.registerFunc;
+
+	_loadedModules[moduleName] = moduleInfo;
+
+	return moduleInfo.registerFuncHandler;
+}
+
 IModule* ModuleManager::load_module(const std::string& moduleName)
 {
 	auto moduleInfoFromMap = _loadedModules.find(moduleName);
 	if (moduleInfoFromMap != _loadedModules.end())
 		return moduleInfoFromMap->second.module;
-
-	auto itFromDllPathByModulePseudonym = _dllPathByModulePseudonym.find(moduleName);
-	if (itFromDllPathByModulePseudonym == _dllPathByModulePseudonym.end())
-		LOG_FATAL("ModuleManager::load_module(): There is no module with pseudonym {}", moduleName)
-
-	std::string modulePath = itFromDllPathByModulePseudonym->second;
+	
+	ModuleInternalState internalState;
+	load_module_internal(moduleName, "register_module", internalState);
 	
 	ModuleInfo moduleInfo;
-	HMODULE hmodule = LoadLibraryA(modulePath.c_str());
-	if (hmodule == NULL)
-	{
-		LOG_FATAL("ModuleManager::load_module(): Failed to load module {}. Error: {}", moduleName, GetLastError())
-	}
-
-	moduleInfo.moduleHandler = hmodule;
-	
-	FARPROC registerFuncPtr = GetProcAddress(hmodule, "register_module");
-	moduleInfo.registerPluginFunc = reinterpret_cast<ModuleInfo::RegisterModuleFunc*>(registerFuncPtr);
-
-	if (moduleInfo.registerPluginFunc == NULL)
-	{
-		LOG_WARNING("EXTERN C FUNC IS INVALID")
-	}
-	
-	moduleInfo.module = moduleInfo.registerPluginFunc();
+	moduleInfo.moduleHandler = internalState.moduleHandler;
+	moduleInfo.registerFuncHandler = internalState.registerFunc;
+	moduleInfo.registerModuleFunc = reinterpret_cast<ModuleInfo::RegisterModuleFunc*>(internalState.registerFunc);
+	moduleInfo.module = moduleInfo.registerModuleFunc();
 	moduleInfo.module->startup_module(this);
 
 	if (!moduleInfo.module)
-		LOG_WARNING("MODULE IS INVALID")
+		LOG_WARNING("ModuleManager::load_module(): IModule* is invalid. Module {}", moduleName)
 
 	_loadedModules[moduleName] = moduleInfo;
 	
@@ -79,4 +80,28 @@ void ModuleManager::unload_module(const std::string& moduleName)
 
 	FreeModule(moduleInfoIt->second.moduleHandler);
 	_loadedModules.erase(moduleInfoIt);
+}
+
+void ModuleManager::load_module_internal(
+	const std::string& moduleName,
+	const std::string& registerFuncName,
+	ModuleInternalState& internalState)
+{
+	auto itFromDllPathByModulePseudonym = _dllPathByModulePseudonym.find(moduleName);
+	if (itFromDllPathByModulePseudonym == _dllPathByModulePseudonym.end())
+		LOG_FATAL("ModuleManager::load_module(): There is no module with pseudonym {}", moduleName)
+
+	std::string modulePath = itFromDllPathByModulePseudonym->second;
+	
+	internalState.moduleHandler = LoadLibraryA(modulePath.c_str());
+	if (internalState.moduleHandler == nullptr)
+	{
+		LOG_FATAL("ModuleManager::load_module(): Failed to load module {}. Error: {}", moduleName, GetLastError())
+	}
+
+	internalState.registerFunc = GetProcAddress(internalState.moduleHandler, registerFuncName.c_str());
+	if (internalState.registerFunc == NULL)
+	{
+		LOG_FATAL("ModuleManager::load_module(): Failed to get proc address of registration func. Module {}", moduleName)
+	}
 }
