@@ -96,25 +96,46 @@ namespace ad_astris::ecore
 	struct PointLightTag { };
 	struct DirectionalLightTag { };
 	struct SpotLightTag { };
+
+	inline void register_basic_components(ecs::EntityManager* entityManager)
+	{
+		entityManager->register_component<TransformComponent>(true);
+		entityManager->register_component<ModelComponent>(true);
+		entityManager->register_component<TextureComponent>(true);
+		entityManager->register_component<OpaquePBRMaterialComponent>(true);
+		entityManager->register_component<TransparentMaterialComponent>(true);
+		entityManager->register_component<LuminanceIntensityComponent>(true);
+		entityManager->register_component<CandelaIntensityComponent>(true);
+		entityManager->register_component<ColorComponent>(true);
+		entityManager->register_component<AttenuationRadiusComponent>(true);
+		entityManager->register_component<InnerConeAngleComponent>(true);
+		entityManager->register_component<OuterConeAngleComponent>(true);
+		entityManager->register_component<LightTemperatureComponent>(true);
+		entityManager->register_component<CastShadowComponent>(true);
+		entityManager->register_component<AffectWorldComponent>(true);
+		entityManager->register_component<VisibleComponent>(true);
+		entityManager->register_component<ExtentComponent>(true);
+		entityManager->register_tag<StaticObjectTag>();
+		entityManager->register_tag<MovableObjectTag>();
+		entityManager->register_tag<PointLightTag>();
+		entityManager->register_tag<DirectionalLightTag>();
+		entityManager->register_tag<SpotLightTag>();
+	}
 }
 
-REGISTER_TAG(MovableObjectTag, ad_astris::ecore::MovableObjectTag)
-REGISTER_TAG(PointLightTag, ad_astris::ecore::PointLightTag)
-REGISTER_TAG(DirectionalLightTag, ad_astris::ecore::DirectionalLightTag)
-REGISTER_TAG(StaticObjectTag, ad_astris::ecore::StaticObjectTag)
-REGISTER_TAG(SpotLightTag, ad_astris::ecore::SpotLightTag)
-
-REGISTER_COMPONENT(TransformComponent, ad_astris::ecore::TransformComponent, location, rotation, scale)
-REGISTER_COMPONENT(ModelComponent, ad_astris::ecore::ModelComponent, modelUUID)
-REGISTER_COMPONENT(TextureComponent, ad_astris::ecore::TextureComponent, textureUUID)
-REGISTER_COMPONENT(LuminanceIntensityComponent, ad_astris::ecore::LuminanceIntensityComponent, intensity)
-REGISTER_COMPONENT(CandelaIntensityComponent, ad_astris::ecore::CandelaIntensityComponent, intensity)
-REGISTER_COMPONENT(ColorComponent, ad_astris::ecore::ColorComponent, color)
-REGISTER_COMPONENT(AttenuationRadiusComponent, ad_astris::ecore::AttenuationRadiusComponent, attenuationRadius)
-REGISTER_COMPONENT(InnerConeAngleComponent, ad_astris::ecore::InnerConeAngleComponent, angle)
-REGISTER_COMPONENT(OuterConeAngleComponent, ad_astris::ecore::OuterConeAngleComponent, angle)
-REGISTER_COMPONENT(LightTemperatureComponent, ad_astris::ecore::LightTemperatureComponent, isTemperatureUsed, temperature)
-REGISTER_COMPONENT(CastShadowComponent, ad_astris::ecore::CastShadowComponent, castShadows)
-REGISTER_COMPONENT(AffectWorldComponent, ad_astris::ecore::AffectWorldComponent, isWorldAffected)
-REGISTER_COMPONENT(VisibleComponent, ad_astris::ecore::VisibleComponent, isVisible)
-REGISTER_COMPONENT(ExtentComponent, ad_astris::ecore::ExtentComponent, width, height)
+REFLECT_COMPONENT(ad_astris::ecore::TransformComponent, location, rotation, scale)
+REFLECT_COMPONENT(ad_astris::ecore::ModelComponent, modelUUID)
+REFLECT_COMPONENT(ad_astris::ecore::TextureComponent, textureUUID)
+REFLECT_COMPONENT(ad_astris::ecore::OpaquePBRMaterialComponent, materialUUID)
+REFLECT_COMPONENT(ad_astris::ecore::TransparentMaterialComponent, materialUUID)
+REFLECT_COMPONENT(ad_astris::ecore::LuminanceIntensityComponent, intensity)
+REFLECT_COMPONENT(ad_astris::ecore::CandelaIntensityComponent, intensity)
+REFLECT_COMPONENT(ad_astris::ecore::ColorComponent, color)
+REFLECT_COMPONENT(ad_astris::ecore::AttenuationRadiusComponent, attenuationRadius)
+REFLECT_COMPONENT(ad_astris::ecore::InnerConeAngleComponent, angle)
+REFLECT_COMPONENT(ad_astris::ecore::OuterConeAngleComponent, angle)
+REFLECT_COMPONENT(ad_astris::ecore::LightTemperatureComponent, isTemperatureUsed, temperature)
+REFLECT_COMPONENT(ad_astris::ecore::CastShadowComponent, castShadows)
+REFLECT_COMPONENT(ad_astris::ecore::AffectWorldComponent, isWorldAffected)
+REFLECT_COMPONENT(ad_astris::ecore::VisibleComponent, isVisible)
+REFLECT_COMPONENT(ad_astris::ecore::ExtentComponent, width, height)

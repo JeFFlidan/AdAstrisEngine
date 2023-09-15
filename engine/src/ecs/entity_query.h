@@ -26,7 +26,7 @@ namespace ad_astris::ecs
 			void add_component_requirement(ComponentAccess componentAccess)
 			{
 				if (!TypeInfoTable::check_component_in_table<T>())
-					TypeInfoTable::add_component_info<T>();
+					TypeInfoTable::add_component<T>();
 				
 				uint32_t id = TypeInfoTable::get_component_id<T>();
 				_componentIDToAccess[id] = componentAccess;

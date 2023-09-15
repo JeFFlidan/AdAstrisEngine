@@ -151,7 +151,7 @@ void ecs::Archetype::destroy_entity(Entity& entity, uint32_t rowIndex)
 
 uint32_t ecs::Archetype::get_chunk_size()
 {
-	return _chunkStructure.entityCount * _sizeOfOneColumn;
+	return _numEntitiesPerChunk * _sizeOfOneColumn;
 }
 
 uint32_t ecs::Archetype::get_chunks_count()

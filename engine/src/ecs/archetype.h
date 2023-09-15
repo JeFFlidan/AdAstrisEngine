@@ -50,7 +50,6 @@ namespace ad_astris::ecs
 		std::unordered_map<uint32_t, uint16_t> componentIdToSize;	// should be sorted
 		std::vector<uint32_t> tagIDs;
 		std::unordered_set<uint32_t> tagIDsSet;
-		uint32_t entityCount;
 	};
 	
 	class ArchetypeChunk

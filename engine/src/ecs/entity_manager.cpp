@@ -87,6 +87,7 @@ ArchetypeHandle EntityManager::create_archetype(ArchetypeExtensionContext& conte
 ArchetypeHandle EntityManager::create_archetype(ArchetypeReductionContext context)
 {
 	// TODO
+	return ArchetypeHandle();
 }
 
 ArchetypeHandle EntityManager::get_entity_archetype(Entity& entity)
@@ -96,7 +97,8 @@ ArchetypeHandle EntityManager::get_entity_archetype(Entity& entity)
 
 Entity EntityManager::create_entity()
 {
-	// TODO
+	//TODO
+	return Entity();
 }
 
 Entity EntityManager::create_entity(ArchetypeHandle& archetypeHandle)
@@ -125,7 +127,7 @@ Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID u
 	archetypeContext._idToSize = entityContext._typeIdToSize;
 	archetypeContext._allComponentsSize = entityContext._allComponentsSize;
 	archetypeContext._tagIDs = std::move(tagIDsToMove);
-
+	
 	ArchetypeHandle archHandle = create_archetype(archetypeContext);
 
 	UUID newUUID = uuid ? uuid : UUID();
@@ -138,9 +140,9 @@ Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID u
 	entityInArchetype.column = entityColumn;
 	entityInArchetype.archetypeId = archHandle.get_id();
 	_entityToItsInfoInArchetype[entity] = entityInArchetype;
-	
+
 	archetype.set_components(entity, entityColumn, entityContext);
-	
+
 	return entity;
 }
 
@@ -184,8 +186,11 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 		//componentsArray += i * constants::MAX_COMPONENT_SIZE;
 		uint32_t typeId = archetype._chunkStructure.componentIds[i];
 		archetype.get_component_by_component_type_id(entity, column, typeId, componentPtr);
-		serializers::BaseSerializer* serializer = serializers::get_table()->get_serializer(typeId);
-		serializer->serialize(componentPtr, componentsJson);
+		if (serializers::get_table()->has_serializer(typeId))
+		{
+			serializers::BaseSerializer* serializer = serializers::get_table()->get_serializer(typeId);
+			serializer->serialize(componentPtr, componentsJson);
+		}
 	}
 
 	nlohmann::json entityJson;

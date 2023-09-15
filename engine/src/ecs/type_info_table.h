@@ -190,31 +190,4 @@ namespace ad_astris::ecs
 			static std::vector<std::string> _systemNames;   // element index = type id
 			static uint32_t _systemIDGenerator;
 	};
-
-	class System;
-	namespace registration
-	{
-		struct SystemStorage
-		{
-			template<typename T>
-			static void register_system()
-			{
-				System* system = new T();
-				systems[TypeInfoTable::get_system_id<T>()] = system; 
-			}
-		
-			static std::unordered_map<uint32_t, System*> systems;
-
-			template<typename T>
-			struct SystemRegistrar
-			{
-				static bool register_system()
-				{
-					TypeInfoTable::add_system<T>();
-					systems[TypeInfoTable::get_system_id<T>()] = new T();
-					return true;
-				}
-			};
-		};
-	}
 }

@@ -11,5 +11,3 @@ uint32_t TypeInfoTable::_tagIDGenerator{ 0 };
 std::unordered_map<std::string, uint32_t> TypeInfoTable::_systemIDByName;
 uint32_t TypeInfoTable::_systemIDGenerator{ 0 };
 std::vector<std::string> TypeInfoTable::_systemNames;
-
-std::unordered_map<uint32_t, System*> registration::SystemStorage::systems;

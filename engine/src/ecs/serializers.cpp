@@ -13,12 +13,12 @@ SerializersTable* SerializersTable::get_instance()
 	return _instance;
 }
 
-BaseSerializer* SerializersTable::get_serializer(uint32_t componentTypeId)
+BaseSerializer* SerializersTable::get_serializer(uint32_t componentTypeID)
 {
-	auto serializerIterator = _typeIdToFactory.find(componentTypeId);
-	if (serializerIterator == _typeIdToFactory.end())
+	auto serializerIterator = _serializerByTypeID.find(componentTypeID);
+	if (serializerIterator == _serializerByTypeID.end())
 	{
-		LOG_ERROR("FactoriesTable::get_factory(): There is no factory by component type id {}", componentTypeId)
+		LOG_ERROR("FactoriesTable::get_factory(): There is no factory by component type id {}", componentTypeID)
 		return nullptr;
 	}
 

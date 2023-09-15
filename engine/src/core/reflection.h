@@ -11,12 +11,16 @@
 #define CORE_FUNC_NAME_FRONT(type, name) ((sizeof(#type) + sizeof(" ad_astris::() [with T = ") + sizeof(#name)) - 3u)
 #define CORE_FUNC_NAME_BACK (sizeof("]") - 1u)
 #define CORE_FUNC_NAME __PRETTY_FUNCTION__
-#else
-#error "Implicit component registration is not supported"
+#endif
+
+#if defined(_MSC_VER)
+#define CORE_FUNC_NAME_FRONT(type, name) ((sizeof(#type) + sizeof("__cdecl ad_astris::") + sizeof(#name) + sizeof("<struct ")) - 3u)
+#define CORE_FUNC_NAME_BACK (sizeof(">(void)"))
+#define CORE_FUNC_NAME __FUNCSIG__
 #endif
 
 #define CORE_FUNC_TYPE_LEN(type, name, str)\
-(strlen(str) - (CORE_FUNC_NAME_FRONT(type, name) + CORE_FUNC_NAME_BACK))
+(sizeof(str) - (CORE_FUNC_NAME_FRONT(type, name) + CORE_FUNC_NAME_BACK))
 
 namespace ad_astris
 {
@@ -46,6 +50,7 @@ namespace ad_astris
     }
 
 }
+
 #define REFLECT_SERIALIZABLE_FIELD(Field) REFL_FIELD(Field, ad_astris::serialization::SerializableFields(), ad_astris::uicore::UIField())
 	
 #define REFLECT_SERIALIZABLE_FIELDS(Type, ...)				\

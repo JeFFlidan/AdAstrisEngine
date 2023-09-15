@@ -1,11 +1,14 @@
 #pragma once
 
+#include "serializers.h"
 #include "entity_types.h"
 #include "archetype_types.h"
 #include "archetype.h"
+#include "core/serialization.h"
 #include <vector>
 #include <unordered_map>
 #include <mutex>
+
 
 namespace ad_astris::ecs
 {
@@ -169,6 +172,13 @@ namespace ad_astris::ecs
 				return _archetypes.size();
 			}
 
+			uint32_t get_archetype_chunks_count(ArchetypeHandle archetypeHandle)
+			{
+				std::scoped_lock<std::mutex> locker(_archetypeMutex);
+				Archetype& archetype = _archetypes[archetypeHandle.get_id()];
+				return archetype.get_chunks_count();
+			}
+
 			template<typename ComponentType>
 			bool does_entity_have_component(Entity& entity)
 			{
@@ -185,6 +195,43 @@ namespace ad_astris::ecs
 				auto it = _entityToItsInfoInArchetype.find(entity);
 				Archetype& archetype = _archetypes[it->second.archetypeId];
 				return archetype.has_tag<TagType>();
+			}
+
+			template<typename Component>
+			void register_component(bool serializable)
+			{
+				TypeInfoTable::add_component_info<Component>();
+
+				class TypedSerializer : public serializers::BaseSerializer									
+				{																							
+					public:																					
+						void serialize(void* component, nlohmann::json& jsonForComponents) override			
+						{																					
+							Component* typedComponent = static_cast<Component*>(component);	
+							std::string typeName = get_type_name<Component>();						
+							jsonForComponents[typeName] = serialization::serialize_to_json(*typedComponent);
+						}
+						void deserialize(													
+							EntityCreationContext& entityCreationContext,					
+							const std::string& componentInfo) override						
+						{																	
+							Component component;									
+							serialization::deserialize_from_json(componentInfo, component);	
+							entityCreationContext.add_component(component);					
+						}
+				};
+
+				if (serializable)
+				{
+					TypedSerializer* serializer = new TypedSerializer();
+					serializers::get_table()->add_serializer<Component>(serializer);
+				}
+			}
+
+			template<typename T>
+			void register_tag()
+			{
+				TypeInfoTable::add_tag<T>();
 			}
 		
 		private:

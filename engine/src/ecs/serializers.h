@@ -29,10 +29,15 @@ namespace ad_astris::ecs
 				{
 					uint32_t id = TypeInfoTable::get_component_id<COMPONENT_TYPE>();
 					std::lock_guard<std::mutex> lock(_mutex);
-					_typeIdToFactory[id] = serializer;
+					_serializerByTypeID[id] = serializer;
 				}
 				
-				BaseSerializer* get_serializer(uint32_t componentTypeId);
+				BaseSerializer* get_serializer(uint32_t componentTypeID);
+			
+				bool has_serializer(uint32_t componentTypeID)
+				{
+					return _serializerByTypeID.find(componentTypeID) == _serializerByTypeID.end() ? false : true;
+				}
 
 			private:
 				SerializersTable() {}
@@ -40,7 +45,7 @@ namespace ad_astris::ecs
 				
 				static SerializersTable* _instance;
 				static std::mutex _mutex;
-				std::unordered_map<uint32_t, BaseSerializer*> _typeIdToFactory;
+				std::unordered_map<uint32_t, BaseSerializer*> _serializerByTypeID;
 		};
 		
 		inline SerializersTable* get_table()

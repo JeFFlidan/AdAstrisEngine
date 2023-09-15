@@ -22,16 +22,7 @@ SystemManager::~SystemManager()
 
 void SystemManager::init()
 {
-	std::unordered_map<uint32_t, System*>& addedSystems = registration::SystemStorage::systems;
 
-	for (auto& data : addedSystems)
-	{
-		data.second->configure_query();
-	}
-	
-	_idToSystem.insert(addedSystems.begin(), addedSystems.end());
-	
-	registration::SystemStorage::systems.clear();
 }
 
 void SystemManager::cleanup()
