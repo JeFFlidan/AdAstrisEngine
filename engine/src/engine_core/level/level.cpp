@@ -79,7 +79,7 @@ void Level::build_entities()
 
 inline uint64_t Level::get_size()
 {
-	// TODO
+	return 0;
 }
 
 inline bool Level::is_resource()
@@ -94,7 +94,7 @@ inline UUID Level::get_uuid()
 
 inline std::string Level::get_description()
 {
-	// TODO
+	return std::string();
 }
 
 inline std::string Level::get_type()

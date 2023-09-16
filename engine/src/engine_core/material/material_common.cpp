@@ -86,7 +86,7 @@ ShaderPassInfo Utils::unpack_shader_pass_info(std::string& metadata)
 	ShaderPassInfo shaderPassInfo;
 	for (auto& shaderInfo : shaderPassMetadata.items())
 	{
-		shaderPassInfo.shaderUUIDContext.shaderUUIDs.push_back(UUID(shaderInfo.value()));
+		shaderPassInfo.shaderUUIDContext.shaderUUIDs.push_back(UUID((uint64_t)shaderInfo.value()));
 	}
 
 	return shaderPassInfo;

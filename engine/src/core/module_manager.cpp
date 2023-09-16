@@ -6,7 +6,7 @@
 
 using namespace ad_astris;
 
-ModuleManager::ModuleManager(io::FileSystem* fileSystem)
+ModuleManager::ModuleManager(io::FileSystem* fileSystem) : _fileSystem(fileSystem)
 {
 	io::URI path = io::Utils::get_absolute_path_to_file(fileSystem, "configs/modules.ini");
 	
@@ -29,9 +29,9 @@ void ModuleManager::cleanup()
 
 DLL_FUNC_PTR ModuleManager::load_third_party_module(const std::string& moduleName, const std::string& registerFuncName)
 {
-	auto moduleInfoFromMap = _loadedModules.find(moduleName);
-	if (moduleInfoFromMap != _loadedModules.end())
-		return moduleInfoFromMap->second.registerFuncHandler;
+	auto it = _loadedModules.find(moduleName);
+	if (it != _loadedModules.end())
+		return it->second.registerFuncHandler;
 
 	ModuleInternalState internalState;
 	load_module_internal(moduleName, registerFuncName, internalState);
@@ -87,11 +87,11 @@ void ModuleManager::load_module_internal(
 	const std::string& registerFuncName,
 	ModuleInternalState& internalState)
 {
-	auto itFromDllPathByModulePseudonym = _dllPathByModulePseudonym.find(moduleName);
-	if (itFromDllPathByModulePseudonym == _dllPathByModulePseudonym.end())
+	auto it = _dllPathByModulePseudonym.find(moduleName);
+	if (it == _dllPathByModulePseudonym.end())
 		LOG_FATAL("ModuleManager::load_module(): There is no module with pseudonym {}", moduleName)
 
-	std::string modulePath = itFromDllPathByModulePseudonym->second;
+	std::string modulePath = io::Utils::get_absolute_path_to_file(_fileSystem->get_engine_root_path(), it->second.c_str()).c_str();
 	
 	internalState.moduleHandler = LoadLibraryA(modulePath.c_str());
 	if (internalState.moduleHandler == nullptr)

@@ -19,32 +19,33 @@ void ecore::Texture2D::deserialize(io::IFile* file, ObjectName* objectName)
 	_name = objectName;
 }
 
-inline uint64_t ecore::Texture2D::get_size()
+uint64_t ecore::Texture2D::get_size()
 {
 	return _textureInfo.size;
 }
 
-inline bool ecore::Texture2D::is_resource()
+bool ecore::Texture2D::is_resource()
 {
 	return true;
 }
 
-inline UUID ecore::Texture2D::get_uuid()
+UUID ecore::Texture2D::get_uuid()
 {
 	return _textureInfo.uuid;
 }
 
-inline std::string ecore::Texture2D::get_description()
+std::string ecore::Texture2D::get_description()
 {
-	// TODO
+	return std::string();
 }
 
-inline std::string ecore::Texture2D::get_type()
+std::string ecore::Texture2D::get_type()
 {
+	// TODO
 	return "texture";
 }
 
-inline void ecore::Texture2D::accept(resource::IResourceVisitor& resourceVisitor)
+void ecore::Texture2D::accept(resource::IResourceVisitor& resourceVisitor)
 {
 	resourceVisitor.visit(this);
 }

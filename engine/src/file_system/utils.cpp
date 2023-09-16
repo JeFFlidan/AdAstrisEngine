@@ -118,3 +118,19 @@ io::URI io::Utils::find_file_with_specific_extension(const URI& folderPath, cons
 
 	return URI();
 }
+
+void io::Utils::read_file(FileSystem* fileSystem, const URI& path, std::vector<uint8_t>& dataStorage)
+{
+	size_t size = 0;
+	uint8_t* tempData = static_cast<uint8_t*>(fileSystem->map_to_read(path, size));
+	dataStorage.resize(size);
+	memcpy(dataStorage.data(), tempData, size);
+	fileSystem->unmap_after_reading(tempData);
+}
+
+void io::Utils::write_file(FileSystem* fileSystem, const URI& path, uint8_t* data, size_t dataSize, const std::string& writeMode)
+{
+	Stream* stream = fileSystem->open(path, writeMode.c_str());
+	stream->write(data, sizeof(uint8_t), dataSize);
+	fileSystem->close(stream);
+}

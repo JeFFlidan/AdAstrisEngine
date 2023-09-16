@@ -40,6 +40,7 @@ namespace ad_astris
 			void unload_module(const std::string& moduleName);
 		
 		private:
+			io::FileSystem* _fileSystem{ nullptr };
 			std::unordered_map<std::string, std::string> _dllPathByModulePseudonym;
 			std::unordered_map<std::string, ModuleInfo> _loadedModules;
 			std::string _rootPath;

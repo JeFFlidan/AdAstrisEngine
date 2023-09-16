@@ -6,8 +6,10 @@
 
 namespace ad_astris::ecore
 {
-#define REGISTER_MATERIAL_SETTINGS(Type, ...)		\
-	REFLECT_SERIALIZABLE_FIELDS(Type, __VA_ARGS__)
+#define REGISTER_MATERIAL_SETTINGS(Type, ...)\
+	REFL_TYPE(Type)											\
+		FOR_EACH(REFLECT_SERIALIZABLE_FIELD, __VA_ARGS__)	\
+		REFL_END
 
 #define IMPLEMENT_MATERIAL_SETTINGS_METHODS()										\
 	virtual std::string serialize() override										\

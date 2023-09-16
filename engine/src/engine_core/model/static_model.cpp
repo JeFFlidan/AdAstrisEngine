@@ -16,7 +16,7 @@ ecore::StaticModelData ecore::StaticModel::get_model_data()
 	return data;
 }
 
-inline ecore::model::ModelBounds ecore::StaticModel::get_model_bounds()
+ecore::model::ModelBounds ecore::StaticModel::get_model_bounds()
 {
 	return _modelInfo.bounds;
 }
@@ -26,12 +26,12 @@ ecore::model::VertexFormat ecore::StaticModel::get_vertex_format()
 	return _modelInfo.vertexFormat;
 }
 
-inline std::string ecore::StaticModel::get_original_file()
+std::string ecore::StaticModel::get_original_file()
 {
 	return _modelInfo.originalFile;
 }
 
-inline std::vector<std::string> ecore::StaticModel::get_materials_name()
+std::vector<std::string> ecore::StaticModel::get_materials_name()
 {
 	return _modelInfo.materialsName;
 }
@@ -54,33 +54,33 @@ void ecore::StaticModel::deserialize(io::IFile* file, ObjectName* objectName)
 	_path = file->get_file_path();
 }
 
-inline uint64_t ecore::StaticModel::get_size()
+uint64_t ecore::StaticModel::get_size()
 {
 	return _modelInfo.vertexBufferSize + _modelInfo.indexBufferSize;
 }
 
-inline bool ecore::StaticModel::is_resource()
+bool ecore::StaticModel::is_resource()
 {
 	return true;
 }
 
-inline UUID ecore::StaticModel::get_uuid()
+UUID ecore::StaticModel::get_uuid()
 {
 	return _modelInfo.uuid;
 }
 
-inline std::string ecore::StaticModel::get_description()
+std::string ecore::StaticModel::get_description()
 {
 	// TODO
 	return std::string();
 }
 
-inline std::string ecore::StaticModel::get_type()
+std::string ecore::StaticModel::get_type()
 {
 	return "model";
 }
 
-inline void ecore::StaticModel::accept(resource::IResourceVisitor& resourceVisitor)
+void ecore::StaticModel::accept(resource::IResourceVisitor& resourceVisitor)
 {
 	resourceVisitor.visit(this);
 }

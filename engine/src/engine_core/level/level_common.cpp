@@ -16,7 +16,7 @@ LevelInfo Utils::unpack_level_info(std::string& strMetadata)
 {
 	nlohmann::json levelMetadata = nlohmann::json::parse(strMetadata);
 	LevelInfo info;
-	info.uuid = UUID(levelMetadata["uuid"]);
+	info.uuid = UUID((uint64_t)levelMetadata["uuid"]);
 	return info;
 }
 

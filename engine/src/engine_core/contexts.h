@@ -9,5 +9,7 @@ namespace ad_astris::ecore
 	{
 		UUID uuid;
 		glm::vec3 location;
+		glm::vec3 rotation;
+		glm::vec3 scale;
 	};
 }

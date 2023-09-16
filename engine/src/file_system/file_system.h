@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <cstdlib>
 #include <cstdio>
+#include <string>
 #include <cstring>
 #include <cassert>
 #include <stdint.h>
@@ -12,52 +13,48 @@ namespace ad_astris::io
 	class URI
 	{
 		public:
-			URI()
-			{
-				data[0] = '\x0';
-			}
-
+			URI() = default;
+		
 			URI(const char* uri)
 			{
 				size_t len = strlen(uri);
 				assert(len < 4096);
-				memcpy(data, uri, len);
-				data[len] = '\x0';
+				data = uri;
 			}
 
 			URI(const URI& uri)
 			{
-				memcpy(data, uri.data, sizeof(char) * 4096);
+				data = uri.data;
 			}
 
 			URI& operator=(const URI& uri)
 			{
-				memcpy(data, uri.data, sizeof(char) * 4096);
+				data = uri.data;
 				return *this;
 			}
 
 			bool operator==(const URI& uri) const
 			{
-				return strcmp(data, uri.data) == 0;
+				return data == uri.data;
 			}
 
 			URI& operator+(const URI& uri)
 			{
-				strcat(data, uri.data);
+				data += uri.data;
 				return *this;
 			}
 
 			URI& operator+=(const URI& uri)
 			{
-				strcat(data, uri.data);
+				data += uri.data;
 				return *this;
 			}
 
-			const char* c_str() const { return data; }
-			bool empty() const { return data[0] == '\x0'; }
+			const char* c_str() const { return data.c_str(); }
+			bool empty() { return data.empty(); }
 
 		private:
-			char data[4096];
+			std::string data;
 	};
 
 	class Stream
