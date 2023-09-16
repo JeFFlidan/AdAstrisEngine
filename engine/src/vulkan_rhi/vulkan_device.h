@@ -23,7 +23,7 @@ namespace ad_astris::vulkan
 
 	class VulkanQueue;
 
-	class VK_RHI_API VulkanDevice
+	class VulkanDevice
 	{
 		public:
 			VulkanDevice(vkb::Instance& instance, acore::IWindow* window);

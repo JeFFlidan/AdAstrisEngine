@@ -64,12 +64,8 @@ ecs::Entity EngineObjectsCreator::create_point_light(
 {
 	ecs::EntityCreationContext entityCreationContext;
 	setup_basic_light_components(entityCreationContext, objectCreationContext);
-	LuminanceIntensityComponent intensityComponent;
-	intensityComponent.intensity = 1500.0f;
-	entityCreationContext.add_component(intensityComponent);
-	AttenuationRadiusComponent attenuationComponent;
-	attenuationComponent.attenuationRadius = 1000.0f;
-	entityCreationContext.add_component(attenuationComponent);
+	entityCreationContext.add_component<LuminanceIntensityComponent>(1500.0f);
+	entityCreationContext.add_component<AttenuationRadiusComponent>(1000.0f);
 	entityCreationContext.add_tag<StaticObjectTag>();
 	entityCreationContext.add_tag<PointLightTag>();
 
@@ -98,9 +94,7 @@ ecs::Entity EngineObjectsCreator::create_directional_light(
 {
 	ecs::EntityCreationContext entityCreationContext;
 	setup_basic_light_components(entityCreationContext, objectCreationContext);
-	CandelaIntensityComponent intensityComponent;
-	intensityComponent.intensity = 2.0f;
-	entityCreationContext.add_component(intensityComponent);
+	entityCreationContext.add_component<CandelaIntensityComponent>(2.0f);
 	entityCreationContext.add_tag<StaticObjectTag>();
 	entityCreationContext.add_tag<DirectionalLightTag>();
 
@@ -128,18 +122,10 @@ ecs::Entity EngineObjectsCreator::create_spot_light(
 {
 	ecs::EntityCreationContext entityCreationContext;
 	setup_basic_light_components(entityCreationContext, objectCreationContext);
-	LuminanceIntensityComponent intensityComponent;
-	intensityComponent.intensity = 1500.0f;
-	entityCreationContext.add_component(intensityComponent);
-	AttenuationRadiusComponent attenuationComponent;
-	attenuationComponent.attenuationRadius = 1000.0f;
-	entityCreationContext.add_component(attenuationComponent);
-	OuterConeAngleComponent outerConeAngleComponent;
-	outerConeAngleComponent.angle = 45.0f;
-	entityCreationContext.add_component(outerConeAngleComponent);
-	InnerConeAngleComponent innerConeAngleComponent;
-	innerConeAngleComponent.angle = 0.0f;
-	entityCreationContext.add_component(innerConeAngleComponent);
+	entityCreationContext.add_component<LuminanceIntensityComponent>(1500.0f);
+	entityCreationContext.add_component<AttenuationRadiusComponent>(1000.0f);
+	entityCreationContext.add_component<OuterConeAngleComponent>(45.0f);
+	entityCreationContext.add_component<InnerConeAngleComponent>(0.0f);
 	entityCreationContext.add_tag<StaticObjectTag>();
 	entityCreationContext.add_tag<SpotLightTag>();
 
@@ -222,45 +208,21 @@ void EngineObjectsCreator::setup_basic_model_components(
 	ecs::EntityCreationContext& entityCreationContext,
 	EditorObjectCreationContext& objectCreationContext)
 {
-	TransformComponent transformComponent{ };
-	transformComponent.location = objectCreationContext.location;
-	entityCreationContext.add_component(transformComponent);
-	ModelComponent modelComponent;
-	modelComponent.modelUUID = objectCreationContext.uuid;
-	entityCreationContext.add_component(modelComponent);
-	CastShadowComponent castShadowComponent;
-	castShadowComponent.castShadows = true;
-	entityCreationContext.add_component(castShadowComponent);
-	VisibleComponent visibleComponent;
-	visibleComponent.isVisible = true;
-	entityCreationContext.add_component(visibleComponent);
+	entityCreationContext.add_component<TransformComponent>(objectCreationContext.location, objectCreationContext.rotation, objectCreationContext.scale);
+	entityCreationContext.add_component<ModelComponent>(objectCreationContext.uuid);
+	entityCreationContext.add_component<CastShadowComponent>(true);
+	entityCreationContext.add_component<VisibleComponent>(true);
 }
 
 void EngineObjectsCreator::setup_basic_light_components(
 	ecs::EntityCreationContext& entityCreationContext,
 	EditorObjectCreationContext& objectCreationContext)
 {
-	TransformComponent transformComponent{ };
-	transformComponent.location = objectCreationContext.location;
-	entityCreationContext.add_component(transformComponent);
-	ColorComponent colorComponent;
-	colorComponent.color = glm::vec4(1.0f);
-	entityCreationContext.add_component(colorComponent);
-	LightTemperatureComponent lightTemperatureComponent;
-	lightTemperatureComponent.temperature = 6500.0f;
-	lightTemperatureComponent.isTemperatureUsed = false;
-	entityCreationContext.add_component(lightTemperatureComponent);
-	CastShadowComponent castShadowComponent;
-	castShadowComponent.castShadows = true;
-	entityCreationContext.add_component(castShadowComponent);
-	VisibleComponent visibleComponent;
-	visibleComponent.isVisible = true;
-	entityCreationContext.add_component(visibleComponent);
-	AffectWorldComponent affectWorldComponent;
-	affectWorldComponent.isWorldAffected = true;
-	entityCreationContext.add_component(affectWorldComponent);
-	ExtentComponent extentComponent;
-	extentComponent.width = 2048;
-	extentComponent.height = 2048;
-	entityCreationContext.add_component(extentComponent);
+	entityCreationContext.add_component<TransformComponent>(objectCreationContext.location, objectCreationContext.rotation, objectCreationContext.scale);
+	entityCreationContext.add_component<ColorComponent>(glm::vec4{1.0f});
+	entityCreationContext.add_component<LightTemperatureComponent>(false, 6500.0f);
+	entityCreationContext.add_component<CastShadowComponent>(true);
+	entityCreationContext.add_component<VisibleComponent>(true);
+	entityCreationContext.add_component<AffectWorldComponent>(true);
+	entityCreationContext.add_component<ExtentComponent>(2048u, 2048u);
 }

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "core/module.h"
-#include "engine_core/material/shader_common.h"
 #include "file_system/file_system.h"
+#include "core/module.h"
 #include "rhi/resources.h"
 #include "rhi/engine_rhi.h"
 
 #include <string>
+#include <unordered_set>
 
 namespace ad_astris::rcore
 {
@@ -26,18 +26,6 @@ namespace ad_astris::rcore
 		ASYNC_COMPUTE = 1 << 3
 	};
 
-	class IShaderCompiler
-	{
-		public:
-			virtual ~IShaderCompiler() = default;
-			virtual void init(io::FileSystem* filsSystem) = 0;
-		
-			//Legacy
-			virtual void compile_into_spv(io::URI& path, rhi::ShaderInfo* info) = 0;
-		
-			virtual void compile_shader_into_spv(ecore::shader::CompilationContext& compilationContext) = 0;
-	};
-	
 	class IRenderPass
 	{
 		public:
@@ -133,6 +121,45 @@ namespace ad_astris::rcore
 			virtual rhi::Buffer* get_physical_buffer(BufferDesc* bufferDesc) = 0;
 			virtual rhi::Buffer* get_physical_buffer(const std::string& bufferName) = 0;
 			virtual rhi::Buffer* get_physical_buffer(uint32_t physicalIndex) = 0;
+	};
+
+	struct ShaderInputDesc
+	{
+		io::URI shaderPath;
+		rhi::ShaderType type{ rhi::ShaderType::UNDEFINED };
+		rhi::ShaderFormat format{ rhi::ShaderFormat::UNDEFINED };
+		rhi::HLSLShaderModel minHlslShaderModel{ rhi::HLSLShaderModel::SM_6_0 };
+		std::string entryPoint{ "main" };
+		std::vector<std::string> defines;
+		std::vector<std::string> includePaths;
+	};
+
+	struct ShaderOutputDesc
+	{
+		std::shared_ptr<void> internalBlob;
+		const uint8_t* data{ nullptr };
+		uint64_t dataSize;
+		std::unordered_set<std::string> dependencies;
+	};
+
+	enum ShaderCacheType
+	{
+		DXIL,
+		SPIRV
+	};
+
+	struct ShaderCompilerInitContext
+	{
+		ModuleManager* moduleManager;
+		io::FileSystem* fileSystem;
+		ShaderCacheType cacheType;
+	};
+
+	class IShaderCompiler
+	{
+		public:
+			virtual void init(ShaderCompilerInitContext& initContext) = 0;
+			virtual void compile(ShaderInputDesc& inputDesc, ShaderOutputDesc& outputDesc) = 0;
 	};
 	
 	class IRenderCoreModule : public IModule

@@ -16,7 +16,7 @@ namespace ad_astris::vulkan
 		STORAGE_TEXTURES,
 	};
 	
-	class VK_RHI_API VulkanDescriptorManager
+	class VulkanDescriptorManager
 	{
 		public:
 			VulkanDescriptorManager(VulkanDevice* device);

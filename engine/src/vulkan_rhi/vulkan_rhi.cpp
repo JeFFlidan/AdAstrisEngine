@@ -1,4 +1,5 @@
-﻿#include "vulkan_rhi.h"
+﻿#define NOMINMAX
+#include "vulkan_rhi.h"
 #include "vulkan_queue.h"
 #include "vulkan_common.h"
 

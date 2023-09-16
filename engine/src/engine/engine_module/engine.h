@@ -39,5 +39,6 @@ namespace ad_astris::engine::impl
 			void create_new_blank_project();
 			void load_existing_project();
 			void create_material_templates();
+			void register_ecs_objects();
 	};
 }

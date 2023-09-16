@@ -14,7 +14,7 @@ namespace ad_astris::vulkan
 		rhi::QueueType queueType;
 	};
 
-	class VK_RHI_API VulkanQueue
+	class VulkanQueue
 	{
 		public:
 			VulkanQueue(QueueData queueData);

@@ -9,7 +9,7 @@ namespace ad_astris::vulkan
 {
 	class VulkanDevice;
 	
-	class VK_RHI_API VulkanTexture
+	class VulkanTexture
 	{
 		public:
 			VulkanTexture() = default;

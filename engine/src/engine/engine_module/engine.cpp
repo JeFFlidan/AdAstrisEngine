@@ -22,6 +22,8 @@ void Engine::init(EngineInitializationContext& initializationContext)
 	_world->init();
 	LOG_INFO("Engine::init(): Initialized world")
 
+	register_ecs_objects();
+
 	_engineObjectsCreator = std::make_unique<EngineObjectsCreator>(_world->get_entity_manager(), _eventManager);
 	LOG_INFO("Engine::init(): Initialized engine objects creator")
 
@@ -296,4 +298,9 @@ void Engine::create_material_templates()
 	
 	ecore::TransparentMaterialHandle transparentMaterialHandle = _resourceManager->create_new_resource(transparentMaterialCreationContext);
 	LOG_INFO("Created transparent material: {}", transparentMaterialHandle.get_resource()->get_name()->get_full_name())
+}
+
+void Engine::register_ecs_objects()
+{
+	ecore::register_basic_components(_world->get_entity_manager());
 }

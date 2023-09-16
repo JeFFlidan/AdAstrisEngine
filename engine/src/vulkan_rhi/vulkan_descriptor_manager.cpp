@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "vulkan_descriptor_manager.h"
 #include "vulkan_common.h"
 #include "vulkan_buffer.h"

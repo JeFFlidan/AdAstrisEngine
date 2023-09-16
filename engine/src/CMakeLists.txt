@@ -18,8 +18,7 @@ file(GLOB ENGINE_CORE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/resource_manager/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/rhi/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/events/*.*
-    ${CMAKE_CURRENT_SOURCE_DIR}/multithreading/*.*
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.*)
+    ${CMAKE_CURRENT_SOURCE_DIR}/multithreading/*.*)
 target_sources(engine_core PRIVATE ${ENGINE_CORE_FILES})
 
 target_link_libraries(engine_core
@@ -36,6 +35,7 @@ target_link_libraries(engine_core
     fmt_lib)
 target_include_directories(engine_core PUBLIC ${DIR_ENGINE_SRC})
 target_include_directories(engine_core PUBLIC ${DIR_THIRD_PARTY})
+target_compile_options(engine_core PRIVATE "/Zc:preprocessor")
 
 add_executable(AdAstrisEngine main.cpp)
 target_include_directories(AdAstrisEngine PUBLIC ${DIR_ENGINE_SRC})

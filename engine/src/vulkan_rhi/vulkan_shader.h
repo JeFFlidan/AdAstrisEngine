@@ -6,7 +6,7 @@
 
 namespace ad_astris::vulkan
 {
-	class VK_RHI_API VulkanShader
+	class VulkanShader
 	{
 		public:
 			struct Binding

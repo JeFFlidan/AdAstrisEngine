@@ -25,7 +25,7 @@ file(GLOB CORE_FILES
 target_sources(core PRIVATE ${CORE_FILES})
 
 add_library(glfw STATIC IMPORTED)
-set_target_properties(glfw PROPERTIES IMPORTED_LOCATION ${DIR_THIRD_PARTY}/glfw/libglfw3.a)
+set_target_properties(glfw PROPERTIES IMPORTED_LOCATION ${DIR_THIRD_PARTY}/glfw/glfw3.lib)
 
 add_library(nfd STATIC IMPORTED)
 set_target_properties(nfd PROPERTIES IMPORTED_LOCATION ${DIR_THIRD_PARTY}/nfd/nfd.lib)

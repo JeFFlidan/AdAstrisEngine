@@ -18,7 +18,7 @@ namespace ad_astris::vulkan
 	class VulkanCommandManager;
 	class VulkanQueue;
 	
-	class VK_RHI_API VulkanCommandBuffer
+	class VulkanCommandBuffer
 	{
 		friend VulkanCommandPool;
 		friend VulkanCommandManager;
@@ -42,7 +42,7 @@ namespace ad_astris::vulkan
 	};
 
 	// One VulkanCommandPool per queue per thread per frame
-	class VK_RHI_API VulkanCommandPool
+	class VulkanCommandPool
 	{
 		friend VulkanCommandManager;
 		friend VulkanQueue;
@@ -66,11 +66,11 @@ namespace ad_astris::vulkan
 			std::vector<std::unique_ptr<VulkanCommandBuffer>> _submittedCmdBuffers;
 	};
 	
-	void VK_RHI_API clear_after_submission(
+	void clear_after_submission(
 		std::vector<std::unique_ptr<VulkanCommandPool>>& freePools,
 		std::vector<std::unique_ptr<VulkanCommandPool>>& lockedPools);
 	
-	class VK_RHI_API VulkanCommandManager
+	class VulkanCommandManager
 	{
 		friend VulkanQueue;
 		
