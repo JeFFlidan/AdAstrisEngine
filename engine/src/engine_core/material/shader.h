@@ -45,7 +45,7 @@ namespace ad_astris::ecore
 		
 		private:
 			rhi::ShaderInfo _shaderInfo;
-			io::IFile* _file{ nullptr };
+			io::File* _file{ nullptr };
 			bool _isCompiled{ false };
 			UUID _uuid;
 
@@ -54,8 +54,8 @@ namespace ad_astris::ecore
 		public:
 			// ========== Begin Object interface ==========
 					
-			virtual void serialize(io::IFile* file) override;
-			virtual void deserialize(io::IFile* file, ObjectName* objectName) override;
+			virtual void serialize(io::File* file) override;
+			virtual void deserialize(io::File* file, ObjectName* objectName) override;
 		
 			virtual uint64_t get_size() override
 			{

@@ -17,8 +17,8 @@ ResourcePool::ResourcePool()
 	create_pool_for_new_resource<ecore::Level>();
 	create_pool_for_new_resource<ecore::MaterialTemplate>();
 	create_pool_for_new_resource<ecore::Shader>();
-	create_pool_for_new_resource<io::ResourceFile>();
-	create_pool_for_new_resource<io::LevelFile>();
+	create_pool_for_new_resource<resource::ResourceFile>();
+	create_pool_for_new_resource<resource::LevelFile>();
 	create_pool_for_new_resource<ecore::ObjectName>();
 	create_pool_for_new_resource<ecore::OpaquePBRMaterial>();
 	create_pool_for_new_resource<ecore::TransparentMaterial>();

@@ -34,7 +34,7 @@ ResourceAccessor<ecore::Level> ResourceManager::create_level(io::URI& path)
 {
 	std::string strLevelName = io::Utils::get_file_name(path);
 	ecore::ObjectName* levelName = _resourcePool.allocate<ecore::ObjectName>(strLevelName.c_str());
-	io::IFile* levelFile = _resourcePool.allocate<io::LevelFile>(path);
+	io::File* levelFile = _resourcePool.allocate<resource::LevelFile>(path);
 	ecore::Level* level = _resourcePool.allocate<ecore::Level>(path, levelName);
 	level->serialize(levelFile);
 
@@ -54,7 +54,7 @@ ResourceAccessor<ecore::Level> ResourceManager::load_level(io::URI& path)
 {
 	UUID uuidByName = _resourceDataTable.get_uuid_by_name(path);
 	ResourceData* resourceData = _resourceDataTable.get_resource_data(uuidByName);
-	io::IFile* file = resourceData->file;
+	io::File* file = resourceData->file;
 	ecore::Level* level = static_cast<ecore::Level*>(resourceData->object);
 
 	if (file)
@@ -62,7 +62,7 @@ ResourceAccessor<ecore::Level> ResourceManager::load_level(io::URI& path)
 	
 	size_t size = 0;
 	uint8_t* data = static_cast<uint8_t*>(_fileSystem->map_to_read(path, size, "rb"));
-	file = _resourcePool.allocate<io::LevelFile>(path);
+	file = _resourcePool.allocate<resource::LevelFile>(path);
 	file->deserialize(data, size);
 	_fileSystem->unmap_after_reading(data);
 	
@@ -151,7 +151,7 @@ ResourceAccessor<ecore::MaterialTemplate> ResourceManager::create_new_resource(
 	resData.metadata.type = ResourceType::MATERIAL_TEMPLATE;
 	resData.metadata.objectName = _resourcePool.allocate<ecore::ObjectName>(creationContext.materialTemplateName.c_str());
 	resData.object = _resourcePool.allocate<ecore::MaterialTemplate>(templateInfo, resData.metadata.objectName);
-	resData.file = _resourcePool.allocate<io::ResourceFile>(absolutePath);
+	resData.file = _resourcePool.allocate<resource::ResourceFile>(absolutePath);
 
 	_resourceDataTable.add_resource(&resData);
 
@@ -176,7 +176,7 @@ ResourceAccessor<ecore::OpaquePBRMaterial> ResourceManager::create_new_resource(
 	resData.metadata.type = ResourceType::MATERIAL;
 	resData.metadata.objectName = objectName;
 	resData.object = _resourcePool.allocate<ecore::OpaquePBRMaterial>(creationContext.materialSettings, objectName, creationContext.materialTemplateUUID);
-	resData.file = _resourcePool.allocate<io::ResourceFile>(absoluteMaterialPath);
+	resData.file = _resourcePool.allocate<resource::ResourceFile>(absoluteMaterialPath);
 
 	_resourceDataTable.add_resource(&resData);
 
@@ -198,7 +198,7 @@ ResourceAccessor<ecore::TransparentMaterial> ResourceManager::create_new_resourc
 	resData.metadata.type = ResourceType::MATERIAL;
 	resData.metadata.objectName = objectName;
 	resData.object = _resourcePool.allocate<ecore::TransparentMaterial>(creationContext.materialSettings, objectName, creationContext.materialTemplateUUID);
-	resData.file = _resourcePool.allocate<io::ResourceFile>(absoluteMaterialPath);
+	resData.file = _resourcePool.allocate<resource::ResourceFile>(absoluteMaterialPath);
 
 	_resourceDataTable.add_resource(&resData);
 
@@ -221,7 +221,7 @@ void ResourceManager::destroy_resource(UUID uuid)
 /** @warning MEMORY LEAK, uint8_t* data, should be tested if everything works correct after delete[]
  * 
  */
-void ResourceManager::write_to_disk(io::IFile* file)
+void ResourceManager::write_to_disk(io::File* file)
 {
 	io::URI path = file->get_file_path();		// temporary solution
 
@@ -235,11 +235,11 @@ void ResourceManager::write_to_disk(io::IFile* file)
 	delete[] data;
 }
 
-io::IFile* ResourceManager::read_from_disk(io::URI& path, bool isShader)
+io::File* ResourceManager::read_from_disk(io::URI& path, bool isShader)
 {
 	size_t size = 0;
 	uint8_t* data = static_cast<uint8_t*>(_fileSystem->map_to_read(path, size, "rb"));
-	io::IFile* file = _resourcePool.allocate<io::ResourceFile>(path);
+	io::File* file = _resourcePool.allocate<resource::ResourceFile>(path);
 	
 	if (isShader)
 		file->set_binary_blob(data, size);

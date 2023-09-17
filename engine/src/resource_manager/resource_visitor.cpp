@@ -44,12 +44,12 @@ void ResourceDeleterVisitor::visit(ecore::TransparentMaterial* material)
 	_resourcePool->free(material);
 }
 
-void ResourceDeleterVisitor::visit(io::ResourceFile* resourceFile)
+void ResourceDeleterVisitor::visit(resource::ResourceFile* resourceFile)
 {
 	_resourcePool->free(resourceFile);
 }
 
-void ResourceDeleterVisitor::visit(io::LevelFile* levelFile)
+void ResourceDeleterVisitor::visit(resource::LevelFile* levelFile)
 {
 	_resourcePool->free(levelFile);
 }

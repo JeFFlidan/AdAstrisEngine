@@ -14,8 +14,8 @@ namespace ad_astris::ecore
 		public:
 			virtual ~Object() { }
 		
-			virtual void serialize(io::IFile* file) { }
-			virtual void deserialize(io::IFile* file, ObjectName* objectName) { }
+			virtual void serialize(io::File* file) { }
+			virtual void deserialize(io::File* file, ObjectName* objectName) { }
 
 			// Begin method for resources
 			virtual Object* clone()

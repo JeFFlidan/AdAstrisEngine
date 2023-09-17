@@ -1,191 +1,101 @@
 #include "file.h"
 #include "utils.h"
-#include "engine_core/model/static_model.h"
-#include "engine_core/texture/texture2D.h"
-#include "resource_manager/resource_visitor.h"
-#include "profiler/logger.h"
 
 #include <lz4/lz4.h>
 
 #include <vector>
 
 using namespace ad_astris;
+using namespace io;
 
-void io::IFile::set_metadata(std::string& newMetaData)
+void File::serialize(
+	std::vector<uint8_t>& binBlob,
+	std::string& metadata,
+	std::vector<uint8_t>& outputData)
 {
-	_metaData = newMetaData;
-}
+	uint64_t metadataSize = metadata.size();
+	uint64_t binDataSize = binBlob.size();
+	uint64_t compressedBinDataSize = 0;
+	std::vector<uint8_t> compressedBinData;
 
-std::string& io::IFile::get_metadata()
-{
-	return _metaData;
-}
-
-io::URI io::IFile::get_file_path()
-{
-	return _path;
-}
-
-std::string io::IFile::get_file_name()
-{
-	return Utils::get_file_name(_path);
-}
-
-template<typename T>
-io::ResourceFile::ResourceFile(ConversionContext<T>& context)
-{
-	
-}
-
-template<>
-io::ResourceFile::ResourceFile(ConversionContext<ecore::StaticModel>& context)
-{
-	context.get_data(_metaData, _binBlob, _binBlobSize, _path);
-}
-
-template<>
-io::ResourceFile::ResourceFile(ConversionContext<ecore::Texture2D>& context)
-{
-	context.get_data(_metaData, _binBlob, _binBlobSize, _path);
-}
-
-io::ResourceFile::ResourceFile(const URI& uri)
-{
-	_path = uri;
-}
-
-inline io::ResourceFile::~ResourceFile()
-{
-	delete[] _binBlob;
-}
-
-void io::ResourceFile::serialize(uint8_t*& data, uint64_t& size)
-{
-	int compressStaging = LZ4_compressBound(_binBlobSize);
-	std::vector<char> compressedBinBlob;
-	compressedBinBlob.resize(compressStaging);
-
-	uint64_t compressedSize = LZ4_compress_default(
-		(const char*)_binBlob,
-		compressedBinBlob.data(),
-		_binBlobSize,
-		compressStaging);
-
-	compressedBinBlob.resize(compressedSize);
-	
-	uint64_t metadataSize = _metaData.size();
-	size_t uint64Size = sizeof(uint64_t) * 3;
-	size = uint64Size + compressedBinBlob.size() + metadataSize;
-	data = new uint8_t[size];
-	uint64_t sizes[3] = { metadataSize, compressedSize, _binBlobSize };
-
-	memcpy(data, sizes, uint64Size);
-	memcpy(data + uint64Size, _metaData.data(), _metaData.size());
-	memcpy(data + uint64Size + _metaData.size(), compressedBinBlob.data(), compressedBinBlob.size());
-}
-
-void io::ResourceFile::deserialize(uint8_t* data, uint64_t size)
-{
-	uint64_t metaDataSize;
-	memcpy(&metaDataSize, data, sizeof(uint64_t));
-	data += sizeof(uint64_t);
-	uint64_t compressedBlobSize;
-	memcpy(&compressedBlobSize, data, sizeof(uint64_t));
-	data += sizeof(uint64_t);
-	memcpy(&_binBlobSize, data, sizeof(uint64_t));
-	data += sizeof(uint64_t);
-	_metaData.resize(metaDataSize);
-	memcpy(_metaData.data(), data, metaDataSize);
-	data += metaDataSize;
-	
-	if (_binBlobSize != 0)
+	if (binDataSize)
 	{
-		uint8_t* compressedBlob = new uint8_t[compressedBlobSize];
-		_binBlob = new uint8_t[_binBlobSize];
-		memcpy(compressedBlob, data, compressedBlobSize);
-		LZ4_decompress_safe((char*)compressedBlob, (char*)_binBlob, compressedBlobSize, _binBlobSize);
-		delete[] compressedBlob;
+		uint64_t compressStaging = binDataSize ? LZ4_compressBound(binDataSize) : 0;
+		compressedBinData.resize(compressStaging);
+		compressedBinDataSize = LZ4_compress_default(
+		   (const char*)binBlob.data(),
+		   (char*)compressedBinData.data(),
+		   binDataSize,
+		   compressStaging);
+		compressedBinData.resize(compressedBinDataSize);
+	}
+
+	uint64_t outputDataSize = sizeof(uint64_t) * 3 + metadataSize + compressedBinDataSize;
+	outputData.resize(outputDataSize);
+	uint8_t* outputDataPtr = outputData.data();
+	
+	std::vector<uint64_t> sizes = { metadataSize, compressedBinDataSize, binDataSize };
+	memcpy(outputDataPtr, sizes.data(), sizeof(uint64_t) * sizes.size());
+	outputDataPtr += sizeof(uint64_t) * sizes.size();
+	
+	if (metadataSize)
+	{
+		memcpy(outputDataPtr, metadata.c_str(), metadataSize);
+		outputDataPtr += metadataSize;
+	}
+
+	if (compressedBinDataSize)
+	{
+		memcpy(outputDataPtr, compressedBinData.data(), compressedBinDataSize);
 	}
 }
 
-inline bool io::ResourceFile::is_valid()
+void File::deserialize(
+	std::vector<uint8_t>& inputData,
+	std::vector<uint8_t>& outputData,
+	std::string& outputMetadata)
 {
-	return _binBlob && !_metaData.empty();
-}
-
-inline uint8_t* io::ResourceFile::get_binary_blob()
-{
-	return _binBlob;
-}
-
-inline void io::ResourceFile::set_binary_blob(uint8_t* blob, uint64_t blobSize)
-{
-	_binBlob = new uint8_t[blobSize];
-	memcpy(_binBlob, blob, blobSize);
-	_binBlobSize = blobSize;
-}
-
-inline uint64_t io::ResourceFile::get_binary_blob_size()
-{
-	return _binBlobSize;
-}
-
-inline void io::ResourceFile::destroy_binary_blob()
-{
-	delete[] _binBlob;
-	_binBlob = nullptr;
-}
-
-inline void io::ResourceFile::accept(resource::IResourceVisitor& resourceVisitor)
-{
-	resourceVisitor.visit(this);
-}
-
-io::LevelFile::LevelFile(const URI& uri)
-{
-	_path = uri;
-}
-			
-io::LevelFile::~LevelFile()
-{
+	uint8_t* inputDataPtr = inputData.data();
 	
+	uint64_t metadataSize = 0;
+	memcpy(inputDataPtr, &metadataSize, sizeof(uint64_t));
+	inputDataPtr += sizeof(uint64_t);
+	
+	uint64_t compressedBinDataSize = 0;
+	memcpy(inputDataPtr, &compressedBinDataSize, sizeof(uint64_t));
+	inputDataPtr += sizeof(uint64_t);
+	
+	uint64_t binDataSize = 0;
+	memcpy(inputDataPtr, &binDataSize, sizeof(uint64_t));
+	inputDataPtr += sizeof(uint64_t);
+
+	if (metadataSize)
+	{
+		outputMetadata.resize(metadataSize);
+		memcpy(inputDataPtr, outputMetadata.data(), metadataSize);
+		inputDataPtr += metadataSize;
+	}
+
+	if (compressedBinDataSize && binDataSize)
+	{
+		std::vector<uint8_t> compressedBin(compressedBinDataSize);
+		memcpy(inputDataPtr, compressedBin.data(), compressedBinDataSize);
+		outputData.resize(binDataSize);
+		LZ4_decompress_safe(
+			(char*)compressedBin.data(),
+			(char*)outputData.data(),
+			compressedBinDataSize,
+			binDataSize);
+	}
 }
 
-void io::LevelFile::serialize(uint8_t*& data, uint64_t& size)
+void File::serialize(uint8_t*& data, uint64_t& size)
 {
-	data = new uint8_t[_metaData.size() + sizeof(uint64_t)];
-	LOG_INFO("Meta data in file serialize: {}", _metaData)
-	LOG_INFO("Array size: {}", _metaData.size() + sizeof(uint64_t))
-	uint64_t metadataSize = _metaData.size();
-	memcpy(data, &metadataSize, sizeof(uint64_t));
-	memcpy(data + sizeof(uint64_t), _metaData.data(), metadataSize);
-	size = sizeof(uint64_t) + _metaData.size();
+	// TODO
 }
 
-void io::LevelFile::deserialize(uint8_t* data, uint64_t size)
+void File::deserialize(uint8_t* data, uint64_t size)
 {
-	uint64_t metadataSize;
-	memcpy(&metadataSize, data, sizeof(uint64_t));
-	_metaData.resize(metadataSize);
-	memcpy(_metaData.data(), data + sizeof(uint64_t), metadataSize);
+	// TODO
 }
 
-inline bool io::LevelFile::is_valid()
-{
-	return !_metaData.empty();
-}
-
-inline uint8_t* io::LevelFile::get_binary_blob()
-{
-	return nullptr;
-}
-
-inline uint64_t io::LevelFile::get_binary_blob_size()
-{
-	return 0;
-}
-
-inline void io::LevelFile::accept(resource::IResourceVisitor& resourceVisitor)
-{
-	resourceVisitor.visit(this);
-}

@@ -12,7 +12,7 @@ Shader::Shader(ObjectName* shaderName)
 	_name = shaderName;
 }
 
-void Shader::serialize(io::IFile* file)
+void Shader::serialize(io::File* file)
 {
     
 }
@@ -22,7 +22,7 @@ Shader::~Shader()
 	delete[] _shaderInfo.data;
 }
 
-void Shader::deserialize(io::IFile* file, ObjectName* objectName)
+void Shader::deserialize(io::File* file, ObjectName* objectName)
 {
 	_file = file;
 	_shaderInfo.shaderType = get_shader_type_by_file_ext(file->get_file_path());

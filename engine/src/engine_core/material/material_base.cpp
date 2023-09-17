@@ -8,7 +8,7 @@ MaterialBase::MaterialBase(ObjectName* materialName, UUID generalMaterialTemplat
 	_name = materialName;
 }
 
-void MaterialBase::serialize(io::IFile* file)
+void MaterialBase::serialize(io::File* file)
 {
 	nlohmann::json metadataJson;
 	metadataJson["material_uuid"] = _materialUUID;
@@ -18,7 +18,7 @@ void MaterialBase::serialize(io::IFile* file)
 	file->set_metadata(metadataStr);
 }
 
-void MaterialBase::deserialize(io::IFile* file, ObjectName* objectName)
+void MaterialBase::deserialize(io::File* file, ObjectName* objectName)
 {
 	std::string& metadataStr = file->get_metadata();
 	nlohmann::json metadataJson = nlohmann::json::parse(metadataStr);

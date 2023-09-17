@@ -26,7 +26,7 @@ resource::ResourceConverter::ResourceConverter(io::FileSystem* fileSystem) : _fi
 template <typename T>
 void resource::ResourceConverter::convert_to_aares_file(
 	io::URI& path,
-	io::ConversionContext<T>* conversionContext,
+	resource::ConversionContext<T>* conversionContext,
 	ecore::Object* existedObject)
 {
 	// TODO 
@@ -35,7 +35,7 @@ void resource::ResourceConverter::convert_to_aares_file(
 template<>
 void resource::ResourceConverter::convert_to_aares_file(
 	io::URI& path,
-	io::ConversionContext<ecore::StaticModel>* conversionContext,
+	resource::ConversionContext<ecore::StaticModel>* conversionContext,
 	ecore::Object* existedObject)
 {
 	if (existedObject)
@@ -63,7 +63,7 @@ void resource::ResourceConverter::convert_to_aares_file(
 template<>
 void resource::ResourceConverter::convert_to_aares_file(
 	io::URI& path,
-	io::ConversionContext<ecore::Texture2D>* conversionContext,
+	resource::ConversionContext<ecore::Texture2D>* conversionContext,
 	ecore::Object* existedObject)
 {
 	if (existedObject)
@@ -82,7 +82,7 @@ void resource::ResourceConverter::convert_to_aares_file(
 	convert_to_texture_info_from_raw_image(path, conversionContext);
 }
 
-void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path, io::ConversionContext<ecore::StaticModel>* context)
+void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path, resource::ConversionContext<ecore::StaticModel>* context)
 {
 	cgltf_options options;
 	memset(&options, 0, sizeof(cgltf_options));
@@ -257,7 +257,7 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 	memcpy(context->buffer + vertexBufferSize, modelIndices.data(), indexBufferSize);
 }
 
-void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, io::ConversionContext<ecore::StaticModel>* context)
+void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, resource::ConversionContext<ecore::StaticModel>* context)
 {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
@@ -339,7 +339,7 @@ void resource::ResourceConverter::convert_to_model_info_from_obj(io::URI& path, 
 	memcpy(context->buffer + vertexBufferSize, indices.data(), indexBufferSize);
 }
 
-void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI& path, io::ConversionContext<ecore::Texture2D>* context)
+void resource::ResourceConverter::convert_to_texture_info_from_raw_image(io::URI& path, resource::ConversionContext<ecore::Texture2D>* context)
 {
 	int32_t texWidth, texHeight, texChannels;
 	stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);

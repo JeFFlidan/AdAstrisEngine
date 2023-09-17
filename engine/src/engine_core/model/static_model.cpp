@@ -36,13 +36,13 @@ std::vector<std::string> ecore::StaticModel::get_materials_name()
 	return _modelInfo.materialsName;
 }
 
-void ecore::StaticModel::serialize(io::IFile* file)
+void ecore::StaticModel::serialize(io::File* file)
 {
 	std::string newMetadata = model::Utils::pack_static_model_info(&_modelInfo);
 	file->set_metadata(newMetadata);
 }
 
-void ecore::StaticModel::deserialize(io::IFile* file, ObjectName* objectName)
+void ecore::StaticModel::deserialize(io::File* file, ObjectName* objectName)
 {
 	std::string strMetadata = file->get_metadata();
 	_modelInfo = model::Utils::unpack_static_model_info(strMetadata);
@@ -85,7 +85,7 @@ void ecore::StaticModel::accept(resource::IResourceVisitor& resourceVisitor)
 	resourceVisitor.visit(this);
 }
 
-void io::ConversionContext<ecore::StaticModel>::get_data(std::string& metadata, uint8_t*& binBlob, uint64_t& binBlobSize, URI& path)
+void resource::ConversionContext<ecore::StaticModel>::get_data(std::string& metadata, uint8_t*& binBlob, uint64_t& binBlobSize, io::URI& path)
 {
 	ecore::model::StaticModelInfo info;
 	info.uuid = uuid;

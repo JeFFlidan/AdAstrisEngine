@@ -11,13 +11,13 @@ MaterialTemplate::MaterialTemplate(material::MaterialTemplateInfo& templateInfo,
 	_name = objectName;
 }
 
-void MaterialTemplate::serialize(io::IFile* file)
+void MaterialTemplate::serialize(io::File* file)
 {
 	std::string newMetadata = material::Utils::pack_general_material_template_info(_templateInfo);
 	file->set_metadata(newMetadata);
 }
 
-void MaterialTemplate::deserialize(io::IFile* file, ObjectName* templateName)
+void MaterialTemplate::deserialize(io::File* file, ObjectName* templateName)
 {
 	_templateInfo = material::Utils::unpack_general_material_template_info(file->get_metadata());
 	_name = templateName;

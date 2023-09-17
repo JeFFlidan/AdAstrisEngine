@@ -34,7 +34,7 @@ inline void Level::add_entity(ecs::Entity& entity)
 	_entities.push_back(entity);
 }
 
-void Level::serialize(io::IFile* file)
+void Level::serialize(io::File* file)
 {
 	nlohmann::json levelMainJson;
 
@@ -49,7 +49,7 @@ void Level::serialize(io::IFile* file)
 	file->set_metadata(newMetadata);
 }
 
-void Level::deserialize(io::IFile* file, ObjectName* objectName)
+void Level::deserialize(io::File* file, ObjectName* objectName)
 {
 	if (!objectName)
 	{

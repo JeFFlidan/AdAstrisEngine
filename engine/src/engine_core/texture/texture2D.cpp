@@ -5,13 +5,13 @@
 
 using namespace ad_astris;
 
-void ecore::Texture2D::serialize(io::IFile* file)
+void ecore::Texture2D::serialize(io::File* file)
 {
 	std::string strMetadata = texture::Utils::pack_texture2D_info(&_textureInfo);
 	file->set_metadata(strMetadata);
 }
 
-void ecore::Texture2D::deserialize(io::IFile* file, ObjectName* objectName)
+void ecore::Texture2D::deserialize(io::File* file, ObjectName* objectName)
 {
 	_data = file->get_binary_blob();
 	_textureInfo = texture::Utils::unpack_texture2D_info(file->get_metadata());
@@ -50,7 +50,7 @@ void ecore::Texture2D::accept(resource::IResourceVisitor& resourceVisitor)
 	resourceVisitor.visit(this);
 }
 
-void io::ConversionContext<ecore::Texture2D>::get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize,URI& path)
+void resource::ConversionContext<ecore::Texture2D>::get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize, io::URI& path)
 {
 	ecore::texture::Texture2DInfo info;
 	info.uuid = uuid;

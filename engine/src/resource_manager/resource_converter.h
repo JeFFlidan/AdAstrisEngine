@@ -23,15 +23,15 @@ namespace ad_astris::resource
 			template<typename T>
 			void convert_to_aares_file(
 				io::URI& path,
-				io::ConversionContext<T>* conversionContext,
+				resource::ConversionContext<T>* conversionContext,
 				ecore::Object* existedObject = nullptr);
 		
 		private:
 			io::FileSystem* _fileSystem{ nullptr };
 		
-			void convert_to_model_info_from_gltf(io::URI& path, io::ConversionContext<ecore::StaticModel>* context);
-			void convert_to_model_info_from_obj(io::URI& path, io::ConversionContext<ecore::StaticModel>* context);
-			void convert_to_texture_info_from_raw_image(io::URI& path, io::ConversionContext<ecore::Texture2D>* context);
+			void convert_to_model_info_from_gltf(io::URI& path, resource::ConversionContext<ecore::StaticModel>* context);
+			void convert_to_model_info_from_obj(io::URI& path, resource::ConversionContext<ecore::StaticModel>* context);
+			void convert_to_texture_info_from_raw_image(io::URI& path, resource::ConversionContext<ecore::Texture2D>* context);
 
 			struct BinaryBlob
 			{

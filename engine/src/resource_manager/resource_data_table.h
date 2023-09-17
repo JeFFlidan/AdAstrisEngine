@@ -22,7 +22,7 @@ namespace ad_astris::resource
 
 	struct ResourceData
 	{
-		io::IFile* file{ nullptr };
+		io::File* file{ nullptr };
 		ecore::Object* object{ nullptr };
 		ResourceMetadata metadata;
 	};
@@ -77,7 +77,7 @@ namespace ad_astris::resource
 			UUID get_uuid_by_name(io::URI& path);
 			UUID get_uuid_by_name(const std::string& name);
 		
-			io::IFile* get_resource_file(UUID& uuid);
+			io::File* get_resource_file(UUID& uuid);
 			ecore::Object* get_resource_object(UUID& uuid);
 			ResourceData* get_resource_data(UUID& uuid);
 			ResourceType get_resource_type(UUID& uuid);

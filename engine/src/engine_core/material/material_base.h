@@ -25,8 +25,8 @@ namespace ad_astris::ecore
 		public:
 			// ========== Begin Object interface ==========
 
-			virtual void serialize(io::IFile* file) override;
-			virtual void deserialize(io::IFile* file, ObjectName* objectName) override;
+			virtual void serialize(io::File* file) override;
+			virtual void deserialize(io::File* file, ObjectName* objectName) override;
 			virtual bool is_resource() override
 			{
 				return true;

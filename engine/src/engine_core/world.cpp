@@ -44,12 +44,12 @@ Level* World::get_current_level()
 	return _currentLevel;
 }
 
-void World::serialize(io::IFile* file)
+void World::serialize(io::File* file)
 {
 	
 }
 
-void World::deserialize(io::IFile* file, ObjectName* newName)
+void World::deserialize(io::File* file, ObjectName* newName)
 {
 	
 }

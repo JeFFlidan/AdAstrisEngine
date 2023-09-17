@@ -98,7 +98,7 @@ void resource::ResourceDataTable::save_resources()
 		if (resourceData.metadata.type == ResourceType::SHADER || !resourceData.object)
 			continue;
 		
-		io::IFile* file = resourceData.file;
+		io::File* file = resourceData.file;
 		ecore::Object* object = resourceData.object;
 		ResourceMetadata& metadata = resourceData.metadata;
 
@@ -239,7 +239,7 @@ void resource::ResourceDataTable::destroy_resource(UUID& uuid)
 
 // No if statement to check resource state cause it's implemented in ResourceManager where I use func
 // check_resource_in_cache() and make async loading
-io::IFile* resource::ResourceDataTable::get_resource_file(UUID& uuid)
+io::File* resource::ResourceDataTable::get_resource_file(UUID& uuid)
 {
 	std::scoped_lock<std::mutex> lock(_mutex);
 	auto it = _uuidToResourceData.find(uuid);

@@ -3,6 +3,7 @@
 #include "texture_common.h"
 #include "file_system/file.h"
 #include "engine_core/object.h"
+#include "resource_manager/resource_files.h"
 
 namespace ad_astris::ecore
 {
@@ -21,8 +22,8 @@ namespace ad_astris::ecore
 		public:
 			// ========== Begin Object interface ==========
 		
-			virtual void serialize(io::IFile* file) override;
-			virtual void deserialize(io::IFile* file, ObjectName* objectName) override;
+			virtual void serialize(io::File* file) override;
+			virtual void deserialize(io::File* file, ObjectName* objectName) override;
 			virtual uint64_t get_size() override;
 			virtual bool is_resource() override;
 			virtual UUID get_uuid() override;
@@ -38,7 +39,7 @@ namespace ad_astris::ecore
 	};
 }
 
-namespace ad_astris::io
+namespace ad_astris::resource
 {
 	template<>
 	struct ConversionContext<ecore::Texture2D>
@@ -52,6 +53,6 @@ namespace ad_astris::io
 		std::string filePath;
 		ecore::texture::Texture2DInfo* oldInfo{ nullptr };
 		
-		void get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize,URI& path);
+		void get_data(std::string& metadata,uint8_t*& binBlob,uint64_t& binBlobSize,io::URI& path);
 	};
 }

@@ -56,7 +56,7 @@ namespace ad_astris::resource
 			 * @param aaresPath must be a valid path to the folder where you want to save the new aares file
 			 */
 			template <typename T>
-			ResourceAccessor<T> convert_to_aares(io::URI& originalResourcePath, io::URI& aaresPath)
+			ResourceAccessor<T> convert_to_aares(io::URI originalResourcePath, io::URI aaresPath)
 			{
 				if (!io::Utils::exists(_fileSystem, originalResourcePath))
 				{
@@ -80,7 +80,7 @@ namespace ad_astris::resource
 					existedObjectName = _resourceDataTable.get_resource_data(uuid)->metadata.objectName;
 				}
 
-				io::ConversionContext<T> conversionContext;
+				resource::ConversionContext<T> conversionContext;
 				if (existedObject)
 				{
 					_resourceConverter.convert_to_aares_file(originalResourcePath, &conversionContext, existedObject);
@@ -89,7 +89,7 @@ namespace ad_astris::resource
 				{
 					_resourceConverter.convert_to_aares_file(originalResourcePath, &conversionContext);
 				}
-				
+
 				if (io::Utils::is_relative(aaresPath))
 				{
 					aaresPath = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), aaresPath);
@@ -112,7 +112,7 @@ namespace ad_astris::resource
 				resourceData.metadata.path = aaresPath;
 				resourceData.metadata.objectName = existedObjectName ? existedObjectName : newObjectName;
 				
-				io::IFile* file = _resourcePool.allocate<io::ResourceFile>(conversionContext);
+				io::File* file = _resourcePool.allocate<ResourceFile>(conversionContext);
 				T* typedObject = _resourcePool.allocate<T>();
 				typedObject->deserialize(file, resourceData.metadata.objectName);
 				
@@ -187,8 +187,8 @@ namespace ad_astris::resource
 
 			BuiltinResourcesContext _builtinResourcesContext;
 
-			void write_to_disk(io::IFile* file);
-			io::IFile* read_from_disk(io::URI& path, bool isShader = false);
+			void write_to_disk(io::File* file);
+			io::File* read_from_disk(io::URI& path, bool isShader = false);
 		
 			template<typename T>
 			ResourceAccessor<T> load_resource(UUID& uuid)
@@ -196,7 +196,7 @@ namespace ad_astris::resource
 				io::URI path = _resourceDataTable.get_resource_path(uuid);
 				bool isShader = _resourceDataTable.get_resource_type(uuid) == ResourceType::SHADER;
 
-				io::IFile* file = read_from_disk(path, isShader);
+				io::File* file = read_from_disk(path, isShader);
 
 				if (isShader)
 				{
