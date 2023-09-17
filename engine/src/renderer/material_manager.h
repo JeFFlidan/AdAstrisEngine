@@ -67,7 +67,7 @@ namespace ad_astris::renderer::impl
 	
 	struct MaterialManagerInitializationContext
 	{
-		rcore::IShaderCompiler* shaderCompiler;
+		rcore::IShaderManager* shaderManager;
 		events::EventManager* eventManager;
 		tasks::TaskComposer* taskComposer;
 		resource::ResourceManager* resourceManager;
@@ -94,7 +94,7 @@ namespace ad_astris::renderer::impl
 			RendererMaterialTemplate* get_material_template(UUID materialTemplateUUID);
 
 		private:
-			rcore::IShaderCompiler* _shaderCompiler;
+			rcore::IShaderManager* _shaderManager;
 			events::EventManager* _eventManager;
 			tasks::TaskComposer* _taskComposer;
 			resource::ResourceManager* _resourceManager;

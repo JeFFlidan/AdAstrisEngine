@@ -265,6 +265,27 @@ namespace ad_astris::rhi
 		RAY_MISS = 1 << 12,
 		RAY_CALLABLE = 1 << 13
 	};
+
+	enum class ShaderFormat
+	{
+		UNDEFINED = 0,
+		HLSL6,			// For D3D12, DXCompiler
+		HLSL_TO_SPIRV,	// For vulkan, DXCompiler
+		GLSL_TO_HLSL6,	// For D3D12, compiler will use spirv-cross. This feature will be implemented in the future
+		GLSL_TO_SPIRV,	// For vulkan, Shaderc 
+	};
+
+	enum class HLSLShaderModel
+	{
+		SM_6_0,
+		SM_6_1,
+		SM_6_2,
+		SM_6_3,
+		SM_6_4,
+		SM_6_5,
+		SM_6_6,
+		SM_6_7
+	};
 	
 	struct TextureInfo
 	{

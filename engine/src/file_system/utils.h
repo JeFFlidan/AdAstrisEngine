@@ -25,6 +25,7 @@ namespace ad_astris::io
 			static bool is_absolute(const URI& path);
 			static bool is_relative(const URI& path);
 			static bool has_extension(const URI& path);
+			static bool exists(const URI& absolutePath);
 			static bool exists(const URI& baseFolder, const URI& relativePath);
 			// Checks if file exists in the engine sources. Not recommended to use anywhere other than engine internal code
 			static bool exists(FileSystem* fileSystem, const URI& path);
@@ -37,6 +38,11 @@ namespace ad_astris::io
 			 * \param dataStorage is an empty vector that will be resized in function. New vector size = file size in bytes
 			 */
 			static void read_file(FileSystem* fileSystem, const URI& path, std::vector<uint8_t>& dataStorage);
-			static void write_file(FileSystem* fileSystem, const URI& path, uint8_t* data, size_t dataSize, const std::string& writeMode = "wb");
+			static void read_file(FileSystem* fileSystem, const URI& path, uint8_t** dataStorage);
+			static void write_file(FileSystem* fileSystem, const URI& path, const uint8_t* data, size_t dataSize, const std::string& writeMode = "wb");
+			static void write_file(FileSystem* fileSystem, const URI& path, const char* data, size_t dataSize, const std::string& writeMode = "wb");
+			static void serialize_file(FileSystem* fileSystem, const URI& path, std::vector<uint8_t>& inputBinData, std::string& inputMetadata);
+			static void deserialize_file(FileSystem* fileSystem, const URI& path, std::vector<uint8_t>& outputBinData, std::string& outputMetadata);
+			static uint64_t get_last_write_time(const URI& absolutePath);
 	};
 }

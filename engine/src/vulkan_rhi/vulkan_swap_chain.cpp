@@ -19,14 +19,17 @@ vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDev
 	
 	if (swapInfo->buffersCount == 3)
 	{
+		LOG_INFO("VK_PRESENT_MODE_MAILBOX_KHR")
 		presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
 	}
 	else if (swapInfo->sync)
 	{
+		LOG_INFO("VK_PRESENT_MODE_FIFO_KHR")
 		presentMode = VK_PRESENT_MODE_FIFO_KHR;
 	}
 	else if (!swapInfo->sync)
 	{
+		LOG_INFO("VK_PRESENT_MODE_IMMEDIATE_KHR")
 		presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 	}
 	

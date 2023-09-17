@@ -33,11 +33,11 @@ namespace ad_astris::renderer::impl
 			ecore::RendererSubsettings* _rendererSubsettings{ nullptr };
 			rhi::IEngineRHI* _rhi{ nullptr };
 			rcore::IRenderGraph* _renderGraph{ nullptr };
-			rcore::IShaderCompiler* _shaderCompiler{ nullptr };
+			rcore::IShaderManager* _shaderManager{ nullptr };
 			resource::ResourceManager* _resourceManager{ nullptr };
 			events::EventManager* _eventManager{ nullptr };
 			tasks::TaskComposer* _taskComposer{ nullptr };
-
+			
 			std::unique_ptr<TriangleTest> _triangleTest{ nullptr };
 
 			rhi::SwapChain _swapChain;

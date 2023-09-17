@@ -1,5 +1,5 @@
 #include "render_graph.h"
-#include "shader_compiler.h"
+#include "shader_compiler/shader_manager.h"
 #include "engine/render_core_module.h"
 #include "core/module_manager.h"
 #include "profiler/logger.h"
@@ -11,12 +11,12 @@ namespace ad_astris::rcore
 	{
 		public:
 			virtual void startup_module(ModuleManager* moduleManager) override;
-			virtual IShaderCompiler* get_shader_compiler() override;
+			virtual IShaderManager* get_shader_manager() override;
 			virtual IRenderGraph* get_render_graph() override;
 
 		private:
 			std::unique_ptr<IRenderGraph> _renderGraph;
-			std::unique_ptr<IShaderCompiler> _shaderCompiler;
+			std::unique_ptr<IShaderManager> _shaderManager;
 	};
 
 	void RenderCoreModule::startup_module(ModuleManager* moduleManager)
@@ -28,14 +28,15 @@ namespace ad_astris::rcore
 		// a big overhead. For now, I will use
 		//IVulkanRHIModule* rhiModule = moduleManager->load_module<IVulkanRHIModule>("libvulkan_rhi.dll");		// TODO module associated names in config file
 
-		_shaderCompiler = std::make_unique<impl::ShaderCompiler>();
+		//_shaderCompiler = std::make_unique<impl::ShaderCompiler>();
 		
 		_renderGraph = std::make_unique<impl::RenderGraph>();
+		_shaderManager = std::make_unique<impl::ShaderManager>();
 	}
 
-	IShaderCompiler* RenderCoreModule::get_shader_compiler()
+	IShaderManager* RenderCoreModule::get_shader_manager()
 	{
-		return _shaderCompiler.get();
+		return _shaderManager.get();
 	}
 
 	IRenderGraph* RenderCoreModule::get_render_graph()

@@ -9,12 +9,12 @@ using namespace ad_astris;
 using namespace io;
 
 void File::serialize(
-	std::vector<uint8_t>& binBlob,
-	std::string& metadata,
+	std::vector<uint8_t>& inputBinData,
+	std::string& inputMetadata,
 	std::vector<uint8_t>& outputData)
 {
-	uint64_t metadataSize = metadata.size();
-	uint64_t binDataSize = binBlob.size();
+	uint64_t metadataSize = inputMetadata.size();
+	uint64_t binDataSize = inputBinData.size();
 	uint64_t compressedBinDataSize = 0;
 	std::vector<uint8_t> compressedBinData;
 
@@ -23,7 +23,7 @@ void File::serialize(
 		uint64_t compressStaging = binDataSize ? LZ4_compressBound(binDataSize) : 0;
 		compressedBinData.resize(compressStaging);
 		compressedBinDataSize = LZ4_compress_default(
-		   (const char*)binBlob.data(),
+		   (const char*)inputBinData.data(),
 		   (char*)compressedBinData.data(),
 		   binDataSize,
 		   compressStaging);
@@ -40,7 +40,7 @@ void File::serialize(
 	
 	if (metadataSize)
 	{
-		memcpy(outputDataPtr, metadata.c_str(), metadataSize);
+		memcpy(outputDataPtr, inputMetadata.c_str(), metadataSize);
 		outputDataPtr += metadataSize;
 	}
 
@@ -52,7 +52,7 @@ void File::serialize(
 
 void File::deserialize(
 	std::vector<uint8_t>& inputData,
-	std::vector<uint8_t>& outputData,
+	std::vector<uint8_t>& outputBinData,
 	std::string& outputMetadata)
 {
 	uint8_t* inputDataPtr = inputData.data();
@@ -80,10 +80,10 @@ void File::deserialize(
 	{
 		std::vector<uint8_t> compressedBin(compressedBinDataSize);
 		memcpy(inputDataPtr, compressedBin.data(), compressedBinDataSize);
-		outputData.resize(binDataSize);
+		outputBinData.resize(binDataSize);
 		LZ4_decompress_safe(
 			(char*)compressedBin.data(),
-			(char*)outputData.data(),
+			(char*)outputBinData.data(),
 			compressedBinDataSize,
 			binDataSize);
 	}

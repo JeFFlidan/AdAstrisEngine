@@ -15,7 +15,9 @@ target_include_directories(file_system PUBLIC ${DIR_THIRD_PARTY}/fmt_lib)
 file(GLOB FILE_SYSTEM_FILES
 	${DIR_THIRD_PARTY}/fmt_lib/fmt/*
 	${DIR_ENGINE_SRC}/file_system/utils.h
-	${DIR_ENGINE_SRC}/file_system/utils.cpp)
+	${DIR_ENGINE_SRC}/file_system/utils.cpp
+	${DIR_ENGINE_SRC}/file_system/file.*
+	${DIR_THIRD_PARTY}/lz4/*)
 target_sources(file_system PRIVATE ${FILE_SYSTEM_FILES})
 
 include_directories(${DIR_THIRD_PARTY})

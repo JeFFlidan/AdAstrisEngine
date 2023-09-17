@@ -3,7 +3,7 @@
 
 using namespace ad_astris::renderer::impl;
 
-TriangleTest::TriangleTest(rhi::IEngineRHI* rhi, io::FileSystem* fileSystem) : _rhi(rhi)
+TriangleTest::TriangleTest(rhi::IEngineRHI* rhi, io::FileSystem* fileSystem, rcore::IShaderManager* shaderManager) : _rhi(rhi)
 {
 	std::vector<rhi::TextureView> swapChainTextureViews;
 	_rhi->get_swap_chain_texture_views(swapChainTextureViews);
@@ -41,33 +41,8 @@ TriangleTest::TriangleTest(rhi::IEngineRHI* rhi, io::FileSystem* fileSystem) : _
 	_rhi->create_render_pass(&_renderPass, &renderPassInfo);
 	LOG_INFO("TriangleTest::TriangleTest(): Created render pass")
 
-	io::URI vertexShaderPath = fileSystem->get_engine_root_path() + "/shaders/triangle.vert.spv";
-	io::URI fragmentShaderPath = fileSystem->get_engine_root_path() + "/shaders/triangle.frag.spv";
-
-	size_t size;
-	uint8_t* shaderData = static_cast<uint8_t*>(fileSystem->map_to_read(vertexShaderPath, size));
-	rhi::ShaderInfo vertexShaderInfo;
-	vertexShaderInfo.data = new uint8_t[size];
-	memcpy(vertexShaderInfo.data, shaderData, size);
-	vertexShaderInfo.size = size;
-	vertexShaderInfo.shaderType = rhi::ShaderType::VERTEX;
-	fileSystem->unmap_after_reading(shaderData);
-
-	shaderData = static_cast<uint8_t*>(fileSystem->map_to_read(fragmentShaderPath, size));
-	rhi::ShaderInfo fragmentShaderInfo;
-	fragmentShaderInfo.data = new uint8_t[size];
-	memcpy(fragmentShaderInfo.data, shaderData, size);
-	fragmentShaderInfo.size = size;
-	fragmentShaderInfo.shaderType = rhi::ShaderType::FRAGMENT;
-	fileSystem->unmap_after_reading(shaderData);
-
-	rhi::Shader vertexShader;
-	_rhi->create_shader(&vertexShader, &vertexShaderInfo);
-	LOG_INFO("TriangleTest::TriangleTest(): Created vertex shader")
-
-	rhi::Shader fragmentShader;
-	_rhi->create_shader(&fragmentShader, &fragmentShaderInfo);
-	LOG_INFO("TriangleTest::TriangleTest(): Created fragment shader")
+	rhi::Shader* vertexShader = shaderManager->load_shader("engine/shaders/triangleVS.hlsl", rhi::ShaderType::VERTEX);
+	auto fragmentShader = shaderManager->load_shader("engine/shaders/trianglePS.hlsl", rhi::ShaderType::FRAGMENT);
 	
 	rhi::GraphicsPipelineInfo pipelineInfo;
 	pipelineInfo.renderPass = _renderPass;
@@ -82,8 +57,8 @@ TriangleTest::TriangleTest(rhi::IEngineRHI* rhi, io::FileSystem* fileSystem) : _
 	pipelineInfo.rasterizationState.isBiasEnabled = false;
 	pipelineInfo.rasterizationState.frontFace = rhi::FrontFace::COUNTER_CLOCKWISE;
 
-	pipelineInfo.shaderStages.push_back(vertexShader);
-	pipelineInfo.shaderStages.push_back(fragmentShader);
+	pipelineInfo.shaderStages.push_back(*vertexShader);
+	pipelineInfo.shaderStages.push_back(*fragmentShader);
 
 	rhi::ColorBlendAttachmentState attachState;
 	attachState.isBlendEnabled = false;
@@ -107,7 +82,7 @@ void TriangleTest::draw()
 	_rhi->begin_command_buffer(&cmd);
 	_rhi->bind_pipeline(&cmd, &_pipeline);
 	rhi::ClearValues clearValues;
-	clearValues.color = { 0.1f, 0.1f, 0.1f, 0.1f };
+	clearValues.color = { 0.0f, 0.0f, 0.0f, 1.0f };
 	_rhi->begin_render_pass(&cmd, &_renderPass, clearValues);
 
 	rhi::Viewport viewport;

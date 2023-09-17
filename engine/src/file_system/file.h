@@ -16,12 +16,12 @@ namespace ad_astris::io
 			virtual void serialize(uint8_t*& data, uint64_t& size);
 			virtual void deserialize(uint8_t* data, uint64_t size);
 			virtual void serialize(
-				std::vector<uint8_t>& binBlob,
-				std::string& metadata,
+				std::vector<uint8_t>& inputBinData,
+				std::string& inputMetadata,
 				std::vector<uint8_t>& outputBinBlob);
 			virtual void deserialize(
 				std::vector<uint8_t>& inputData,
-				std::vector<uint8_t>& outputData,
+				std::vector<uint8_t>& outputBinData,
 				std::string& outputMetadata);
 
 			virtual bool is_valid()

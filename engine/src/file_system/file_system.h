@@ -10,6 +10,8 @@
 
 namespace ad_astris::io
 {
+	constexpr uint64_t MAX_PATH_LENGTH = 4096;
+	
 	class URI
 	{
 		public:
@@ -18,17 +20,25 @@ namespace ad_astris::io
 			URI(const char* uri)
 			{
 				size_t len = strlen(uri);
-				assert(len < 4096);
+				assert(len < 2048);
+				data = uri;
+			}
+
+			URI(const std::string& uri)
+			{
+				assert(uri.size() < MAX_PATH_LENGTH);
 				data = uri;
 			}
 
 			URI(const URI& uri)
 			{
+				assert(uri.data.size() < MAX_PATH_LENGTH);
 				data = uri.data;
 			}
 
 			URI& operator=(const URI& uri)
 			{
+				assert(uri.data.size() < MAX_PATH_LENGTH);
 				data = uri.data;
 				return *this;
 			}
@@ -40,16 +50,19 @@ namespace ad_astris::io
 
 			URI& operator+(const URI& uri)
 			{
+				assert(uri.data.size() < MAX_PATH_LENGTH);
 				data += uri.data;
 				return *this;
 			}
 
 			URI& operator+=(const URI& uri)
 			{
+				assert(uri.data.size() < MAX_PATH_LENGTH);
 				data += uri.data;
 				return *this;
 			}
 
+			const std::string& string() { return data; }
 			const char* c_str() const { return data.c_str(); }
 			bool empty() { return data.empty(); }
 

@@ -142,7 +142,7 @@ namespace ad_astris::rcore
 		std::unordered_set<std::string> dependencies;
 	};
 
-	enum ShaderCacheType
+	enum class ShaderCacheType
 	{
 		DXIL,
 		SPIRV
@@ -158,15 +158,38 @@ namespace ad_astris::rcore
 	class IShaderCompiler
 	{
 		public:
-			virtual void init(ShaderCompilerInitContext& initContext) = 0;
 			virtual void compile(ShaderInputDesc& inputDesc, ShaderOutputDesc& outputDesc) = 0;
+	};
+
+	struct ShaderManagerInitContext
+	{
+		ModuleManager* moduleManager;
+		io::FileSystem* fileSystem;
+		ShaderCacheType cacheType;
+		rhi::IEngineRHI* rhi;
+	};
+
+	class IShaderManager
+	{
+		public:
+			virtual ~IShaderManager() { }
+		
+			virtual void init(ShaderManagerInitContext& shaderManagerInitContext) = 0;
+			virtual rhi::Shader* load_shader(
+				const io::URI& relativeShaderPath,
+				rhi::ShaderType shaderType,
+				bool isEngineShader = true,
+				rhi::HLSLShaderModel shaderModel = rhi::HLSLShaderModel::SM_6_0,
+				const std::vector<std::string>& shaderDefines = {}) = 0;
+			virtual rhi::Shader* get_shader(const io::URI& relativeShaderPath) = 0;
+			virtual IShaderCompiler* get_shader_compiler() = 0;
 	};
 	
 	class IRenderCoreModule : public IModule
 	{
 		public:
-			virtual IShaderCompiler* get_shader_compiler() = 0;
 			virtual IRenderGraph* get_render_graph() = 0;
+			virtual IShaderManager* get_shader_manager() = 0;
 	};
 }
 

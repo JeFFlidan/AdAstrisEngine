@@ -38,9 +38,23 @@ void Renderer::init(RendererInitializationContext& initializationContext)
 
 	auto rcoreModule = moduleManager->load_module<rcore::IRenderCoreModule>("RenderCore");
 	_renderGraph = rcoreModule->get_render_graph();
-	_shaderCompiler = rcoreModule->get_shader_compiler();
+	_shaderManager = rcoreModule->get_shader_manager();
 	_renderGraph->init(_rhi);
-	_shaderCompiler->init(_resourceManager->get_file_system());
+
+	rcore::ShaderManagerInitContext shaderManagerInitContext;
+	shaderManagerInitContext.rhi = _rhi;
+	switch (_rendererSubsettings->get_graphics_api())
+	{
+		case ecore::GraphicsAPI::VULKAN:
+			shaderManagerInitContext.cacheType = rcore::ShaderCacheType::SPIRV;
+			break;
+		case ecore::GraphicsAPI::D3D12:
+			shaderManagerInitContext.cacheType = rcore::ShaderCacheType::DXIL;
+			break;
+	}
+	shaderManagerInitContext.fileSystem = _resourceManager->get_file_system();
+	shaderManagerInitContext.moduleManager = moduleManager;
+	_shaderManager->init(shaderManagerInitContext);
 	LOG_INFO("Renderer::init(): Loaded and initialized RenderCore module")
 
 	rhi::SwapChainInfo swapChainInfo;
@@ -55,7 +69,7 @@ void Renderer::init(RendererInitializationContext& initializationContext)
 	MaterialManagerInitializationContext materialManagerInitContext;
 	materialManagerInitContext.eventManager = _eventManager;
 	materialManagerInitContext.resourceManager = _resourceManager;
-	materialManagerInitContext.shaderCompiler = _shaderCompiler;
+	materialManagerInitContext.shaderManager = _shaderManager;
 	materialManagerInitContext.taskComposer = _taskComposer;
 	materialManagerInitContext.rhi = _rhi;
 	_materialManager = std::make_unique<MaterialManager>(materialManagerInitContext);
@@ -69,7 +83,7 @@ void Renderer::init(RendererInitializationContext& initializationContext)
 	_sceneManager = std::make_unique<SceneManager>(sceneManagerInitContext);
 	LOG_INFO("Renderer::init(): Initialized scene manager")
 
-	_triangleTest = std::make_unique<TriangleTest>(_rhi, _resourceManager->get_file_system());
+	_triangleTest = std::make_unique<TriangleTest>(_rhi, _resourceManager->get_file_system(), _shaderManager);
 	LOG_INFO("Renderer::init(): Initialized triangle test")
 }
 
@@ -93,7 +107,7 @@ void Renderer::draw()
 	uint32_t currentFrameIndex = get_current_frame_index();
 	uint32_t acquiredImageIndex;
 	_rhi->acquire_next_image(acquiredImageIndex, currentFrameIndex);
-	_sceneManager->setup_global_buffers();
+	//_sceneManager->setup_global_buffers();
 	_triangleTest->draw();
 	_rhi->submit(rhi::QueueType::GRAPHICS);
 	_rhi->present();

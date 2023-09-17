@@ -1,8 +1,10 @@
 #include "utils.h"
+#include "file.h"
 #include "profiler/logger.h"
 
 #include <algorithm>
 #include <filesystem>
+#include <chrono>
 
 using namespace ad_astris;
 
@@ -93,6 +95,11 @@ bool io::Utils::has_extension(const URI& path)
 	return std::filesystem::path(path.c_str()).has_extension();
 }
 
+bool io::Utils::exists(const URI& absolutePath)
+{
+	return std::filesystem::exists(absolutePath.c_str());
+}
+
 bool io::Utils::exists(const URI& baseFolder, const URI& relativePath)
 {
 	URI newPath = get_absolute_path_to_file(baseFolder, relativePath);
@@ -128,9 +135,55 @@ void io::Utils::read_file(FileSystem* fileSystem, const URI& path, std::vector<u
 	fileSystem->unmap_after_reading(tempData);
 }
 
-void io::Utils::write_file(FileSystem* fileSystem, const URI& path, uint8_t* data, size_t dataSize, const std::string& writeMode)
+void io::Utils::read_file(FileSystem* fileSystem, const URI& path, uint8_t** dataStorage)
+{
+	size_t size = 0;
+	uint8_t* tempData = static_cast<uint8_t*>(fileSystem->map_to_read(path, size));
+	*dataStorage = new uint8_t[size];
+	memcpy(*dataStorage, tempData, size);
+	fileSystem->unmap_after_reading(tempData);
+}
+
+void io::Utils::write_file(FileSystem* fileSystem, const URI& path, const uint8_t* data, size_t dataSize, const std::string& writeMode)
 {
 	Stream* stream = fileSystem->open(path, writeMode.c_str());
 	stream->write(data, sizeof(uint8_t), dataSize);
 	fileSystem->close(stream);
+}
+
+void io::Utils::write_file(FileSystem* fileSystem, const URI& path, const char* data, size_t dataSize, const std::string& writeMode)
+{
+	Stream* stream = fileSystem->open(path, writeMode.c_str());
+	stream->write(data, sizeof(char), dataSize);
+	fileSystem->close(stream);
+}
+
+void io::Utils::serialize_file(
+	FileSystem* fileSystem,
+	const URI& path,
+	std::vector<uint8_t>& inputBinData,
+	std::string& inputMetadata)
+{
+	File file;
+	std::vector<uint8_t> outputData;
+	file.serialize(inputBinData, inputMetadata, outputData);
+	write_file(fileSystem, path, outputData.data(), outputData.size());
+}
+
+void io::Utils::deserialize_file(
+	FileSystem* fileSystem,
+	const URI& path,
+	std::vector<uint8_t>& outputBinData,
+	std::string& outputMetadata)
+{
+	std::vector<uint8_t> inputData;
+	read_file(fileSystem, path, inputData);
+	File file;
+	file.deserialize(inputData, outputBinData, outputMetadata);
+}
+
+uint64_t io::Utils::get_last_write_time(const URI& absolutePath)
+{
+	auto time = std::filesystem::last_write_time(absolutePath.c_str());
+	return std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch()).count();
 }

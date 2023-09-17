@@ -6,7 +6,7 @@
 using namespace ad_astris::renderer::impl;
 
 MaterialManager::MaterialManager(MaterialManagerInitializationContext& initializationContext)
-	: _shaderCompiler(initializationContext.shaderCompiler), _eventManager(initializationContext.eventManager),
+	: _shaderManager(initializationContext.shaderManager), _eventManager(initializationContext.eventManager),
 		_taskComposer(initializationContext.taskComposer), _resourceManager(initializationContext.resourceManager),
 		_rhi(initializationContext.rhi)
 {
@@ -20,20 +20,20 @@ void MaterialManager::create_material_templates(RenderPassContext* renderPassCon
 
 	Timer timer;
 	
-	for (auto shader : _loadedShaders)
-	{
-		_taskComposer->execute(*shaderTaskGroup, [shader, this](tasks::TaskExecutionInfo execInfo)
-		{
-			ecore::shader::CompilationContext compilationContext = shader->get_compilation_context();
-			_shaderCompiler->compile_shader_into_spv(compilationContext);
-			shader->set_shader_compiled_flag();
-
-			rhi::Shader apiShader;
-			_rhi->create_shader(&apiShader, &shader->get_shader_info());
-			std::scoped_lock<std::mutex> lock(_mutex);
-			_apiShaderHandleByUUID[shader->get_uuid()] = apiShader;
-		});
-	}
+	// for (auto shader : _loadedShaders)
+	// {
+	// 	_taskComposer->execute(*shaderTaskGroup, [shader, this](tasks::TaskExecutionInfo execInfo)
+	// 	{
+	// 		ecore::shader::CompilationContext compilationContext = shader->get_compilation_context();
+	// 		_shaderCompiler->compile_shader_into_spv(compilationContext);
+	// 		shader->set_shader_compiled_flag();
+	//
+	// 		rhi::Shader apiShader;
+	// 		_rhi->create_shader(&apiShader, &shader->get_shader_info());
+	// 		std::scoped_lock<std::mutex> lock(_mutex);
+	// 		_apiShaderHandleByUUID[shader->get_uuid()] = apiShader;
+	// 	});
+	// }
 
 	_taskComposer->wait(*shaderTaskGroup);
 	LOG_INFO("MaterialManager::create_material_templates(): Shaders compilation time: {} ms", timer.elapsed_milliseconds())
