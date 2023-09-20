@@ -803,3 +803,16 @@ VkImageAspectFlags vulkan::get_image_aspect(rhi::ResourceUsage usage)
 	}
 	return VK_IMAGE_ASPECT_COLOR_BIT;
 }
+
+VkImageAspectFlags vulkan::get_image_aspect(rhi::TextureAspect textureAspect)
+{
+	switch (textureAspect)
+	{
+		case rhi::TextureAspect::COLOR:
+			return VK_IMAGE_ASPECT_COLOR_BIT;
+		case rhi::TextureAspect::DEPTH:
+			return VK_IMAGE_ASPECT_DEPTH_BIT;
+		case rhi::TextureAspect::STENCIL:
+			return VK_IMAGE_ASPECT_STENCIL_BIT;
+	}
+}

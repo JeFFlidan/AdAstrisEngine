@@ -1,3 +1,6 @@
+#define NOMINMAX
+
+#include "vulkan_common.h"
 #include "vulkan_shader.h"
 #include "profiler/logger.h"
 
@@ -9,6 +12,8 @@
 #include <cassert>
 
 using namespace ad_astris;
+
+#define CHECK_REFLECT(Result) assert(result == SPV_REFLECT_RESULT_SUCCESS);
 
 bool vulkan::VulkanShader::create_shader_module(rhi::ShaderInfo* shaderInfo)
 {
@@ -27,6 +32,8 @@ bool vulkan::VulkanShader::create_shader_module(rhi::ShaderInfo* shaderInfo)
 		return false;
 	}
 
+	reflect(shaderInfo);
+
 	return true;
 }
 
@@ -34,6 +41,63 @@ void vulkan::VulkanShader::delete_shader_module()
 {
 	vkDestroyShaderModule(_device, _shaderModule, nullptr);
 	_shaderModule = VK_NULL_HANDLE;
+}
+
+void vulkan::VulkanShader::reflect(rhi::ShaderInfo* shaderInfo)
+{
+	SpvReflectShaderModule reflectModule;
+	SpvReflectResult result = spvReflectCreateShaderModule(_size, _code, &reflectModule);
+	CHECK_REFLECT(result)
+
+	uint32_t bindingCount = 0;
+	result = spvReflectEnumerateDescriptorBindings(&reflectModule, &bindingCount, nullptr);
+	CHECK_REFLECT(result)
+	
+	std::vector<SpvReflectDescriptorBinding*> bindings(bindingCount);
+	result = spvReflectEnumerateDescriptorBindings(&reflectModule, &bindingCount, bindings.data());
+	CHECK_REFLECT(result)
+
+	uint32_t pushConstantCount = 0;
+	result = spvReflectEnumeratePushConstantBlocks(&reflectModule, &pushConstantCount, nullptr);
+	CHECK_REFLECT(result)
+
+	std::vector<SpvReflectBlockVariable*> pushConstants(pushConstantCount);
+	result = spvReflectEnumeratePushConstantBlocks(&reflectModule, &pushConstantCount, pushConstants.data());
+	CHECK_REFLECT(result)
+
+	for (auto& pushConstant : pushConstants)
+	{
+		auto& vkPushConstant = _reflectContext.pushConstantRange;
+		vkPushConstant.stageFlags |= pushConstant->flags;
+		vkPushConstant.offset = pushConstant->offset;
+		vkPushConstant.size = pushConstant->size;
+		_reflectContext.isPushConstantUsed = true;
+	}
+
+	if (!pushConstantCount)
+		_reflectContext.pushConstantRange.size = 0;
+
+	for (auto& binding : bindings)
+	{
+		bool isBindless = binding->set > 0;
+
+		if (isBindless)
+		{
+			_reflectContext.bindlessBindings.resize(std::max(_reflectContext.bindlessBindings.size(), (size_t)binding->set));
+			_reflectContext.bindlessBindings[binding->set - 1].isUsed = true;
+		}
+
+		auto& vkBinding = isBindless ? _reflectContext.bindlessBindings[binding->set - 1].binding : _reflectContext.zeroSetBindings.emplace_back();
+		vkBinding.binding = binding->binding;
+		vkBinding.descriptorCount = binding->count;
+		vkBinding.descriptorType = (VkDescriptorType)binding->descriptor_type;
+		vkBinding.stageFlags =  get_shader_stage(shaderInfo->shaderType);
+	}
+
+	spvReflectDestroyShaderModule(&reflectModule);
+
+	LOG_INFO("Bindless sets bindings count: {}", _reflectContext.bindlessBindings.size())
+	LOG_INFO("Zero sets bindings count: {}", _reflectContext.zeroSetBindings.size())
 }
 
 VkPipelineLayout vulkan::VulkanShaderStages::get_pipeline_layout(VkDevice device)

@@ -152,7 +152,7 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 	LOG_INFO("First frame graphics: {}", _freeGraphicsCmdPools[0].size())
 	LOG_INFO("Second frame graphics: {}", _freeGraphicsCmdPools[1].size())
 
-	LOG_INFO("First frame transfer: {}", _freeTransferCmdPools[0].size())
+	LOG_INFO("First frame transsfer: {}", _freeTransferCmdPools[0].size())
 	LOG_INFO("Second frame transfer: {}", _freeTransferCmdPools[1].size())
 
 	LOG_INFO("First frame compute: {}", _freeComputeCmdPools[0].size())
@@ -161,7 +161,6 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 	_lockedGraphicsCmdPools.resize(_bufferCount);
 	_lockedComputeCmdPools.resize(_bufferCount);
 	_lockedTransferCmdPools.resize(_bufferCount);
-	_tripleBufferingIndicesChain.resize(_bufferCount);
 
 	_syncManager.init(_device, _bufferCount);
 }

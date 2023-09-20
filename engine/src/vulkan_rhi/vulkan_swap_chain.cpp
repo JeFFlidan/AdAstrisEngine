@@ -3,8 +3,6 @@
 #include "profiler/logger.h"
 #include <vkbootstrap/VkBootstrap.h>
 
-#include "fmt/color.h"
-
 using namespace ad_astris;
 
 vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDevice* device) : _device(device)
@@ -19,17 +17,14 @@ vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDev
 	
 	if (swapInfo->buffersCount == 3)
 	{
-		LOG_INFO("VK_PRESENT_MODE_MAILBOX_KHR")
 		presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
 	}
 	else if (swapInfo->sync)
 	{
-		LOG_INFO("VK_PRESENT_MODE_FIFO_KHR")
 		presentMode = VK_PRESENT_MODE_FIFO_KHR;
 	}
 	else if (!swapInfo->sync)
 	{
-		LOG_INFO("VK_PRESENT_MODE_IMMEDIATE_KHR")
 		presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 	}
 	
@@ -56,11 +51,14 @@ vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDev
 
 	for (int i = 0; i != imageViews.size(); ++i)
 	{
+		_vulkanTextures.emplace_back(new VulkanTexture())->set_handle(images[i]);
+		
 		_textures.emplace_back(new rhi::Texture());
 		_textures.back()->textureInfo.samplesCount = rhi::SampleCount::BIT_1;
 		_textures.back()->textureInfo.width = swapInfo->width;
 		_textures.back()->textureInfo.height = swapInfo->height;
 		_textures.back()->textureInfo.format = rhi::Format::B8G8R8A8_SRGB;
+		_textures.back()->data = _vulkanTextures.back().get();
 		_vulkanTextureViews.emplace_back(new VulkanTextureView());
 		_vulkanTextureViews.back()->set_handle(imageViews[i]);
 		rhi::TextureView texView;
@@ -68,6 +66,9 @@ vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDev
 		texView.handle = _vulkanTextureViews.back().get();
 		_textureViews.push_back(texView);
 	}
+
+	_width = swapInfo->width;
+	_height = swapInfo->height;
 }
 
 void vulkan::VulkanSwapChain::cleanup()

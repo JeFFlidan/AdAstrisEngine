@@ -8,12 +8,19 @@
 
 namespace ad_astris::rhi
 {
+	struct RHIInitContext
+	{
+		acore::IWindow* window{ nullptr };
+		io::FileSystem* fileSystem{ nullptr };
+		SwapChainInfo* swapChainInfo{ nullptr };
+	};
+	
 	class IEngineRHI
 	{
 		public:
 			virtual ~IEngineRHI() = default;
 		
-			virtual void init(acore::IWindow* window, io::FileSystem* fileSystem) = 0;
+			virtual void init(RHIInitContext& initContext) = 0;
 			virtual void cleanup() = 0;
 
 			virtual void create_swap_chain(SwapChain* swapChain, SwapChainInfo* info) = 0;
@@ -37,6 +44,7 @@ namespace ad_astris::rhi
 			virtual uint32_t get_descriptor_index(Buffer* buffer) = 0;
 			virtual uint32_t get_descriptor_index(TextureView* textureView) = 0;
 			virtual uint32_t get_descriptor_index(Sampler* sampler) = 0;
+			virtual void bind_uniform_buffer(Buffer* buffer, uint32_t slot, uint32_t size = 0, uint32_t offset = 0) = 0;
 
 			virtual void begin_command_buffer(CommandBuffer* cmd, QueueType queueType = QueueType::GRAPHICS) = 0;
 			virtual void wait_command_buffer(CommandBuffer* cmd, CommandBuffer* waitForCmd) = 0;
@@ -76,6 +84,12 @@ namespace ad_astris::rhi
 			virtual void bind_pipeline(CommandBuffer* cmd, Pipeline* pipeline) = 0;
 			virtual void begin_render_pass(CommandBuffer* cmd, RenderPass* renderPass, ClearValues& clearValues) = 0;
 			virtual void end_render_pass(CommandBuffer* cmd) = 0;
+			// No render passes
+			virtual void begin_rendering(CommandBuffer* cmd, RenderingBeginInfo* beginInfo) = 0;
+			// No render passes
+			virtual void end_rendering(CommandBuffer* cmd) = 0;
+			virtual void begin_rendering_swap_chain(CommandBuffer* cmd, ClearValues* clearValues) = 0;
+			virtual void end_rendering_swap_chain(CommandBuffer* cmd) = 0;
 			// One buffer - one object
 			virtual void draw(CommandBuffer* cmd, uint64_t vertexCount) = 0;
 			virtual void draw_indexed(

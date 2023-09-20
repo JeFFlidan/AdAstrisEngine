@@ -173,6 +173,16 @@ vkb::Device vulkan::VulkanDevice::pick_device(vkb::PhysicalDevice& physicalDevic
 	maintenance4Features.maintenance4 = VK_TRUE;
 	deviceBuilder.add_pNext(&maintenance4Features);
 	
+	VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{};
+	dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
+	dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+	deviceBuilder.add_pNext(&dynamicRenderingFeatures);
+
+	VkPhysicalDeviceSynchronization2Features synchronization2Features{};
+	synchronization2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+	synchronization2Features.synchronization2 = VK_TRUE;
+	deviceBuilder.add_pNext(&synchronization2Features);
+	
 	LOG_INFO("Finish picking logical device")
 	return deviceBuilder.build().value();
 }

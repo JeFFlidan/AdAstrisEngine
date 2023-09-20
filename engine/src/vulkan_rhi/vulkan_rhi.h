@@ -11,6 +11,7 @@
 #include "vulkan_shader.h"
 #include "vulkan_swap_chain.h"
 #include "vulkan_descriptor_manager.h"
+#include "vulkan_pipeline_layout_cache.h"
 
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
@@ -27,7 +28,7 @@ namespace ad_astris::vulkan
 			// TODO Create custom destructor
 			~VulkanRHI() final override = default;
 
-			virtual void init(acore::IWindow* window, io::FileSystem* fileSystem) final override;
+			virtual void init(rhi::RHIInitContext& initContext) final override;
 			virtual void cleanup() final override;
 
 			virtual void create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info) final override;
@@ -54,6 +55,7 @@ namespace ad_astris::vulkan
 			virtual uint32_t get_descriptor_index(rhi::Buffer* buffer) final override;
 			virtual uint32_t get_descriptor_index(rhi::TextureView* textureView) final override;
 			virtual uint32_t get_descriptor_index(rhi::Sampler* sampler) final override;
+			virtual void bind_uniform_buffer(rhi::Buffer* buffer, uint32_t slot, uint32_t size, uint32_t offset) override;
 
 			virtual void begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType = rhi::QueueType::GRAPHICS) final override;
 			virtual void wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd) final override;
@@ -90,6 +92,10 @@ namespace ad_astris::vulkan
 			virtual void bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline) final override;
 			virtual void begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass, rhi::ClearValues& clearValues) final override;
 			virtual void end_render_pass(rhi::CommandBuffer* cmd) final override;
+			virtual void begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingBeginInfo* beginInfo) override;
+			virtual void end_rendering(rhi::CommandBuffer* cmd) override;
+			virtual void begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi::ClearValues* clearValues) override;
+			virtual void end_rendering_swap_chain(rhi::CommandBuffer* cmd) override;
 			virtual void draw(rhi::CommandBuffer* cmd, uint64_t vertexCount) final override;
 			virtual void draw_indexed(
 				rhi::CommandBuffer* cmd,
@@ -103,9 +109,15 @@ namespace ad_astris::vulkan
 			virtual void dispatch(rhi::CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) final override;
 			virtual void fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data) final override;
 			virtual void add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vector<rhi::PipelineBarrier>& barriers) final override;
+
+			VulkanDevice* get_device() { return _device.get(); }
+			VkInstance get_instance() { return _instance; }
+			VulkanSwapChain* get_swap_chain() { return _swapChain.get(); }
+			uint32_t get_current_image_index() { return _currentImageIndex; }
 		
 		private:
 			io::FileSystem* _fileSystem{ nullptr };
+			acore::IWindow* _mainWindow{ nullptr };
 			VkInstance _instance{ VK_NULL_HANDLE };
 			VkDebugUtilsMessengerEXT _debugMessenger{ VK_NULL_HANDLE };
 			VmaAllocator _allocator;
@@ -113,6 +125,7 @@ namespace ad_astris::vulkan
 			std::unique_ptr<VulkanCommandManager> _cmdManager{ nullptr };
 			std::unique_ptr<VulkanSwapChain> _swapChain{ nullptr };
 			std::unique_ptr<VulkanDescriptorManager> _descriptorManager{ nullptr };
+			std::unique_ptr<VulkanPipelineLayoutCache> _pipelineLayoutCache{ nullptr };
 			VkPipelineCache _pipelineCache;
 
 			std::vector<std::unique_ptr<VulkanPipeline>> _vulkanPipelines;
@@ -129,5 +142,7 @@ namespace ad_astris::vulkan
 			void create_allocator();
 			void create_pipeline_cache();
 			void save_pipeline_cache();
+
+			void set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier);
 	};
 }

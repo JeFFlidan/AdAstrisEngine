@@ -5,26 +5,58 @@
 
 using namespace ad_astris;
 
-vulkan::VulkanPipeline::VulkanPipeline(VulkanDevice* device, rhi::GraphicsPipelineInfo* info, VkPipelineCache pipelineCache) : _device(device)
+vulkan::VulkanPipeline::VulkanPipeline(
+	VulkanDevice* device,
+	rhi::GraphicsPipelineInfo* info,
+	VkPipelineCache pipelineCache,
+	VulkanPipelineLayoutCache* layoutCache) : _device(device)
 {
-	create_graphics_pipeline(info, pipelineCache);
+	create_graphics_pipeline(info, pipelineCache, layoutCache);
 	_type = rhi::PipelineType::GRAPHICS;
 }
 
-vulkan::VulkanPipeline::VulkanPipeline(VulkanDevice* device, rhi::ComputePipelineInfo* info, VkPipelineCache pipelineCache) : _device(device)
+vulkan::VulkanPipeline::VulkanPipeline(
+	VulkanDevice* device,
+	rhi::ComputePipelineInfo* info,
+	VkPipelineCache pipelineCache,
+	VulkanPipelineLayoutCache* layoutCache) : _device(device)
 {
-	create_compute_pipeline(info, pipelineCache);
+	create_compute_pipeline(info, pipelineCache, layoutCache);
 	_type = rhi::PipelineType::COMPUTE;
 }
 
 void vulkan::VulkanPipeline::cleanup()
 {
 	vkDestroyPipeline(_device->get_device(), _pipeline, nullptr);
-	vkDestroyPipelineLayout(_device->get_device(), _layout, nullptr);
+}
+
+void vulkan::VulkanPipeline::bind(VkCommandBuffer cmd, uint32_t frameIndex)
+{
+	VkPipelineBindPoint bindPoint;
+	switch (_type)
+	{
+		case rhi::PipelineType::GRAPHICS:
+			bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			break;
+		case rhi::PipelineType::COMPUTE:
+			bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+			break;
+		case rhi::PipelineType::RAY_TRACING:
+			bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+			break;
+		case rhi::PipelineType::UNDEFINED:
+			LOG_FATAL("VulkanPipeline::bind(): Can't bind undefined pipeline")
+	}
+	
+	vkCmdBindPipeline(cmd, bindPoint, _pipeline);
+	_layout->bind_descriptor_sets(cmd, frameIndex, bindPoint);
 }
 
 //private
-void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo* info, VkPipelineCache pipelineCache)
+void vulkan::VulkanPipeline::create_graphics_pipeline(
+	rhi::GraphicsPipelineInfo* info,
+	VkPipelineCache pipelineCache,
+	VulkanPipelineLayoutCache* layoutCache)
 {
 	VkPipelineInputAssemblyStateCreateInfo assemblyState{};
 	assemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -182,8 +214,7 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 	colorBlendState.pAttachments = colorBlendAttachments.data();
 	colorBlendState.logicOpEnable = info->colorBlendState.isLogicOpEnabled ? VK_TRUE : VK_FALSE;
 	colorBlendState.logicOp = get_logic_op(info->colorBlendState.logicOp);
-
-	VulkanShaderStages shaderStages;
+	
 	std::vector<VkPipelineShaderStageCreateInfo> pipelineStages; 
 	for (auto& shader : info->shaderStages)
 	{
@@ -193,7 +224,6 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 			return;
 		}
 		VulkanShader* vulkanShader = static_cast<VulkanShader*>(shader.handle);
-		shaderStages.add_stage(vulkanShader, (VkShaderStageFlagBits)get_shader_stage(shader.type));
 		VkPipelineShaderStageCreateInfo shaderStage{};
 		shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStage.module = vulkanShader->get_shader_module();
@@ -256,12 +286,15 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 		}
 	}
 
-	_layout = shaderStages.get_pipeline_layout(_device->get_device());
-
+	_layout = layoutCache->get_layout(info->shaderStages);
+	
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.layout = _layout;
-	pipelineInfo.renderPass = get_vk_obj(&info->renderPass)->get_handle();
+	pipelineInfo.layout = _layout->get_handle();
+	if (info->renderPass.handle)
+		pipelineInfo.renderPass = get_vk_obj(&info->renderPass)->get_handle();
+	else
+		pipelineInfo.renderPass = VK_NULL_HANDLE;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.stageCount = pipelineStages.size();
 	pipelineInfo.pStages = pipelineStages.data();
@@ -278,13 +311,15 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(rhi::GraphicsPipelineInfo*
 	VK_CHECK(vkCreateGraphicsPipelines(_device->get_device(), pipelineCache, 1, &pipelineInfo, nullptr, &_pipeline));
 }
 
-void vulkan::VulkanPipeline::create_compute_pipeline(rhi::ComputePipelineInfo* info, VkPipelineCache pipelineCache)
+void vulkan::VulkanPipeline::create_compute_pipeline(
+	rhi::ComputePipelineInfo* info,
+	VkPipelineCache pipelineCache,
+	VulkanPipelineLayoutCache* layoutCache)
 {
 	VkShaderStageFlagBits stageBit = (VkShaderStageFlagBits)get_shader_stage(info->shaderStage.type);
 	VulkanShader* vkShader = static_cast<VulkanShader*>(info->shaderStage.handle); 
 	VulkanShaderStages vkStage;
 	vkStage.add_stage(vkShader, stageBit);
-	_layout = vkStage.get_pipeline_layout(_device->get_device());
 
 	VkPipelineShaderStageCreateInfo shaderStage{};
 	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -292,9 +327,10 @@ void vulkan::VulkanPipeline::create_compute_pipeline(rhi::ComputePipelineInfo* i
 	shaderStage.stage = stageBit;
 	shaderStage.pName = "main";
 	
+	_layout = layoutCache->get_layout(info->shaderStage);
 	VkComputePipelineCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-	createInfo.layout = _layout;
+	createInfo.layout = _layout->get_handle();
 	createInfo.stage = shaderStage;
 	
 	VK_CHECK(vkCreateComputePipelines(_device->get_device(), pipelineCache, 1, &createInfo, nullptr, &_pipeline));

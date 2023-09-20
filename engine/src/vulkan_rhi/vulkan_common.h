@@ -7,6 +7,7 @@
 #include "vulkan_pipeline.h"
 #include "vulkan_buffer.h"
 #include "vulkan_texture.h"
+#include "vulkan_shader.h"
 
 #include <iostream>
 #include <vulkan/vulkan.h>
@@ -53,6 +54,7 @@ namespace ad_astris::vulkan
 	VkAccessFlags get_access(rhi::ResourceLayout resourceLayout);
 	VkPipelineBindPoint get_pipeline_bind_point(rhi::PipelineType pipelineType);
 	VkImageAspectFlags get_image_aspect(rhi::ResourceUsage usage);
+	VkImageAspectFlags get_image_aspect(rhi::TextureAspect textureAspect);
 
 	inline VulkanCommandBuffer* get_vk_obj(rhi::CommandBuffer* cmd)
 	{
@@ -87,5 +89,10 @@ namespace ad_astris::vulkan
 	inline VulkanSampler* get_vk_obj(rhi::Sampler* sampler)
 	{
 		return static_cast<VulkanSampler*>(sampler->handle);
+	}
+
+	inline VulkanShader* get_vk_obj(rhi::Shader* shader)
+	{
+		return static_cast<VulkanShader*>(shader->handle);
 	}
 }

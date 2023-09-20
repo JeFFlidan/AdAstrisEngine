@@ -20,6 +20,7 @@ namespace ad_astris::vulkan
 			void create_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);
 
 			VkImage get_handle() { return _image; }
+			void set_handle(VkImage image) { _image = image; }
 			VkExtent3D get_extent() { return _extent; }
 		
 		private:

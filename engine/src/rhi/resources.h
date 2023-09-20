@@ -8,6 +8,7 @@ namespace ad_astris::rhi
 {
 	enum class ResourceFlags
 	{
+		UNDEFINED = 0,
 		CUBE_TEXTURE = 1 << 0,
 	};
 	
@@ -232,6 +233,14 @@ namespace ad_astris::rhi
 		TEXTURE3D
 	};
 
+	enum class TextureAspect
+	{
+		UNDEFINED,
+		COLOR,
+		DEPTH,
+		STENCIL
+	};
+
 	enum class BorderColor
 	{
 		UNDEFINED,
@@ -300,7 +309,7 @@ namespace ad_astris::rhi
 		MemoryUsage memoryUsage{ MemoryUsage::UNDEFINED };
 		SampleCount samplesCount{ SampleCount::UNDEFINED };
 		TextureDimension textureDimension{ TextureDimension::UNDEFINED };
-		ResourceFlags resourceFlags;	// not necessary
+		ResourceFlags resourceFlags{ ResourceFlags::UNDEFINED};	// not necessary
 	};
 
 	// Think about Format field
@@ -388,6 +397,9 @@ namespace ad_astris::rhi
 	{
 		uint8_t baseMipLevel;
 		uint8_t baseLayer;
+		// if texture aspect is undefined, rhi will automatically set aspect mask.
+		// however, for stencil view it must be set
+		TextureAspect textureAspect{ TextureAspect::UNDEFINED };
 	};
 
 	struct TextureView : public ObjectHandle
@@ -426,7 +438,18 @@ namespace ad_astris::rhi
 		DEPTH,
 		COLOR,
 	};
+	
+	struct ClearValues
+	{
+		std::array<float, 4> color;
 
+		struct
+		{
+			float depth;
+			uint32_t stencil;
+		} depthStencil;
+	};
+	
 	struct RenderTarget
 	{
 		TextureView* target;
@@ -436,6 +459,7 @@ namespace ad_astris::rhi
 		ResourceLayout initialLayout;
 		ResourceLayout renderPassLayout;
 		ResourceLayout finalLayout;
+		ClearValues clearValue;
 	};
 
 	struct RenderBuffer
@@ -467,17 +491,6 @@ namespace ad_astris::rhi
 	struct RenderPass : public ObjectHandle
 	{
 		
-	};
-
-	struct ClearValues
-	{
-		std::array<float, 4> color;
-
-		struct
-		{
-			float depth;
-			uint32_t stencil;
-		} depthStencil;
 	};
 	
 	enum class TopologyType
@@ -787,6 +800,19 @@ namespace ad_astris::rhi
 		int32_t right = 0;
 		int32_t bottom = 0;
 	};
+
+	enum class RenderingBeginInfoFlags
+	{
+		SUSPENDING = 1 << 0,
+		RESUMING = 1 << 1
+	};
+	
+	struct RenderingBeginInfo
+	{
+		std::vector<RenderTarget> renderTargets;
+		RenderingBeginInfoFlags flags;
+		MultiviewInfo multiviewInfo;		// Not necessary
+	};
 }
 
 template<>
@@ -809,6 +835,12 @@ struct EnableBitMaskOperator<ad_astris::rhi::ResourceLayout>
 
 template<>
 struct EnableBitMaskOperator<ad_astris::rhi::ShaderType>
+{
+	static const bool enable = true;
+};
+
+template<>
+struct EnableBitMaskOperator<ad_astris::rhi::RenderingBeginInfoFlags>
 {
 	static const bool enable = true;
 };

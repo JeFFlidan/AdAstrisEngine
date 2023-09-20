@@ -1,11 +1,23 @@
 #pragma once
 
-#include "api.h"
 #include "rhi/resources.h"
 #include <vulkan/vulkan.h>
 
 namespace ad_astris::vulkan
 {
+	struct VulkanShaderReflectContext
+	{
+		struct BindlessBindingDesc
+		{
+			bool isUsed{ false };
+			VkDescriptorSetLayoutBinding binding;
+		};
+		VkPushConstantRange pushConstantRange;
+		bool isPushConstantUsed{ false };
+		std::vector<BindlessBindingDesc> bindlessBindings;
+		std::vector<VkDescriptorSetLayoutBinding> zeroSetBindings;
+	};
+	
 	class VulkanShader
 	{
 		public:
@@ -38,12 +50,20 @@ namespace ad_astris::vulkan
 			VkShaderModule get_shader_module() const { return _shaderModule; }
 			uint8_t* get_code() const { return _code; }
 			uint64_t get_size() const { return _size; }
+
+			const VulkanShaderReflectContext* get_reflect_context()
+			{
+				return &_reflectContext;
+			}
 		
 		private:
 			VkDevice _device;
 			VkShaderModule _shaderModule{ VK_NULL_HANDLE };
 			uint8_t* _code;
 			uint64_t _size;
+			VulkanShaderReflectContext _reflectContext;
+
+			void reflect(rhi::ShaderInfo* shaderInfo);
 	};
 	
 	struct VulkanShaderStages

@@ -101,7 +101,7 @@ namespace ad_astris::vulkan
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _freeComputeCmdPools;
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedComputeCmdPools;
 			uint32_t _imageIndex{ 0 };
-			std::atomic_bool _firstSubmissionInFrame{ true };
+			std::atomic_bool _firstSubmissionInFrame{ false };
 
 			class SynchronizationManager
 			{
@@ -120,7 +120,6 @@ namespace ad_astris::vulkan
 			};
 
 			SynchronizationManager _syncManager;
-			std::vector<uint32_t> _tripleBufferingIndicesChain;
 			uint32_t _bufferCount;
 		
 			void flush_cmd_buffers();

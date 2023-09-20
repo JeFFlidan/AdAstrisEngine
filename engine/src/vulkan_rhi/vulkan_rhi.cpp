@@ -19,14 +19,24 @@ using namespace ad_astris;
 constexpr uint32_t MAX_VIEWPORT_COUNT = 16;
 constexpr uint32_t MAX_SCISSOR_COUNT = 16;
 
-void vulkan::VulkanRHI::init(acore::IWindow* window, io::FileSystem* fileSystem)
+void vulkan::VulkanRHI::init(rhi::RHIInitContext& initContext)
 {
-	_fileSystem = fileSystem;
+	assert(initContext.window != nullptr);
+	assert(initContext.fileSystem != nullptr);
+	assert(initContext.swapChainInfo != nullptr);
+	
+	_fileSystem = initContext.fileSystem;
+	_mainWindow = initContext.window;
 	vkb::Instance vkbInstance = create_instance();
 	_instance = vkbInstance.instance;
 	_debugMessenger = vkbInstance.debug_messenger;
-	_device = std::make_unique<VulkanDevice>(vkbInstance, window);
-	_descriptorManager = std::make_unique<VulkanDescriptorManager>(_device.get());
+	_device = std::make_unique<VulkanDevice>(vkbInstance, initContext.window);
+	
+	_swapChain = std::make_unique<VulkanSwapChain>(initContext.swapChainInfo, _device.get());
+	_cmdManager = std::make_unique<VulkanCommandManager>(_device.get(), _swapChain.get());
+	
+	_descriptorManager = std::make_unique<VulkanDescriptorManager>(_device.get(), _swapChain->get_buffers_count());
+	_pipelineLayoutCache = std::make_unique<VulkanPipelineLayoutCache>(_device.get(), _descriptorManager.get());
 	create_allocator();
 	create_pipeline_cache();
 
@@ -69,6 +79,7 @@ void vulkan::VulkanRHI::cleanup()
 	VkDevice device = _device.get()->get_device();
 	vkDestroyPipelineCache(device, _pipelineCache, nullptr);
 	vmaDestroyAllocator(_allocator);
+	_pipelineLayoutCache->cleanup();
 	_cmdManager->cleanup();
 	_swapChain->cleanup();
 	_device->cleanup();
@@ -227,7 +238,10 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 	createInfo.samples = get_sample_count(texInfo->samplesCount);
 	
 	if (has_flag(texInfo->resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
+	{
+		LOG_INFO("CUBE MAP")
 		createInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	}
 
 	VkImageUsageFlags imgUsage = get_image_usage(texInfo->textureUsage);
 	createInfo.usage = imgUsage;
@@ -259,10 +273,17 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	VkImageUsageFlags imgUsage = get_image_usage(texInfo.textureUsage);
 
 	VkImageAspectFlags aspectFlags;
-	if ((imgUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-		aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	if (viewInfo->textureAspect == rhi::TextureAspect::UNDEFINED)
+	{
+		if ((imgUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+			aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+		else
+			aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+	}
 	else
-		aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+	{
+		aspectFlags = get_image_aspect(viewInfo->textureAspect);
+	}
 	
 	VkImageViewCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -433,7 +454,7 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Invalid pointers")
 		return;
 	}
-	_vulkanPipelines.emplace_back(new VulkanPipeline(_device.get(), info, _pipelineCache));
+	_vulkanPipelines.emplace_back(new VulkanPipeline(_device.get(), info, _pipelineCache, _pipelineLayoutCache.get()));
 	pipeline->type = rhi::PipelineType::GRAPHICS;
 	pipeline->handle = _vulkanPipelines.back().get();
 }
@@ -445,7 +466,7 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid pointers")
 		return;
 	}
-	_vulkanPipelines.emplace_back(new VulkanPipeline(_device.get(), info, _pipelineCache));
+	_vulkanPipelines.emplace_back(new VulkanPipeline(_device.get(), info, _pipelineCache, _pipelineLayoutCache.get()));
 	pipeline->type = rhi::PipelineType::COMPUTE;
 	pipeline->handle = _vulkanPipelines.back().get();
 }
@@ -485,6 +506,18 @@ uint32_t vulkan::VulkanRHI::get_descriptor_index(rhi::TextureView* textureView)
 uint32_t vulkan::VulkanRHI::get_descriptor_index(rhi::Sampler* sampler)
 {
 	return get_vk_obj(sampler)->get_descriptor_index();
+}
+
+void vulkan::VulkanRHI::bind_uniform_buffer(rhi::Buffer* buffer, uint32_t slot, uint32_t size, uint32_t offset)
+{
+	rhi::BufferInfo& bufferInfo = buffer->bufferInfo;
+	if (!has_flag(bufferInfo.bufferUsage, rhi::ResourceUsage::UNIFORM_BUFFER))
+		LOG_FATAL("VulkanRHI::bind_uniform_buffer(): Can't bind buffer without ResourceUsage::UNIFORM_BUFFER")
+
+	if (!size)
+		size = bufferInfo.size;
+	
+	_descriptorManager->allocate_uniform_buffer(get_vk_obj(buffer), size, offset, slot, _currentImageIndex);
 }
 
 // TODO Queue type for command buffer
@@ -761,7 +794,7 @@ void vulkan::VulkanRHI::bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pi
 	}
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanPipeline* vkPipeline = get_vk_obj(pipeline);
-	vkCmdBindPipeline(vkCmd->get_handle(), get_pipeline_bind_point(vkPipeline->get_type()), vkPipeline->get_handle());
+	vkPipeline->bind(vkCmd->get_handle(), _currentImageIndex);
 }
 
 void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass, rhi::ClearValues& clearValues)
@@ -789,6 +822,132 @@ void vulkan::VulkanRHI::end_render_pass(rhi::CommandBuffer* cmd)
 	}
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	vkCmdEndRenderPass(vkCmd->get_handle());
+}
+
+void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingBeginInfo* beginInfo)
+{
+	VkRenderingInfo renderingInfo{};
+	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+
+	if (has_flag(beginInfo->flags, rhi::RenderingBeginInfoFlags::RESUMING))
+	{
+		renderingInfo.flags |= VK_RENDERING_RESUMING_BIT;
+	}
+	if (has_flag(beginInfo->flags, rhi::RenderingBeginInfoFlags::SUSPENDING))
+	{
+		renderingInfo.flags |= VK_RENDERING_SUSPENDING_BIT;
+	}
+	
+	renderingInfo.layerCount = 1;
+	if (beginInfo->multiviewInfo.isEnabled)
+	{
+		renderingInfo.viewMask = (1 << beginInfo->multiviewInfo.viewCount) - 1;
+	}
+	
+	renderingInfo.renderArea.offset.x = 0;
+	renderingInfo.renderArea.offset.y = 0;
+	rhi::TextureInfo& textureInfo = beginInfo->renderTargets[0].target->texture->textureInfo;
+	renderingInfo.renderArea.extent = { textureInfo.width, textureInfo.height };
+	renderingInfo.colorAttachmentCount = 0;
+	renderingInfo.pColorAttachments = nullptr;
+	renderingInfo.pDepthAttachment = nullptr;
+	renderingInfo.pStencilAttachment = nullptr;
+
+	std::vector<VkRenderingAttachmentInfo> colorAttachments;
+	VkRenderingAttachmentInfo depthAttachment{};
+	VkRenderingAttachmentInfo stencilAttachment{};
+
+	for (auto& renderTarget : beginInfo->renderTargets)
+	{
+		rhi::TextureView* textureView = renderTarget.target;
+		textureInfo = textureView->texture->textureInfo;
+
+		if (has_flag(textureInfo.textureUsage, rhi::ResourceUsage::COLOR_ATTACHMENT))
+		{
+			VkRenderingAttachmentInfo& attachmentInfo = colorAttachments.emplace_back();
+			attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+			attachmentInfo.pNext = nullptr;
+			attachmentInfo.storeOp = get_attach_store_op(renderTarget.storeOp);
+			attachmentInfo.loadOp = get_attach_load_op(renderTarget.loadOp);
+			attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			attachmentInfo.imageView = get_vk_obj(textureView)->get_handle();
+			std::array<float, 4>& clearVal = renderTarget.clearValue.color;
+			attachmentInfo.clearValue.color = { { clearVal[0], clearVal[1], clearVal[2], clearVal[3] } };
+		}
+		if (has_flag(textureInfo.textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
+		{
+			if (textureInfo.format != rhi::Format::S8_UINT)
+			{
+				depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+				depthAttachment.imageView = get_vk_obj(textureView)->get_handle();
+				depthAttachment.loadOp = get_attach_load_op(renderTarget.loadOp);
+				depthAttachment.storeOp = get_attach_store_op(renderTarget.storeOp);
+				depthAttachment.clearValue.depthStencil.depth = renderTarget.clearValue.depthStencil.depth;
+
+				if (textureInfo.format != rhi::Format::D16_UNORM || textureInfo.format != rhi::Format::D32_SFLOAT)
+				{
+					depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+					depthAttachment.clearValue.depthStencil.stencil = renderTarget.clearValue.depthStencil.stencil;
+				}
+				else
+				{
+					depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+				}
+
+				renderingInfo.pDepthAttachment = &depthAttachment;
+			}
+			else
+			{
+				stencilAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+				stencilAttachment.imageView = get_vk_obj(textureView)->get_handle();
+				stencilAttachment.imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+				stencilAttachment.loadOp = get_attach_load_op(renderTarget.loadOp);
+				stencilAttachment.storeOp = get_attach_store_op(renderTarget.storeOp);
+				stencilAttachment.clearValue.depthStencil.stencil = renderTarget.clearValue.depthStencil.stencil;
+				renderingInfo.pStencilAttachment = &stencilAttachment;
+			}
+		}
+	}
+
+	vkCmdBeginRendering(get_vk_obj(cmd)->get_handle(), &renderingInfo);
+}
+
+void vulkan::VulkanRHI::end_rendering(rhi::CommandBuffer* cmd)
+{
+	vkCmdEndRendering(get_vk_obj(cmd)->get_handle());
+}
+
+void vulkan::VulkanRHI::begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi::ClearValues* clearValues)
+{
+	VkRenderingInfo renderingInfo{};
+	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+	renderingInfo.pDepthAttachment = nullptr;
+	renderingInfo.pStencilAttachment = nullptr;
+	renderingInfo.colorAttachmentCount = 1;
+	renderingInfo.layerCount = 1;
+	renderingInfo.renderArea.offset.x = 0;
+	renderingInfo.renderArea.offset.y = 0;
+	renderingInfo.renderArea.extent.width = _swapChain->get_width();
+	renderingInfo.renderArea.extent.height = _swapChain->get_height();
+
+	rhi::TextureView& textureView = _swapChain->get_texture_views()[_currentImageIndex];
+	VkRenderingAttachmentInfo attachmentInfo{};
+	attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+	attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachmentInfo.imageView = get_vk_obj(&textureView)->get_handle();
+	attachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachmentInfo.clearValue.color = { { clearValues->color[0], clearValues->color[1], clearValues->color[2], clearValues->color[3] } };
+
+	renderingInfo.pColorAttachments = &attachmentInfo;
+	set_swap_chain_image_barrier(cmd, false);
+	vkCmdBeginRendering(get_vk_obj(cmd)->get_handle(), &renderingInfo);
+}
+
+void vulkan::VulkanRHI::end_rendering_swap_chain(rhi::CommandBuffer* cmd)
+{
+	vkCmdEndRendering(get_vk_obj(cmd)->get_handle());
+	set_swap_chain_image_barrier(cmd, true);
 }
 
 void vulkan::VulkanRHI::draw(rhi::CommandBuffer* cmd, uint64_t vertexCount)
@@ -1001,4 +1160,47 @@ void vulkan::VulkanRHI::save_pipeline_cache()
 	io::Stream* stream = _fileSystem->open(cachePath, "wb");
 	stream->write(cacheData.data(), sizeof(uint8_t), cacheSize);
 	_fileSystem->close(stream);
+}
+
+void vulkan::VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier)
+{
+	rhi::TextureView& textureView = _swapChain->get_texture_views()[_currentImageIndex];
+	
+	VkImageMemoryBarrier2 imageBarrier{};
+	imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	imageBarrier.image = get_vk_obj(textureView.texture)->get_handle();
+	if (useAfterDrawingImageBarrier)
+	{
+		imageBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		imageBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		imageBarrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+		imageBarrier.dstAccessMask = VK_ACCESS_2_NONE;
+	}
+	else
+	{
+		imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		imageBarrier.srcAccessMask = VK_ACCESS_2_NONE;
+		imageBarrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+	}
+	imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+	imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+	imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	imageBarrier.subresourceRange.baseArrayLayer = 0;
+	imageBarrier.subresourceRange.baseMipLevel = 0;
+	imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	
+	VkDependencyInfo dependencyInfo{};
+	dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	dependencyInfo.memoryBarrierCount = 0;
+	dependencyInfo.pMemoryBarriers = nullptr;
+	dependencyInfo.pBufferMemoryBarriers = nullptr;
+	dependencyInfo.bufferMemoryBarrierCount = 0;
+	dependencyInfo.imageMemoryBarrierCount = 1;
+	dependencyInfo.pImageMemoryBarriers = &imageBarrier;
+
+	vkCmdPipelineBarrier2(get_vk_obj(cmd)->get_handle(), &dependencyInfo);
 }
