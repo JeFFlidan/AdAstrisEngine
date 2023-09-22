@@ -20,7 +20,7 @@ namespace ad_astris::vulkan
 			VulkanQueue(QueueData queueData);
 		
 			void submit(VulkanCommandManager& cmdManager);
-			void present(VulkanSwapChain* swapChain, uint32_t currentImageIndex);
+			bool present(VulkanSwapChain* swapChain, uint32_t currentImageIndex);
 
 			VkQueue get_queue() { return _queue; }
 			uint32_t get_family() { return _family; }

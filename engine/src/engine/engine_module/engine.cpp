@@ -5,12 +5,12 @@
 
 using namespace ad_astris::engine::impl;
 
-void Engine::init(EngineInitializationContext& initializationContext)
+void Engine::init(EngineInitializationContext& engineInitContext)
 {
-	_fileSystem = initializationContext.fileSystem;
-	_moduleManager = initializationContext.moduleManager;
-	_eventManager = initializationContext.eventManager;
-	_mainWindow = initializationContext.mainWindow;
+	_fileSystem = engineInitContext.fileSystem;
+	_moduleManager = engineInitContext.moduleManager;
+	_eventManager = engineInitContext.eventManager;
+	_mainWindow = engineInitContext.mainWindow;
 
 	_taskComposer = std::make_unique<tasks::TaskComposer>();
 	LOG_INFO("Engine::init(): Initialized task composer")
@@ -34,7 +34,7 @@ void Engine::init(EngineInitializationContext& initializationContext)
 	_systemManager->add_entity_manager(_world->get_entity_manager());
 	LOG_INFO("Engine::init(): Generated execution order")
 
-	switch (initializationContext.projectInfo->newProjectTemplate)
+	switch (engineInitContext.projectInfo->newProjectTemplate)
 	{
 		case devtools::NewProjectTemplate::OLD_PROJECT:
 		{
@@ -50,19 +50,20 @@ void Engine::init(EngineInitializationContext& initializationContext)
 		}
 	}
 
-	renderer::RendererInitializationContext rendererInitializationContext;
-	rendererInitializationContext.eventManager = _eventManager;
-	rendererInitializationContext.mainWindow = _mainWindow;
-	rendererInitializationContext.moduleManager = _moduleManager;
-	rendererInitializationContext.projectSettings = _projectSettings.get();
-	rendererInitializationContext.resourceManager = _resourceManager.get();
-	rendererInitializationContext.taskComposer = _taskComposer.get();
+	renderer::RendererInitializationContext rendererInitContext;
+	rendererInitContext.eventManager = _eventManager;
+	rendererInitContext.mainWindow = _mainWindow;
+	rendererInitContext.moduleManager = _moduleManager;
+	rendererInitContext.projectSettings = _projectSettings.get();
+	rendererInitContext.resourceManager = _resourceManager.get();
+	rendererInitContext.taskComposer = _taskComposer.get();
 	auto rendererModule = _moduleManager->load_module<renderer::IRendererModule>("Renderer");
 	_renderer = rendererModule->get_renderer();
-	_renderer->init(rendererInitializationContext);
+	_renderer->init(rendererInitContext);
+	engineInitContext.uiBackendCallbacks = rendererInitContext.uiBackendCallbacks;
 	LOG_INFO("Engine::init(): Loaded and initialized Renderer module")
 
-	if (initializationContext.projectInfo->newProjectTemplate == devtools::NewProjectTemplate::OLD_PROJECT)
+	if (engineInitContext.projectInfo->newProjectTemplate == devtools::NewProjectTemplate::OLD_PROJECT)
 	{
 		_resourceManager->load_builtin_resources();
 		LOG_INFO("Engine::init(): Loaded builtin resources")
@@ -87,6 +88,7 @@ void Engine::execute()
 void Engine::save_and_cleanup(bool needToSave)
 {
 	_systemManager->cleanup();
+	_renderer->cleanup();
 	if (needToSave)
 	{
 		_resourceManager->save_resources();

@@ -85,8 +85,17 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanSampler* sample
 
 void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* textureView, TextureDescriptorHeapType heapType)
 {
-	uint32_t textureDescriptorIndex = _samplerBindlessPool.allocate();
-	textureView->set_descriptor_index(textureDescriptorIndex);
+	uint32_t textureDescriptorIndex;
+	
+	if (textureView->get_descriptor_index() == UNDEFINED_DESCRIPTOR)
+	{
+		textureDescriptorIndex = _imageBindlessPool.allocate();
+		textureView->set_descriptor_index(textureDescriptorIndex);
+	}
+	else
+	{
+		textureDescriptorIndex = textureView->get_descriptor_index();
+	}
 
 	switch (heapType)
 	{
@@ -105,6 +114,7 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* te
 			writeDescriptorSet.descriptorCount = 1;
 			writeDescriptorSet.pImageInfo = &imageInfo;
 			vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
+			break;
 		}
 		case TextureDescriptorHeapType::STORAGE_TEXTURES:
 		{
@@ -121,6 +131,7 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* te
 			writeDescriptorSet.descriptorCount = 1;
 			writeDescriptorSet.pImageInfo = &imageInfo;
 			vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
+			break;
 		}
 	}
 }
@@ -320,7 +331,7 @@ void VulkanDescriptorManager::BindlessDescriptorPool::init(VulkanDevice* device,
 	allocInfo.pSetLayouts = &_layout;
 	allocInfo.descriptorPool = _pool;
 	VK_CHECK(vkAllocateDescriptorSets(device->get_device(), &allocInfo, &_set));
-
+	
 	for (int32_t i = 0; i != (int32_t)descriptorCount; ++i)
 	{
 		_freePlaces.push_back((int32_t)descriptorCount - i - 1);

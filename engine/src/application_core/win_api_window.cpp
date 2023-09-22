@@ -3,6 +3,9 @@
 
 #include <iostream>
 #include <memory>
+#include <imgui/imgui_impl_win32.h>
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 using namespace ad_astris::acore;
 using namespace impl;
@@ -10,6 +13,11 @@ using namespace impl;
 LRESULT CALLBACK window_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	using namespace ad_astris;
+
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+	{
+		return true;
+	}
 	
 	auto window = reinterpret_cast<WinApiWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 	WindowEvents windowEvents;
@@ -37,7 +45,9 @@ LRESULT CALLBACK window_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case WM_SIZE:
 		{
 			WindowResizedEvent resizedEvent(LOWORD(lParam), HIWORD(lParam));
-			window->get_event_manager()->trigger_event(resizedEvent);
+			window->get_event_manager()->enqueue_event(resizedEvent);
+			window->set_width(resizedEvent.get_width());
+			window->set_height(resizedEvent.get_height());
 			break;
 		}
 		case WM_KEYDOWN:
@@ -160,6 +170,7 @@ bool WinApiWindow::process_messages()
 		if (msg.message == WM_QUIT || msg.message == WM_CLOSE)
 		{
 			LOG_INFO("FINISH WORK")
+			_isRunning = false;
 			return false;
 		}
 		

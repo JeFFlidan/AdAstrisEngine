@@ -22,7 +22,7 @@ file(GLOB CORE_FILES
 	${DIR_ENGINE_SRC}/file_system/utils.*
 	${DIR_ENGINE_SRC}/file_system/file.*
 	${DIR_THIRD_PARTY}/fmt_lib/fmt/*
-	${DIR_THIRD_PARTY}/lz4/lz4.*
+	${DIR_THIRD_PARTY}/lz4/*
 	${DIR_THIRD_PARTY}/inicpp/*)
 target_sources(core PRIVATE ${CORE_FILES})
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include <array>
 
+
 namespace ad_astris::rhi
 {
 	struct RHIInitContext
@@ -49,7 +50,7 @@ namespace ad_astris::rhi
 			virtual void begin_command_buffer(CommandBuffer* cmd, QueueType queueType = QueueType::GRAPHICS) = 0;
 			virtual void wait_command_buffer(CommandBuffer* cmd, CommandBuffer* waitForCmd) = 0;
 			virtual void submit(QueueType queueType = QueueType::GRAPHICS) = 0;
-			virtual void present() = 0;
+			virtual bool present() = 0;
 			virtual void wait_fences() = 0;
 
 			// If size = 0 (default value), method will copy whole srcBuffer to dstBuffer

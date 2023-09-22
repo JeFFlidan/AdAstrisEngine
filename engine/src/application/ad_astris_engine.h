@@ -5,6 +5,7 @@
 #include "core/module_manager.h"
 #include "engine/engine_module.h"
 #include "application_core/window.h"
+#include "editor_module.h"
 
 namespace ad_astris::app
 {
@@ -20,6 +21,7 @@ namespace ad_astris::app
 			std::unique_ptr<ModuleManager> _moduleManager{ nullptr };
 			std::unique_ptr<io::FileSystem> _fileSystem{ nullptr };
 			std::unique_ptr<acore::IWindow> _mainWindow{ nullptr };
+			editor::IEditor* _editor{ nullptr };
 			engine::IEngine* _engine{ nullptr };
 	};
 }

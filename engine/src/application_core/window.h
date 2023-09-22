@@ -24,5 +24,8 @@ namespace ad_astris::acore
 			virtual bool process_messages() = 0;
 			virtual void close() = 0;
 			virtual HWND get_hWnd() = 0;
+			virtual uint32_t get_width() = 0;
+			virtual uint32_t get_height() = 0;
+			virtual bool is_running() = 0;
 	};
 }

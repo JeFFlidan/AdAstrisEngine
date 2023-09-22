@@ -33,15 +33,6 @@ bool AdAstrisEngine::init()
 	_moduleManager->unload_module("ProjectLauncher");
 	LOG_INFO("AdAstrisEngine::init(): Unload ProjectLauncher module")
 
-	_moduleManager->load_module("VulkanRHI");
-	LOG_INFO("AFTER VULKAN RHI")
-	_moduleManager->load_module("RenderCore");
-	LOG_INFO("AFTER RENDER CORE")
-	_moduleManager->load_module("Renderer");
-	LOG_INFO("AFTER RENDERER")
-	_moduleManager->load_module("Engine");
-	LOG_INFO("AFTER ENGINE")
-
 	if (projectInfo.projectPath.empty())
 	{
 		LOG_INFO("AdAstrisEngine::init(): No project was chosen. Engine execution finished")
@@ -60,7 +51,7 @@ bool AdAstrisEngine::init()
 	windowCreationContext.windowTitle = projectName;
 	_mainWindow = std::make_unique<acore::impl::WinApiWindow>(windowCreationContext, _eventManager.get());
 	LOG_INFO("AdAstrisEngine::init(): Initialized WinApi main window. Window title is {}", projectName)
-
+	
 	engine::EngineInitializationContext engineInitializationContext;
 	engineInitializationContext.eventManager = _eventManager.get();
 	engineInitializationContext.fileSystem = _fileSystem.get();
@@ -71,6 +62,19 @@ bool AdAstrisEngine::init()
 	_engine = engineModule->get_engine();
 	_engine->init(engineInitializationContext);
 	LOG_INFO("AdAstrisEngine::init(): Loaded and initalized Engine module")
+	
+	editor::EditorInitContext editorInitContext;
+	editorInitContext.eventManager = _eventManager.get();
+	editorInitContext.fileSystem = _fileSystem.get();
+	editorInitContext.mainWindow = _mainWindow.get();
+	editorInitContext.callbacks = &engineInitializationContext.uiBackendCallbacks;
+	auto editorModule = _moduleManager->load_module<editor::IEditorModule>("Editor");
+	_editor = editorModule->get_editor();
+	_editor->init(editorInitContext);
+	ImGui::SetCurrentContext(engineInitializationContext.uiBackendCallbacks.getContextCallback());
+	rhi::UIWindowBackendCallbacks::ImGuiAllocators imGuiAllocators = engineInitializationContext.uiBackendCallbacks.getImGuiAllocators();
+	ImGui::SetAllocatorFunctions(imGuiAllocators.allocFunc, imGuiAllocators.freeFunc);
+	LOG_INFO("AdAstrisEngine::init(): Initialized editor")
 
 	return true;
 }
@@ -82,6 +86,8 @@ void AdAstrisEngine::execute()
 	while (running)
 	{
 		running = _mainWindow->process_messages();
+		if (running)
+			_editor->draw();
 		_engine->execute();
 		_eventManager->dispatch_events();
 	}
@@ -90,5 +96,6 @@ void AdAstrisEngine::execute()
 
 void AdAstrisEngine::save_and_cleanup()
 {
+	_editor->cleanup();
 	_engine->save_and_cleanup(true);
 }

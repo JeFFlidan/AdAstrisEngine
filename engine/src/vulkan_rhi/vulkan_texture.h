@@ -15,7 +15,7 @@ namespace ad_astris::vulkan
 			VulkanTexture() = default;
 			VulkanTexture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);
 
-			void destroy_texture();
+			void destroy_texture(VmaAllocator allocator);
 			
 			void create_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage);
 
@@ -24,7 +24,6 @@ namespace ad_astris::vulkan
 			VkExtent3D get_extent() { return _extent; }
 		
 		private:
-			VmaAllocator* _allocator;
 			VkImage _image = VK_NULL_HANDLE;
 			VmaAllocation _allocation;
 			VkExtent3D _extent;
@@ -38,6 +37,7 @@ namespace ad_astris::vulkan
 		public:
 			VulkanTextureView() = default;
 			VulkanTextureView(VulkanDevice* device, VkImageViewCreateInfo& info);
+			void create(VulkanDevice* device, VkImageViewCreateInfo& info);
 			void destroy(VulkanDevice* device);
 			
 			VkImageView get_handle() { return _imageView; }

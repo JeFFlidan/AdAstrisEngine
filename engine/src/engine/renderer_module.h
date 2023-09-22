@@ -6,6 +6,7 @@
 #include "multithreading/task_composer.h"
 #include "application_core/window.h"
 #include "core/module_manager.h"
+#include "rhi/ui_window_backend.h"
 
 namespace ad_astris::renderer
 {
@@ -17,6 +18,7 @@ namespace ad_astris::renderer
 		resource::ResourceManager* resourceManager;
 		events::EventManager* eventManager;
 		acore::IWindow* mainWindow;
+		rhi::UIWindowBackendCallbacks uiBackendCallbacks;
 	};
 	
 	class IRenderer

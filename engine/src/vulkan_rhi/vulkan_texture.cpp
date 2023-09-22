@@ -10,9 +10,10 @@ vulkan::VulkanTexture::VulkanTexture(VkImageCreateInfo info, VmaAllocator* alloc
 	allocate_texture(info, allocator, memoryUsage);
 }
 
-void vulkan::VulkanTexture::destroy_texture()
+void vulkan::VulkanTexture::destroy_texture(VmaAllocator allocator)
 {
-	vmaDestroyImage(*_allocator, _image, _allocation);
+	vmaDestroyImage(allocator, _image, _allocation);
+	_image = VK_NULL_HANDLE;
 }
 
 void vulkan::VulkanTexture::create_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage)
@@ -33,6 +34,11 @@ void vulkan::VulkanTexture::allocate_texture(VkImageCreateInfo info, VmaAllocato
 }
 
 vulkan::VulkanTextureView::VulkanTextureView(VulkanDevice* device, VkImageViewCreateInfo& info)
+{
+	VK_CHECK(vkCreateImageView(device->get_device(), &info, nullptr, &_imageView));
+}
+
+void vulkan::VulkanTextureView::create(VulkanDevice* device, VkImageViewCreateInfo& info)
 {
 	VK_CHECK(vkCreateImageView(device->get_device(), &info, nullptr, &_imageView));
 }

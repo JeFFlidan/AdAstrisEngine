@@ -2,24 +2,28 @@
 
 #include "render_pass_context.h"
 #include "engine/vulkan_rhi_module.h"
+#include "application/editor_module.h"
 
 using namespace ad_astris;
 using namespace renderer;
 using namespace impl;
 
-void Renderer::init(RendererInitializationContext& initializationContext)
+void Renderer::init(RendererInitializationContext& rendererInitContext)
 {
-	_resourceManager = initializationContext.resourceManager;
-	_rendererSubsettings = initializationContext.projectSettings->get_subsettings<ecore::RendererSubsettings>();
-	_taskComposer = initializationContext.taskComposer;
-	_eventManager = initializationContext.eventManager;
-	ModuleManager* moduleManager = initializationContext.moduleManager;
+	_resourceManager = rendererInitContext.resourceManager;
+	_rendererSubsettings = rendererInitContext.projectSettings->get_subsettings<ecore::RendererSubsettings>();
+	_taskComposer = rendererInitContext.taskComposer;
+	_eventManager = rendererInitContext.eventManager;
+	_mainWindow = rendererInitContext.mainWindow;
+	ModuleManager* moduleManager = rendererInitContext.moduleManager;
 
 	switch (_rendererSubsettings->get_graphics_api())
 	{
 		case ecore::GraphicsAPI::VULKAN:
 		{
-			_rhi = moduleManager->load_module<IVulkanRHIModule>("VulkanRHI")->create_vulkan_rhi();
+			auto rhiModule = moduleManager->load_module<IVulkanRHIModule>("VulkanRHI");
+			_rhi = rhiModule->create_vulkan_rhi();
+			_uiWindowBackend = rhiModule->get_ui_window_backend();
 			break;
 		}
 		case ecore::GraphicsAPI::D3D12:
@@ -33,7 +37,22 @@ void Renderer::init(RendererInitializationContext& initializationContext)
 			break;
 		}
 	}
-	_rhi->init(initializationContext.mainWindow, _resourceManager->get_file_system());
+
+	rhi::RHIInitContext rhiInitContext;
+	rhiInitContext.window = rendererInitContext.mainWindow;
+	rhiInitContext.fileSystem = _resourceManager->get_file_system();
+	rhi::SwapChainInfo swapChainInfo;
+	swapChainInfo.width = _rendererSubsettings->get_render_area_width();
+	swapChainInfo.height = _rendererSubsettings->get_render_area_height();
+	swapChainInfo.sync = _rendererSubsettings->is_vsync_used();
+	bool useTripleBuffering = _rendererSubsettings->is_triple_buffering_used();
+	swapChainInfo.buffersCount = useTripleBuffering ? 3 : 2;
+	rhiInitContext.swapChainInfo = &swapChainInfo;
+	
+	_rhi->init(rhiInitContext);
+
+	//create_swap_chain();
+	create_samplers();
 	LOG_INFO("Renderer::init(): Loaded and initialized RHI module")
 
 	auto rcoreModule = moduleManager->load_module<rcore::IRenderCoreModule>("RenderCore");
@@ -56,15 +75,6 @@ void Renderer::init(RendererInitializationContext& initializationContext)
 	shaderManagerInitContext.moduleManager = moduleManager;
 	_shaderManager->init(shaderManagerInitContext);
 	LOG_INFO("Renderer::init(): Loaded and initialized RenderCore module")
-
-	rhi::SwapChainInfo swapChainInfo;
-	swapChainInfo.width = _rendererSubsettings->get_render_area_width();
-	swapChainInfo.height = _rendererSubsettings->get_render_area_height();
-	swapChainInfo.sync = _rendererSubsettings->is_vsync_used();
-	bool useTripleBuffering = _rendererSubsettings->is_triple_buffering_used();
-	swapChainInfo.buffersCount = useTripleBuffering ? 3 : 2;
-	_rhi->create_swap_chain(&_swapChain, &swapChainInfo);
-	LOG_INFO("Renderer::init(): Created swap chain")
 	
 	MaterialManagerInitializationContext materialManagerInitContext;
 	materialManagerInitContext.eventManager = _eventManager;
@@ -83,13 +93,24 @@ void Renderer::init(RendererInitializationContext& initializationContext)
 	_sceneManager = std::make_unique<SceneManager>(sceneManagerInitContext);
 	LOG_INFO("Renderer::init(): Initialized scene manager")
 
-	_triangleTest = std::make_unique<TriangleTest>(_rhi, _resourceManager->get_file_system(), _shaderManager);
+	_triangleTest = std::make_unique<TriangleTest>(_rhi, _resourceManager->get_file_system(), _shaderManager, _mainWindow->get_width(), _mainWindow->get_height());
 	LOG_INFO("Renderer::init(): Initialized triangle test")
+
+	rhi::UIWindowBackendInitContext uiBackendInitContext;
+	uiBackendInitContext.rhi = _rhi;
+	uiBackendInitContext.sampler = _samplers[SAMPLER_LINEAR_REPEAT];
+	uiBackendInitContext.window = rendererInitContext.mainWindow;
+
+	_uiWindowBackend->init(uiBackendInitContext);
+	_uiWindowBackend->set_backbuffer(_triangleTest->get_texture_view(), &_samplers[SAMPLER_LINEAR_CLAMP]);
+	_uiWindowBackend->get_callbacks(rendererInitContext.uiBackendCallbacks);
+	LOG_INFO("Renderer::init(): Initialized ui backend")
 }
 
 void Renderer::cleanup()
 {
 	_renderGraph->cleanup();
+	_uiWindowBackend->cleanup();
 	_rhi->cleanup();
 }
 
@@ -104,19 +125,92 @@ void Renderer::bake()
 
 void Renderer::draw()
 {
-	uint32_t currentFrameIndex = get_current_frame_index();
 	uint32_t acquiredImageIndex;
-	_rhi->acquire_next_image(acquiredImageIndex, currentFrameIndex);
+	if (!_rhi->acquire_next_image(acquiredImageIndex, _frameIndex))
+	{
+		_uiWindowBackend->set_backbuffer(_triangleTest->get_texture_view(), &_samplers[SAMPLER_LINEAR_CLAMP]);
+		return;
+	}
+
 	//_sceneManager->setup_global_buffers();
-	_triangleTest->draw();
+
+	rhi::CommandBuffer cmd;
+	_rhi->begin_command_buffer(&cmd);
+	rhi::ClearValues clearValues;
+	clearValues.color = { 0.1f, 0.1f, 0.1f, 1.0f };
+	rhi::Viewport viewport;
+	viewport.width = _mainWindow->get_width();
+	viewport.height = _mainWindow->get_height();
+	std::vector<rhi::Viewport> viewports = { viewport };
+	_rhi->set_viewports(&cmd, viewports);
+
+	rhi::Scissor scissor;
+	scissor.right = _mainWindow->get_width();
+	scissor.bottom = _mainWindow->get_height();
+	std::vector<rhi::Scissor> scissors = { scissor };
+	_rhi->set_scissors(&cmd, scissors);
+	_triangleTest->draw(cmd);
+	
+	_rhi->begin_rendering_swap_chain(&cmd, &clearValues);
+	if (_mainWindow->is_running())
+		_uiWindowBackend->draw(&cmd);
+	_rhi->end_rendering_swap_chain(&cmd);
+	
 	_rhi->submit(rhi::QueueType::GRAPHICS);
-	_rhi->present();
-	++_frameNumber;
+	if (!_rhi->present())
+	{
+		_uiWindowBackend->set_backbuffer(_triangleTest->get_texture_view(), &_samplers[SAMPLER_LINEAR_CLAMP]);
+		_frameIndex = 0;
+	}
+	else
+	{
+		get_current_frame_index();
+	}
 }
 
-uint32_t Renderer::get_current_frame_index()
+void Renderer::get_current_frame_index()
 {
-	return _frameNumber % _swapChain.info.buffersCount;
+	if (++_frameIndex > 2)
+		_frameIndex = 0;
+}
+
+void Renderer::create_swap_chain()
+{
+	rhi::SwapChainInfo swapChainInfo;
+	swapChainInfo.width = _rendererSubsettings->get_render_area_width();
+	swapChainInfo.height = _rendererSubsettings->get_render_area_height();
+	swapChainInfo.sync = _rendererSubsettings->is_vsync_used();
+	bool useTripleBuffering = _rendererSubsettings->is_triple_buffering_used();
+	swapChainInfo.buffersCount = useTripleBuffering ? 3 : 2;
+	_rhi->create_swap_chain(&_swapChain, &swapChainInfo);
+}
+
+void Renderer::create_samplers()
+{
+	rhi::SamplerInfo samplerInfo;
+	samplerInfo.filter = rhi::Filter::MIN_MAG_MIP_LINEAR;
+	samplerInfo.addressMode = rhi::AddressMode::REPEAT;
+	samplerInfo.borderColor = rhi::BorderColor::FLOAT_TRANSPARENT_BLACK;
+	samplerInfo.maxAnisotropy = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = std::numeric_limits<float>::max();
+	_rhi->create_sampler(&_samplers[SAMPLER_LINEAR_REPEAT], &samplerInfo);
+
+	samplerInfo.addressMode = rhi::AddressMode::CLAMP_TO_EDGE;
+	_rhi->create_sampler(&_samplers[SAMPLER_LINEAR_CLAMP], &samplerInfo);
+
+	samplerInfo.addressMode = rhi::AddressMode::MIRRORED_REPEAT;
+	_rhi->create_sampler(&_samplers[SAMPLER_LINEAR_MIRROR], &samplerInfo);
+
+	samplerInfo.filter = rhi::Filter::MIN_MAG_MIP_NEAREST;
+	samplerInfo.addressMode = rhi::AddressMode::REPEAT;
+	_rhi->create_sampler(&_samplers[SAMPLER_NEAREST_CLAMP], &samplerInfo);
+
+	samplerInfo.addressMode = rhi::AddressMode::CLAMP_TO_EDGE;
+	_rhi->create_sampler(&_samplers[SAMPLER_NEAREST_CLAMP], &samplerInfo);
+
+	samplerInfo.addressMode = rhi::AddressMode::MIRRORED_REPEAT;
+	_rhi->create_sampler(&_samplers[SAMPLER_NEAREST_MIRROR], &samplerInfo);
 }
 
 void Renderer::test_rhi()

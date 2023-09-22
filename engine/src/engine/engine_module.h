@@ -5,6 +5,8 @@
 #include "events/event_manager.h"
 #include "application_core/window.h"
 #include "file_system/file_system.h"
+#include "rhi/ui_window_backend.h"
+#include <functional>
 
 namespace ad_astris::engine
 {
@@ -15,6 +17,7 @@ namespace ad_astris::engine
 		ModuleManager* moduleManager;
 		events::EventManager* eventManager;
 		devtools::ProjectInfo* projectInfo;
+		rhi::UIWindowBackendCallbacks uiBackendCallbacks;	// Need this to setup ui in the application module
 	};
 	
 	class IEngine

@@ -55,12 +55,12 @@ void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager)
 	VK_CHECK(vkQueueSubmit(_queue, submitInfos.size(), submitInfos.data(), cmdManager.get_free_fence()));
 }
 
-void vulkan::VulkanQueue::present(VulkanSwapChain* swapChain, uint32_t currentImageIndex)
+bool vulkan::VulkanQueue::present(VulkanSwapChain* swapChain, uint32_t currentImageIndex)
 {
 	if (_queueType != rhi::QueueType::GRAPHICS)
 	{
 		LOG_INFO("VulkanQueue::present(): Can't present non graphics queue")
-		return;
+		return false;
 	}
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -71,13 +71,9 @@ void vulkan::VulkanQueue::present(VulkanSwapChain* swapChain, uint32_t currentIm
 	presentInfo.waitSemaphoreCount = _presentWaitSemaphores.size();
 	presentInfo.pImageIndices = &currentImageIndex;
 	VkResult result = vkQueuePresentKHR(_queue, &presentInfo);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-	{
-		// TODO
-	}
-	else if (result != VK_SUCCESS)
-	{
-		// TODO
-	}
 	_presentWaitSemaphores.clear();
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+		return false;
+	
+	return true;
 }

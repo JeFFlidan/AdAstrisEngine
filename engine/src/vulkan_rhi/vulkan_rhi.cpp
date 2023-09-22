@@ -46,6 +46,8 @@ void vulkan::VulkanRHI::init(rhi::RHIInitContext& initContext)
 	LOG_INFO("MAX IMAGES: {}", properties.maxDescriptorSetUpdateAfterBindSampledImages);
 	LOG_INFO("MAX STORAGE IMAGES: {}", properties.maxDescriptorSetUpdateAfterBindStorageImages)
 	LOG_INFO("MAX STORAGE BUFFERS: {}", properties.maxDescriptorSetUpdateAfterBindStorageBuffers)
+
+	_attachmentDescPool.allocate_new_pool(64);
 	//LOG_INFO("TEST: {}", properties11.subgroupSize);
 }
 
@@ -71,7 +73,7 @@ void vulkan::VulkanRHI::cleanup()
 		textureView->destroy(_device.get());
 	
 	for (auto& texture : _vulkanTextures)
-		texture->destroy_texture();
+		texture->destroy_texture(_allocator);
 	
 	for (auto& buffer : _vulkanBuffers)
 		buffer->destroy_buffer(&_allocator);
@@ -80,8 +82,9 @@ void vulkan::VulkanRHI::cleanup()
 	vkDestroyPipelineCache(device, _pipelineCache, nullptr);
 	vmaDestroyAllocator(_allocator);
 	_pipelineLayoutCache->cleanup();
+	_descriptorManager->cleanup();
 	_cmdManager->cleanup();
-	_swapChain->cleanup();
+	_attachmentDescPool.cleanup();
 	_device->cleanup();
 	vkb::destroy_debug_utils_messenger(_instance, _debugMessenger, nullptr);
 	vkDestroyInstance(_instance, nullptr);
@@ -114,13 +117,17 @@ void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
 
 void vulkan::VulkanRHI::get_swap_chain_texture_views(std::vector<rhi::TextureView>& textureViews)
 {
-	for (auto& textureView : _swapChain->get_texture_views())
-		textureViews.push_back(textureView);
+	// for (auto& textureView : _swapChain->get_texture_views())
+	// 	textureViews.push_back(textureView);
 }
 
 bool vulkan::VulkanRHI::acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex)
 {
-	_cmdManager->acquire_next_image(_swapChain.get(), nextImageIndex, currentFrameIndex);
+	if (!_cmdManager->acquire_next_image(_swapChain.get(), nextImageIndex, currentFrameIndex))
+	{
+		recreate_swap_chain();
+		return false;
+	}
 	_currentImageIndex = nextImageIndex;
 	return true;
 }
@@ -239,7 +246,6 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 	
 	if (has_flag(texInfo->resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
 	{
-		LOG_INFO("CUBE MAP")
 		createInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 	}
 
@@ -248,15 +254,22 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 	createInfo.imageType = get_image_type(texInfo->textureDimension);
 
 	_vulkanTextures.emplace_back(new VulkanTexture(createInfo, &_allocator, memoryUsage));
-	VulkanTexture* vkText = _vulkanTextures.back().get();
-	if (vkText->get_handle() == VK_NULL_HANDLE)
+	VulkanTexture* vkTexture = _vulkanTextures.back().get();
+	if (vkTexture->get_handle() == VK_NULL_HANDLE)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Failed to allocate VkImage")
 		return;
 	}
-	texture->data = vkText;
+	texture->data = vkTexture;
 	texture->type = rhi::Resource::ResourceType::TEXTURE;
 	texture->textureInfo = *texInfo;
+
+	if (has_flag(texInfo->textureUsage, rhi::ResourceUsage::COLOR_ATTACHMENT)
+		|| has_flag(texInfo->textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
+	{
+		_viewIndicesByTexturePtr[vkTexture] = _attachmentDescPool.allocate();
+		_viewIndicesByTexturePtr[vkTexture]->imageCreateInfo = createInfo;
+	}
 }
 
 void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::TextureViewInfo* viewInfo, rhi::Texture* texture)
@@ -343,6 +356,7 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	createInfo.subresourceRange.layerCount = texInfo.layersCount;
 	createInfo.subresourceRange.aspectMask = aspectFlags;
 
+	uint32_t vkTextureViewIndex = _vulkanTextureViews.size();
 	_vulkanTextureViews.emplace_back(new VulkanTextureView(_device.get(), createInfo));
 	textureView->handle = _vulkanTextureViews.back().get();
 	textureView->viewInfo = *viewInfo;
@@ -355,6 +369,14 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	else if ((imgUsage & VK_IMAGE_USAGE_STORAGE_BIT) == VK_IMAGE_USAGE_STORAGE_BIT)
 	{
 		_descriptorManager->allocate_bindless_descriptor(_vulkanTextureViews.back().get(), TextureDescriptorHeapType::STORAGE_TEXTURES);
+	}
+
+	if (has_flag(texInfo.textureUsage, rhi::ResourceUsage::COLOR_ATTACHMENT)
+		|| has_flag(texInfo.textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
+	{
+		AttachmentDesc::ViewDesc& viewDesc = _viewIndicesByTexturePtr[vkTexture]->viewDescriptions.emplace_back();
+		viewDesc.viewArrayIndex = vkTextureViewIndex;
+		viewDesc.imageViewCreateInfo = createInfo;
 	}
 }
 
@@ -538,9 +560,14 @@ void vulkan::VulkanRHI::submit(rhi::QueueType queueType)
 	_cmdManager->submit(queueType);
 }
 
-void vulkan::VulkanRHI::present()
+bool vulkan::VulkanRHI::present()
 {
-	_device->get_graphics_queue()->present(_swapChain.get(), _currentImageIndex);
+	if (!_device->get_graphics_queue()->present(_swapChain.get(), _currentImageIndex))
+	{
+		recreate_swap_chain();
+		return false;
+	}
+	return true;
 }
 
 void vulkan::VulkanRHI::wait_fences()
@@ -846,8 +873,9 @@ void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingB
 	
 	renderingInfo.renderArea.offset.x = 0;
 	renderingInfo.renderArea.offset.y = 0;
-	rhi::TextureInfo& textureInfo = beginInfo->renderTargets[0].target->texture->textureInfo;
-	renderingInfo.renderArea.extent = { textureInfo.width, textureInfo.height };
+	VulkanTexture* vulkanTexture = get_vk_obj(beginInfo->renderTargets[0].target->texture);
+	VkExtent3D extent3D = vulkanTexture->get_extent();
+	renderingInfo.renderArea.extent = { extent3D.width, extent3D.height };
 	renderingInfo.colorAttachmentCount = 0;
 	renderingInfo.pColorAttachments = nullptr;
 	renderingInfo.pDepthAttachment = nullptr;
@@ -860,7 +888,7 @@ void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingB
 	for (auto& renderTarget : beginInfo->renderTargets)
 	{
 		rhi::TextureView* textureView = renderTarget.target;
-		textureInfo = textureView->texture->textureInfo;
+		rhi::TextureInfo& textureInfo = textureView->texture->textureInfo;
 
 		if (has_flag(textureInfo.textureUsage, rhi::ResourceUsage::COLOR_ATTACHMENT))
 		{
@@ -909,6 +937,8 @@ void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingB
 		}
 	}
 
+	renderingInfo.colorAttachmentCount = colorAttachments.size();
+	renderingInfo.pColorAttachments = colorAttachments.data();
 	vkCmdBeginRendering(get_vk_obj(cmd)->get_handle(), &renderingInfo);
 }
 
@@ -929,12 +959,11 @@ void vulkan::VulkanRHI::begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi:
 	renderingInfo.renderArea.offset.y = 0;
 	renderingInfo.renderArea.extent.width = _swapChain->get_width();
 	renderingInfo.renderArea.extent.height = _swapChain->get_height();
-
-	rhi::TextureView& textureView = _swapChain->get_texture_views()[_currentImageIndex];
+	
 	VkRenderingAttachmentInfo attachmentInfo{};
 	attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
 	attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	attachmentInfo.imageView = get_vk_obj(&textureView)->get_handle();
+	attachmentInfo.imageView = _swapChain->get_image_view_handle(_currentImageIndex);
 	attachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachmentInfo.clearValue.color = { { clearValues->color[0], clearValues->color[1], clearValues->color[2], clearValues->color[3] } };
@@ -1164,11 +1193,9 @@ void vulkan::VulkanRHI::save_pipeline_cache()
 
 void vulkan::VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier)
 {
-	rhi::TextureView& textureView = _swapChain->get_texture_views()[_currentImageIndex];
-	
 	VkImageMemoryBarrier2 imageBarrier{};
 	imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-	imageBarrier.image = get_vk_obj(textureView.texture)->get_handle();
+	imageBarrier.image = _swapChain->get_image_handle(_currentImageIndex);
 	if (useAfterDrawingImageBarrier)
 	{
 		imageBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1203,4 +1230,30 @@ void vulkan::VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bo
 	dependencyInfo.pImageMemoryBarriers = &imageBarrier;
 
 	vkCmdPipelineBarrier2(get_vk_obj(cmd)->get_handle(), &dependencyInfo);
+}
+
+void vulkan::VulkanRHI::recreate_swap_chain()
+{
+	vkDeviceWaitIdle(_device->get_device());
+	uint32_t width = _mainWindow->get_width();
+	uint32_t height = _mainWindow->get_height();
+	for (auto& pair : _viewIndicesByTexturePtr)
+	{
+		VulkanTexture* vulkanTexture = pair.first;
+		vulkanTexture->destroy_texture(_allocator);
+		VkImageCreateInfo& imageCreateInfo = pair.second->imageCreateInfo;
+		imageCreateInfo.extent = { width, height, 1 };
+		vulkanTexture->create_texture(imageCreateInfo, &_allocator, VMA_MEMORY_USAGE_GPU_ONLY);
+
+		for (auto& imageViewDesc : pair.second->viewDescriptions)
+		{
+			VulkanTextureView* vulkanTextureView = _vulkanTextureViews[imageViewDesc.viewArrayIndex].get();
+			vulkanTextureView->destroy(_device.get());
+			VkImageViewCreateInfo& viewCreateInfo = imageViewDesc.imageViewCreateInfo;
+			viewCreateInfo.image = vulkanTexture->get_handle();
+			vulkanTextureView->create(_device.get(), viewCreateInfo);
+			_descriptorManager->allocate_bindless_descriptor(vulkanTextureView, TextureDescriptorHeapType::TEXTURES);
+		}
+	}
+	_swapChain->recreate(width, height);
 }

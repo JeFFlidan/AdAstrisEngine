@@ -3,13 +3,13 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
-set(CMAKE_CXX_COMPILER C:/msys64/mingw64/bin/g++.exe)
+#set(CMAKE_CXX_COMPILER C:/msys64/mingw64/bin/g++.exe)
 set(DIR_THIRD_PARTY ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 set(DIR_BIN ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(DIR_ENGINE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/engine/src)
 set(DIR_DEVTOOLS ${CMAKE_CURRENT_SOURCE_DIR}/engine/devtools)
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DIR_BIN})
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DIR_BIN})
+#set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
 
 project ("AdAstrisEngine")
 
@@ -25,6 +25,13 @@ option(BUILD_RENDERER "Build Renderer module" OFF)
 option(BUILD_PROJECT_LAUNCHER "Build ProjectLauncher module" OFF)
 option(BUILD_LOW_LEVEL_ENGINE "Build low level engine" OFF)
 option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_EDTIOR "Build editor" OFF)
+option(GLSL_SUPPORT "GLSL support" OFF)
+
+if (MSVC)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${DIR_BIN})
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${DIR_BIN})
+endif()
 
 if (BUILD_THIRD_PARTY)
     add_subdirectory(third_party)
@@ -49,6 +56,9 @@ if (BUILD_LOW_LEVEL_ENGINE)
 endif()
 if (BUILD_TESTS)
     add_subdirectory(engine/src/tests)
+endif()
+if (BUILD_EDITOR)
+    add_subdirectory(engine/editor)
 endif()
 
 find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin ${DIR_THIRD_PARTY}/vulkan_base/glslang)

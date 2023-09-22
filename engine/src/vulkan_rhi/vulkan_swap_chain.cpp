@@ -5,9 +5,46 @@
 
 using namespace ad_astris;
 
-vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDevice* device) : _device(device)
+vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapChainInfo, VulkanDevice* device) : _device(device)
 {
-	if (swapInfo->buffersCount < 2 || swapInfo->buffersCount > 3)
+	assert(swapChainInfo != nullptr);
+	_swapChainInfo = *swapChainInfo;
+	create_swap_chain_internal();
+	_imageViews = _swapChain.get_image_views().value();
+	_images = _swapChain.get_images().value();
+}
+
+void vulkan::VulkanSwapChain::recreate(rhi::SwapChainInfo* swapChainInfo)
+{
+	_swapChainInfo = *swapChainInfo;
+	vkb::Swapchain oldSwapChain = _swapChain;
+	create_swap_chain_internal(_swapChain.swapchain);
+	create_swap_chain_internal(_swapChain.swapchain);
+	
+	for (auto& imageView : _imageViews)
+		vkDestroyImageView(_device->get_device(), imageView, nullptr);
+	_imageViews.clear();
+	_images.clear();
+	vkb::destroy_swapchain(oldSwapChain);
+}
+
+void vulkan::VulkanSwapChain::recreate(uint32_t width, uint32_t height)
+{
+	_swapChainInfo.width = width;
+	_swapChainInfo.height = height;
+	vkb::Swapchain oldSwapChain = _swapChain;
+	create_swap_chain_internal(_swapChain.swapchain);
+	
+	for (auto& imageView : _imageViews)
+		vkDestroyImageView(_device->get_device(), imageView, nullptr);
+	_imageViews.clear();
+	_images.clear();
+	vkb::destroy_swapchain(oldSwapChain);
+}
+
+void vulkan::VulkanSwapChain::create_swap_chain_internal(VkSwapchainKHR oldSwapChain)
+{
+	if (_swapChainInfo.buffersCount < 2 || _swapChainInfo.buffersCount > 3)
 	{
 		LOG_ERROR("VulkanSwapChain::VulkanSwapChain(): Invalid amount of buffers for swap chain")
 		return;
@@ -15,68 +52,31 @@ vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapInfo, VulkanDev
 	
 	VkPresentModeKHR presentMode;
 	
-	if (swapInfo->buffersCount == 3)
+	if (_swapChainInfo.buffersCount == 3)
 	{
 		presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
 	}
-	else if (swapInfo->sync)
+	else if (_swapChainInfo.sync)
 	{
 		presentMode = VK_PRESENT_MODE_FIFO_KHR;
 	}
-	else if (!swapInfo->sync)
+	else if (!_swapChainInfo.sync)
 	{
 		presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 	}
 	
 	VkSurfaceFormatKHR format;
 	format.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-	format.format = VK_FORMAT_B8G8R8A8_SRGB;
+	format.format = VK_FORMAT_B8G8R8A8_UNORM;
 	
 	vkb::SwapchainBuilder swapchainBuilder{
 		_device->get_physical_device(),
 		_device->get_device(),
 		_device->get_surface() };
-	vkb::Swapchain vkbSwapchain = swapchainBuilder
-		.set_desired_present_mode(presentMode)
-		.set_desired_extent(swapInfo->width, swapInfo->height)
-		.set_desired_format(format)
-		.build()
-		.value();
-
-	_swapChain = vkbSwapchain.swapchain;
-	auto images = vkbSwapchain.get_images().value();
-	auto imageViews = vkbSwapchain.get_image_views().value();
-	swapInfo->buffersCount = imageViews.size();
-	_format = vkbSwapchain.image_format;
-
-	for (int i = 0; i != imageViews.size(); ++i)
-	{
-		_vulkanTextures.emplace_back(new VulkanTexture())->set_handle(images[i]);
-		
-		_textures.emplace_back(new rhi::Texture());
-		_textures.back()->textureInfo.samplesCount = rhi::SampleCount::BIT_1;
-		_textures.back()->textureInfo.width = swapInfo->width;
-		_textures.back()->textureInfo.height = swapInfo->height;
-		_textures.back()->textureInfo.format = rhi::Format::B8G8R8A8_SRGB;
-		_textures.back()->data = _vulkanTextures.back().get();
-		_vulkanTextureViews.emplace_back(new VulkanTextureView());
-		_vulkanTextureViews.back()->set_handle(imageViews[i]);
-		rhi::TextureView texView;
-		texView.texture = _textures.back().get();
-		texView.handle = _vulkanTextureViews.back().get();
-		_textureViews.push_back(texView);
-	}
-
-	_width = swapInfo->width;
-	_height = swapInfo->height;
-}
-
-void vulkan::VulkanSwapChain::cleanup()
-{
-	for (auto& view : _textureViews)
-	{
-		VulkanTextureView* vulkanTextureView = get_vk_obj(&view);
-		vkDestroyImageView(_device->get_device(), vulkanTextureView->get_handle(), nullptr);
-	}
-	vkDestroySwapchainKHR(_device->get_device(), _swapChain, nullptr);
+	swapchainBuilder.set_desired_present_mode(presentMode);
+	swapchainBuilder.set_desired_extent(_swapChainInfo.width, _swapChainInfo.height);
+	swapchainBuilder.set_desired_format(format);
+	if (oldSwapChain != VK_NULL_HANDLE)
+		swapchainBuilder.set_old_swapchain(oldSwapChain);
+	_swapChain = swapchainBuilder.build().value();
 }

@@ -60,8 +60,10 @@ void vulkan::VulkanDevice::cleanup()
 	delete _presentQueue;
 	delete _computeQueue;
 	delete _transferQueue;
-	vkDestroySurfaceKHR(_instance, _surface, nullptr);
 	vkDestroyDevice(_device, nullptr);
+	if (_surface == VK_NULL_HANDLE)
+		LOG_ERROR("NULL HANDLE")
+	//vkDestroySurfaceKHR(_instance, _surface, nullptr);
 }
 
 void vulkan::VulkanDevice::create_surface(VkInstance instance, acore::IWindow* window)

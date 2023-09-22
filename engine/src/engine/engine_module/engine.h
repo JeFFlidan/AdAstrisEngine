@@ -19,7 +19,7 @@ namespace ad_astris::engine::impl
 	class ENGINE_API Engine final : public IEngine
 	{
 		public:
-			virtual void init(EngineInitializationContext& initializationContext) override;
+			virtual void init(EngineInitializationContext& engineInitContext) override;
 			virtual void execute() override;
 			virtual void save_and_cleanup(bool needToSave) override;
 

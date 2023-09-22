@@ -12,12 +12,15 @@
 #include "vulkan_swap_chain.h"
 #include "vulkan_descriptor_manager.h"
 #include "vulkan_pipeline_layout_cache.h"
+#include "core/pool_allocator.h"
 
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
 #include <vkbootstrap/VkBootstrap.h>
 
 #include <vector>
+#include <unordered_set>
+#include <unordered_map>
 #include <memory>
 
 namespace ad_astris::vulkan
@@ -60,7 +63,7 @@ namespace ad_astris::vulkan
 			virtual void begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType = rhi::QueueType::GRAPHICS) final override;
 			virtual void wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd) final override;
 			virtual void submit(rhi::QueueType queueType = rhi::QueueType::GRAPHICS) final override;
-			virtual void present() final override;
+			virtual bool present() final override;
 			virtual void wait_fences() final override;
 
 			virtual void copy_buffer(
@@ -136,6 +139,19 @@ namespace ad_astris::vulkan
 			std::vector<std::unique_ptr<VulkanTexture>> _vulkanTextures;
 			std::vector<std::unique_ptr<VulkanBuffer>> _vulkanBuffers;
 
+			struct AttachmentDesc
+			{
+				VkImageCreateInfo imageCreateInfo;
+				struct ViewDesc
+				{
+					uint32_t viewArrayIndex;
+					VkImageViewCreateInfo imageViewCreateInfo;
+				};
+				std::vector<ViewDesc> viewDescriptions;
+			};
+			ThreadSafePoolAllocator<AttachmentDesc> _attachmentDescPool;
+			std::unordered_map<VulkanTexture*, AttachmentDesc*> _viewIndicesByTexturePtr;
+
 			uint32_t _currentImageIndex{ 0 };
 
 			vkb::Instance create_instance();
@@ -144,5 +160,6 @@ namespace ad_astris::vulkan
 			void save_pipeline_cache();
 
 			void set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier);
+			void recreate_swap_chain();
 	};
 }

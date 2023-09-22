@@ -2,6 +2,7 @@
 
 #include "core/module.h"
 #include "rhi/engine_rhi.h"
+#include "rhi/ui_window_backend.h"
 
 namespace ad_astris
 {
@@ -17,5 +18,6 @@ namespace ad_astris
 	{
 		public:
 			virtual rhi::IEngineRHI* create_vulkan_rhi() = 0;
+			virtual rhi::UIWindowBackend* get_ui_window_backend() = 0;
 	};
 }

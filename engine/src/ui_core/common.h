@@ -18,4 +18,11 @@ namespace ad_astris::uicore
 
 	using UICallback = std::function<void(internal::BaseWidget&)>;
 	using UISetCustomStyleCallback = std::function<void()>;
+
+	class IUIWindow
+	{
+		public:
+			virtual ~IUIWindow() {}
+			virtual void draw_window(void* data = nullptr) = 0;
+	};
 }

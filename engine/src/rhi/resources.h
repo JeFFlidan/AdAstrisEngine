@@ -453,12 +453,12 @@ namespace ad_astris::rhi
 	struct RenderTarget
 	{
 		TextureView* target;
-		RenderTargetType type;
+		RenderTargetType type;		// Only for render pass. 
 		LoadOp loadOp;
 		StoreOp storeOp;
-		ResourceLayout initialLayout;
-		ResourceLayout renderPassLayout;
-		ResourceLayout finalLayout;
+		ResourceLayout initialLayout;		// Only for render pass
+		ResourceLayout renderPassLayout;	// Only for render pass
+		ResourceLayout finalLayout;			// Only for render pass
 		ClearValues clearValue;
 	};
 

@@ -23,6 +23,9 @@ namespace ad_astris::acore
 			}
 		
 			virtual HWND get_hWnd() override;
+			virtual uint32_t get_width() override { return 0; }
+			virtual uint32_t get_height() override { return 0; }
+			virtual bool is_running() override { return true; }
 
 		private:
 			GLFWwindow* _window{ nullptr };

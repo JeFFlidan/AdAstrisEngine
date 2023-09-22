@@ -23,6 +23,11 @@ namespace ad_astris::acore::impl
 				return _hWnd;
 			}
 
+			virtual uint32_t get_width() override { return _width; }
+			virtual uint32_t get_height() override { return _height; }
+			void set_width(uint32_t width) { _width = width; }
+			void set_height(uint32_t height) { _height = height; }
+
 			void parse_keys(KeyEvent& keyEvent, WPARAM wParam);
 			void setup_mouse_button_down_up_event(MouseButtonEvent* event, MouseButton button);
 			void setup_mouse_move_with_pressed_button_event(MouseMoveWithPressedButtonEvent& mouseMoveButtonEvent);
@@ -32,6 +37,8 @@ namespace ad_astris::acore::impl
 			{
 				return _eventManager;
 			}
+
+			virtual bool is_running() override { return _isRunning; }
 
 		private:
 			HINSTANCE _hInstance;
@@ -43,6 +50,9 @@ namespace ad_astris::acore::impl
 			int32_t _minHeight{ 400 };
 			int32_t _maxWidth{ 3840 };
 			int32_t _maxHeight{ 2160 };
+			uint32_t _width;
+			uint32_t _height;
+			bool _isRunning{ true };
 		
 			events::EventManager* _eventManager{ nullptr };
 	};

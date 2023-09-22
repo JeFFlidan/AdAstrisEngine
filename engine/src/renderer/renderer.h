@@ -1,6 +1,7 @@
 #pragma once
 
 #include "api.h"
+#include "enums.h"
 #include "triangle_test.h"
 #include "material_manager.h"
 #include "scene_manager/scene_manager.h"
@@ -8,6 +9,7 @@
 #include "resource_manager/resource_manager.h"
 #include "engine/render_core_module.h"
 #include "rhi/engine_rhi.h"
+#include "rhi/ui_window_backend.h"
 
 namespace ad_astris::renderer::impl
 {
@@ -21,7 +23,7 @@ namespace ad_astris::renderer::impl
 			Renderer& operator=(const Renderer& renderer) = delete;
 			Renderer& operator=(const Renderer&& renderer) = delete;
 
-			virtual void init(RendererInitializationContext& initializationContext) override;
+			virtual void init(RendererInitializationContext& rendererInitContext) override;
 			virtual void cleanup() override;
 
 			virtual void bake() override;
@@ -32,19 +34,26 @@ namespace ad_astris::renderer::impl
 			std::unique_ptr<SceneManager> _sceneManager{ nullptr };
 			ecore::RendererSubsettings* _rendererSubsettings{ nullptr };
 			rhi::IEngineRHI* _rhi{ nullptr };
+			rhi::UIWindowBackend* _uiWindowBackend{ nullptr };
 			rcore::IRenderGraph* _renderGraph{ nullptr };
 			rcore::IShaderManager* _shaderManager{ nullptr };
 			resource::ResourceManager* _resourceManager{ nullptr };
 			events::EventManager* _eventManager{ nullptr };
 			tasks::TaskComposer* _taskComposer{ nullptr };
+			acore::IWindow* _mainWindow{ nullptr };
+			bool* _isRunning{ nullptr };
 			
 			std::unique_ptr<TriangleTest> _triangleTest{ nullptr };
 
+			rhi::Sampler _samplers[SAMPLER_COUNT];
+
 			rhi::SwapChain _swapChain;
 
-			uint32_t _frameNumber{ 0 };
+			uint32_t _frameIndex{ 0 };
 
-			uint32_t get_current_frame_index();
+			void get_current_frame_index();
+			void create_swap_chain();
+			void create_samplers();
 		
 			void test_rhi();
 	};

@@ -40,3 +40,13 @@ target_compile_options(engine_core PRIVATE "/Zc:preprocessor")
 add_executable(AdAstrisEngine main.cpp)
 target_include_directories(AdAstrisEngine PUBLIC ${DIR_ENGINE_SRC})
 target_link_libraries(AdAstrisEngine engine_core)
+
+add_library(ui_core STATIC)
+file(GLOB UI_CORE_FILES
+    ${DIR_ENGINE_SRC}/ui_core/*
+    ${DIR_ENGINE_SRC}/ui_core/*/*)
+add_library(nfd STATIC IMPORTED)
+target_sources(ui_core PRIVATE ${UI_CORE_FILES})
+set_target_properties(nfd PROPERTIES IMPORTED_LOCATION ${DIR_THIRD_PARTY}/nfd/nfd.lib)
+target_link_libraries(ui_core engine_core nfd imgui)
+    

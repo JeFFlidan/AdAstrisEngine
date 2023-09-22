@@ -168,6 +168,15 @@ vulkan::VulkanCommandManager::VulkanCommandManager(VulkanDevice* device, VulkanS
 void vulkan::VulkanCommandManager::cleanup()
 {
 	_syncManager.cleanup(_device, _bufferCount);
+	for (uint32_t i = 0; i != _bufferCount; ++i)
+	{
+		_freeGraphicsCmdPools[i].clear();
+		_freeComputeCmdPools[i].clear();
+		_freeTransferCmdPools[i].clear();
+		_lockedComputeCmdPools[i].clear();
+		_lockedGraphicsCmdPools[i].clear();
+		_lockedTransferCmdPools[i].clear();
+	}
 }
 
 vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rhi::QueueType queueType)
@@ -273,12 +282,17 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
 bool vulkan::VulkanCommandManager::acquire_next_image(VulkanSwapChain* swapChain, uint32_t& nextImageIndex, uint32_t currentFrameIndex)
 {
 	_syncManager.wait_fences(_device, currentFrameIndex);
+	
+	_imageIndex = currentFrameIndex;
+	flush_cmd_buffers();
+	
 	VkSemaphore acquireSemaphore = _syncManager.get_acquire_semaphore(currentFrameIndex);
 	VkResult res = vkAcquireNextImageKHR(_device->get_device(), swapChain->get_swap_chain(), 1000000000, acquireSemaphore, VK_NULL_HANDLE, &nextImageIndex);
+	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+		return false;
 
-	_imageIndex = nextImageIndex;
-	flush_cmd_buffers();
 	_firstSubmissionInFrame.store(true);
+	_imageIndex = nextImageIndex;
 	
 	return true;
 }
