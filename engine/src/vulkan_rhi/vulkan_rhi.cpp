@@ -555,9 +555,17 @@ void vulkan::VulkanRHI::wait_command_buffer(rhi::CommandBuffer* cmd, rhi::Comman
 	_cmdManager->wait_for_cmd_buffer(cmd1, cmd2);
 }
 
-void vulkan::VulkanRHI::submit(rhi::QueueType queueType)
+void vulkan::VulkanRHI::submit(rhi::QueueType queueType, bool waitAfterSubmitting)
 {
-	_cmdManager->submit(queueType);
+	if (waitAfterSubmitting)
+	{
+		_cmdManager->submit(queueType, false);
+		_cmdManager->wait_fences();
+	}
+	else
+	{
+		_cmdManager->submit(queueType, true);
+	}
 }
 
 bool vulkan::VulkanRHI::present()
@@ -1128,6 +1136,11 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vect
 		bufferBarriers.data(),
 		imageBarriers.size(),
 		imageBarriers.data());
+}
+
+void vulkan::VulkanRHI::wait_for_gpu()
+{
+	VK_CHECK(vkDeviceWaitIdle(_device->get_device()));
 }
 
 // private methods

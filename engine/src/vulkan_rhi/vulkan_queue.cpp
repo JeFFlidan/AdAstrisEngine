@@ -11,7 +11,7 @@ vulkan::VulkanQueue::VulkanQueue(QueueData queueData)
 	_submissionCounter = 0;
 }
 
-void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager)
+void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager, bool useSignalSemaphores)
 {
 	std::vector<std::unique_ptr<VulkanCommandPool>>* cmdPools;
 	switch (_queueType)
@@ -42,13 +42,23 @@ void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager)
 		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		info.commandBufferCount = 1;
 		info.pCommandBuffers = &cmdBuffer->_cmdBuffer;
-		info.signalSemaphoreCount = 1;
-		info.pSignalSemaphores = &cmdBuffer->_signalSemaphore;
+		if (useSignalSemaphores)
+		{
+			info.signalSemaphoreCount = 1;
+			info.pSignalSemaphores = &cmdBuffer->_signalSemaphore;
+		}
+		else
+		{
+			info.signalSemaphoreCount = 0;
+			info.pSignalSemaphores = nullptr;
+		}
 		info.waitSemaphoreCount = cmdBuffer->_waitSemaphores.size();
 		info.pWaitSemaphores = cmdBuffer->_waitSemaphores.data();
 		info.pWaitDstStageMask = cmdBuffer->_waitFlags.data();
 		submitInfos.push_back(info);
-		_presentWaitSemaphores.push_back(cmdBuffer->_signalSemaphore);
+		
+		if (_queueType == rhi::QueueType::GRAPHICS)
+			_presentWaitSemaphores.push_back(cmdBuffer->_signalSemaphore);
 	}
 
 	// TODO need to use the correct fence

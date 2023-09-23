@@ -19,32 +19,32 @@ namespace ad_astris::renderer::impl
 
 			void setup_global_buffers();
 		
-			rhi::Buffer* get_vertex_buffer_f32pntc()
+			const rhi::Buffer* get_vertex_buffer_f32pntc()
 			{
 				return get_model_submanager()->get_vertex_buffer_f32pntc();
 			}
 
-			rhi::Buffer* get_index_buffer_f32pntc()
+			const rhi::Buffer* get_index_buffer_f32pntc()
 			{
 				return get_model_submanager()->get_index_buffer_f32pntc();
 			}
 
-			rhi::Buffer* get_output_plane_vertex_buffer()
+			const rhi::Buffer* get_output_plane_vertex_buffer()
 			{
 				return get_model_submanager()->get_output_plane_vertex_buffer();
 			}
 
-			rhi::Buffer* get_point_light_storage_buffer()
+			const rhi::Buffer* get_point_light_storage_buffer()
 			{
 				return get_light_submanager()->get_point_light_storage_buffer();
 			}
 
-			rhi::Buffer* get_directional_light_storage_buffer()
+			const rhi::Buffer* get_directional_light_storage_buffer()
 			{
 				return get_light_submanager()->get_directional_light_storage_buffer();
 			}
 
-			rhi::Buffer* get_spot_light_storage_buffer()
+			const rhi::Buffer* get_spot_light_storage_buffer()
 			{
 				return get_light_submanager()->get_spot_light_storage_buffer();
 			}
@@ -53,11 +53,10 @@ namespace ad_astris::renderer::impl
 			rhi::IEngineRHI* _rhi{ nullptr };
 			events::EventManager* _eventManager{ nullptr };
 			tasks::TaskComposer* _taskComposer{ nullptr };
+			rcore::IRendererResourceManager* _rendererResourceManager{ nullptr };
 
 			std::unordered_map<std::string, std::unique_ptr<SceneSubmanagerBase>> _submanagerByItsName;
-			std::unordered_set<std::string> _submanagersToUpdate;
-
-			void subscribe_to_events();
+			std::vector<SceneSubmanagerBase*> _submanagersToUpdate;
 
 			ModelSubmanager* get_model_submanager()
 			{

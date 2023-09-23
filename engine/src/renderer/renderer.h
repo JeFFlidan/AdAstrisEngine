@@ -38,6 +38,7 @@ namespace ad_astris::renderer::impl
 			rcore::IRenderGraph* _renderGraph{ nullptr };
 			rcore::IShaderManager* _shaderManager{ nullptr };
 			resource::ResourceManager* _resourceManager{ nullptr };
+			rcore::IRendererResourceManager* _rendererResourceManager{ nullptr };
 			events::EventManager* _eventManager{ nullptr };
 			tasks::TaskComposer* _taskComposer{ nullptr };
 			acore::IWindow* _mainWindow{ nullptr };

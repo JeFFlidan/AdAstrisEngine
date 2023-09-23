@@ -81,7 +81,7 @@ namespace ad_astris::vulkan
 			VulkanCommandBuffer* get_command_buffer(rhi::QueueType queueType = rhi::QueueType::GRAPHICS);
 			// cmd waits for waitForCmd
 			void wait_for_cmd_buffer(VulkanCommandBuffer* cmd, VulkanCommandBuffer* waitForCmd);
-			void submit(rhi::QueueType queueType);
+			void submit(rhi::QueueType queueType, bool useSignalSemaphores);
 
 			bool acquire_next_image(
 				VulkanSwapChain* swapChain,

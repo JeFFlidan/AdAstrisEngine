@@ -62,8 +62,7 @@ void VulkanUIWindowBackend::init(rhi::UIWindowBackendInitContext& initContext)
 	rhi::CommandBuffer cmdBuffer;
 	_rhi->begin_command_buffer(&cmdBuffer, rhi::QueueType::GRAPHICS);
 	ImGui_ImplVulkan_CreateFontsTexture(get_vk_obj(&cmdBuffer)->get_handle());
-	_rhi->submit(rhi::QueueType::GRAPHICS);
-	_rhi->wait_fences();
+	_rhi->submit(rhi::QueueType::GRAPHICS, true);
 	ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 

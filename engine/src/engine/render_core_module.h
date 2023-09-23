@@ -35,9 +35,6 @@ namespace ad_astris::rcore
 		
 			virtual uint32_t get_logical_pass_index() = 0;
 
-			virtual uint32_t get_physical_pass_index() = 0;
-			virtual void set_physical_pass_index(uint32_t newPhysicalIndex) = 0;
-
 			virtual RenderGraphQueue get_queue() = 0;
 
 			virtual void enable_multiview() = 0;
@@ -104,8 +101,6 @@ namespace ad_astris::rcore
 		
 			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue) = 0;
 			virtual IRenderPass* get_logical_pass(const std::string& passName) = 0;
-			virtual rhi::RenderPass* get_physical_pass(const std::string& passName) = 0;
-			virtual rhi::RenderPass* get_physical_pass(IRenderPass* logicalPass) = 0;
 			virtual void create_swapchain(rhi::SwapChainInfo& swapChainInfo) = 0;
 			virtual void set_swap_chain_source(const std::string& swapChainInputName) = 0;
 
@@ -184,12 +179,42 @@ namespace ad_astris::rcore
 			virtual rhi::Shader* get_shader(const io::URI& relativeShaderPath) = 0;
 			virtual IShaderCompiler* get_shader_compiler() = 0;
 	};
+
+	struct RendererResourceManagerInitContext
+	{
+		rhi::IEngineRHI* rhi{ nullptr };
+	};
+
+	class IRendererResourceManager
+	{
+		public:
+			virtual ~IRendererResourceManager() { }
+		
+			virtual void init(RendererResourceManagerInitContext& initContext) = 0;
+			virtual void cleanup_staging_buffers() = 0;
+
+			virtual void allocate_gpu_buffer(const std::string& bufferName, uint64_t size, rhi::ResourceUsage bufferUsage) = 0;
+			virtual void allocate_vertex_buffer(const std::string& bufferName, uint64_t size) = 0;
+			virtual void allocate_index_buffer(const std::string& bufferName, uint64_t size) = 0;
+			virtual void allocate_indirect_buffer(const std::string& bufferName, uint64_t size) = 0;
+			virtual void allocate_storage_buffer(const std::string& bufferName, uint64_t size) = 0;
+			virtual bool update_buffer(
+				rhi::CommandBuffer* cmd,
+				const std::string& bufferName,
+				uint64_t objectSizeInBytes,
+				void* allObjects,
+				uint64_t allObjectCount,
+				uint64_t newObjectCount) = 0;
+
+			virtual const rhi::Buffer* get_buffer(const std::string& bufferName) = 0;
+	};
 	
 	class IRenderCoreModule : public IModule
 	{
 		public:
 			virtual IRenderGraph* get_render_graph() = 0;
 			virtual IShaderManager* get_shader_manager() = 0;
+			virtual IRendererResourceManager* get_renderer_resource_manager() = 0;
 	};
 }
 

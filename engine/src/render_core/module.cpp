@@ -1,4 +1,5 @@
 #include "render_graph.h"
+#include "renderer_resource_manager.h"
 #include "shader_compiler/shader_manager.h"
 #include "engine/render_core_module.h"
 #include "core/module_manager.h"
@@ -13,10 +14,12 @@ namespace ad_astris::rcore
 			virtual void startup_module(ModuleManager* moduleManager) override;
 			virtual IShaderManager* get_shader_manager() override;
 			virtual IRenderGraph* get_render_graph() override;
+			virtual IRendererResourceManager* get_renderer_resource_manager() override;
 
 		private:
 			std::unique_ptr<IRenderGraph> _renderGraph;
 			std::unique_ptr<IShaderManager> _shaderManager;
+			std::unique_ptr<IRendererResourceManager> _rendererResourceManager;
 	};
 
 	void RenderCoreModule::startup_module(ModuleManager* moduleManager)
@@ -32,6 +35,7 @@ namespace ad_astris::rcore
 		
 		_renderGraph = std::make_unique<impl::RenderGraph>();
 		_shaderManager = std::make_unique<impl::ShaderManager>();
+		_rendererResourceManager = std::make_unique<impl::RendererResourceManager>();
 	}
 
 	IShaderManager* RenderCoreModule::get_shader_manager()
@@ -42,6 +46,11 @@ namespace ad_astris::rcore
 	IRenderGraph* RenderCoreModule::get_render_graph()
 	{
 		return _renderGraph.get();
+	}
+
+	IRendererResourceManager* RenderCoreModule::get_renderer_resource_manager()
+	{
+		return _rendererResourceManager.get();
 	}
 
 	extern "C" RENDER_CORE_API IRenderCoreModule* register_module()

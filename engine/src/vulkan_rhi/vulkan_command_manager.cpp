@@ -246,13 +246,13 @@ void vulkan::VulkanCommandManager::wait_for_cmd_buffer(VulkanCommandBuffer* cmd,
 	cmd->_waitFlags.push_back(waitForCmd->_stageFlag);
 }
 
-void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
+void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType, bool useSignalSemaphores)
 {
 	switch (queueType)
 	{
 		case rhi::QueueType::GRAPHICS:
 		{
-			_device->get_graphics_queue()->submit(*this);
+			_device->get_graphics_queue()->submit(*this, useSignalSemaphores);
 			auto& lockedPools = _lockedGraphicsCmdPools[_imageIndex];
 			auto& freePools = _freeGraphicsCmdPools[_imageIndex];
 			clear_after_submission(freePools, lockedPools);
@@ -260,7 +260,7 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
 		}
 		case rhi::QueueType::COMPUTE:
 		{
-			_device->get_compute_queue()->submit(*this);
+			_device->get_compute_queue()->submit(*this, useSignalSemaphores);
 			auto& lockedPools = _lockedComputeCmdPools[_imageIndex];
 			auto& freePools = _freeComputeCmdPools[_imageIndex];
 			clear_after_submission(freePools, lockedPools);
@@ -268,7 +268,7 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType)
 		}
 		case rhi::QueueType::TRANSFER:
 		{
-			_device->get_transfer_queue()->submit(*this);
+			_device->get_transfer_queue()->submit(*this, useSignalSemaphores);
 			auto& lockedPools = _lockedTransferCmdPools[_imageIndex];
 			auto& freePools = _freeTransferCmdPools[_imageIndex];
 			clear_after_submission(freePools, lockedPools);

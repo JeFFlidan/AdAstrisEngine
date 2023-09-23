@@ -62,7 +62,7 @@ namespace ad_astris::vulkan
 
 			virtual void begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType = rhi::QueueType::GRAPHICS) final override;
 			virtual void wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd) final override;
-			virtual void submit(rhi::QueueType queueType = rhi::QueueType::GRAPHICS) final override;
+			virtual void submit(rhi::QueueType queueType = rhi::QueueType::GRAPHICS, bool waitAfterSubmitting = false) final override;
 			virtual bool present() final override;
 			virtual void wait_fences() final override;
 
@@ -112,6 +112,8 @@ namespace ad_astris::vulkan
 			virtual void dispatch(rhi::CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) final override;
 			virtual void fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data) final override;
 			virtual void add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vector<rhi::PipelineBarrier>& barriers) final override;
+
+			virtual void wait_for_gpu() override;
 
 			VulkanDevice* get_device() { return _device.get(); }
 			VkInstance get_instance() { return _instance; }

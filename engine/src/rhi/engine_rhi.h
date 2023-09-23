@@ -49,7 +49,7 @@ namespace ad_astris::rhi
 
 			virtual void begin_command_buffer(CommandBuffer* cmd, QueueType queueType = QueueType::GRAPHICS) = 0;
 			virtual void wait_command_buffer(CommandBuffer* cmd, CommandBuffer* waitForCmd) = 0;
-			virtual void submit(QueueType queueType = QueueType::GRAPHICS) = 0;
+			virtual void submit(QueueType queueType = QueueType::GRAPHICS, bool waitAfterSubmitting = false) = 0;
 			virtual bool present() = 0;
 			virtual void wait_fences() = 0;
 
@@ -105,5 +105,7 @@ namespace ad_astris::rhi
 			virtual void dispatch(CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
 			virtual void fill_buffer(CommandBuffer* cmd, Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data) = 0;
 			virtual void add_pipeline_barriers(CommandBuffer* cmd, std::vector<PipelineBarrier>& barriers) = 0;
+
+			virtual void wait_for_gpu() = 0;
 	};
 }

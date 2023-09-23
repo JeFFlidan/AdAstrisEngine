@@ -8,18 +8,18 @@
 
 namespace ad_astris::resource
 {
-	class StaticModelCreatedEvent : public events::IEvent, public impl::StaticModelEvent
+	class StaticModelFirstCreationEvent : public events::IEvent, public impl::StaticModelEvent
 	{
 		public:
-			EVENT_TYPE_DECL(StaticModelCreatedEvent)
-			StaticModelCreatedEvent(ecore::StaticModel* model) : StaticModelEvent(model) { }
+			EVENT_TYPE_DECL(StaticModelFirstCreationEvent)
+			StaticModelFirstCreationEvent(ecore::StaticModel* model) : StaticModelEvent(model) { }
 	};
 	
-	class StaticModelLoadedEvent : public events::IEvent, public impl::StaticModelEvent
+	class StaticModelLoadedInEngineEvent : public events::IEvent, public impl::StaticModelEvent
 	{
 		public:
-			EVENT_TYPE_DECL(StaticModelLoadedEvent)
-			StaticModelLoadedEvent(ecore::StaticModel* model) : StaticModelEvent(model) { }
+			EVENT_TYPE_DECL(StaticModelLoadedInEngineEvent)
+			StaticModelLoadedInEngineEvent(ecore::StaticModel* model) : StaticModelEvent(model) { }
 	};
 
 	class Texture2DCreatedEvent : public events::IEvent, public impl::Texture2DEvent

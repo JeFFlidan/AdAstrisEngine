@@ -19,7 +19,7 @@ namespace ad_astris::vulkan
 		public:
 			VulkanQueue(QueueData queueData);
 		
-			void submit(VulkanCommandManager& cmdManager);
+			void submit(VulkanCommandManager& cmdManager, bool useSignalSemaphores);
 			bool present(VulkanSwapChain* swapChain, uint32_t currentImageIndex);
 
 			VkQueue get_queue() { return _queue; }

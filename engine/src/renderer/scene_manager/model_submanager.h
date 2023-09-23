@@ -13,52 +13,41 @@ namespace ad_astris::renderer::impl
 			ModelSubmanager(SceneSubmanagerInitializationContext& initContext);
 
 			virtual void update(rhi::CommandBuffer& cmdBuffer) override;
-			virtual void cleanup_staging_buffers() override;
-			virtual bool need_allocation() override;
+			virtual void cleanup_after_update() override;
+			virtual bool need_update() override;
 
-			rhi::Buffer* get_vertex_buffer_f32pntc()
+			const rhi::Buffer* get_vertex_buffer_f32pntc()
 			{
-				return &_vertexBuffer_F32PNTC.buffer;
+				return _rendererResourceManager->get_buffer(VERTEX_BUFFER_F32PNTC_NAME);
 			}
 
-			rhi::Buffer* get_index_buffer_f32pntc()
+			const rhi::Buffer* get_index_buffer_f32pntc()
 			{
-				return &_indexBuffer_F32PNTC.buffer;
+				return _rendererResourceManager->get_buffer(INDEX_BUFFER_F32PNTC_NAME);
 			}
 
-			rhi::Buffer* get_output_plane_vertex_buffer()
+			const rhi::Buffer* get_output_plane_vertex_buffer()
 			{
-				return &_outputPlaneVertexBuffer_F32PC;
+				return _rendererResourceManager->get_buffer(OUTPUT_PLANE_VERTEX_BUFFER_NAME);
 			}
 
 		private:
-			GPUBuffer _vertexBuffer_F32PNTC;
-			GPUBuffer _indexBuffer_F32PNTC;
-			rhi::Buffer _outputPlaneVertexBuffer_F32PC;
-			bool _areDefaultBuffersAllocated{ false };
+			const std::string VERTEX_BUFFER_F32PNTC_NAME = "vertex_buffer_f32pntc";
+			const std::string INDEX_BUFFER_F32PNTC_NAME = "index_buffer_f32pntc";
+			const std::string OUTPUT_PLANE_VERTEX_BUFFER_NAME = "output_plane_buffer";
+		
 			bool _areGPUBuffersAllocated{ false };
 
-			std::vector<uint8_t> vertexArray_F32PNTC;		// Contains all vertices of all models with vertex format Float32 Position Normal Tangent TexCoord
-			std::vector<uint8_t> indexArray_F32PNTC;
-
-			struct
-			{
-				rhi::Buffer vertexBuffer_F32PNTC;		// CPU buffer that contains all vertices of all models or all vertices of recently loaded models. It depends on occupancy of gpu buffer. Always destroyed after submitting _transferCmdBuffer
-				rhi::Buffer indexBuffer_F32PNTC;
-				rhi::Buffer outputPlaneVertexBuffer_F32PC;
-			} _stagingBuffers;
-
-			std::vector<rhi::Buffer*> _stagingBuffersToDelete;
+			std::vector<uint8_t> _vertexArray_F32PNTC;		// Contains all vertices of all models with vertex format Float32 Position Normal Tangent TexCoord
+			std::vector<uint8_t> _indexArray_F32PNTC;
 
 			std::vector<ecore::StaticModelHandle> _loadedStaticModelHandles;
 			uint64_t _loadedModelsVertexArraySize_F32PNTC{ 0 };
 			uint64_t _loadedModelsIndexArraySize_F32PNTC{ 0 };
 
 			virtual void subscribe_to_events() override;
-			void allocate_staging_buffers(rhi::CommandBuffer& cmdBuffer);
-			void allocate_gpu_buffers(rhi::CommandBuffer& cmdBuffer);
-			void allocate_default_buffers(rhi::CommandBuffer& cmdBuffer);
+			void update_gpu_buffers(rhi::CommandBuffer& cmd);
+			void allocate_gpu_buffers(rhi::CommandBuffer& cmd);
+			void update_cpu_arrays();
 	};
-
-	IMPLEMENT_SUBMANAGER_EVENT(ModelSubmanager)
 }

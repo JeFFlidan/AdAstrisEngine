@@ -34,24 +34,20 @@ void LightSubmanager::update(rhi::CommandBuffer& cmdBuffer)
 	LOG_INFO("Before setup lights")
 	setup_lights();
 	LOG_INFO("After setup lights")
-	allocate_staging_buffers();
-	allocate_gpu_buffers(cmdBuffer);
+	update_gpu_buffer(cmdBuffer);
+	LOG_INFO("After updating")
 }
 
-void LightSubmanager::cleanup_staging_buffers()
+void LightSubmanager::cleanup_after_update()
 {
 	LOG_ERROR("RESET TEMP ARRAYS LIGHT SUBMANAGER")
 	_recentlyCreated.pointLights.clear();
 	_recentlyCreated.directionalLights.clear();
 	_recentlyCreated.spotLights.clear();
-	
-	for (auto& buffer : _stagingBuffersToDelete)
-		_rhi->destroy_buffer(buffer);
-	_stagingBuffersToDelete.clear();
 	LOG_WARNING("FINISH TEMP ARRAY CLEANUPING")
 }
 
-bool LightSubmanager::need_allocation()
+bool LightSubmanager::need_update()
 {
 	return !_areGPUBuffersAllocated || !_recentlyCreated.pointLights.empty() || !_recentlyCreated.directionalLights.empty() || !_recentlyCreated.spotLights.empty();
 }
@@ -76,7 +72,7 @@ void LightSubmanager::subscribe_to_events()
 		pointLightTemp.pointLightCollectionIndex = _cpuCollections.pointLights.add_object(pointLight, context->entity);
 		_recentlyCreated.pointLights.push_back(pointLightTemp);
 		LightSubmanagerUpdatedEvent submanagerUpdatedEvent;
-		_eventManager->enqueue_event(submanagerUpdatedEvent);
+		_eventManager->trigger_event(submanagerUpdatedEvent);
 	};
 	_eventManager->subscribe(pointLightCreatedDelegate);
 
@@ -96,7 +92,7 @@ void LightSubmanager::subscribe_to_events()
 		dirLightTemp.directionalLightCollectionIndex = _cpuCollections.directionalLights.add_object(dirLight, context->entity);
 		_recentlyCreated.directionalLights.push_back(dirLightTemp);
 		LightSubmanagerUpdatedEvent submanagerUpdatedEvent;
-		_eventManager->enqueue_event(submanagerUpdatedEvent);
+		_eventManager->trigger_event(submanagerUpdatedEvent);
 	};
 	_eventManager->subscribe(dirLightCreatedDelegate);
 
@@ -125,7 +121,7 @@ void LightSubmanager::subscribe_to_events()
 		spotLightTemp.spotLightCollectionIndex = _cpuCollections.spotLights.add_object(spotLight, context->entity);
 		_recentlyCreated.spotLights.push_back(spotLightTemp);
 		LightSubmanagerUpdatedEvent submanagerUpdatedEvent;
-		_eventManager->enqueue_event(submanagerUpdatedEvent);
+		_eventManager->trigger_event(submanagerUpdatedEvent);
 	};
 	_eventManager->subscribe(spotLigthCreatedDelegate);
 }
@@ -143,46 +139,61 @@ void LightSubmanager::setup_lights()
 	LOG_INFO("LightSubmanager::setup_lights(): Time: {} ms", timer.elapsed_milliseconds())
 }
 
-void LightSubmanager::allocate_staging_buffers()
+void LightSubmanager::allocate_gpu_buffers()
 {
-	allocate_staging_buffer(
-		_stagingBuffers.pointLights,
-		_storageBuffers.pointLights,
-		_recentlyCreated.pointLights,
-		_cpuCollections.pointLights);
-	allocate_staging_buffer(
-		_stagingBuffers.directionalLights,
-		_storageBuffers.directionalLights,
-		_recentlyCreated.directionalLights,
-		_cpuCollections.directionalLights);
-	allocate_staging_buffer(
-		_stagingBuffers.spotLights,
-		_storageBuffers.spotLights,
-		_recentlyCreated.spotLights,
-		_cpuCollections.spotLights);
+	if (_recentlyCreated.pointLights.size() * sizeof(PointLight) > POINT_LIGHT_DEFAULT_COUNT * sizeof(PointLight))
+		_rendererResourceManager->allocate_storage_buffer(POINT_LIGHT_BUFFER_NAME, _recentlyCreated.pointLights.size() * sizeof(PointLight));
+	else
+		_rendererResourceManager->allocate_storage_buffer(POINT_LIGHT_BUFFER_NAME, POINT_LIGHT_DEFAULT_COUNT * sizeof(PointLight));
+
+	if (_recentlyCreated.spotLights.size() * sizeof(SpotLight) > SPOT_LIGHT_DEFAULT_COUNT * sizeof(SpotLight))
+		_rendererResourceManager->allocate_storage_buffer(SPOT_LIGHT_BUFFER_NAME, _recentlyCreated.spotLights.size() * sizeof(SpotLight));
+	else
+		_rendererResourceManager->allocate_storage_buffer(SPOT_LIGHT_BUFFER_NAME, SPOT_LIGHT_DEFAULT_COUNT * sizeof(SpotLight));
+
+	if (_recentlyCreated.directionalLights.size() > sizeof(DirectionalLight) > DIRECTIONAL_LIGHT_DEFAULT_COUNT * sizeof(DirectionalLight))
+		_rendererResourceManager->allocate_storage_buffer(DIR_LIGHT_BUFFER_NAME, _recentlyCreated.directionalLights.size() * sizeof(DirectionalLight));
+	else
+		_rendererResourceManager->allocate_storage_buffer(DIR_LIGHT_BUFFER_NAME, DIRECTIONAL_LIGHT_DEFAULT_COUNT * sizeof(DirectionalLight));
+	
+	_areGPUBuffersAllocated = true;
 }
 
-void LightSubmanager::allocate_gpu_buffers(rhi::CommandBuffer& cmdBuffer)
+void LightSubmanager::update_gpu_buffer(rhi::CommandBuffer& cmd)
 {
-	allocate_gpu_buffer(
-		cmdBuffer,
-		_stagingBuffers.pointLights,
-		_storageBuffers.pointLights,
-		_cpuCollections.pointLights,
-		POINT_LIGHT_DEFAULT_COUNT);
-	allocate_gpu_buffer(
-		cmdBuffer,
-		_stagingBuffers.directionalLights,
-		_storageBuffers.directionalLights,
-		_cpuCollections.directionalLights,
-		DIRECTIONAL_LIGHT_DEFAULT_COUNT);
-	allocate_gpu_buffer(
-		cmdBuffer,
-		_stagingBuffers.spotLights,
-		_storageBuffers.spotLights,
-		_cpuCollections.spotLights,
-		SPOT_LIGHT_DEFAULT_COUNT);
-	_areGPUBuffersAllocated = true;
+	if (!_areGPUBuffersAllocated)
+		allocate_gpu_buffers();
+	
+	if (!_recentlyCreated.pointLights.empty())
+	{
+		_rendererResourceManager->update_buffer(
+		   &cmd,
+		   POINT_LIGHT_BUFFER_NAME,
+		   sizeof(PointLight),
+		   _cpuCollections.pointLights.begin(),
+		   _cpuCollections.pointLights.size(),
+		   _recentlyCreated.pointLights.size());
+	}
+	if (!_recentlyCreated.spotLights.empty())
+	{
+		_rendererResourceManager->update_buffer(
+			&cmd,
+			SPOT_LIGHT_BUFFER_NAME,
+			sizeof(SpotLight),
+			_cpuCollections.spotLights.begin(),
+			_cpuCollections.spotLights.size(),
+			_recentlyCreated.spotLights.size());
+	}
+	if (!_recentlyCreated.directionalLights.empty())
+	{
+		_rendererResourceManager->update_buffer(
+			&cmd,
+			DIR_LIGHT_BUFFER_NAME,
+			sizeof(DirectionalLight),
+			_cpuCollections.directionalLights.begin(),
+			_cpuCollections.directionalLights.size(),
+			_recentlyCreated.directionalLights.size());
+	}
 }
 
 void LightSubmanager::setup_point_lights_matrices(tasks::TaskGroup& taskGroup)

@@ -58,6 +58,7 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	auto rcoreModule = moduleManager->load_module<rcore::IRenderCoreModule>("RenderCore");
 	_renderGraph = rcoreModule->get_render_graph();
 	_shaderManager = rcoreModule->get_shader_manager();
+	_rendererResourceManager = rcoreModule->get_renderer_resource_manager();
 	_renderGraph->init(_rhi);
 
 	rcore::ShaderManagerInitContext shaderManagerInitContext;
@@ -74,6 +75,11 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	shaderManagerInitContext.fileSystem = _resourceManager->get_file_system();
 	shaderManagerInitContext.moduleManager = moduleManager;
 	_shaderManager->init(shaderManagerInitContext);
+
+	rcore::RendererResourceManagerInitContext rendererResourceManagerInitContext;
+	rendererResourceManagerInitContext.rhi = _rhi;
+	_rendererResourceManager->init(rendererResourceManagerInitContext);
+	
 	LOG_INFO("Renderer::init(): Loaded and initialized RenderCore module")
 	
 	MaterialManagerInitializationContext materialManagerInitContext;
@@ -90,6 +96,7 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	sceneManagerInitContext.eventManager = _eventManager;
 	sceneManagerInitContext.taskComposer = _taskComposer;
 	sceneManagerInitContext.resourceManager = _resourceManager;
+	sceneManagerInitContext.rendererResourceManager = _rendererResourceManager;
 	_sceneManager = std::make_unique<SceneManager>(sceneManagerInitContext);
 	LOG_INFO("Renderer::init(): Initialized scene manager")
 
@@ -132,7 +139,7 @@ void Renderer::draw()
 		return;
 	}
 
-	//_sceneManager->setup_global_buffers();
+	_sceneManager->setup_global_buffers();
 
 	rhi::CommandBuffer cmd;
 	_rhi->begin_command_buffer(&cmd);
