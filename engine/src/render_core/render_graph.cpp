@@ -8,9 +8,21 @@ using namespace ad_astris;
 using namespace rcore;
 using namespace impl;
 
+RenderGraph::RenderGraph(IRendererResourceManager* rendererResourceManager) : _rendererResourceManager(rendererResourceManager)
+{
+	
+}
+
 void RenderGraph::init(rhi::IEngineRHI* engineRHI)
 {
-	_engineRHI = engineRHI;
+	_rhi = engineRHI;
+}
+
+void RenderGraph::update_attachments()
+{
+	clear_collections();
+	build_rendering_begin_info();
+	build_barriers();
 }
 
 void RenderGraph::cleanup()
@@ -32,7 +44,7 @@ IRenderPass* RenderGraph::add_new_pass(const std::string& passName, RenderGraphQ
 	return _logicalPasses.back().get();
 }
 
-IRenderPass* RenderGraph::get_logical_pass(const std::string& passName)
+IRenderPass* RenderGraph::get_pass(const std::string& passName)
 {
 	auto it = _logicalPassIndexByItsName.find(passName);
 	if (it == _logicalPassIndexByItsName.end())
@@ -41,32 +53,9 @@ IRenderPass* RenderGraph::get_logical_pass(const std::string& passName)
 	return _logicalPasses[it->second].get();
 }
 
-rhi::RenderPass* RenderGraph::get_physical_pass(const std::string& passName)
-{
-	auto it = _logicalPassIndexByItsName.find(passName);
-	if (it == _logicalPassIndexByItsName.end())
-	{
-		LOG_FATAL("RenderGraph::get_physical_pass(): There is no pass {}", passName);
-	}
-
-	RenderPass* logicalPass = _logicalPasses[it->second].get();
-	if (logicalPass->get_physical_pass_index() != ResourceDesc::Unused)
-	{
-		return &_physicalPasses[logicalPass->get_physical_pass_index()];
-	}
-	
-	LOG_FATAL("RenderGraph::get_physical_pass(): Can't get physical pass because logical pass {} doesn't have a physical pass index", passName)
-}
-
-rhi::RenderPass* RenderGraph::get_physical_pass(IRenderPass* logicalPass)
-{
-	return get_physical_pass(logicalPass->get_name());
-}
-
 void RenderGraph::bake()
 {
-	_sortedPasses.clear();
-	_passBarriers.clear();
+	clear_collections();
 	
 	if (_swapChainInputName.empty())
 	{
@@ -95,17 +84,13 @@ void RenderGraph::bake()
 	std::reverse(_sortedPasses.begin(), _sortedPasses.end());
 	filter_pass_order();
 
-	_passBarriers.resize(_sortedPasses.size());
-	_physicalTextures.reserve(_logicalResources.size());
-	_physicalTextureViews.reserve(_logicalResources.size());
-
 	LOG_INFO("Before optimizing pass order")
 	optimize_pass_order();
 
 	LOG_INFO("Before building physical resources")
 	build_physical_resources();
-	LOG_INFO("Before building physical passes")
-	build_physical_passes();
+	LOG_INFO("Before building rendering begin info")
+	build_rendering_begin_info();
 	LOG_INFO("Before building barriers")
 	build_barriers();
 	LOG_INFO("After building barriers")
@@ -113,45 +98,18 @@ void RenderGraph::bake()
 
 void RenderGraph::log()
 {
-	// RenderPass* pass = _logicalPasses.back().get();
-	// LOG_INFO("Color outputs size: {}", pass->get_color_outputs().size())
-	// LOG_INFO("Custom textures size: {}", pass->get_custom_textures().size())
-	// LOG_INFO("Storage texture inputs: {}", pass->get_storage_texture_inputs().size())
-	// LOG_INFO("Resources count: {}", _logicalResources.size())
-	
 	for (auto& passIndex : _sortedPasses)
 	{
 		RenderPass* pass = _logicalPasses[passIndex].get();
 		LOG_INFO("RenderPass name: {}", pass->get_name())
 	}
 
-	uint32_t barriersAmount = 0;
-	for (auto& barriersVector : _passBarriers)
-	{
-		barriersAmount += barriersVector.size();
-	}
-	
-	LOG_INFO("RenderGraph::log(): Physical passes amount: {}", _physicalPasses.size())
-	LOG_INFO("RenderGraph::log(): Barriers amount: {}", barriersAmount)
-	LOG_INFO("RenderGraph::log(): Resources with barriers: {}", _barriersByResourceIndex.size())
-	for (auto& barriersPerResource : _barriersByResourceIndex)
-	{
-		ResourceDesc* resDesc = _logicalResources[barriersPerResource.first].get();
-		LOG_INFO("Resource {} has {} barriers", resDesc->get_name(), barriersPerResource.second.size())
-	}
+	uint32_t flushingBarrierCount = 0;
+	for (auto& pair : _flushingPipelineBarriersByPassIndex)
+		flushingBarrierCount += pair.second.size();
 
-	IRenderPass* renderPass = get_logical_pass("composite");
-	LOG_INFO("RenderGraph::log(): Before ignoring pass")
-	add_pass_to_ignore(renderPass->get_logical_pass_index());
-
-	LOG_INFO("RenderGraph::log(): Ignored passes amount: {}", _passToIgnore.size())
-	LOG_INFO("RenderGraph::log(): Ignored barriers amount: {}", _barrierToIgnore.size())
-
-	LOG_INFO("RenderGraph::log(): Before removing pass from ignored")
-	remove_pass_from_ignore(renderPass->get_logical_pass_index());
-
-	LOG_INFO("RenderGraph::log(): Ignored passes amount: {}", _passToIgnore.size())
-	LOG_INFO("RenderGraph::log(): Ignored barriers amount: {}", _barrierToIgnore.size())
+	LOG_INFO("RenderGraph::log(): Invalidating barrier count {}", _invalidatingPipelineBarriers.size())
+	LOG_INFO("RenderGraph::log(): Flushing barrier count {}", flushingBarrierCount)
 }
 
 TextureDesc* RenderGraph::get_texture_desc(const std::string& textureName)
@@ -180,7 +138,7 @@ BufferDesc* RenderGraph::get_buffer_desc(const std::string& bufferName)
 	if (it != _logicalResourceIndexByItsName.end())
 	{
 		ResourceDesc* resourceDesc = _logicalResources[it->second].get();
-		if (resourceDesc->get_type() != ResourceDesc::Type::TEXTURE)
+		if (resourceDesc->get_type() != ResourceDesc::Type::BUFFER)
 		{
 			LOG_ERROR("RenderGraph::get_buffer_desc(): Texture has name {}, not buffer", bufferName)
 			return nullptr;
@@ -193,81 +151,35 @@ BufferDesc* RenderGraph::get_buffer_desc(const std::string& bufferName)
 	_logicalResourceIndexByItsName[bufferName] = resourceIndex;
 	return get_buffer_desc_handle(resourceIndex);
 }
+
+void RenderGraph::draw(tasks::TaskGroup* taskGroup)
+{
+	rhi::CommandBuffer cmd;
+	_rhi->begin_command_buffer(&cmd);
+	_rhi->add_pipeline_barriers(&cmd, _invalidatingPipelineBarriers);
+
+	for (auto& passIndex : _sortedPasses)
+	{
+		RenderPass* renderPass = _logicalPasses[passIndex].get();
+		if (check_if_graphics(renderPass))
+			_rhi->begin_rendering(&cmd, &_renderingBeginInfoByPassIndex[passIndex]);
 		
-rhi::TextureView* RenderGraph::get_physical_texture(TextureDesc* textureDesc)
-{
-	return get_physical_texture(textureDesc->get_physical_index());
-}
+		renderPass->get_executor()->execute(&cmd);
 
-rhi::TextureView* RenderGraph::get_physical_texture(const std::string& textureName)
-{
-	auto it = _logicalResourceIndexByItsName.find(textureName);
-	if (it == _logicalResourceIndexByItsName.end())
-	{
-		LOG_ERROR("RenderGraph::get_physical_texture(): Can't get physical texture because there is no logical texture with name {}", textureName)
-		return nullptr;
-	}
-	if (_logicalResources[it->second]->get_type() != ResourceDesc::Type::TEXTURE)
-	{
-		LOG_ERROR("RenderGraph::get_physical_texture(): Buffer has name {}, not texture", textureName)
-		return nullptr;
+		if (check_if_graphics(renderPass))
+			_rhi->end_rendering(&cmd);
+		
+		auto it = _flushingPipelineBarriersByPassIndex.find(passIndex);
+		if (it != _flushingPipelineBarriersByPassIndex.end())
+			_rhi->add_pipeline_barriers(&cmd, it->second);
 	}
 
-	return get_physical_texture(get_texture_desc_handle(it->second)->get_physical_index());
-}
-
-rhi::TextureView* RenderGraph::get_physical_texture(uint32_t physicalIndex)
-{
-	if (physicalIndex > _physicalTextureViews.size())
-	{
-		LOG_ERROR("RenderGraph::get_physical_texture(): Physical index can't be greater than physical texture views amount ({} > {})", physicalIndex, _physicalTextureViews.size())
-		return nullptr;
-	}
-	if (physicalIndex == ResourceDesc::Unused)
-	{
-		LOG_ERROR("RenderGraph::get_physical_texture(): Can't get physical index because logical texture doesn't have an associated physical texture view")
-		return nullptr;
-	}
-
-	return _physicalTextureViews[physicalIndex].get();
-}
-
-rhi::Buffer* RenderGraph::get_physical_buffer(BufferDesc* bufferDesc)
-{
-	return get_physical_buffer(bufferDesc->get_physical_index());
-}
-
-rhi::Buffer* RenderGraph::get_physical_buffer(const std::string& bufferName)
-{
-	auto it = _logicalResourceIndexByItsName.find(bufferName);
-	if (it == _logicalResourceIndexByItsName.end())
-	{
-		LOG_ERROR("RenderGraph::get_physical_buffer(): You can't get physical texture because there is no logical buffer with name {}", bufferName)
-		return nullptr;
-	}
-	if (_logicalResources[it->second]->get_type() != ResourceDesc::Type::BUFFER)
-	{
-		LOG_ERROR("RenderGraph::get_physical_texture(): Texture has name {}, not buffer", bufferName)
-		return nullptr;
-	}
-
-	return get_physical_buffer(get_buffer_desc_handle(it->second)->get_physical_index());
-}
-
-rhi::Buffer* RenderGraph::get_physical_buffer(uint32_t physicalIndex)
-{
-	if (physicalIndex > _physicalTextureViews.size())
-	{
-		LOG_ERROR("RenderGraph::get_physical_buffer(): Physical index can't be greater than physical buffers amount ({} > {})", physicalIndex, _physicalTextureViews.size())
-		return nullptr;
-	}
-	if (physicalIndex == ResourceDesc::Unused)
-	{
-		LOG_ERROR("RenderGraph::get_physical_buffer(): Can't get physical index because logical buffer doesn't have an associated physical buffer")
-		return nullptr;
-	}
-
-	return _physicalBuffers[physicalIndex].get();
+	rhi::ClearValues clearValues;
+	clearValues.color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	_rhi->begin_rendering_swap_chain(&cmd, &clearValues);
+	_swapChainExecutor->execute(&cmd);
+	_rhi->end_rendering_swap_chain(&cmd);
+	_rhi->submit();
 }
 
 void RenderGraph::solve_graph(RenderPass* passHandle, uint32_t passesInStackCount)
@@ -373,32 +285,61 @@ void RenderGraph::optimize_pass_order()
 	
 }
 
+void RenderGraph::build_rendering_begin_info()
+{
+	for (auto& passIndex : _sortedPasses)
+	{
+		RenderPass* renderPass = _logicalPasses[passIndex].get();
+		if (check_if_compute(renderPass))
+			continue;
+
+		rhi::RenderingBeginInfo& beginInfo = _renderingBeginInfoByPassIndex[passIndex];
+		uint32_t viewCount = renderPass->get_view_count();
+		if (viewCount)
+		{
+			beginInfo.multiviewInfo.isEnabled = true;
+			beginInfo.multiviewInfo.viewCount = viewCount;
+		}
+		TextureDesc* depthTextureDesc = renderPass->get_depth_stencil_output();
+		if (depthTextureDesc)
+		{
+			rhi::RenderTarget& renderTarget = beginInfo.renderTargets.emplace_back();
+			renderTarget.target = get_physical_texture_view(depthTextureDesc->get_name());
+			renderTarget.clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
+			renderTarget.loadOp = rhi::LoadOp::CLEAR;
+			renderTarget.storeOp = rhi::StoreOp::STORE;
+		}
+
+		for (auto& colorTextureDesc : renderPass->get_color_outputs())
+		{
+			rhi::RenderTarget& renderTarget = beginInfo.renderTargets.emplace_back();
+			renderTarget.target = get_physical_texture_view(colorTextureDesc->get_name());
+			renderTarget.clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
+			renderTarget.loadOp = rhi::LoadOp::CLEAR;
+			renderTarget.storeOp = rhi::StoreOp::STORE;
+		}
+	}
+}
+
 void RenderGraph::build_barriers()
 {
 	std::unordered_map<uint32_t, uint32_t> incompleteBarrierByResIndex;
+	std::unordered_set<uint32_t> resourcesWithFlushingBarrier;
+	std::unordered_set<uint32_t> resourcesWithInvalidatingBarrier;
 	
 	for (auto& passIndex : _sortedPasses)
 	{
 		RenderPass* logicalPass = _logicalPasses[passIndex].get();
+		uint32_t logicalPassIndex = logicalPass->get_logical_pass_index();
 
 		{
 			TextureDesc* depthTextureDesc = logicalPass->get_depth_stencil_input();
-
 			if (depthTextureDesc)
 			{
-				auto it = _barriersByResourceIndex.find(depthTextureDesc->get_logical_index());
-
-				if (it == _barriersByResourceIndex.end())
+				auto it = resourcesWithFlushingBarrier.find(depthTextureDesc->get_logical_index());
+				if (it == resourcesWithFlushingBarrier.end())
 				{
-					LOG_FATAL("RenderGraph::bake(): Depth stencil input {} hasn't been written", depthTextureDesc->get_name())
-				}
-				else
-				{
-					rhi::ResourceLayout lastLayout = it->second.back().textureBarrier.dstLayout;
-					if (lastLayout != rhi::ResourceLayout::SHADER_READ)
-					{
-						setup_barrier(logicalPass, depthTextureDesc, lastLayout, rhi::ResourceLayout::SHADER_READ);
-					}
+					LOG_FATAL("RenderGraph::bake(): Pass {} can't have texture {} as depth input because this texture hasn't been written", logicalPass->get_name(), depthTextureDesc->get_name())
 				}
 			}
 		}
@@ -406,176 +347,146 @@ void RenderGraph::build_barriers()
 		{
 			TextureDesc* depthTextureDesc = logicalPass->get_depth_stencil_output();
 			if (depthTextureDesc)
-				setup_incomplete_barrier(depthTextureDesc, rhi::ResourceLayout::DEPTH_STENCIL, incompleteBarrierByResIndex);
+			{
+				rhi::PipelineBarrier& invalidatingBarrier = _invalidatingPipelineBarriers.emplace_back();
+				rhi::PipelineBarrier& flushingBarrier = _flushingPipelineBarriersByPassIndex[passIndex].emplace_back();
+				invalidatingBarrier = rhi::PipelineBarrier::set_texture_barrier(
+					get_physical_texture(depthTextureDesc->get_name()),
+					rhi::ResourceLayout::UNDEFINED,
+					rhi::ResourceLayout::DEPTH_STENCIL);
+				flushingBarrier = rhi::PipelineBarrier::set_texture_barrier(
+					get_physical_texture(depthTextureDesc->get_name()),
+					rhi::ResourceLayout::DEPTH_STENCIL,
+					rhi::ResourceLayout::SHADER_READ);
+				resourcesWithFlushingBarrier.insert(depthTextureDesc->get_logical_index());
+				resourcesWithInvalidatingBarrier.insert(depthTextureDesc->get_logical_index());
+			}
 		}
 
 		for (auto& colorInput : logicalPass->get_color_inputs())
 		{
-			if (finish_incomplete_barrier(logicalPass, colorInput, rhi::ResourceLayout::SHADER_READ, incompleteBarrierByResIndex))
-				continue;
-			
-			auto it = _barriersByResourceIndex.find(colorInput->get_logical_index());
-
-			if (it == _barriersByResourceIndex.end())
+			auto it = resourcesWithFlushingBarrier.find(colorInput->get_logical_index());
+			if (it == resourcesWithFlushingBarrier.end())
 			{
-				LOG_FATAL("RenderGraph::bake(): Color input {} was not written", colorInput->get_name())
-			}
-
-			rhi::ResourceLayout lastLayout = it->second.back().textureBarrier.dstLayout;
-
-			if (lastLayout != rhi::ResourceLayout::SHADER_READ)
-			{
-				setup_barrier(logicalPass, colorInput, lastLayout, rhi::ResourceLayout::SHADER_READ);
+				LOG_FATAL("RenderGraph::bake(): Pass {} can't have texture {} as color input because this texture hasn't been written", logicalPass->get_name(), colorInput->get_name())
 			}
 		}
-
+		
 		for (auto& colorOutput : logicalPass->get_color_outputs())
 		{
-			setup_incomplete_barrier(colorOutput, rhi::ResourceLayout::COLOR_ATTACHMENT, incompleteBarrierByResIndex);
-		}
-
-		for (auto& textureDesc : logicalPass->get_custom_textures())
-		{
-			auto it = _barriersByResourceIndex.find(textureDesc->get_logical_index());
-			auto endIt = _barriersByResourceIndex.end();
-
-			rhi::ResourceLayout lastLayout = it == endIt ? rhi::ResourceLayout::UNDEFINED : it->second.back().textureBarrier.dstLayout;
-			
-			if (lastLayout != rhi::ResourceLayout::SHADER_READ)
+			bool isBlitSrc = false;
+			for (auto& blitTexture : logicalPass->get_blit_textures())
 			{
-				setup_barrier(logicalPass, textureDesc, lastLayout, rhi::ResourceLayout::SHADER_READ);
+				TextureDesc* blitSrcTexture = blitTexture.first;
+				if (colorOutput->get_logical_index() == blitSrcTexture->get_logical_index())
+				{
+					isBlitSrc = true;
+					break;
+				}
 			}
+
+			rhi::PipelineBarrier& invalidatingBarrier = _invalidatingPipelineBarriers.emplace_back();
+			invalidatingBarrier = rhi::PipelineBarrier::set_texture_barrier(
+				get_physical_texture(colorOutput->get_name()),
+				rhi::ResourceLayout::UNDEFINED,
+				rhi::ResourceLayout::COLOR_ATTACHMENT);
+			resourcesWithInvalidatingBarrier.insert(colorOutput->get_logical_index());
+			
+			if (isBlitSrc)
+				continue;
+		
+			rhi::PipelineBarrier& flushingBarrier = _flushingPipelineBarriersByPassIndex[passIndex].emplace_back();
+			flushingBarrier = rhi::PipelineBarrier::set_texture_barrier(
+				get_physical_texture(colorOutput->get_name()),
+				rhi::ResourceLayout::COLOR_ATTACHMENT,
+				rhi::ResourceLayout::SHADER_READ);
+			resourcesWithFlushingBarrier.insert(colorOutput->get_logical_index());
 		}
+
+		// for (auto& textureDesc : logicalPass->get_custom_textures())
+		// {
+		// 	// TODO 
+		// }
 
 		for (auto& storageTextureDesc : logicalPass->get_storage_texture_inputs())
 		{
-			auto it = _barriersByResourceIndex.find(storageTextureDesc->get_logical_index());
-
-			if (it == _barriersByResourceIndex.end())
+			auto it = resourcesWithInvalidatingBarrier.find(storageTextureDesc->get_logical_index());
+			if (it == resourcesWithInvalidatingBarrier.end())
 			{
-				LOG_FATAL("RenderGraph::bake(): Pass {} can't have storage texture {} as input because this texture hasn't been written before", logicalPass->get_name(), storageTextureDesc->get_name())
-			}
-
-			rhi::ResourceLayout lastLayout = it->second.back().textureBarrier.dstLayout;
-			if (lastLayout != rhi::ResourceLayout::GENERAL)
-			{
-				setup_barrier(logicalPass, storageTextureDesc, lastLayout, rhi::ResourceLayout::GENERAL);
+				LOG_FATAL("RenderGraph::bake(): Pass {} can't have texture {} as storage input because this texture hasn't been written", logicalPass->get_name(), storageTextureDesc->get_name())
 			}
 		}
 
 		for (auto& storageTextureDesc : logicalPass->get_storage_texture_outputs())
 		{
-			auto it = _barriersByResourceIndex.find(storageTextureDesc->get_logical_index());
-			auto endIt = _barriersByResourceIndex.end();
+			auto it = resourcesWithInvalidatingBarrier.find(storageTextureDesc->get_logical_index());
+			if (it != resourcesWithInvalidatingBarrier.end())
+				continue;
 
-			rhi::ResourceLayout lastLayout = it == endIt ? rhi::ResourceLayout::UNDEFINED : it->second.back().textureBarrier.dstLayout;
-
-			if (lastLayout != rhi::ResourceLayout::GENERAL)
-			{
-				LOG_INFO("RenderGraph::bake(): Output storage texture {} doesn't have GENERAL layout", storageTextureDesc->get_name())
-
-				setup_barrier(logicalPass, storageTextureDesc, lastLayout, rhi::ResourceLayout::GENERAL);
-			}
+			rhi::PipelineBarrier& invalidatingBarrier = _invalidatingPipelineBarriers[passIndex];
+			invalidatingBarrier = rhi::PipelineBarrier::set_texture_barrier(
+				_rendererResourceManager->get_texture_view(storageTextureDesc->get_name())->texture,
+				rhi::ResourceLayout::UNDEFINED,
+				rhi::ResourceLayout::GENERAL);
+			resourcesWithInvalidatingBarrier.insert(storageTextureDesc->get_logical_index());
 		}
-
+		
 		for (auto& blitTextures : logicalPass->get_blit_textures())
 		{
 			TextureDesc* srcTextureDesc = blitTextures.first;
 			TextureDesc* dstTextureDesc = blitTextures.second;
+		
+			rhi::PipelineBarrier& srcBeforeBarrier = _beforeBlitPipelineBarriersByPassIndex[passIndex].emplace_back();
+			rhi::PipelineBarrier& dstBeforeBarrier = _beforeBlitPipelineBarriersByPassIndex[passIndex].emplace_back();
+			rhi::PipelineBarrier& srcAfterBarrier = _afterBlitPipelineBarriersByPassIndex[passIndex].emplace_back();
+			rhi::PipelineBarrier& dstAfterBarrier = _afterBlitPipelineBarriersByPassIndex[passIndex].emplace_back();
+		
+			srcBeforeBarrier = rhi::PipelineBarrier::set_texture_barrier(
+				get_physical_texture(srcTextureDesc->get_name()),
+				rhi::ResourceLayout::COLOR_ATTACHMENT,
+				rhi::ResourceLayout::TRANSFER_SRC); // TODO
 
-			auto srcIt = _barriersByResourceIndex.find(srcTextureDesc->get_logical_index());
-			auto dstIt = _barriersByResourceIndex.find(dstTextureDesc->get_logical_index());
-			auto endIt = _barriersByResourceIndex.end();
-			
-			rhi::ResourceLayout srcTextureLastLayout = srcIt == endIt ? rhi::ResourceLayout::UNDEFINED : srcIt->second.back().textureBarrier.dstLayout;
-			rhi::ResourceLayout dstTextureLastLayout = dstIt == endIt ? rhi::ResourceLayout::UNDEFINED : dstIt->second.back().textureBarrier.dstLayout;
+			dstBeforeBarrier = rhi::PipelineBarrier::set_texture_barrier(
+				get_physical_texture(dstTextureDesc->get_name()),
+				rhi::ResourceLayout::UNDEFINED,
+				rhi::ResourceLayout::TRANSFER_DST);
 
-			if (srcTextureLastLayout != rhi::ResourceLayout::TRANSFER_SRC)
-			{
-				LOG_INFO("RenderGraph::bake(): Blit src not transfer src")
+			srcAfterBarrier = rhi::PipelineBarrier::set_texture_barrier(
+				get_physical_texture(srcTextureDesc->get_name()),
+				rhi::ResourceLayout::TRANSFER_SRC,
+				rhi::ResourceLayout::SHADER_READ);
 
-				setup_barrier(logicalPass, srcTextureDesc, srcTextureLastLayout, rhi::ResourceLayout::TRANSFER_SRC);
-			}
+			dstAfterBarrier = rhi::PipelineBarrier::set_texture_barrier(
+				get_physical_texture(dstTextureDesc->get_name()),
+				rhi::ResourceLayout::TRANSFER_DST,
+				rhi::ResourceLayout::SHADER_READ);
 
-			if (dstTextureLastLayout != rhi::ResourceLayout::TRANSFER_DST)
-			{
-				LOG_INFO("RenderGraph::bake(): Blit dst not transfer dst")
-
-				setup_barrier(logicalPass, dstTextureDesc, dstTextureLastLayout, rhi::ResourceLayout::TRANSFER_DST);
-			}
+			resourcesWithFlushingBarrier.insert(srcTextureDesc->get_logical_index());
+			resourcesWithFlushingBarrier.insert(dstTextureDesc->get_logical_index());
 		}
 
-		for (auto& storageBufferDesc : logicalPass->get_storage_buffer_inputs())
-		{
-			if (finish_incomplete_barrier(logicalPass, storageBufferDesc, rhi::ResourceLayout::SHADER_READ, incompleteBarrierByResIndex))
-				continue;
-			
-			auto it = _barriersByResourceIndex.find(storageBufferDesc->get_logical_index());
-
-			if (it == _barriersByResourceIndex.end())
-			{
-				LOG_FATAL("RenderGraph::bake(): Input storage buffer {} has not been written", storageBufferDesc->get_name())
-			}
-
-			rhi::ResourceLayout lastLayout = it->second.back().bufferBarrier.dstLayout;
-			if (!has_flag(lastLayout, rhi::ResourceLayout::SHADER_READ))
-			{
-				setup_barrier(logicalPass, storageBufferDesc, lastLayout, rhi::ResourceLayout::SHADER_READ);
-			}
-		}
-
-		for (auto& storageBufferDesc : logicalPass->get_storage_buffer_outputs())
-		{
-			rhi::ResourceLayout readFlag = rhi::ResourceLayout::SHADER_READ;
-			rhi::ResourceLayout writeFlag = rhi::ResourceLayout::SHADER_WRITE;
-			rhi::ResourceLayout readWriteFlags = readFlag | writeFlag;
-
-			if (finish_incomplete_barrier(logicalPass, storageBufferDesc, readWriteFlags, incompleteBarrierByResIndex))
-				continue;
-			
-			auto it = _barriersByResourceIndex.find(storageBufferDesc->get_logical_index());
-			auto endIt = _barriersByResourceIndex.end();
-
-			rhi::ResourceLayout lastLayout = it == endIt ? readWriteFlags : it->second.back().bufferBarrier.dstLayout;
-
-			if (!has_flag(lastLayout, readFlag) || !has_flag(lastLayout, writeFlag))
-			{
-				setup_barrier(logicalPass, storageBufferDesc, lastLayout, readWriteFlags);
-			}
-		}
-
-		for (auto& transferBufferDesc : logicalPass->get_transfer_outputs())
-		{
-			auto it = _barriersByResourceIndex.find(transferBufferDesc->get_logical_index());
-			auto endIt = _barriersByResourceIndex.end();
-
-			if (it == endIt)
-			{
-				setup_incomplete_barrier(transferBufferDesc, rhi::ResourceLayout::TRANSFER_DST, incompleteBarrierByResIndex);
-			}
-			else if (!has_flag(it->second.back().bufferBarrier.dstLayout, rhi::ResourceLayout::TRANSFER_DST))
-			{
-				rhi::ResourceLayout lastLayout = it->second.back().bufferBarrier.dstLayout;
-				setup_barrier(logicalPass, transferBufferDesc, lastLayout, rhi::ResourceLayout::TRANSFER_DST);
-			}
-		}
+		// for (auto& storageBufferDesc : logicalPass->get_storage_buffer_inputs())
+		// {
+		// 	// TODO Think how to sync storage buffers
+		// }
+		//
+		// for (auto& storageBufferDesc : logicalPass->get_storage_buffer_outputs())
+		// {
+		// 	// TODO Think how to sync storage buffers
+		// }
+		//
+		// for (auto& transferBufferDesc : logicalPass->get_transfer_outputs())
+		// {
+		// 	// TODO Think how to sync transfer buffers
+		// }
 
 		for (auto& indirectBufferDesc : logicalPass->get_indirect_buffer_inputs())
 		{
-			auto it = _barriersByResourceIndex.find(indirectBufferDesc->get_logical_index());
-			auto endIt = _barriersByResourceIndex.end();
-
-			if (it == endIt)
-			{
-				LOG_FATAL("RenderGraph::bake(): Indirect buffer {} has not been written", indirectBufferDesc->get_name())
-			}
-
-			rhi::ResourceLayout lastLayout = it->second.back().bufferBarrier.dstLayout;
-
-			if (!has_flag(lastLayout, rhi::ResourceLayout::INDIRECT_COMMAND_BUFFER))
-			{
-				setup_barrier(logicalPass, indirectBufferDesc, lastLayout, rhi::ResourceLayout::INDIRECT_COMMAND_BUFFER);
-			}
+			rhi::PipelineBarrier& flushingBarrier = _flushingPipelineBarriersByPassIndex[passIndex].emplace_back();
+			flushingBarrier = rhi::PipelineBarrier::set_buffer_barrier(
+				get_physical_buffer(indirectBufferDesc->get_name()),
+				rhi::ResourceLayout::SHADER_WRITE,
+				rhi::ResourceLayout::INDIRECT_COMMAND_BUFFER);
 		}
 	}
 }
@@ -598,341 +509,22 @@ void RenderGraph::build_physical_resources()
 	}
 }
 
-void RenderGraph::build_physical_passes()
-{
-	for (auto& logicalPassIndex : _sortedPasses)
-	{
-		RenderPass* logicalPass = _logicalPasses[logicalPassIndex].get();
-
-		if (logicalPass->get_physical_pass_index() != ResourceDesc::Unused)
-			continue;
-
-		rhi::RenderPassInfo physPassInfo;
-		setup_physical_pass_queue(physPassInfo, logicalPass);
-
-		if (logicalPass->is_multiview_enabled())
-		{
-			rhi::MultiviewInfo multiviewInfo;
-			multiviewInfo.isEnabled = true;
-			if (logicalPass->get_depth_stencil_output())
-			{
-				multiviewInfo.viewCount = logicalPass->get_depth_stencil_output()->get_texture_info().layersCount;
-			}
-			else
-			{
-				multiviewInfo.viewCount = logicalPass->get_color_outputs()[0]->get_texture_info().layersCount;
-			}
-			
-			physPassInfo.multiviewInfo = multiviewInfo;
-		}
-
-		rhi::RenderBuffer renderBuffer;
-		for (auto& colorOutput : logicalPass->get_color_outputs())
-		{
-			rhi::TextureView& textureView = *_physicalTextureViews[colorOutput->get_physical_index()].get();
-		
-			rhi::RenderTarget target;
-			setup_color_render_target(target, textureView);
-			
-			renderBuffer.renderTargets.push_back(target);
-		}
-		
-		{
-			TextureDesc* depthStencilOutput = logicalPass->get_depth_stencil_output();
-			if (depthStencilOutput)
-			{
-				rhi::TextureView& textureView = *_physicalTextureViews[depthStencilOutput->get_physical_index()].get();
-		
-				rhi::RenderTarget target;
-				setup_depth_stencil_render_target(target, textureView);
-
-				renderBuffer.renderTargets.push_back(target);
-			}
-		}
-
-		physPassInfo.renderBuffers.push_back(renderBuffer);
-
-		rhi::RenderPass physicalPass;
-		_engineRHI->create_render_pass(&physicalPass, &physPassInfo);
-		uint32_t physicalPassIndex = _physicalPasses.size();
-		_physicalPasses.push_back(physicalPass);
-		logicalPass->set_physical_pass_index(physicalPassIndex);
-	}
-}
-
 void RenderGraph::create_physical_texture(TextureDesc* logicalTexture)
 {
-	rhi::TextureInfo& textureInfo = logicalTexture->get_texture_info();
-	_physicalTextures.emplace_back(new rhi::Texture());
-	rhi::Texture* texture = _physicalTextures.back().get();
-	_engineRHI->create_texture(texture, &textureInfo);
-	
-	uint32_t viewIndex = _physicalTextureViews.size();
-	_physicalTextureViews.emplace_back(new rhi::TextureView());
-	rhi::TextureView* textureView = _physicalTextureViews.back().get();
-	rhi::TextureViewInfo viewInfo;
-	viewInfo.baseLayer = 0;
-	viewInfo.baseMipLevel = 0;
-	_engineRHI->create_texture_view(textureView, &viewInfo, texture);
-	
-	logicalTexture->set_physical_index(viewIndex);
+	if (logicalTexture->has_texture_info())
+	{
+		rhi::TextureInfo& textureInfo = logicalTexture->get_texture_info();
+		_rendererResourceManager->allocate_texture(logicalTexture->get_name(), textureInfo);
+		_rendererResourceManager->allocate_texture_view(logicalTexture->get_name(), logicalTexture->get_name());
+	}
 }
 
 void RenderGraph::create_physical_buffer(BufferDesc* logicalBuffer)
 {
-	uint32_t physicalIndex = _physicalBuffers.size();
-	logicalBuffer->set_physical_index(physicalIndex);
-	
-	_physicalBuffers.emplace_back(new rhi::Buffer());
-	rhi::Buffer* buffer = _physicalBuffers.back().get();
-
-	rhi::BufferInfo& bufferInfo = logicalBuffer->get_buffer_info();
-	_engineRHI->create_buffer(buffer, &bufferInfo);
-}
-
-void RenderGraph::setup_physical_pass_queue(rhi::RenderPassInfo& physPassInfo, RenderPass* logicalPass)
-{
-	RenderGraphQueue queue = logicalPass->get_queue();
-	if (has_flag(queue, RenderGraphQueue::GRAPHICS) || has_flag(queue, RenderGraphQueue::ASYNC_GRAPHICS))
+	if (logicalBuffer->has_buffer_info())
 	{
-		physPassInfo.pipelineType = rhi::PipelineType::GRAPHICS;
-	}
-	else if (has_flag(queue, RenderGraphQueue::COMPUTE) || has_flag(queue, RenderGraphQueue::ASYNC_COMPUTE))
-	{
-		physPassInfo.pipelineType = rhi::PipelineType::COMPUTE;
-	}
-}
-
-void RenderGraph::setup_depth_stencil_render_target(rhi::RenderTarget& renderTarget, rhi::TextureView& textureView)
-{
-	renderTarget.target = &textureView;
-	renderTarget.type = rhi::RenderTargetType::DEPTH;
-	renderTarget.loadOp = rhi::LoadOp::CLEAR;
-	renderTarget.storeOp = rhi::StoreOp::STORE;
-	renderTarget.initialLayout = rhi::ResourceLayout::UNDEFINED;
-	renderTarget.renderPassLayout = rhi::ResourceLayout::DEPTH_STENCIL;
-	renderTarget.finalLayout = rhi::ResourceLayout::DEPTH_STENCIL;
-}
-
-void RenderGraph::setup_color_render_target(rhi::RenderTarget& renderTarget, rhi::TextureView& textureView)
-{
-	renderTarget.target = &textureView;
-	renderTarget.type = rhi::RenderTargetType::COLOR;
-	renderTarget.loadOp = rhi::LoadOp::CLEAR;
-	renderTarget.storeOp = rhi::StoreOp::STORE;
-	renderTarget.initialLayout = rhi::ResourceLayout::UNDEFINED;
-	renderTarget.renderPassLayout = rhi::ResourceLayout::COLOR_ATTACHMENT;
-	renderTarget.finalLayout = rhi::ResourceLayout::COLOR_ATTACHMENT;
-}
-
-void RenderGraph::setup_barrier(RenderPass* passHandle, ResourceDesc* resourceDesc, rhi::ResourceLayout srcLayout, rhi::ResourceLayout dstLayout)
-{
-	rhi::PipelineBarrier barrier;
-	
-	switch (resourceDesc->get_type())
-	{
-		case ResourceDesc::Type::BUFFER:
-		{
-			BufferDesc* bufferDesc = reinterpret_cast<BufferDesc*>(resourceDesc);
-			rhi::Buffer* bufferHandle = get_physical_buffer(bufferDesc);
-			barrier = rhi::PipelineBarrier::set_buffer_barrier(bufferHandle, srcLayout, dstLayout);
-			break;
-		}
-		case ResourceDesc::Type::TEXTURE:
-		{
-			TextureDesc* textureDesc = reinterpret_cast<TextureDesc*>(resourceDesc);
-			rhi::TextureView* textureHandle = get_physical_texture(textureDesc);
-			barrier = rhi::PipelineBarrier::set_texture_barrier(textureHandle->texture, srcLayout, dstLayout);
-			break;
-		}
-	}
-
-	uint32_t resourceIndex = resourceDesc->get_logical_index();
-	uint32_t barrierIndex = _barriersByResourceIndex[resourceIndex].size();
-	_barriersByResourceIndex[resourceIndex].push_back(barrier);
-	_passBarriers[passHandle->get_logical_pass_index()].push_back({resourceIndex, barrierIndex});
-}
-
-void RenderGraph::setup_incomplete_barrier(
-	ResourceDesc* resourceDesc,
-	rhi::ResourceLayout srcLayout,
-	std::unordered_map<uint32_t, uint32_t>& incompleteBarrierByResIndex)
-{
-	rhi::PipelineBarrier barrier;
-
-	switch (resourceDesc->get_type())
-	{
-		case ResourceDesc::Type::BUFFER:
-		{
-			BufferDesc* bufferDesc = reinterpret_cast<BufferDesc*>(resourceDesc);
-			rhi::Buffer* bufferHandle = get_physical_buffer(bufferDesc);
-			barrier.bufferBarrier = rhi::PipelineBarrier::BufferBarrier();
-			barrier.bufferBarrier.buffer = bufferHandle;
-			barrier.bufferBarrier.srcLayout = srcLayout;
-			barrier.type = rhi::PipelineBarrier::BarrierType::BUFFER;
-			break;
-		}
-		case ResourceDesc::Type::TEXTURE:
-		{
-			TextureDesc* textureDesc = reinterpret_cast<TextureDesc*>(resourceDesc);
-			rhi::TextureView* textureHandle = get_physical_texture(textureDesc);
-			barrier.textureBarrier = rhi::PipelineBarrier::TextureBarrier();
-			barrier.textureBarrier.texture = textureHandle->texture;
-			barrier.textureBarrier.srcLayout = srcLayout;
-			barrier.type = rhi::PipelineBarrier::BarrierType::TEXTURE;
-			break;
-		}
-	}
-
-	uint32_t resourceIndex = resourceDesc->get_logical_index();
-	uint32_t barrierIndex = _barriersByResourceIndex[resourceIndex].size();
-	incompleteBarrierByResIndex[resourceIndex] = barrierIndex;
-	_barriersByResourceIndex[resourceIndex].push_back(barrier);
-}
-
-bool RenderGraph::finish_incomplete_barrier(
-	RenderPass* passHandle,
-	ResourceDesc* resourceDesc,
-	rhi::ResourceLayout dstLayout,
-	std::unordered_map<uint32_t, uint32_t>& incompleteBarrierByResIndex)
-{
-	auto incompleteBarrierIt = incompleteBarrierByResIndex.find(resourceDesc->get_logical_index());
-	if (incompleteBarrierIt != incompleteBarrierByResIndex.end())
-	{
-		uint32_t resourceIndex = incompleteBarrierIt->first;
-		uint32_t barrierIndex = incompleteBarrierIt->second;
-		uint32_t logicalPassIndex = passHandle->get_logical_pass_index();
-		rhi::PipelineBarrier& barrier = _barriersByResourceIndex[resourceIndex][barrierIndex];
-		barrier.textureBarrier.dstLayout = dstLayout;
-		_passBarriers[logicalPassIndex].push_back({ resourceIndex, barrierIndex });
-		incompleteBarrierByResIndex.erase(incompleteBarrierIt);
-		return true;
-	}
-	return false;
-}
-
-void RenderGraph::add_pass_to_ignore(uint32_t passIndex)
-{
-	if (_passToIgnore.find(passIndex) != _passToIgnore.end())
-		return;
-
-	_passToIgnore.insert(passIndex);
-
-	for (auto& resIndexAndBarrierIndex : _passBarriers[passIndex])
-	{
-		uint32_t resourceIndex = resIndexAndBarrierIndex.first;
-		uint32_t barrierToIgnoreIndex = resIndexAndBarrierIndex.second;
-		std::vector<rhi::PipelineBarrier>& resourceBarriers = _barriersByResourceIndex[resourceIndex];
-		
-		if (barrierToIgnoreIndex == resourceBarriers.size() - 1)
-		{
-			BarrierIndices barrierIndices;
-			barrierIndices.resourceIndex = resourceIndex;
-			barrierIndices.barrierIndex = barrierToIgnoreIndex;
-			_barrierToIgnore.insert(barrierIndices);
-			continue;
-		}
-		
-		rhi::PipelineBarrier& barrierToIgnore = resourceBarriers[barrierToIgnoreIndex];
-		rhi::PipelineBarrier& nextBarrier = resourceBarriers[barrierToIgnoreIndex + 1];
-		
-		BarrierIndices nextBarrierIndices;
-		nextBarrierIndices.resourceIndex = resourceIndex;
-		nextBarrierIndices.barrierIndex = barrierToIgnoreIndex + 1;
-
-		if (barrierToIgnoreIndex == 0)
-		{
-			_bakedBarrierByItsIndices[nextBarrierIndices] = nextBarrier;
-			rhi::ResourceLayout& nextBarrierSrcLayout = get_barrier_layout(nextBarrier);
-			nextBarrierSrcLayout = get_barrier_layout(barrierToIgnore);
-		}
-		else
-		{
-			rhi::PipelineBarrier& prevBarrier = resourceBarriers[barrierToIgnoreIndex - 1];
-			rhi::ResourceLayout prevBarrierDstLayout = get_barrier_layout(prevBarrier, false);
-			rhi::ResourceLayout nextBarrierDstLayout = get_barrier_layout(nextBarrier, false);
-
-			if (prevBarrierDstLayout == nextBarrierDstLayout)
-			{
-				_barrierToIgnore.insert(nextBarrierIndices);
-			}
-			else
-			{
-				_bakedBarrierByItsIndices[nextBarrierIndices] = nextBarrier;
-				rhi::ResourceLayout& nextBarrierSrcLayout = get_barrier_layout(nextBarrier);
-				nextBarrierSrcLayout = prevBarrierDstLayout;
-			}
-		}
-	}
-}
-
-void RenderGraph::remove_pass_from_ignore(uint32_t passIndex)
-{
-	RenderPass* logicalPass = _logicalPasses[passIndex].get();
-	
-	if (_passToIgnore.find(passIndex) == _passToIgnore.end())
-	{
-		LOG_ERROR("RenderGraph::execute_passes(): Pass {} is not in ignored", logicalPass->get_name())
-		return;
-	}
-
-	_passToIgnore.erase(passIndex);
-
-	for (auto& resIndexAndBarrierIndex : _passBarriers[passIndex])
-	{
-		uint32_t resourceIndex = resIndexAndBarrierIndex.first;
-		uint32_t ignoredBarrierIndex = resIndexAndBarrierIndex.second;
-
-		BarrierIndices ignoredBarrierIndices;
-		ignoredBarrierIndices.barrierIndex = ignoredBarrierIndex;
-		ignoredBarrierIndices.resourceIndex = resourceIndex;
-		_barrierToIgnore.erase(_barrierToIgnore.find(ignoredBarrierIndices));
-		
-		std::vector<rhi::PipelineBarrier>& resourceBarriers = _barriersByResourceIndex[resourceIndex];
-		
-		if (ignoredBarrierIndex == resourceBarriers.size())
-		{
-			continue;
-		}
-		
-		rhi::PipelineBarrier& nextBarrier = resourceBarriers[ignoredBarrierIndex];
-
-		BarrierIndices nextBarrierIndices;
-		nextBarrierIndices.resourceIndex = resourceIndex;
-		nextBarrierIndices.barrierIndex = ignoredBarrierIndex + 1;
-
-		auto itFromBarrierToIgnore = _barrierToIgnore.find(nextBarrierIndices);
-		if (itFromBarrierToIgnore != _barrierToIgnore.end())
-		{
-			_barrierToIgnore.erase(itFromBarrierToIgnore);
-			continue;
-		}
-
-		auto itFromBakedBarrierByItsIndices = _bakedBarrierByItsIndices.find(nextBarrierIndices);
-		if (itFromBakedBarrierByItsIndices != _bakedBarrierByItsIndices.end())
-		{
-			nextBarrier = itFromBakedBarrierByItsIndices->second;
-			_bakedBarrierByItsIndices.erase(nextBarrierIndices);
-		}
-	}
-}
-
-rhi::ResourceLayout& RenderGraph::get_barrier_layout(rhi::PipelineBarrier& barrier, bool getSrcLayout)
-{
-	switch (barrier.type)
-	{
-		case rhi::PipelineBarrier::BarrierType::TEXTURE:
-		{
-			return getSrcLayout ? barrier.textureBarrier.srcLayout : barrier.textureBarrier.dstLayout;
-		}
-		case rhi::PipelineBarrier::BarrierType::BUFFER:
-		{
-			return getSrcLayout ? barrier.bufferBarrier.srcLayout : barrier.bufferBarrier.dstLayout;
-		}
-		case rhi::PipelineBarrier::BarrierType::MEMORY:
-		{
-			return getSrcLayout ? barrier.memoryBarrier.srcLayout : barrier.memoryBarrier.dstLayout;
-		}
+		rhi::BufferInfo& bufferInfo = logicalBuffer->get_buffer_info();
+		_rendererResourceManager->allocate_buffer(logicalBuffer->get_name(), bufferInfo);
 	}
 }
 
@@ -947,7 +539,6 @@ bool RenderGraph::check_if_graphics(RenderPass* passHandle)
 	RenderGraphQueue queue = passHandle->get_queue();
 	return has_flag(queue, RenderGraphQueue::GRAPHICS) || has_flag(queue, RenderGraphQueue::ASYNC_GRAPHICS);
 }
-
 
 TextureDesc* RenderGraph::get_texture_desc_handle(uint32_t index)
 {
@@ -969,14 +560,27 @@ BufferDesc* RenderGraph::get_buffer_desc_handle(ResourceDesc* resourceDesc)
 	return reinterpret_cast<BufferDesc*>(resourceDesc);
 }
 
-size_t RenderGraph::BarrierIndices::hash() const
+rhi::TextureView* RenderGraph::get_physical_texture_view(const std::string& name)
 {
-	uint32_t resIndexHash = std::hash<uint32_t>()(resourceIndex);
-	uint32_t barrierIndexHash = std::hash<uint32_t>()(barrierIndex);
-	return resIndexHash ^ barrierIndexHash;
+	return _rendererResourceManager->get_texture_view(name);
 }
 
-bool RenderGraph::BarrierIndices::operator==(const BarrierIndices& other) const
+rhi::Texture* RenderGraph::get_physical_texture(const std::string& name)
 {
-	return resourceIndex == other.resourceIndex && barrierIndex == other.barrierIndex;
+	return _rendererResourceManager->get_texture_view(name)->texture;
+}
+
+rhi::Buffer* RenderGraph::get_physical_buffer(const std::string& name)
+{
+	return _rendererResourceManager->get_buffer(name);
+}
+
+void RenderGraph::clear_collections()
+{
+	_sortedPasses.clear();
+	_passDependencies.clear();
+	_invalidatingPipelineBarriers.clear();
+	_flushingPipelineBarriersByPassIndex.clear();
+	_beforeBlitPipelineBarriersByPassIndex.clear();
+	_afterBlitPipelineBarriersByPassIndex.clear();
 }

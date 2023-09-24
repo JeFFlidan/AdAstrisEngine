@@ -19,29 +19,27 @@ namespace ad_astris::rcore::impl
 	class RENDER_CORE_API RenderGraph : public IRenderGraph
 	{
 		public:
-			RenderGraph() = default;
+			RenderGraph(IRendererResourceManager* rendererResourceManager);
 			RenderGraph(const RenderGraph&) = delete;
 			RenderGraph(const RenderGraph&&) = delete;
 			RenderGraph& operator=(const RenderGraph&) = delete;
 			RenderGraph& operator=(const RenderGraph&&) = delete;
 		
 			virtual void init(rhi::IEngineRHI* engineRHI) override;
+			virtual void update_attachments() override;
 			virtual void cleanup() override;
 
 			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue) override;
-			virtual IRenderPass* get_logical_pass(const std::string& passName) override;
-			virtual rhi::RenderPass* get_physical_pass(const std::string& passName) override;
-			virtual rhi::RenderPass* get_physical_pass(IRenderPass* logicalPass) override;
+			virtual IRenderPass* get_pass(const std::string& passName) override;
 		
-			virtual void create_swapchain(rhi::SwapChainInfo& swapChainInfo) override
-			{
-				if (!_swapChain)
-					_engineRHI->create_swap_chain(_swapChain, &swapChainInfo);
-			}
-		
-			virtual void set_swap_chain_source(const std::string& swapChainInputName) override
+			virtual void set_swap_chain_input(const std::string& swapChainInputName) override
 			{
 				_swapChainInputName = swapChainInputName;
+			}
+
+			virtual void set_swap_chain_executor(IRenderPassExecutor* executor) override
+			{
+				_swapChainExecutor = executor;
 			}
 
 			virtual void bake() override;
@@ -49,16 +47,12 @@ namespace ad_astris::rcore::impl
 
 			virtual TextureDesc* get_texture_desc(const std::string& textureName) override;
 			virtual BufferDesc* get_buffer_desc(const std::string& bufferName) override;
-		
-			virtual rhi::TextureView* get_physical_texture(TextureDesc* textureDesc) override;
-			virtual rhi::TextureView* get_physical_texture(const std::string& textureName) override;
-			virtual rhi::TextureView* get_physical_texture(uint32_t physicalIndex) override;
-			virtual rhi::Buffer* get_physical_buffer(BufferDesc* bufferDesc) override;
-			virtual rhi::Buffer* get_physical_buffer(const std::string& bufferName) override;
-			virtual rhi::Buffer* get_physical_buffer(uint32_t physicalIndex) override;
+
+			virtual void draw(tasks::TaskGroup* taskGroup) override;
 
 		private:
-			rhi::IEngineRHI* _engineRHI{ nullptr };
+			rhi::IEngineRHI* _rhi{ nullptr };
+			IRendererResourceManager* _rendererResourceManager{ nullptr };
 
 			std::vector<std::unique_ptr<RenderPass>> _logicalPasses;
 			std::unordered_map<std::string, uint16_t> _logicalPassIndexByItsName;
@@ -68,39 +62,16 @@ namespace ad_astris::rcore::impl
 		
 			std::vector<std::unique_ptr<ResourceDesc>> _logicalResources;
 			std::unordered_map<std::string, uint32_t> _logicalResourceIndexByItsName;
+		
+			std::vector<rhi::PipelineBarrier> _invalidatingPipelineBarriers;
+			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _flushingPipelineBarriersByPassIndex;
+			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _beforeBlitPipelineBarriersByPassIndex;
+			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _afterBlitPipelineBarriersByPassIndex;
 
-			std::vector<std::unique_ptr<rhi::Texture>> _physicalTextures;
-			std::vector<std::unique_ptr<rhi::TextureView>> _physicalTextureViews;	// Do not forget to clear texture and texture view
-			std::vector<std::unique_ptr<rhi::Buffer>> _physicalBuffers;
-
-			std::vector<rhi::RenderPass> _physicalPasses;
-
-			struct BarrierIndices
-			{
-				uint32_t resourceIndex;
-				uint32_t barrierIndex;
-
-				bool operator==(const BarrierIndices& other) const;
-				size_t hash() const;
-			};
-
-			struct BarrierIndicesHash
-			{
-				std::size_t operator()(const BarrierIndices& k) const
-				{
-					return k.hash();
-				}
-			};
-
-			std::unordered_set<uint32_t> _passToIgnore;
-			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _barriersByResourceIndex;
-			// need this collection to store original barriers because some barriers can be changed in runtime and I need original barriers to reset barriers
-			std::unordered_set<BarrierIndices, BarrierIndicesHash> _barrierToIgnore;
-			std::unordered_map<BarrierIndices, rhi::PipelineBarrier, BarrierIndicesHash> _bakedBarrierByItsIndices;
-			std::vector<std::vector<std::pair<uint32_t, uint32_t>>> _passBarriers;
+			std::unordered_map<uint32_t, rhi::RenderingBeginInfo> _renderingBeginInfoByPassIndex;
 
 			std::string _swapChainInputName;
-			rhi::SwapChain* _swapChain{ nullptr };
+			IRenderPassExecutor* _swapChainExecutor{ nullptr };
 
 			void solve_graph(RenderPass* passHandle, uint32_t passesInStackCount);
 			void parse_passes_recursively(
@@ -113,36 +84,11 @@ namespace ad_astris::rcore::impl
 			void optimize_pass_order();
 		
 			void build_physical_resources();
-			void build_physical_passes();
+			void build_rendering_begin_info();
 			void build_barriers();
 			
 			void create_physical_texture(TextureDesc* logicalTexture);
 			void create_physical_buffer(BufferDesc* logicalBuffer);
-			void setup_physical_pass_queue(rhi::RenderPassInfo& physPassInfo, RenderPass* logicalPass);
-			void setup_depth_stencil_render_target(rhi::RenderTarget& renderTarget, rhi::TextureView& textureView);
-			void setup_color_render_target(rhi::RenderTarget& renderTarget, rhi::TextureView& textureView);
-
-			void setup_barrier(
-				RenderPass* passHandle,
-				ResourceDesc* resourceDesc,
-				rhi::ResourceLayout srcLayout,
-				rhi::ResourceLayout dstLayout);
-
-			void setup_incomplete_barrier(
-				ResourceDesc* resourceDesc,
-				rhi::ResourceLayout srcLayout,
-				std::unordered_map<uint32_t, uint32_t>& incompleteBarrierByResIndex);
-
-			bool finish_incomplete_barrier(
-				RenderPass* passHandle,
-				ResourceDesc* resourceDesc,
-				rhi::ResourceLayout dstLayout,
-				std::unordered_map<uint32_t, uint32_t>& incompleteBarrierByResIndex);
-
-			void add_pass_to_ignore(uint32_t passIndex);
-			void remove_pass_from_ignore(uint32_t passIndex);
-
-			rhi::ResourceLayout& get_barrier_layout(rhi::PipelineBarrier& barrier, bool getSrcLayout = true);
 
 			bool check_if_compute(RenderPass* passHandle);
 			bool check_if_graphics(RenderPass* passHandle);
@@ -151,5 +97,11 @@ namespace ad_astris::rcore::impl
 			TextureDesc* get_texture_desc_handle(ResourceDesc* resourceDesc);
 			BufferDesc* get_buffer_desc_handle(uint32_t index);
 			BufferDesc* get_buffer_desc_handle(ResourceDesc* resourceDesc);
+
+			rhi::TextureView* get_physical_texture_view(const std::string& name);
+			rhi::Texture* get_physical_texture(const std::string& name);
+			rhi::Buffer* get_physical_buffer(const std::string& bufferName);
+
+			void clear_collections();
 	};
 }

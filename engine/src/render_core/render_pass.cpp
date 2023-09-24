@@ -30,11 +30,11 @@ TextureDesc* RenderPass::set_depth_stencil_output(const std::string& outputName,
 	desc->add_queue(_queue);
 	desc->add_texture_usage(rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT);
 	desc->add_written_in_pass(_logicalIndex);
-	_depthStencilInput = desc;
+	_depthStencilOutput = desc;
 	return desc;
 }
 
-TextureDesc* RenderPass::add_attachment_input(const std::string& inputName)
+TextureDesc* RenderPass::add_color_input(const std::string& inputName)
 {
 	TextureDesc* desc = _renderGraph->get_texture_desc(inputName);
 	desc->add_read_in_pass(_logicalIndex);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "engine/render_core_module.h"
-#include "render_graph_common.h"
 #include "api.h"
 
 namespace ad_astris::rcore::impl
@@ -22,39 +21,40 @@ namespace ad_astris::rcore::impl
 				return _logicalIndex;
 			}
 
-			virtual uint32_t get_physical_pass_index() override
-			{
-				return _physicalIndex;
-			}
-		
-			virtual void set_physical_pass_index(uint32_t newPhysicalIndex) override
-			{
-				_physicalIndex = newPhysicalIndex;
-			}
-
 			virtual RenderGraphQueue get_queue() override
 			{
 				return _queue;
 			}
 
-			virtual void enable_multiview() override
+			virtual void enable_multiview(uint32_t viewCount) override
 			{
-				_isMultiviewEnabled = true;
+				_viewCount = viewCount;
 			}
 
-			virtual bool is_multiview_enabled() override
+			virtual uint32_t get_view_count() override
 			{
-				return _isMultiviewEnabled;
+				return _viewCount;
 			}
+
+			virtual void set_executor(IRenderPassExecutor* renderPassExecutor) override
+			{
+				_executor = renderPassExecutor;
+			}
+
+			IRenderPassExecutor* get_executor()
+			{
+				return _executor;
+			}
+		
 			// TODO Do I need this depth stencil input
 			virtual TextureDesc* set_depth_stencil_input(const std::string& inputName) override;
 			virtual TextureDesc* set_depth_stencil_output(
 				const std::string& outputName,
-				rhi::TextureInfo* textureInfo) override;
-			virtual TextureDesc* add_attachment_input(const std::string& inputName) override;
+				rhi::TextureInfo* textureInfo = nullptr) override;
+			virtual TextureDesc* add_color_input(const std::string& inputName) override;
 			virtual TextureDesc* add_color_output(
 				const std::string& outputName,
-				rhi::TextureInfo* textureInfo) override;
+				rhi::TextureInfo* textureInfo = nullptr) override;
 			virtual TextureDesc* add_history_input(const std::string& inputName) override;
 
 			virtual TextureDesc* add_texture_input(
@@ -63,22 +63,22 @@ namespace ad_astris::rcore::impl
 
 			virtual TextureDesc* add_texture_input(
 				const std::string& inputName,
-				rhi::TextureInfo* textureInfo,
+				rhi::TextureInfo* textureInfo = nullptr,
 				rhi::ShaderType shaderStages = rhi::ShaderType::UNDEFINED) override;
 		
 			virtual TextureDesc* add_storage_texture_input(const std::string& inputName) override;
 			virtual TextureDesc* add_storage_texture_output(
 				const std::string& outputName,
-				rhi::TextureInfo* textureInfo) override;
+				rhi::TextureInfo* textureInfo = nullptr) override;
 
 			virtual std::pair<TextureDesc*, TextureDesc*>& add_texture_blit_input_and_output(
 				const std::string& inputName,
 				const std::string& outputName,
-				rhi::TextureInfo* outputTextureInfo) override;
+				rhi::TextureInfo* outputTextureInfo = nullptr) override;
 
 			virtual BufferDesc* add_uniform_buffer_input(
 				const std::string& inputName,
-				rhi::BufferInfo* bufferInfo,
+				rhi::BufferInfo* bufferInfo = nullptr,
 				rhi::ShaderType shaderStages = rhi::ShaderType::UNDEFINED) override;
 
 			virtual BufferDesc* add_storage_buffer_read_only_input(
@@ -86,11 +86,11 @@ namespace ad_astris::rcore::impl
 				rhi::ShaderType shaderStages = rhi::ShaderType::UNDEFINED) override;
 			virtual BufferDesc* add_storage_buffer_read_write_output(
 				const std::string& outputName,
-				rhi::BufferInfo* bufferInfo) override;
+				rhi::BufferInfo* bufferInfo = nullptr) override;
 
 			virtual BufferDesc* add_transfer_output(
 				const std::string& outputName,
-				rhi::BufferInfo* bufferInfo) override;
+				rhi::BufferInfo* bufferInfo = nullptr) override;
 
 			virtual BufferDesc* add_vertex_buffer_input(const std::string& inputName) override;
 			virtual BufferDesc* add_index_buffer_input(const std::string& inputName) override;
@@ -178,11 +178,11 @@ namespace ad_astris::rcore::impl
 
 		private:
 			IRenderGraph* _renderGraph{ nullptr };
+			IRenderPassExecutor* _executor{ nullptr };
 			std::string _name;
 			uint32_t _logicalIndex = ResourceDesc::Unused;
-			uint32_t _physicalIndex = ResourceDesc::Unused;
 			RenderGraphQueue _queue;
-			bool _isMultiviewEnabled{ false };
+			uint32_t _viewCount{ 0 };
 
 			TextureDesc* _depthStencilInput{ nullptr };
 			TextureDesc* _depthStencilOutput{ nullptr };

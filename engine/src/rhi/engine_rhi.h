@@ -32,10 +32,13 @@ namespace ad_astris::rhi
 
 			// Can create an empty buffer or buffer with data
 			virtual void create_buffer(Buffer* buffer, BufferInfo* info, void* data = nullptr) = 0;
+			virtual void create_buffer(Buffer* buffer, void* data = nullptr) = 0;
 			virtual void destroy_buffer(Buffer* buffer) = 0;
 			virtual void update_buffer_data(Buffer* buffer, uint64_t size, void* data) = 0;
 			virtual void create_texture(Texture* texture, TextureInfo* info) = 0;
+			virtual void create_texture(Texture* texture) = 0;
 			virtual void create_texture_view(TextureView* textureView, TextureViewInfo* info, Texture* texture) = 0;
+			virtual void create_texture_view(TextureView* textureView, Texture* texture) = 0;
 			virtual void create_sampler(Sampler* sampler, SamplerInfo* info) = 0;
 			virtual void create_shader(Shader* shader, ShaderInfo* shaderInfo) = 0;
 			virtual void create_render_pass(RenderPass* renderPass, RenderPassInfo* passInfo) = 0;

@@ -33,9 +33,9 @@ namespace ad_astris::rcore
 
 		//_shaderCompiler = std::make_unique<impl::ShaderCompiler>();
 		
-		_renderGraph = std::make_unique<impl::RenderGraph>();
-		_shaderManager = std::make_unique<impl::ShaderManager>();
 		_rendererResourceManager = std::make_unique<impl::RendererResourceManager>();
+		_renderGraph = std::make_unique<impl::RenderGraph>(_rendererResourceManager.get());
+		_shaderManager = std::make_unique<impl::ShaderManager>();
 	}
 
 	IShaderManager* RenderCoreModule::get_shader_manager()

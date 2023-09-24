@@ -9,6 +9,15 @@ void RendererResourceManager::init(RendererResourceManagerInitContext& initConte
 	assert(initContext.rhi != nullptr);
 	_rhi = initContext.rhi;
 	_bufferPool.allocate_new_pool(64);
+	_texturePool.allocate_new_pool(128);
+	_textureViewPool.allocate_new_pool(256);
+}
+
+void RendererResourceManager::cleanup()
+{
+	_bufferPool.cleanup();
+	_texturePool.cleanup();
+	_textureViewPool.cleanup();
 }
 
 void RendererResourceManager::cleanup_staging_buffers()
@@ -19,44 +28,56 @@ void RendererResourceManager::cleanup_staging_buffers()
 	_isDeviceWaiting.store(false);
 }
 
-void RendererResourceManager::allocate_gpu_buffer(const std::string& bufferName, uint64_t size, rhi::ResourceUsage bufferUsage)
+rhi::Buffer* RendererResourceManager::allocate_buffer(const std::string& bufferName, rhi::BufferInfo& bufferInfo)
 {
-	auto it = _bufferByItsName.find(bufferName);
-	if (it != _bufferByItsName.end())
-	{
-		LOG_WARNING("RendererResourceManager::allocate_gpu_buffer(): Buffer with name has been already created.", bufferName)
-		return;
-	}
+	rhi::Buffer* buffer = check_buffer(bufferName);
+	if (buffer)
+		return buffer;
+
+	buffer = _bufferPool.allocate();
+	_rhi->create_buffer(buffer, &bufferInfo);
+
+	std::scoped_lock<std::mutex> locker(_gpuBufferMutex);
+	_bufferByItsName[bufferName] = buffer;
+	return buffer;
+}
+
+rhi::Buffer* RendererResourceManager::allocate_gpu_buffer(const std::string& bufferName, uint64_t size, rhi::ResourceUsage bufferUsage)
+{
+	rhi::Buffer* buffer = check_buffer(bufferName);
+	if (buffer)
+		return buffer;
 	
 	rhi::BufferInfo bufferInfo;
 	bufferInfo.size = size;
 	bufferInfo.bufferUsage = bufferUsage;
 	bufferInfo.memoryUsage = rhi::MemoryUsage::GPU;
-	rhi::Buffer* buffer = _bufferPool.allocate();
+	buffer = _bufferPool.allocate();
 	_rhi->create_buffer(buffer, &bufferInfo);
 
 	std::scoped_lock<std::mutex> locker(_gpuBufferMutex);
 	_bufferByItsName[bufferName] = buffer;
+	return buffer;
 }
 
-void RendererResourceManager::allocate_vertex_buffer(const std::string& bufferName, uint64_t size)
+rhi::Buffer* RendererResourceManager::allocate_vertex_buffer(const std::string& bufferName, uint64_t size)
 {
-	allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::VERTEX_BUFFER | rhi::ResourceUsage::TRANSFER_DST);
+	return allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::VERTEX_BUFFER | rhi::ResourceUsage::TRANSFER_DST);
 }
 
-void RendererResourceManager::allocate_index_buffer(const std::string& bufferName, uint64_t size)
+rhi::Buffer* RendererResourceManager::allocate_index_buffer(const std::string& bufferName, uint64_t size)
 {
-	allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::INDEX_BUFFER | rhi::ResourceUsage::TRANSFER_DST);
+	return allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::INDEX_BUFFER | rhi::ResourceUsage::TRANSFER_DST);
 }
 
-void RendererResourceManager::allocate_indirect_buffer(const std::string& bufferName, uint64_t size)
+rhi::Buffer* RendererResourceManager::allocate_indirect_buffer(const std::string& bufferName, uint64_t size)
 {
-	allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::INDIRECT_BUFFER | rhi::ResourceUsage::TRANSFER_DST | rhi::ResourceUsage::STORAGE_BUFFER);
+	return allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::INDIRECT_BUFFER | rhi::ResourceUsage::TRANSFER_DST | rhi::ResourceUsage::STORAGE_BUFFER);
 }
 
-void RendererResourceManager::allocate_storage_buffer(const std::string& bufferName, uint64_t size)
+rhi::Buffer* RendererResourceManager::allocate_storage_buffer(const std::string& bufferName, uint64_t size)
 {
-	allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::STORAGE_BUFFER | rhi::ResourceUsage::TRANSFER_DST);
+	return allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::STORAGE_BUFFER | rhi::ResourceUsage::TRANSFER_DST);
 }
 
 bool RendererResourceManager::update_buffer(
@@ -67,7 +88,7 @@ bool RendererResourceManager::update_buffer(
 	uint64_t allObjectCount,
 	uint64_t newObjectCount)
 {
-	rhi::Buffer* gpuBuffer = const_cast<rhi::Buffer*>(get_buffer(bufferName));
+	rhi::Buffer* gpuBuffer = get_buffer(bufferName);
 	uint64_t offsetInBytes = (allObjectCount - newObjectCount) * objectSizeInBytes;
 	uint64_t newObjectsSizeInBytes = newObjectCount * objectSizeInBytes;
 
@@ -93,13 +114,223 @@ bool RendererResourceManager::update_buffer(
 	return false;
 }
 
-const rhi::Buffer* RendererResourceManager::get_buffer(const std::string& bufferName)
+rhi::Buffer* RendererResourceManager::get_buffer(const std::string& bufferName)
 {
+	std::scoped_lock<std::mutex> locker(_gpuBufferMutex);
 	auto it = _bufferByItsName.find(bufferName);
 	if (it == _bufferByItsName.end())
 		LOG_FATAL("RenderResourceManager::get_buffer(): No buffer with name {}", bufferName)
 
 	return it->second;
+}
+
+void RendererResourceManager::add_buffer(const std::string& bufferName, rhi::Buffer& buffer)
+{
+	
+}
+
+rhi::Texture* RendererResourceManager::allocate_texture(const std::string& textureName, rhi::TextureInfo& textureInfo)
+{
+	rhi::Texture* texture = check_texture(textureName);
+	if (texture)
+		return texture;
+
+	texture = _texturePool.allocate();
+	_rhi->create_texture(texture, &textureInfo);
+
+	std::scoped_lock<std::mutex> locker(_textureMutex);
+	_textureByItsName[textureName] = texture;
+	return texture;
+}
+
+rhi::Texture* RendererResourceManager::allocate_gpu_texture(
+	const std::string& textureName,
+	uint64_t width,
+	uint64_t height,
+	rhi::Format format,
+	rhi::ResourceUsage usage,
+	rhi::ResourceFlags flags,
+	uint32_t mipLevels,
+	uint32_t layersCount)
+{
+	rhi::Texture* texture = check_texture(textureName);
+	if (texture)
+		return texture;
+	
+	texture = _texturePool.allocate();
+	rhi::TextureInfo& textureInfo = texture->textureInfo;
+	textureInfo.width = width;
+	textureInfo.height = height;
+	textureInfo.layersCount = layersCount;
+	textureInfo.mipLevels = mipLevels;
+	textureInfo.memoryUsage = rhi::MemoryUsage::GPU;
+	textureInfo.resourceFlags = flags;
+	textureInfo.textureDimension = rhi::TextureDimension::TEXTURE2D;
+	textureInfo.textureUsage = usage;
+	textureInfo.samplesCount = rhi::SampleCount::BIT_1;
+	textureInfo.format = format;
+	_rhi->create_texture(texture);
+
+	std::scoped_lock<std::mutex> locker(_textureMutex);
+	_textureByItsName[textureName] = texture;
+	return texture;
+}
+
+rhi::Texture* RendererResourceManager::allocate_color_attachment(
+	const std::string& textureName,
+	uint64_t width,
+	uint64_t height,
+	rhi::ResourceFlags flags,
+	uint32_t mipLevels,
+	uint32_t layersCount)
+{
+	return allocate_gpu_texture(
+		textureName,
+		width,
+		height,
+		rhi::Format::R8G8B8A8_UNORM,
+		rhi::ResourceUsage::SAMPLED_TEXTURE | rhi::ResourceUsage::COLOR_ATTACHMENT | rhi::ResourceUsage::TRANSFER_SRC,
+		flags,
+		mipLevels,
+		layersCount);
+}
+
+rhi::Texture* RendererResourceManager::allocate_depth_stencil_attachment(
+	const std::string& textureName,
+	uint64_t width,
+	uint64_t height,
+	rhi::ResourceFlags flags,
+	uint32_t mipLevels,
+	uint32_t layersCount)
+{
+	return allocate_gpu_texture(
+		textureName,
+		width,
+		height,
+		rhi::Format::D32_SFLOAT,
+		rhi::ResourceUsage::SAMPLED_TEXTURE | rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT | rhi::ResourceUsage::TRANSFER_SRC,
+		flags,
+		mipLevels,
+		layersCount);
+}
+
+rhi::Texture* RendererResourceManager::allocate_cubemap(
+	const std::string& textureName,
+	uint64_t width,
+	uint64_t height,
+	rhi::Format format,
+	rhi::ResourceUsage usage,
+	uint32_t mipLevels,
+	rhi::ResourceFlags flags)
+{
+	return allocate_gpu_texture(textureName, width, height, format, usage, flags, mipLevels, 6);
+}
+
+rhi::Texture* RendererResourceManager::allocate_custom_texture(
+	const std::string& textureName,
+	uint64_t width,
+	uint64_t height,
+	rhi::ResourceFlags flags,
+	uint32_t mipLevels,
+	uint32_t layersCount)
+{
+	return allocate_gpu_texture(
+		textureName,
+		width,
+		height,
+		rhi::Format::R8G8B8A8_UNORM,
+		rhi::ResourceUsage::TRANSFER_DST | rhi::ResourceUsage::SAMPLED_TEXTURE,
+		flags,
+		mipLevels,
+		layersCount);
+}
+
+rhi::TextureView* RendererResourceManager::allocate_texture_view(
+	const std::string& textureViewName,
+	const std::string& textureName,
+	rhi::TextureViewInfo& info)
+{
+	rhi::TextureView* textureView = check_texture_view(textureViewName);
+	if (textureView)
+		return textureView;
+
+	rhi::Texture* texture;
+	{
+		std::scoped_lock<std::mutex> _locker(_textureMutex);
+		auto it = _textureByItsName.find(textureName);
+		if (it == _textureByItsName.end())
+			LOG_FATAL("RendererResourceManager::allocate_texture_view(): Can't create texture view for the texture {}", textureName)
+		texture = it->second;
+	}
+
+	textureView = _textureViewPool.allocate();
+	_rhi->create_texture_view(textureView, &info, texture);
+
+	std::scoped_lock<std::mutex> locker(_textureViewMutex);
+	_textureViewByItsName[textureViewName] = textureView;
+	return textureView;
+}
+
+rhi::TextureView* RendererResourceManager::allocate_texture_view(
+	const std::string& textureViewName,
+	const std::string& textureName,
+	uint32_t baseMipLevel,
+	uint32_t baseLayer,
+	rhi::TextureAspect aspect)
+{
+	rhi::TextureView* textureView = check_texture_view(textureViewName);
+	if (textureView)
+		return textureView;
+	
+	rhi::Texture* texture;
+	{
+		std::scoped_lock<std::mutex> _locker(_textureMutex);
+		auto it = _textureByItsName.find(textureName);
+		if (it == _textureByItsName.end())
+			LOG_FATAL("RendererResourceManager::allocate_texture_view(): Can't create texture view for the texture {}", textureName)
+		texture = it->second;
+	}
+
+	textureView = _textureViewPool.allocate();
+	textureView->viewInfo.baseLayer = baseLayer;
+	textureView->viewInfo.baseMipLevel = baseMipLevel;
+	textureView->viewInfo.textureAspect = aspect;
+
+	_rhi->create_texture_view(textureView, texture);
+
+	std::scoped_lock<std::mutex> locker(_textureViewMutex);
+	_textureViewByItsName[textureViewName] = textureView;
+	return textureView;
+}
+
+rhi::Texture* RendererResourceManager::get_texture(const std::string& textureName)
+{
+	std::scoped_lock<std::mutex> locker(_textureMutex);
+	auto it = _textureByItsName.find(textureName);
+	if (it == _textureByItsName.end())
+		LOG_FATAL("RenderResourceManager::get_texture(): No texture with name {}", textureName)
+
+	return it->second;
+}
+
+rhi::TextureView* RendererResourceManager::get_texture_view(const std::string& textureViewName)
+{
+	std::scoped_lock<std::mutex> locker(_textureViewMutex);
+    auto it = _textureViewByItsName.find(textureViewName);
+    if (it == _textureViewByItsName.end())
+    	LOG_FATAL("RenderResourceManager::get_texture_view(): No texture view with name {}", textureViewName)
+
+    return it->second;
+}
+
+void RendererResourceManager::add_texture(const std::string& textureName, rhi::Texture& texture)
+{
+	// TODO
+}
+
+void RendererResourceManager::add_texture_view(const std::string& textureViewName, rhi::TextureView& textureView)
+{
+	// TODO
 }
 
 void RendererResourceManager::allocate_staging_buffer(rhi::Buffer& buffer, void* allObjects, uint64_t offset, uint64_t newObjectsSize)
@@ -119,4 +350,40 @@ rhi::Buffer& RendererResourceManager::get_new_staging_buffer()
 {
 	std::scoped_lock<std::mutex> locker(_stagingBufferMutex);
 	return _stagingBuffers.emplace_back();
+}
+
+rhi::Buffer* RendererResourceManager::check_buffer(const std::string& bufferName)
+{
+	std::scoped_lock<std::mutex> locker(_gpuBufferMutex);
+	auto it = _bufferByItsName.find(bufferName);
+	if (it != _bufferByItsName.end())
+	{
+		LOG_WARNING("RendererResourceManager::allocate_gpu_buffer(): Buffer with name {} has been already created.", bufferName)
+		return it->second;
+	}
+	return nullptr;
+}
+
+rhi::Texture* RendererResourceManager::check_texture(const std::string& textureName)
+{
+	std::scoped_lock<std::mutex> locker(_textureMutex);
+	auto it = _textureByItsName.find(textureName);
+	if (it != _textureByItsName.end())
+	{
+		LOG_WARNING("RendererResourceManager::allocate_gpu_texture(): Texture with name {} has been already created.", textureName)
+		return it->second;
+	}
+	return nullptr;
+}
+
+rhi::TextureView* RendererResourceManager::check_texture_view(const std::string& textureViewName)
+{
+	std::scoped_lock<std::mutex> locker(_textureViewMutex);
+	auto it = _textureViewByItsName.find(textureViewName);
+	if (it != _textureViewByItsName.end())
+	{
+		LOG_WARNING("RendererResourceManager::allocate_gpu_texture(): Texture view with name {} has been already created.", textureViewName)
+		return it->second;
+	}
+	return nullptr;
 }
