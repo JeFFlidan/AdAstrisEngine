@@ -5,8 +5,7 @@
 
 #pragma once
 
-#include "entity_types.h"
-#include "system_manager.h"
+#include "entity_manager.h"
 #include "core/serialization.h"
 #include "core/reflection.h"
 

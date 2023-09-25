@@ -213,7 +213,7 @@ void ecs::Archetype::set_components(Entity& entity, uint32_t columnIndex, Entity
 	ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
 	for (auto& component : creationContext._componentsMap)
 	{
-		chunk.set_component(columnIndex, component.second);
+		chunk.set_component(columnIndex, component.second.get());
 	}
 }
 

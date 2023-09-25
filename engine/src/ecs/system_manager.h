@@ -3,33 +3,46 @@
 #include "entity_manager.h"
 #include "execution_context.h"
 #include "system.h"
+#include "events/event_manager.h"
+#include "multithreading/task_composer.h"
+#include "resource_manager/resource_manager.h"
 
 namespace ad_astris::ecs
 {
-	// Static class
+	struct EngineManagers
+	{
+		events::EventManager* eventManager{ nullptr };
+		tasks::TaskComposer* taskComposer{ nullptr };
+		resource::ResourceManager* resourceManager{ nullptr };
+		EntityManager* entityManager{ nullptr };
+	};
+	
+	// App can have only one instance of SystemManager. Otherwise there will be an assertion
 	class SystemManager
 	{
 		public:
 			SystemManager();
 			~SystemManager();
 		
-			void init();
+			void init(EngineManagers& managers);
 			void cleanup();
 
 			// Added new system to the SystemManager. New system should be inherited from the System class
 			template<typename T>
 			void register_system()
 			{
-				System* system = new T();
-				system->configure_query();
-				_idToSystem[TypeInfoTable::get_system_id<T>()] = system;
+				TypeInfoTable::add_system<T>();
+				_systemByID[TypeInfoTable::get_system_id<T>()] = std::make_unique<T>();
+				_systemByID[TypeInfoTable::get_system_id<T>()]->subscribe_to_events(_managers);
+				_systemByID[TypeInfoTable::get_system_id<T>()]->configure_execution_order();
+				_systemByID[TypeInfoTable::get_system_id<T>()]->configure_query();
  			}
 
 			// Returns a pointer to the existing system. You can get custom systems or engine default systems
 			template<typename T>
 			T* get_system()
 			{
-				return reinterpret_cast<T*>(_idToSystem[TypeInfoTable::get_system_id<T>()]);
+				return reinterpret_cast<T*>(_systemByID[TypeInfoTable::get_system_id<T>()]);
 			}
 
 			/** Main purpose is changing default engine system to custom one. 
@@ -43,7 +56,7 @@ namespace ad_astris::ecs
 				// Maybe, it is a good idea to implement queue for updating for the next frame?
 				// And should think about generating new execution order
 				uint32_t oldSystemID = TypeInfoTable::get_system_id(oldSystemName);
-				_idToSystem[oldSystemID] = new T();
+				_systemByID[oldSystemID] = new T();
 			}
 
 			// Executes all systems in right order. You can influence on the execution order
@@ -55,15 +68,18 @@ namespace ad_astris::ecs
 			 */
 			void add_entity_manager(EntityManager* entityManager);
 
-			// Generates new execution order based on the _executionOrder field from the System base class
+			// Generates new execution order based on the _executionOrder field from the System base class.
+			// First this method is called while launching the engine. While the engine is running, this method will only be called
+			// if new systems have been added
 			void generate_execution_order();
 
 		private:
 			static bool _isInitialized;
 		
 			std::vector<EntityManager*> _entityManagers;
-			std::unordered_map<uint32_t, System*> _idToSystem;
+			std::unordered_map<uint32_t, std::unique_ptr<System>> _systemByID;
 			std::vector<uint32_t> _executionOrder;
+			EngineManagers _managers;
 
 			void update_queries(std::vector<EntityManager*>& managersForUpdate, System* system);
 	};

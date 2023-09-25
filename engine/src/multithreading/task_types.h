@@ -97,11 +97,14 @@ namespace ad_astris::tasks
 				_tasks.push_back(task);
 			}
 
-			void pop_front(Task& task)
+			bool pop_front(Task& task)
 			{
 				std::scoped_lock<std::mutex> lock(_mutex);
-				task = _tasks.front();
+				if (_tasks.empty())
+					return false;
+				task = std::move(_tasks.front());
 				_tasks.pop_front();
+				return true;
 			}
 
 			bool empty()

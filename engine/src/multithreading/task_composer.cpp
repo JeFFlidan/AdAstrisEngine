@@ -5,12 +5,10 @@
 #include <exception>
 #include <stdio.h>
 
-#ifdef _WIN32
-	#include <windows.h>
-#endif
-
 using namespace ad_astris;
 using namespace tasks;
+
+std::vector<TaskHandler> taskHandlers;
 
 TaskComposer::TaskComposer(uint32_t maxThreadCount)
 {
@@ -86,13 +84,14 @@ void TaskComposer::dispatch(TaskGroup& taskGroup, uint32_t taskCount, uint32_t g
 	Task task;
 	task.taskHandler = taskHandler;
 	task.taskGroup = &taskGroup;
+	taskHandlers.push_back(taskHandler);
 	
 	for (auto groupID = 0; groupID != groupCount; ++groupID)
 	{
 		task.taskSubgroupBeginning = groupID * groupSize;
 		task.taskSubgroupEnd = std::min(task.taskSubgroupBeginning + groupSize, taskCount);
 		task.taskSubgroupID = groupID;
-		_taskQueueGroup->get_queue(groupID).push_back(task);
+		_taskQueueGroup->get_next_queue().push_back(task);
 	}
 
 	_wakeCondition.notify_all();
@@ -124,9 +123,8 @@ void TaskComposer::execute_tasks(uint32_t beginningQueueIndex)
 	for (auto i = 0; i != _threadCount; ++i)
 	{
 		TaskQueue& taskQueue = _taskQueueGroup->get_queue(beginningQueueIndex);
-		while (!taskQueue.empty())
+		while (taskQueue.pop_front(task))
 		{
-			taskQueue.pop_front(task);
 			task.taskGroup->wait_for_other_groups();
 			//TaskExecutionInfo* executionInfo = _taskExecutionInfoPool.allocate();
 			executionInfo.taskSubgroupID = task.taskSubgroupID;

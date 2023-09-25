@@ -124,7 +124,7 @@ Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID u
 	
 	ArchetypeCreationContext archetypeContext;
 	archetypeContext._componentIDs = std::move(componentIdsToMove);
-	archetypeContext._idToSize = entityContext._typeIdToSize;
+	archetypeContext._idToSize = entityContext._sizeByTypeID;
 	archetypeContext._allComponentsSize = entityContext._allComponentsSize;
 	archetypeContext._tagIDs = std::move(tagIDsToMove);
 	

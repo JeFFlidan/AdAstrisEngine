@@ -1,5 +1,6 @@
 #pragma once
 
+#include "execution_context.h"
 #include "type_info_table.h"
 
 #include <vector>
@@ -11,12 +12,6 @@ namespace ad_astris::ecs
 	class Archetype;
 	class ExecutionContext;
 	
-	enum class ComponentAccess : uint8_t
-	{
-		READ_ONLY = 1,
-		READ_WRITE = 2
-	};
-	
 	class QueryRequirements
 	{
 		friend class SystemManager;
@@ -26,7 +21,7 @@ namespace ad_astris::ecs
 			void add_component_requirement(ComponentAccess componentAccess)
 			{
 				if (!TypeInfoTable::check_component_in_table<T>())
-					TypeInfoTable::add_component<T>();
+					TypeInfoTable::add_component_info<T>();
 				
 				uint32_t id = TypeInfoTable::get_component_id<T>();
 				_componentIDToAccess[id] = componentAccess;

@@ -166,6 +166,26 @@ namespace ad_astris::ecs
 				return *component;
 			}
 
+			template<typename T>
+			const T* get_component_const(Entity& entity)
+			{
+				std::scoped_lock<std::mutex> locker(_entityMutex);
+				EntityInArchetypeInfo entityInArchetype = _entityToItsInfoInArchetype[entity];
+				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
+				T* component = archetype.get_entity_component<T>(entity, entityInArchetype.column);
+				return component;
+			}
+
+			template<typename T>
+			T* get_component(Entity& entity)
+			{
+				std::scoped_lock<std::mutex> locker(_entityMutex);
+				EntityInArchetypeInfo entityInArchetype = _entityToItsInfoInArchetype[entity];
+				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
+				T* component = archetype.get_entity_component<T>(entity, entityInArchetype.column);
+				return component;
+			}
+
 			uint32_t get_archetypes_count()
 			{
 				std::scoped_lock<std::mutex> locker(_archetypeMutex);

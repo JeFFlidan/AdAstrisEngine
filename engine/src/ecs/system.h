@@ -2,6 +2,7 @@
 
 #include "entity_query.h"
 #include "core/reflection.h"
+#include "multithreading/task_composer.h"
 
 #include <vector>
 #include <string>
@@ -9,6 +10,7 @@
 namespace ad_astris::ecs
 {
 	class SystemManager;
+	struct EngineManagers;
 	
 	class SystemExecutionOrder
 	{
@@ -42,8 +44,11 @@ namespace ad_astris::ecs
 		friend SystemManager;
 
 		public:
-			virtual void execute() = 0;
+			virtual ~System() { }
+			virtual void subscribe_to_events(EngineManagers& managers) = 0;
 			virtual void configure_query() = 0;
+			virtual void configure_execution_order() = 0;
+			virtual void execute(EngineManagers& managers, tasks::TaskGroup& globalTaskGroup) = 0;
 
 		protected:
 			SystemExecutionOrder _executionOrder;
@@ -51,3 +56,9 @@ namespace ad_astris::ecs
 			EntityQuery _entityQuery;
 	};
 }
+
+#define OVERRIDE_SYSTEM_METHODS()															\
+	virtual void subscribe_to_events(ad_astris::ecs::EngineManagers& managers) override;	\
+	virtual void configure_query() override;												\
+	virtual void configure_execution_order() override;										\
+	virtual void execute(ad_astris::ecs::EngineManagers& managers, ad_astris::tasks::TaskGroup& globalTaskGroup) override;

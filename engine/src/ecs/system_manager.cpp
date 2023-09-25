@@ -20,17 +20,17 @@ SystemManager::~SystemManager()
 	_isInitialized = false;
 }
 
-void SystemManager::init()
+void SystemManager::init(EngineManagers& managers)
 {
-
+	assert(managers.eventManager != nullptr);
+	assert(managers.resourceManager != nullptr);
+	assert(managers.taskComposer != nullptr);
+	_managers = managers;
 }
 
 void SystemManager::cleanup()
 {
-	for (auto& data : _idToSystem)
-	{
-		delete data.second;
-	}
+	
 }
 
 void SystemManager::execute()
@@ -42,11 +42,12 @@ void SystemManager::execute()
 			managersForUpdate.push_back(manager);
 	}
 	
+	tasks::TaskGroup* taskGroup = _managers.taskComposer->allocate_task_group();
 	for (auto& id : _executionOrder)
 	{
-		System* system = _idToSystem[id];
+		System* system = _systemByID[id].get();
 		update_queries(managersForUpdate, system);
-		system->execute();
+		system->execute(_managers, *taskGroup);
 	}
 
 	for (auto& manager : managersForUpdate)
@@ -62,13 +63,13 @@ void SystemManager::add_entity_manager(EntityManager* entityManager)
 
 void SystemManager::generate_execution_order()
 {
-	auto executionDAG = std::make_unique<DAG>(_idToSystem.size());
+	auto executionDAG = std::make_unique<DAG>(_systemByID.size());
 	_executionOrder.clear();
 	
-	for (auto& systemInfo : _idToSystem)
+	for (auto& systemInfo : _systemByID)
 	{
 		uint32_t systemID = systemInfo.first;
-		System* system = systemInfo.second;
+		System* system = systemInfo.second.get();
 		SystemExecutionOrder& systemExecutionOrder = system->_executionOrder;
 
 		if (systemExecutionOrder._executeAfter.empty() && systemExecutionOrder._executeBefore.empty())

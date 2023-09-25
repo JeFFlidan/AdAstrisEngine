@@ -1,6 +1,5 @@
 #pragma once
 
-#include "entity_query.h"
 #include "archetype.h"
 #include "type_info_table.h"
 
@@ -13,6 +12,12 @@
 
 namespace ad_astris::ecs
 {
+	enum class ComponentAccess : uint8_t
+	{
+		READ_ONLY = 1,
+		READ_WRITE = 2
+	};
+	
 	class ExecutionContext
 	{
 		public:
@@ -46,7 +51,7 @@ namespace ad_astris::ecs
 			}
 
 			template<typename T>
-			ThreadSafeArrayView<T> get_mutable_components()
+			ArrayView<T> get_mutable_components()
 			{
 				std::string componentName = get_type_name<T>();
 				
@@ -68,7 +73,7 @@ namespace ad_astris::ecs
 				Subchunk* subchunk = &_loadedSubchunks[id][_chunkIndex];
 
 				uint32_t entitiesCount = _archetype->get_entities_count_per_chunk(_chunkIndex);
-				ThreadSafeArrayView<T> componentsView(reinterpret_cast<T*>(subchunk->get_ptr()), entitiesCount);
+				ArrayView<T> componentsView(reinterpret_cast<T*>(subchunk->get_ptr()), entitiesCount);
 				return componentsView;
 			}
 		
