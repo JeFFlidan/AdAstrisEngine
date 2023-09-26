@@ -1,0 +1,4 @@
+//#define CORE_SHADER_BASE_MODEL_LAYOUT
+#define CORE_SHADER_BASE_MODEL_LAYOUT
+#define CORE_SHADER_COMPILE_VS
+#include "coreHF.hlsli"
