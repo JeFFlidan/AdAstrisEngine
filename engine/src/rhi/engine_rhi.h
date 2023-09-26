@@ -110,5 +110,6 @@ namespace ad_astris::rhi
 			virtual void add_pipeline_barriers(CommandBuffer* cmd, std::vector<PipelineBarrier>& barriers) = 0;
 
 			virtual void wait_for_gpu() = 0;
+			virtual uint32_t get_buffer_count() = 0;
 	};
 }

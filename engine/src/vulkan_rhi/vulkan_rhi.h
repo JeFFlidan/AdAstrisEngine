@@ -138,12 +138,17 @@ namespace ad_astris::vulkan
 			VkPipelineCache _pipelineCache;
 
 			std::vector<std::unique_ptr<VulkanPipeline>> _vulkanPipelines;
+			std::mutex _pipelinesMutex;
 			std::vector<std::unique_ptr<VulkanShader>> _vulkanShaders;
+			std::mutex _shadersMutex;
 			std::vector<std::unique_ptr<VulkanRenderPass>> _vulkanRenderPasses;
 			std::vector<std::unique_ptr<VulkanSampler>> _vulkanSamplers;
 			std::vector<std::unique_ptr<VulkanTextureView>> _vulkanTextureViews;
+			std::mutex _texturesViewMutex;
 			std::vector<std::unique_ptr<VulkanTexture>> _vulkanTextures;
+			std::mutex _texturesMutex;
 			std::vector<std::unique_ptr<VulkanBuffer>> _vulkanBuffers;
+			std::mutex _buffersMutex;
 
 			struct AttachmentDesc
 			{

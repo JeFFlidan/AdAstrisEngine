@@ -165,9 +165,15 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 		LOG_ERROR("Invalid memory usage (buffer)")
 		return;
 	}
+
+	auto vulkanBufferTemp = std::make_unique<VulkanBuffer>(&_allocator, buffer->bufferInfo.size, bufferUsage, memoryUsage);
+	VulkanBuffer* vulkanBuffer = nullptr;
+	{
+		std::scoped_lock<std::mutex> locker(_buffersMutex);
+		_vulkanBuffers.push_back(std::move(vulkanBufferTemp));
+		vulkanBuffer = _vulkanBuffers.back().get();
+	}
 	
-	_vulkanBuffers.emplace_back(new VulkanBuffer(&_allocator, buffer->bufferInfo.size, bufferUsage, memoryUsage));
-	VulkanBuffer* vulkanBuffer = _vulkanBuffers.back().get();
 	buffer->data = vulkanBuffer;
 	buffer->size = buffer->bufferInfo.size;
 	buffer->type = rhi::Resource::ResourceType::BUFFER;
@@ -189,6 +195,8 @@ void vulkan::VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
 {
 	VulkanBuffer* vulkanBuffer = get_vk_obj(buffer);
 	vulkanBuffer->destroy_buffer(&_allocator);
+
+	std::scoped_lock<std::mutex> locker(_buffersMutex);
 	_vulkanBuffers.erase(std::remove_if(_vulkanBuffers.begin(), _vulkanBuffers.end(), [&](auto& object)
 	{
 		return vulkanBuffer == object.get();
@@ -282,8 +290,13 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 	createInfo.usage = imgUsage;
 	createInfo.imageType = get_image_type(texInfo->textureDimension);
 
-	_vulkanTextures.emplace_back(new VulkanTexture(createInfo, &_allocator, memoryUsage));
-	VulkanTexture* vkTexture = _vulkanTextures.back().get();
+	auto vkTextureTemp = std::make_unique<VulkanTexture>(createInfo, &_allocator, memoryUsage);
+	VulkanTexture* vkTexture = nullptr;
+	{
+		std::scoped_lock<std::mutex> locker(_texturesMutex);
+		_vulkanTextures.push_back(std::move(vkTextureTemp));
+		vkTexture = _vulkanTextures.back().get();
+	}
 	if (vkTexture->get_handle() == VK_NULL_HANDLE)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Failed to allocate VkImage")
@@ -397,19 +410,25 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	createInfo.subresourceRange.layerCount = texInfo.layersCount;
 	createInfo.subresourceRange.aspectMask = aspectFlags;
 
-	uint32_t vkTextureViewIndex = _vulkanTextureViews.size();
-	_vulkanTextureViews.emplace_back(new VulkanTextureView(_device.get(), createInfo));
-	textureView->handle = _vulkanTextureViews.back().get();
-	textureView->viewInfo = *viewInfo;
+	auto vkTextureViewTemp = std::make_unique<VulkanTextureView>(_device.get(), createInfo);
+
+	uint32_t vkTextureViewIndex;
+	{
+		std::scoped_lock<std::mutex> locker(_texturesViewMutex);
+		vkTextureViewIndex = _vulkanTextureViews.size();
+		_vulkanTextureViews.push_back(std::move(vkTextureViewTemp));
+		textureView->handle = _vulkanTextureViews.back().get();
+	}
+	
 	textureView->texture = texture;
 
 	if ((imgUsage & VK_IMAGE_USAGE_SAMPLED_BIT) == VK_IMAGE_USAGE_SAMPLED_BIT)
 	{
-		_descriptorManager->allocate_bindless_descriptor(_vulkanTextureViews.back().get(), TextureDescriptorHeapType::TEXTURES);
+		_descriptorManager->allocate_bindless_descriptor(get_vk_obj(textureView), TextureDescriptorHeapType::TEXTURES);
 	}
 	else if ((imgUsage & VK_IMAGE_USAGE_STORAGE_BIT) == VK_IMAGE_USAGE_STORAGE_BIT)
 	{
-		_descriptorManager->allocate_bindless_descriptor(_vulkanTextureViews.back().get(), TextureDescriptorHeapType::STORAGE_TEXTURES);
+		_descriptorManager->allocate_bindless_descriptor(get_vk_obj(textureView), TextureDescriptorHeapType::STORAGE_TEXTURES);
 	}
 
 	if (has_flag(texInfo.textureUsage, rhi::ResourceUsage::COLOR_ATTACHMENT)
@@ -503,11 +522,16 @@ void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shad
 		return;
 	}
 
-	_vulkanShaders.emplace_back(new VulkanShader(_device->get_device()));
-	VulkanShader* vulkanShader = _vulkanShaders.back().get();
+	auto vulkanShader = std::make_unique<VulkanShader>(_device->get_device());
 	vulkanShader->create_shader_module(shaderInfo);
 	shader->type = shaderInfo->shaderType;
-	shader->handle = vulkanShader;
+
+	{
+		std::scoped_lock<std::mutex> locker(_shadersMutex);
+		_vulkanShaders.push_back(std::move(vulkanShader));
+		VulkanShader* vulkanShader = _vulkanShaders.back().get();
+		shader->handle = vulkanShader;
+	}
 }
 
 void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info)
@@ -517,9 +541,16 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Invalid pointers")
 		return;
 	}
-	_vulkanPipelines.emplace_back(new VulkanPipeline(_device.get(), info, _pipelineCache, _pipelineLayoutCache.get()));
+	
+	auto vulkanPipeline = std::make_unique<VulkanPipeline>(_device.get(), info, _pipelineCache, _pipelineLayoutCache.get());
+
+	{
+		std::scoped_lock<std::mutex> locker(_pipelinesMutex);
+		_vulkanPipelines.push_back(std::move(vulkanPipeline));
+		pipeline->handle = _vulkanPipelines.back().get();
+	}
+	
 	pipeline->type = rhi::PipelineType::GRAPHICS;
-	pipeline->handle = _vulkanPipelines.back().get();
 }
 
 void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info)
@@ -529,9 +560,16 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid pointers")
 		return;
 	}
-	_vulkanPipelines.emplace_back(new VulkanPipeline(_device.get(), info, _pipelineCache, _pipelineLayoutCache.get()));
+	
+	auto vulkanPipeline = std::make_unique<VulkanPipeline>(_device.get(), info, _pipelineCache, _pipelineLayoutCache.get());
+
+	{
+		std::scoped_lock<std::mutex> locker(_pipelinesMutex);
+		_vulkanPipelines.push_back(std::move(vulkanPipeline));
+		pipeline->handle = _vulkanPipelines.back().get();
+	}
+	
 	pipeline->type = rhi::PipelineType::COMPUTE;
-	pipeline->handle = _vulkanPipelines.back().get();
 }
 
 void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
