@@ -80,13 +80,13 @@ void SystemManager::generate_execution_order()
 
 		for (auto& executeBeforeName : systemExecutionOrder._executeBefore)
 		{
-			uint32_t executeBeforeID = TypeInfoTable::get_system_id(executeBeforeName);
+			uint32_t executeBeforeID = TYPE_INFO_TABLE->get_system_id(executeBeforeName);
 			executionDAG->add_edge(systemID, executeBeforeID);
 		}
 
 		for (auto& executeAfterName : systemExecutionOrder._executeAfter)
 		{
-			uint32_t executeAfterID = TypeInfoTable::get_system_id(executeAfterName);
+			uint32_t executeAfterID = TYPE_INFO_TABLE->get_system_id(executeAfterName);
 			executionDAG->add_edge(executeAfterID, systemID);
 		}
 	}
@@ -95,7 +95,7 @@ void SystemManager::generate_execution_order()
 	
 	for (auto& id : _executionOrder)
 	{
-		LOG_INFO("SYSTEM: {}", TypeInfoTable::get_system_name(id))
+		LOG_INFO("SYSTEM: {}", TYPE_INFO_TABLE->get_system_name(id))
 	}
 }
 

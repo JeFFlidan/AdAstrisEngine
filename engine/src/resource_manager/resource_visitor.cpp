@@ -1,6 +1,5 @@
 ﻿#include "engine_core/model/static_model.h"
 #include "engine_core/texture/texture2D.h"
-#include "engine_core/material/material_template.h"
 #include "engine_core/material/materials.h"
 #include "engine_core/material/shader.h"
 #include "engine_core/level/level.h"
@@ -17,11 +16,6 @@ void ResourceDeleterVisitor::visit(ecore::StaticModel* staticModel)
 void ResourceDeleterVisitor::visit(ecore::Texture2D* texture2D)
 {
 	_resourcePool->free(texture2D);		
-}
-		
-void ResourceDeleterVisitor::visit(ecore::MaterialTemplate* materialTemplate)
-{
-	_resourcePool->free(materialTemplate);
 }
 		
 void ResourceDeleterVisitor::visit(ecore::Shader* shader)

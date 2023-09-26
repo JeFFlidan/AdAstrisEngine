@@ -59,15 +59,21 @@ namespace ad_astris::acore
 
 	enum class MouseButton
 	{
-		UNKNOWN,
-		LEFT,
-		MIDDLE,
-		RIGHT
+		UNKNOWN = 0,
+		LEFT = 1 << 0,
+		MIDDLE = 1 << 1,
+		RIGHT = 1 << 2
 	};
 }
 
 template<>
 struct EnableBitMaskOperator<ad_astris::acore::Key>
+{
+	static const bool enable = true;
+};
+
+template<>
+struct EnableBitMaskOperator<ad_astris::acore::MouseButton>
 {
 	static const bool enable = true;
 };

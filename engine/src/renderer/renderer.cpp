@@ -1,8 +1,13 @@
 #include "renderer.h"
 
-#include "render_pass_context.h"
 #include "engine/vulkan_rhi_module.h"
 #include "application/editor_module.h"
+#include "lighting/deferred_lighting.h"
+#include "transparency/oit.h"
+#include "postprocessing/temporal_filter.h"
+#include "swap_chain_pass.h"
+#include "shader_interop_renderer.h"
+#include "object_test.h"
 
 using namespace ad_astris;
 using namespace renderer;
@@ -15,7 +20,9 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	_taskComposer = rendererInitContext.taskComposer;
 	_eventManager = rendererInitContext.eventManager;
 	_mainWindow = rendererInitContext.mainWindow;
+	_world = rendererInitContext.world;
 	ModuleManager* moduleManager = rendererInitContext.moduleManager;
+	ecs::set_type_info_table(rendererInitContext.typeInfoTable);
 
 	switch (_rendererSubsettings->get_graphics_api())
 	{
@@ -50,9 +57,7 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	rhiInitContext.swapChainInfo = &swapChainInfo;
 	
 	_rhi->init(rhiInitContext);
-
-	//create_swap_chain();
-	create_samplers();
+	
 	LOG_INFO("Renderer::init(): Loaded and initialized RHI module")
 
 	auto rcoreModule = moduleManager->load_module<rcore::IRenderCoreModule>("RenderCore");
@@ -81,15 +86,6 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	_rendererResourceManager->init(rendererResourceManagerInitContext);
 	
 	LOG_INFO("Renderer::init(): Loaded and initialized RenderCore module")
-	
-	MaterialManagerInitializationContext materialManagerInitContext;
-	materialManagerInitContext.eventManager = _eventManager;
-	materialManagerInitContext.resourceManager = _resourceManager;
-	materialManagerInitContext.shaderManager = _shaderManager;
-	materialManagerInitContext.taskComposer = _taskComposer;
-	materialManagerInitContext.rhi = _rhi;
-	_materialManager = std::make_unique<MaterialManager>(materialManagerInitContext);
-	LOG_INFO("Renderer::init(): Initialized material system")
 
 	SceneManagerInitializationContext sceneManagerInitContext;
 	sceneManagerInitContext.rhi = _rhi;
@@ -97,11 +93,9 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	sceneManagerInitContext.taskComposer = _taskComposer;
 	sceneManagerInitContext.resourceManager = _resourceManager;
 	sceneManagerInitContext.rendererResourceManager = _rendererResourceManager;
+	sceneManagerInitContext.world = _world;
 	_sceneManager = std::make_unique<SceneManager>(sceneManagerInitContext);
 	LOG_INFO("Renderer::init(): Initialized scene manager")
-
-	_triangleTest = std::make_unique<TriangleTest>(_rhi, _resourceManager->get_file_system(), _shaderManager, _mainWindow->get_width(), _mainWindow->get_height());
-	LOG_INFO("Renderer::init(): Initialized triangle test")
 
 	rhi::UIWindowBackendInitContext uiBackendInitContext;
 	uiBackendInitContext.rhi = _rhi;
@@ -109,9 +103,12 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	uiBackendInitContext.window = rendererInitContext.mainWindow;
 
 	_uiWindowBackend->init(uiBackendInitContext);
-	_uiWindowBackend->set_backbuffer(_triangleTest->get_texture_view(), &_samplers[SAMPLER_LINEAR_CLAMP]);
 	_uiWindowBackend->get_callbacks(rendererInitContext.uiBackendCallbacks);
 	LOG_INFO("Renderer::init(): Initialized ui backend")
+	
+	create_uniform_buffers();
+	create_samplers();
+	LOG_INFO("Renderer::init(): Created renderer resources")
 }
 
 void Renderer::cleanup()
@@ -123,50 +120,62 @@ void Renderer::cleanup()
 
 void Renderer::bake()
 {
-	auto renderPassContext = std::make_unique<RenderPassContext>(_renderGraph);
-	_materialManager->create_material_templates(renderPassContext.get());
-	LOG_INFO("Renderer::bake(): Created renderer material templates")
-	//test_rhi();
-	LOG_INFO("AFTER CREATING SAMPLER")
+	LOG_INFO("Renderer::bake(): Start baking")
+
+	RenderingInitContext renderingInitContext;
+	renderingInitContext.rhi = _rhi;
+	renderingInitContext.mainWindow = _mainWindow;
+	renderingInitContext.sceneManager = _sceneManager.get();
+	//
+	// _renderPassExecutors.emplace_back(new GBuffer(renderingInitContext));
+	// LOG_INFO("AFTER EMPLACING GBUFFER")
+	// _renderPassExecutors.emplace_back(new DeferredLighting(renderingInitContext));
+	// LOG_INFO("AFTER EMPLACING DEFERRED")
+	// _renderPassExecutors.emplace_back(new TemporalFilter(renderingInitContext));
+	// _renderPassExecutors.emplace_back(new OITGeometry(renderingInitContext));
+	// _renderPassExecutors.emplace_back(new OIT(renderingInitContext));
+
+	_renderPassExecutors.emplace_back(new ObjectTest(renderingInitContext, _resourceManager->get_file_system(), _shaderManager));
+
+	for (auto& executor : _renderPassExecutors)
+		executor->prepare_render_pass(_renderGraph, _rendererResourceManager);
+
+	auto swapChainPass = std::make_unique<SwapChainPass>(renderingInitContext, _uiWindowBackend);
+	swapChainPass->prepare_render_pass(_renderGraph, _rendererResourceManager);
+	_renderGraph->set_swap_chain_executor(swapChainPass.get());
+	_renderPassExecutors.push_back(std::move(swapChainPass));
+
+	_renderGraph->set_swap_chain_input("ObjectOutput");
+	LOG_INFO("BEFORE BAKE")
+	_renderGraph->bake();
+	LOG_INFO("AFTER BAKE")
+
+	_renderGraph->log();
+	
+	_uiWindowBackend->set_backbuffer(_rendererResourceManager->get_texture_view("ObjectOutput"), &_samplers[SAMPLER_LINEAR_CLAMP]);
+	LOG_INFO("Renderer::bake(): Finished baking")
 }
 
-void Renderer::draw()
+void Renderer::draw(DrawContext& drawContext)
 {
 	uint32_t acquiredImageIndex;
 	if (!_rhi->acquire_next_image(acquiredImageIndex, _frameIndex))
 	{
-		_uiWindowBackend->set_backbuffer(_triangleTest->get_texture_view(), &_samplers[SAMPLER_LINEAR_CLAMP]);
+		_uiWindowBackend->set_backbuffer(_rendererResourceManager->get_texture_view("ObjectOutput"), &_samplers[SAMPLER_LINEAR_CLAMP]);
 		return;
 	}
 
 	_sceneManager->setup_global_buffers();
+	setup_cameras(drawContext);
+	setup_frame_data(drawContext);
 
-	rhi::CommandBuffer cmd;
-	_rhi->begin_command_buffer(&cmd);
-	rhi::ClearValues clearValues;
-	clearValues.color = { 0.1f, 0.1f, 0.1f, 1.0f };
-	rhi::Viewport viewport;
-	viewport.width = _mainWindow->get_width();
-	viewport.height = _mainWindow->get_height();
-	std::vector<rhi::Viewport> viewports = { viewport };
-	_rhi->set_viewports(&cmd, viewports);
-
-	rhi::Scissor scissor;
-	scissor.right = _mainWindow->get_width();
-	scissor.bottom = _mainWindow->get_height();
-	std::vector<rhi::Scissor> scissors = { scissor };
-	_rhi->set_scissors(&cmd, scissors);
-	_triangleTest->draw(cmd);
-	
-	_rhi->begin_rendering_swap_chain(&cmd, &clearValues);
-	if (_mainWindow->is_running())
-		_uiWindowBackend->draw(&cmd);
-	_rhi->end_rendering_swap_chain(&cmd);
+	tasks::TaskGroup taskGroup;
+	_renderGraph->draw(&taskGroup);
 	
 	_rhi->submit(rhi::QueueType::GRAPHICS);
 	if (!_rhi->present())
 	{
-		_uiWindowBackend->set_backbuffer(_triangleTest->get_texture_view(), &_samplers[SAMPLER_LINEAR_CLAMP]);
+		_uiWindowBackend->set_backbuffer(_rendererResourceManager->get_texture_view("ObjectOutput"), &_samplers[SAMPLER_LINEAR_CLAMP]);
 		_frameIndex = 0;
 	}
 	else
@@ -177,19 +186,8 @@ void Renderer::draw()
 
 void Renderer::get_current_frame_index()
 {
-	if (++_frameIndex > 2)
+	if (++_frameIndex > _rhi->get_buffer_count() - 1)
 		_frameIndex = 0;
-}
-
-void Renderer::create_swap_chain()
-{
-	rhi::SwapChainInfo swapChainInfo;
-	swapChainInfo.width = _rendererSubsettings->get_render_area_width();
-	swapChainInfo.height = _rendererSubsettings->get_render_area_height();
-	swapChainInfo.sync = _rendererSubsettings->is_vsync_used();
-	bool useTripleBuffering = _rendererSubsettings->is_triple_buffering_used();
-	swapChainInfo.buffersCount = useTripleBuffering ? 3 : 2;
-	_rhi->create_swap_chain(&_swapChain, &swapChainInfo);
 }
 
 void Renderer::create_samplers()
@@ -220,14 +218,46 @@ void Renderer::create_samplers()
 	_rhi->create_sampler(&_samplers[SAMPLER_NEAREST_MIRROR], &samplerInfo);
 }
 
-void Renderer::test_rhi()
+void Renderer::create_uniform_buffers()
 {
-	rhi::SamplerInfo samplerInfo;
-	samplerInfo.filter = rhi::Filter::MIN_MAG_MIP_LINEAR;
-	samplerInfo.addressMode = rhi::AddressMode::REPEAT;
-	samplerInfo.borderColor = rhi::BorderColor::UNDEFINED;
-	rhi::Sampler sampler;
-	LOG_INFO("BEFORE CREATING SAMPLER")
-	_rhi->create_sampler(&sampler, &samplerInfo);
-	LOG_INFO("AFTER CREATING SAMPLER. DESCRIPTOR INDEX: {}", _rhi->get_descriptor_index(&sampler));
+	rhi::BufferInfo bufferInfo;
+	bufferInfo.size = sizeof(RendererCamera) * 16;
+	bufferInfo.bufferUsage = rhi::ResourceUsage::UNIFORM_BUFFER | rhi::ResourceUsage::TRANSFER_DST;
+	bufferInfo.memoryUsage = rhi::MemoryUsage::CPU_TO_GPU;
+	for (uint32_t i = 0; i != _rhi->get_buffer_count(); ++i)
+		_rendererResourceManager->allocate_buffer("CameraUB" + std::to_string(i), bufferInfo);
+
+	bufferInfo.size = sizeof(FrameUB);
+	for (uint32_t i = 0; i != _rhi->get_buffer_count(); ++i)
+		_rendererResourceManager->allocate_buffer("FrameUB" + std::to_string(i), bufferInfo);
+}
+
+void Renderer::setup_cameras(DrawContext& preDrawContext)
+{
+	auto cameraComponent = _world->get_entity_manager()->get_component<ecore::CameraComponent>(preDrawContext.activeCamera);
+	auto transformComponent = _world->get_entity_manager()->get_component_const<ecore::TransformComponent>(preDrawContext.activeCamera);
+	RendererCamera rendererCamera[16];
+	rendererCamera[0].location = transformComponent->location;
+	rendererCamera[0].view = cameraComponent->view;
+	rendererCamera[0].projection = cameraComponent->projection;
+	rendererCamera[0].viewProjection = cameraComponent->viewProjection;
+	rendererCamera[0].inverseView = cameraComponent->inverseView;
+	rendererCamera[0].inverseProjection = cameraComponent->inverseProjection;
+	rendererCamera[0].inverseViewProjection = cameraComponent->inverseViewProjection;
+	rendererCamera[0].zNear = cameraComponent->zNear;
+	rendererCamera[0].zFar = cameraComponent->zFar;
+	rendererCamera[0].up = cameraComponent->up;
+	rhi::Buffer* cameraUB = _rendererResourceManager->get_buffer("CameraUB" + std::to_string(_frameIndex));
+	_rhi->update_buffer_data(cameraUB, sizeof(RendererCamera) * 16, rendererCamera);
+	_rhi->bind_uniform_buffer(cameraUB, UB_CAMERA_SLOT);
+}
+
+void Renderer::setup_frame_data(DrawContext& preDrawContext)
+{
+	FrameUB frameData;
+	rhi::Buffer* modelInstanceBuffer = _sceneManager->get_model_instance_storage_buffer();
+	frameData.modelInstanceBufferIndex = _rhi->get_descriptor_index(modelInstanceBuffer);
+	rhi::Buffer* frameUB = _rendererResourceManager->get_buffer("FrameUB" + std::to_string(_frameIndex));
+	_rhi->update_buffer_data(frameUB, sizeof(FrameUB), &frameData);
+	_rhi->bind_uniform_buffer(frameUB, UB_FRAME_SLOT);
 }

@@ -1,9 +1,10 @@
 ﻿#pragma once
 
 #include "enums.h"
-#include "window_events_impl.h"
+#include "core/math_base.h"
 #include "events/event.h"
 #include "events/event_manager.h"
+#include "win_api_utils.h"
 
 namespace ad_astris::acore
 {
@@ -28,60 +29,53 @@ namespace ad_astris::acore
 			uint32_t _height{ 0 };
 	};
 
-	class KeyDownEvent : public impl::KeyEvent, public events::IEvent
+	class DeltaTimeUpdateEvent : public events::IEvent
 	{
 		public:
-			EVENT_TYPE_DECL(KeyDownEvent)
+			EVENT_TYPE_DECL(DeltaTimeEvent)
+
+			DeltaTimeUpdateEvent(float deltaTime) : _deltaTime(deltaTime) { }
+			float get_delta_time() { return _deltaTime; }
+
+		private:
+			float _deltaTime;
 	};
 
-	class KeyUpEvent : public impl::KeyEvent, public events::IEvent
+	class InputEvent : public events::IEvent
 	{
 		public:
-			EVENT_TYPE_DECL(KeyUpEvent)
+			EVENT_TYPE_DECL(InputEvent)
+
+			void set_mouse_state(MouseState mouseState){ _mouseState = mouseState; }
+			void set_position(XMFLOAT2 position) { _mouseState.position = position; }
+		
+			bool is_mouse_button_pressed(MouseButton mouseButton)
+			{
+				switch (mouseButton)
+				{
+					case MouseButton::RIGHT:
+						return impl::WinApiUtils::is_key_down(VK_RBUTTON);
+					case MouseButton::LEFT:
+						return impl::WinApiUtils::is_key_down(VK_LBUTTON);
+					case MouseButton::MIDDLE:
+						return impl::WinApiUtils::is_key_down(VK_MBUTTON);
+				}
+			}
+
+			XMFLOAT2 get_position() { return _mouseState.position; }
+			XMFLOAT2 get_delta_position() { return _mouseState.deltaPosition; }
+		
+			bool is_key_pressed(Key key)
+			{
+				uint8_t keyCode = impl::WinApiUtils::parse_key(key);
+				return impl::WinApiUtils::is_key_down(keyCode) || impl::WinApiUtils::is_key_toggle(keyCode);
+			}
+
+			void set_viewport_state(bool isHovered) { _isViewportHovered = isHovered; }
+			bool is_viewport_hovered() { return _isViewportHovered; }
+		
+		private:
+			MouseState _mouseState;
+			bool _isViewportHovered{ false };
 	};
-
-	class MouseButtonDownEvent : public impl::MouseButtonEvent, public events::IEvent
-	{
-		public:
-			EVENT_TYPE_DECL(MouseButtonDownEvent)
-			MouseButtonDownEvent() = default;
-			MouseButtonDownEvent(MouseButton mouseButton, int32_t xPos, int32_t yPos)
-				: MouseButtonEvent(mouseButton, xPos, yPos) { }
-	};
-
-	class MouseButtonUpEvent : public impl::MouseButtonEvent, public events::IEvent
-	{
-		public:
-			EVENT_TYPE_DECL(MouseButtonUpEvent)
-			MouseButtonUpEvent() = default;
-			MouseButtonUpEvent(MouseButton mouseButton, int32_t xPos, int32_t yPos)
-				: MouseButtonEvent(mouseButton, xPos, yPos) { }
-	};
-
-	class MouseMoveWithLeftButtonPressedEvent : public impl::MouseMoveWithPressedButtonEvent, public events::IEvent
-	{
-		public:
-			EVENT_TYPE_DECL(MouseMoveWithLeftButtonPressedEvent)
-	};
-
-	class MouseMoveWithRightButtonPressedEvent : public impl::MouseMoveWithPressedButtonEvent, public events::IEvent
-	{
-		public:
-			EVENT_TYPE_DECL(MouseMoveWithRightButtonPressedEvent)
-	};
-
-	namespace impl
-	{
-		struct WindowEvents
-		{
-			KeyDownEvent keyDownEvent;
-			KeyUpEvent keyUpEvent;
-			MouseButtonDownEvent mouseButtonDownEvent;
-			MouseButtonUpEvent mouseButtonUpEvent;
-			MouseMoveWithLeftButtonPressedEvent mouseMoveLeftButton;
-			MouseMoveWithRightButtonPressedEvent mouseMoveRightButton;
-
-			void enqueue_events(events::EventManager* eventManager);
-		};
-	}
 }

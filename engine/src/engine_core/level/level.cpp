@@ -2,6 +2,7 @@
 #include "engine_core/world.h"
 #include "file_system/utils.h"
 #include "resource_manager/resource_visitor.h"
+#include "engine_core/basic_events.h"
 
 using namespace ad_astris;
 using namespace ecore;
@@ -24,14 +25,24 @@ void Level::set_owning_world(World* world)
 	_entityManager = _owningWorld->get_entity_manager();
 }
 
-inline ecs::EntityManager* Level::get_entity_manager()
+ecs::EntityManager* Level::get_entity_manager()
 {
 	return _entityManager;
 }
 
-inline void Level::add_entity(ecs::Entity& entity)
+void Level::add_entity(ecs::Entity& entity)
 {
 	_entities.push_back(entity);
+	EntityCreatedEvent event(entity, _entityManager);
+	_owningWorld->get_event_manager()->enqueue_event(event);
+}
+
+ecs::Entity Level::create_entity(ecs::EntityCreationContext& creationContext)
+{
+	ecs::Entity entity = _entityManager->create_entity(creationContext);
+	EntityCreatedEvent event(entity, _entityManager);
+	_owningWorld->get_event_manager()->enqueue_event(event);
+	return entity;
 }
 
 void Level::serialize(io::File* file)
@@ -42,9 +53,10 @@ void Level::serialize(io::File* file)
 	levelMainJson["level_metadata"] = levelMetadata;
 
 	nlohmann::json jsonForEntities;
+	LOG_INFO("AFTER BUILDING JSON {}", _entities.size())
 	level::Utils::build_json_from_entities(jsonForEntities, this);
+	LOG_INFO("AFTER BUILDING JSON")
 	levelMainJson["entities"] = jsonForEntities.dump();
-
 	std::string newMetadata = levelMainJson.dump();
 	file->set_metadata(newMetadata);
 }
@@ -77,32 +89,32 @@ void Level::build_entities()
 	}
 }
 
-inline uint64_t Level::get_size()
+uint64_t Level::get_size()
 {
 	return 0;
 }
 
-inline bool Level::is_resource()
+bool Level::is_resource()
 {
 	return false;
 }
 
-inline UUID Level::get_uuid()
+UUID Level::get_uuid()
 {
 	return _levelInfo.uuid;
 }
 
-inline std::string Level::get_description()
+std::string Level::get_description()
 {
 	return std::string();
 }
 
-inline std::string Level::get_type()
+std::string Level::get_type()
 {
 	return "level";
 }
 
-inline void Level::accept(resource::IResourceVisitor& resourceVisitor)
+void Level::accept(resource::IResourceVisitor& resourceVisitor)
 {
 	resourceVisitor.visit(this);
 }

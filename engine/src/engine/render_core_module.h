@@ -122,7 +122,6 @@ namespace ad_astris::rcore
 			virtual void set_swap_chain_executor(IRenderPassExecutor* executor) = 0;
 
 			virtual void bake() = 0;
-			virtual void update_attachments() = 0;
 			virtual void log() = 0;
 		
 			virtual TextureDesc* get_texture_desc(const std::string& textureName) = 0;

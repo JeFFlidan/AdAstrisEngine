@@ -16,17 +16,17 @@ namespace ad_astris::renderer::impl
 			virtual void cleanup_after_update() override;
 			virtual bool need_update() override;
 
-			const rhi::Buffer* get_point_light_storage_buffer()
+			rhi::Buffer* get_point_light_storage_buffer()
 			{
 				return _rendererResourceManager->get_buffer(POINT_LIGHT_BUFFER_NAME);
 			}
 
-			const rhi::Buffer* get_directional_light_storage_buffer()
+			rhi::Buffer* get_directional_light_storage_buffer()
 			{
 				return _rendererResourceManager->get_buffer(DIR_LIGHT_BUFFER_NAME);
 			}
 
-			const rhi::Buffer* get_spot_light_storage_buffer()
+			rhi::Buffer* get_spot_light_storage_buffer()
 			{
 				return _rendererResourceManager->get_buffer(SPOT_LIGHT_BUFFER_NAME);
 			}

@@ -1,6 +1,5 @@
 #include "resource_manager.h"
 #include "resource_events.h"
-#include "engine_core/material/material_template.h"
 #include "engine_core/material/materials.h"
 #include "engine_core/material/shader.h"
 #include "profiler/logger.h"
@@ -77,24 +76,6 @@ ResourceAccessor<ecore::Level> ResourceManager::load_level(io::URI& path)
 
 void ResourceManager::load_builtin_resources()
 {
-	for (auto& uuid : _builtinResourcesContext.materialTemplateNames)
-	{
-		ecore::MaterialTemplate* materialTemplate = get_resource<ecore::MaterialTemplate>(uuid).get_resource();
-		for (auto& pair : materialTemplate->get_shader_passes())
-		{
-			ecore::material::ShaderPass& shaderPass = pair.second;
-			ecore::material::ShaderUUIDContext& uuidContext = shaderPass.get_shader_uuid_context();
-			ecore::material::ShaderHandleContext& handleContext = shaderPass.get_shader_handle_context();
-			for (auto& shaderUUID : uuidContext.shaderUUIDs)
-			{
-				load_shader(shaderUUID, handleContext);
-			}
-		}
-		LOG_INFO("ResourceManager::load_builtin_resources(): Loaded material template: {}", materialTemplate->get_name()->get_full_name())
-		MaterialTemplateLoadedEvent event(materialTemplate);
-		_eventManager->trigger_event(event);
-	}
-
 	_builtinResourcesContext.clear();
 }
 
@@ -102,63 +83,6 @@ template <typename T>
 ResourceAccessor<T> ResourceManager::create_new_resource(FirstCreationContext<T>& creationContext)
 {
 	
-}
-
-template<>
-ResourceAccessor<ecore::MaterialTemplate> ResourceManager::create_new_resource(
-	FirstCreationContext<ecore::MaterialTemplate>& creationContext)
-{
-	if (_resourceDataTable.check_name_in_table(creationContext.materialTemplateName))
-	{
-		UUID uuid = _resourceDataTable.get_uuid_by_name(creationContext.materialTemplateName);
-		return get_resource<ecore::MaterialTemplate>(uuid);
-	}
-
-	ecore::material::MaterialTemplateInfo templateInfo;
-	templateInfo.uuid = UUID();
-	templateInfo.materialType = creationContext.materialType;
-	for (auto& shaderPassInfo : creationContext.shaderPassCreateInfos)
-	{
-		ecore::material::ShaderUUIDContext uuidContext;
-		add_shader_to_uuid_context(shaderPassInfo.vertexShaderPath, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.fragmentShaderPath, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.tessControlShader, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.tessEvaluationShader, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.geometryShader, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.computeShader, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.meshShader, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.taskShader, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.rayGenerationShader, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.rayIntersectionShader, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.rayAnyHitShader, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.rayClosestHit, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.rayMiss, uuidContext);
-		add_shader_to_uuid_context(shaderPassInfo.rayCallable, uuidContext);
-		ecore::material::ShaderPass shaderPass(uuidContext, shaderPassInfo.passType);
-		ecore::material::ShaderHandleContext& handleContext = shaderPass.get_shader_handle_context();
-		for (auto& uuid : shaderPass.get_shader_uuid_context().shaderUUIDs)
-		{
-			load_shader(uuid, handleContext);
-		}
-		templateInfo.shaderPassByItsType[shaderPass.get_type()] = shaderPass;
-	}
-	
-	std::string relativePath = "content/builtin/" + creationContext.materialTemplateName + ".aares";
-	io::URI absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), relativePath.c_str());
-	
-	ResourceData resData{};
-	resData.metadata.path = absolutePath;
-	resData.metadata.type = ResourceType::MATERIAL_TEMPLATE;
-	resData.metadata.objectName = _resourcePool.allocate<ecore::ObjectName>(creationContext.materialTemplateName.c_str());
-	resData.object = _resourcePool.allocate<ecore::MaterialTemplate>(templateInfo, resData.metadata.objectName);
-	resData.file = _resourcePool.allocate<resource::ResourceFile>(absolutePath);
-
-	_resourceDataTable.add_resource(&resData);
-
-	MaterialTemplateCreatedEvent event(static_cast<ecore::MaterialTemplate*>(resData.object));
-	_eventManager->trigger_event(event);
-
-	return resData.object;
 }
 
 template<>
@@ -175,7 +99,7 @@ ResourceAccessor<ecore::OpaquePBRMaterial> ResourceManager::create_new_resource(
 	resData.metadata.path = absoluteMaterialPath;
 	resData.metadata.type = ResourceType::MATERIAL;
 	resData.metadata.objectName = objectName;
-	resData.object = _resourcePool.allocate<ecore::OpaquePBRMaterial>(creationContext.materialSettings, objectName, creationContext.materialTemplateUUID);
+	resData.object = _resourcePool.allocate<ecore::OpaquePBRMaterial>(creationContext.materialSettings, objectName);
 	resData.file = _resourcePool.allocate<resource::ResourceFile>(absoluteMaterialPath);
 
 	_resourceDataTable.add_resource(&resData);
@@ -197,7 +121,7 @@ ResourceAccessor<ecore::TransparentMaterial> ResourceManager::create_new_resourc
 	resData.metadata.path = absoluteMaterialPath;
 	resData.metadata.type = ResourceType::MATERIAL;
 	resData.metadata.objectName = objectName;
-	resData.object = _resourcePool.allocate<ecore::TransparentMaterial>(creationContext.materialSettings, objectName, creationContext.materialTemplateUUID);
+	resData.object = _resourcePool.allocate<ecore::TransparentMaterial>(creationContext.materialSettings, objectName);
 	resData.file = _resourcePool.allocate<resource::ResourceFile>(absoluteMaterialPath);
 
 	_resourceDataTable.add_resource(&resData);
@@ -250,100 +174,6 @@ io::File* ResourceManager::read_from_disk(io::URI& path, bool isShader)
 	return file;
 }
 
-void ResourceManager::add_shader_to_uuid_context(io::URI& shaderPath, ecore::material::ShaderUUIDContext& shaderContext)
-{
-	if (std::string(shaderPath.c_str()).empty())
-	{
-		return;
-	}
-
-	io::URI absolutePath = shaderPath;
-	if (io::Utils::is_relative(shaderPath.c_str()))
-	{
-		absolutePath = io::Utils::get_absolute_path_to_file(_fileSystem, shaderPath);
-	}
-
-	if (!io::Utils::exists(_fileSystem, absolutePath))
-	{
-		LOG_ERROR("ResourceManager::create_new_resource<GeneralMaterialTemplate>: Path {} is invalid", absolutePath.c_str());
-		return;
-	}
-
-	if (_resourceDataTable.check_name_in_table(shaderPath.c_str()))
-	{
-		shaderContext.shaderUUIDs.push_back(_resourceDataTable.get_uuid_by_name(shaderPath.c_str()));
-		return;
-	}
-
-	ResourceData resData;
-	resData.metadata.type = ResourceType::SHADER;
-	resData.metadata.path = absolutePath;
-	resData.metadata.objectName = _resourcePool.allocate<ecore::ObjectName>(shaderPath.c_str());
-	resData.metadata.builtin = true;
-	shaderContext.shaderUUIDs.push_back(UUID());
-	_resourceDataTable.add_empty_resource(&resData, shaderContext.shaderUUIDs.back());
-}
-
-void ResourceManager::load_shader(UUID& shaderUUID, ecore::material::ShaderHandleContext& shaderContext)
-{
-	ResourceAccessor<ecore::Shader> shaderHandle = get_resource<ecore::Shader>(shaderUUID);
-	ecore::Shader* shaderObject = shaderHandle.get_resource();
-	if (shaderObject->get_shader_type() == rhi::ShaderType::UNDEFINED)
-	{
-		LOG_ERROR("GeneralMaterialTemplate::load_required_shaders(): Shader {} has undefined type.", shaderObject->get_path().c_str())
-		return;
-	}
-
-	switch (shaderObject->get_shader_type())
-	{
-		case rhi::ShaderType::VERTEX:
-			shaderContext.vertexShader = shaderHandle;
-			break;
-		case rhi::ShaderType::FRAGMENT:
-			shaderContext.fragmentShader = shaderHandle;
-			break;
-		case rhi::ShaderType::TESSELLATION_CONTROL:
-			shaderContext.tessControlShader = shaderHandle;
-			break;
-		case rhi::ShaderType::TESSELLATION_EVALUATION:
-			shaderContext.tessEvaluationShader = shaderHandle;
-			break;
-		case rhi::ShaderType::GEOMETRY:
-			shaderContext.geometryShader = shaderHandle;
-			break;
-		case rhi::ShaderType::COMPUTE:
-			shaderContext.computeShader = shaderHandle;
-			break;
-		case rhi::ShaderType::MESH:
-			shaderContext.meshShader = shaderHandle;
-			break;
-		case rhi::ShaderType::TASK:
-			shaderContext.taskShader = shaderHandle;
-			break;
-		case rhi::ShaderType::RAY_GENERATION:
-			shaderContext.rayGenerationShader = shaderHandle;
-			break;
-		case rhi::ShaderType::RAY_INTERSECTION:
-			shaderContext.rayIntersectionShader = shaderHandle;
-			break;
-		case rhi::ShaderType::RAY_ANY_HIT:
-			shaderContext.rayAnyHitShader = shaderHandle;
-			break;
-		case rhi::ShaderType::RAY_CLOSEST_HIT:
-			shaderContext.rayClosestHitShader = shaderHandle;
-			break;
-		case rhi::ShaderType::RAY_MISS:
-			shaderContext.rayMissShader = shaderHandle;
-			break;
-		case rhi::ShaderType::RAY_CALLABLE:
-			shaderContext.rayClosestHitShader = shaderHandle;
-			break;
-	}
-
-	ShaderLoadedEvent event(shaderObject);
-	_eventManager->trigger_event(event);
-}
-
 template <typename T>
 void ResourceManager::send_resource_loaded_event(T* resourceObject)
 {
@@ -354,7 +184,7 @@ template<>
 void ResourceManager::send_resource_loaded_event(ecore::StaticModel* resourceObject)
 {
 	LOG_INFO("Sending static model event")
-	StaticModelLoadedEvent event(resourceObject);
+	StaticModelLoadedInEngineEvent event(resourceObject);
 	_eventManager->enqueue_event(event);
 }
 
@@ -388,7 +218,7 @@ void ResourceManager::send_resource_created_event(ecore::Texture2D* resourceObje
 template<>
 void ResourceManager::send_resource_created_event(ecore::StaticModel* resourceObject)
 {
-	StaticModelCreatedEvent event(resourceObject);
+	StaticModelFirstCreationEvent event(resourceObject);
 	_eventManager->enqueue_event(event);
 }
 

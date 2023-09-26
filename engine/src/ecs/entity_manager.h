@@ -220,7 +220,7 @@ namespace ad_astris::ecs
 			template<typename Component>
 			void register_component(bool serializable)
 			{
-				TypeInfoTable::add_component_info<Component>();
+				TYPE_INFO_TABLE->add_component_info<Component>();
 
 				class TypedSerializer : public serializers::BaseSerializer									
 				{																							
@@ -251,7 +251,16 @@ namespace ad_astris::ecs
 			template<typename T>
 			void register_tag()
 			{
-				TypeInfoTable::add_tag<T>();
+				TYPE_INFO_TABLE->add_tag<T>();
+			}
+
+			bool is_entity_valid(Entity& entity)
+			{
+				std::scoped_lock<std::mutex> locker(_entityMutex);
+				auto it = _entityToItsInfoInArchetype.find(entity);
+				if (it != _entityToItsInfoInArchetype.end())
+					return true;
+				return false;
 			}
 		
 		private:
@@ -272,7 +281,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			void set_up_component_common(Entity& entity, T* componentValue)
 			{
-				UntypedComponent component(componentValue, TypeInfoTable::get_component_size<T>(), TypeInfoTable::get_component_id<T>());
+				UntypedComponent component(componentValue, TYPE_INFO_TABLE->get_component_size<T>(), TYPE_INFO_TABLE->get_component_id<T>());
 				EntityInArchetypeInfo& entityInArchetype = _entityToItsInfoInArchetype[entity];
 				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
 				std::scoped_lock<std::mutex> locker(_componentMutex);

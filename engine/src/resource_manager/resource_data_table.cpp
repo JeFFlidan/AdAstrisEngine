@@ -30,12 +30,11 @@ void resource::ResourceDataTable::load_table(BuiltinResourcesContext& context)
 	for (auto section : _config)
 	{
 		UUID uuid = section.get_option_value<uint64_t>("UUID");
-		LOG_INFO("UUID: {}", uuid)
 		if (check_uuid_in_table(uuid))
 			continue;
 		uint32_t nameID = section.get_option_value<uint64_t>("NameID");
 		std::string name = section.get_option_value<std::string>("Name");
-		LOG_INFO("NAME: {}", name)
+
 		bool builtin = section.get_option_value<bool>("Builtin");
 		ResourceData resData{};
 		if (builtin)
@@ -104,21 +103,13 @@ void resource::ResourceDataTable::save_resources()
 
 		uint8_t* data{ nullptr };
 		uint64_t size = 0;
-		LOG_INFO("Before object serialization {}", object->get_name()->get_full_name())
 		object->serialize(file);
-		LOG_INFO("File metadata: {}", file->get_metadata())
-		LOG_INFO("Before file serialization")
 		file->serialize(data, size);
 
-		LOG_INFO("Before openging stream")
 		io::Stream* stream = _fileSystem->open(file->get_file_path(), "wb");
-		LOG_INFO("Before writing")
 		stream->write(data, sizeof(uint8_t), size);
-		LOG_INFO("Before closing")
 		_fileSystem->close(stream);
-		LOG_INFO("Before deleting")
 		delete[] data;
-		LOG_INFO("Finish saving")
 	}
 }
 

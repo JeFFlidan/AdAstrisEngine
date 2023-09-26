@@ -28,7 +28,7 @@ namespace ad_astris::ecs
 			{
 				std::string componentName = get_type_name<T>();
 				
-				uint32_t id = TypeInfoTable::get_component_id<T>();
+				uint32_t id = TYPE_INFO_TABLE->get_component_id<T>();
 				auto it = _accessByComponentID.find(id);
 				if (it == _accessByComponentID.end())
 				{
@@ -55,7 +55,7 @@ namespace ad_astris::ecs
 			{
 				std::string componentName = get_type_name<T>();
 				
-				uint32_t id = TypeInfoTable::get_component_id<T>();
+				uint32_t id = TYPE_INFO_TABLE->get_component_id<T>();
 				auto it = _accessByComponentID.find(id);
 				if (it == _accessByComponentID.end())
 				{
@@ -91,7 +91,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			void load_subchunks()
 			{
-				uint32_t typeID = TypeInfoTable::get_component_id<T>();
+				uint32_t typeID = TYPE_INFO_TABLE->get_component_id<T>();
 				if (_loadedSubchunks.find(typeID) != _loadedSubchunks.end())
 					return;
 

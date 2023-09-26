@@ -35,33 +35,4 @@ namespace ad_astris::resource
 			EVENT_TYPE_DECL(Texture2DLoadedEvent)
 			Texture2DLoadedEvent(ecore::Texture2D* texture) : Texture2DEvent(texture) { }
 	};
-
-	class MaterialTemplateLoadedEvent : public events::IEvent, public impl::MaterialTemplateEvent
-	{
-		public:
-			EVENT_TYPE_DECL(MaterialTemplateLoadedEvent)
-			MaterialTemplateLoadedEvent(ecore::MaterialTemplate* materialTemplate) : MaterialTemplateEvent(materialTemplate) { }
-	};
-
-	class MaterialTemplateCreatedEvent : public events::IEvent, public impl::MaterialTemplateEvent
-	{
-		public:
-			EVENT_TYPE_DECL(MaterialTemplateCreatedEvent)
-			MaterialTemplateCreatedEvent(ecore::MaterialTemplate* materialTemplate) : MaterialTemplateEvent(materialTemplate) { }
-	};
-
-	class ShaderLoadedEvent : public events::IEvent
-	{
-		public:
-			EVENT_TYPE_DECL(ShaderLoadedEvent)
-			ShaderLoadedEvent(ecore::Shader* shader) : _shader(shader) { }
-
-			ecore::ShaderHandle get_shader_handle()
-			{
-				return _shader;
-			}
-
-		private:
-			ecore::Shader* _shader{ nullptr };
-	};
 }

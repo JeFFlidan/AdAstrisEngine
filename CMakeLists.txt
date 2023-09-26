@@ -8,6 +8,7 @@ set(DIR_THIRD_PARTY ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 set(DIR_BIN ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(DIR_ENGINE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/engine/src)
 set(DIR_DEVTOOLS ${CMAKE_CURRENT_SOURCE_DIR}/engine/devtools)
+set(DIR_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DIR_BIN})
 #set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
 
@@ -32,6 +33,8 @@ if (MSVC)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${DIR_BIN})
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${DIR_BIN})
 endif()
+
+add_subdirectory(${DIR_ROOT}/engine/shaders)
 
 if (BUILD_THIRD_PARTY)
     add_subdirectory(third_party)
@@ -65,3 +68,4 @@ find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin ${DIR
 include_directories(${DIR_THIRD_PARTY})
 include_directories(${DIR_THIRD_PARTY}/json)
 include_directories(${DIR_ENGINE_SRC})
+include_directories(${DIR_ROOT}/engine)

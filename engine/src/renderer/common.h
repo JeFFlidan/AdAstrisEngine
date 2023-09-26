@@ -9,12 +9,12 @@ namespace ad_astris::renderer::impl
 {
 	struct GPUCameraData
 	{
-		glm::mat4 view;
-		glm::mat4 oldView;
-		glm::mat4 proj;
-		glm::mat4 viewproj;
-		glm::mat4 invViewProj;
-		glm::vec4 cameraPosition;
+		XMFLOAT4X4 view;
+		XMFLOAT4X4 oldView;
+		XMFLOAT4X4 proj;
+		XMFLOAT4X4 viewproj;
+		XMFLOAT4X4 invViewProj;
+		XMFLOAT4 cameraPosition;
 	};
 
 	struct GPUSceneData
@@ -35,7 +35,7 @@ namespace ad_astris::renderer::impl
 
 	struct GPUCullData
 	{
-		glm::mat4 view;
+		XMFLOAT4X4 view;
 		float P00, P11, znear, zfar; // symmetric projection parameters
 		float frustum[4];  // data for left/right/top/bottom frustum planes
 		float lodBase, lodStep;  // lod distance i = base * pow(step, i)
@@ -75,17 +75,17 @@ namespace ad_astris::renderer::impl
 		bool frustumCull;
 		float drawDist;
 		bool aabb;
-		glm::vec3 aabbmin;
-		glm::vec3 aabbmax;
-		glm::mat4 projMatrix;
-		glm::mat4 viewMatrix;
+		XMFLOAT3 aabbmin;
+		XMFLOAT3 aabbmax;
+		XMFLOAT4X4 projMatrix;
+		XMFLOAT4X4 viewMatrix;
 	};
 
 	struct PointLight
 	{
-		glm::vec4 color;
-		glm::vec4 locationAndAttenuationRadius;
-		glm::mat4 lightSpaceMat[6];
+		XMFLOAT4 color;
+		XMFLOAT4 locationAndAttenuationRadius;
+		XMFLOAT4X4 lightSpaceMat[6];
 		float intensity;		// In lm
 		bool castShadows;
 		bool isVisible;
@@ -98,9 +98,9 @@ namespace ad_astris::renderer::impl
 
 	struct DirectionalLight
 	{
-		glm::vec4 color;
-		glm::vec4 direction;
-		glm::mat4 lightSpaceMat;
+		XMFLOAT4 color;
+		XMFLOAT4 direction;
+		XMFLOAT4X4 lightSpaceMat;
 		float intensity;		// In candelas
 		bool isVisible;
 		bool castShadows;
@@ -112,10 +112,10 @@ namespace ad_astris::renderer::impl
 
 	struct SpotLight
 	{
-		glm::vec4 color;
-		glm::vec4 locationAndDistance;
-		glm::vec4 rotationAndInnerConeRadius;
-		glm::mat4 lightSpaceMat;
+		XMFLOAT4 color;
+		XMFLOAT4 locationAndDistance;
+		XMFLOAT4 rotationAndInnerConeRadius;
+		XMFLOAT4X4 lightSpaceMat;
 		float intensity;		// In lm
 		float outerConeRadius;
 		bool castShadows;

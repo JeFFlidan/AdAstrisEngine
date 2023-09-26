@@ -2,8 +2,7 @@
 
 #include "engine_core/uuid.h"
 #include "rhi/resources.h"
-#include <glm/glm/vec3.hpp>
-#include <glm/glm/vec2.hpp>
+#include "core/math_base.h"
 #include <vector>
 #include <string>
 
@@ -12,17 +11,17 @@ namespace ad_astris::ecore::model
 	// Describes vertex with position and tex coord
 	struct VertexF32PC
 	{
-		glm::vec3 position;
-		glm::vec2 texCoord;
+		XMFLOAT3 position;
+		XMFLOAT2 texCoord;
 	};
 
 	// Describes vertex with position, normal, tangent and tex coord
 	struct VertexF32PNTC
 	{
-		glm::vec3 position;
-		glm::vec3 normal;
-		glm::vec3 tangent;
-		glm::vec2 texCoord;
+		XMFLOAT3 position;
+		XMFLOAT3 normal;
+		XMFLOAT3 tangent;
+		XMFLOAT2 texCoord;
 	};
 
 	enum class VertexFormat
@@ -34,9 +33,9 @@ namespace ad_astris::ecore::model
 
 	struct ModelBounds
 	{
-		glm::vec3 origin;
+		XMFLOAT3 origin;
 		float radius;
-		glm::vec3 extents;
+		XMFLOAT3 extents;
 	};
 	
 	struct StaticModelInfo

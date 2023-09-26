@@ -112,4 +112,16 @@ namespace ad_astris::ecore
 
 			IMPLEMENT_ENGINE_OBJECT_EVENT(SpotLightCreatedEvent)
 	};
+
+	class CameraCreatedEvent : public events::IEvent
+	{
+		public:
+			EVENT_TYPE_DECL(CameraCreatedEvent)
+			CameraCreatedEvent(ecs::Entity entity) : _entity(entity) { }
+
+			ecs::Entity get_entity() { return _entity; }
+
+		private:
+			ecs::Entity _entity;
+	};
 }

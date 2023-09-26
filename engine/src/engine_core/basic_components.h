@@ -1,17 +1,16 @@
 #pragma once
 
 #include "ecs/ecs.h"
-#include <glm/glm/vec2.hpp>
-#include <glm/glm/vec3.hpp>
-#include <glm/glm/vec4.hpp>
+#include "core/math_base.h"
 
 namespace ad_astris::ecore
 {
 	struct TransformComponent
 	{
-		glm::vec3 location{ 0.0f };
-		glm::vec3 rotation{ 0.0f };
-		glm::vec3 scale{ 1.0f };
+		XMFLOAT3 location{ 0.0f, 0.0f, 0.0f };
+		XMFLOAT4 rotation{ 0.0f, 0.0f, 0.0f, 1.0f };
+		XMFLOAT3 scale{ 1.0f, 1.0f, 1.0f };
+		XMFLOAT4X4 world = math::IDENTITY_MATRIX;
 	};
 	
 	struct ModelComponent
@@ -46,7 +45,7 @@ namespace ad_astris::ecore
 
 	struct ColorComponent
 	{
-		glm::vec4 color;
+		XMFLOAT4 color;
 	};
 
 	struct AttenuationRadiusComponent
@@ -90,6 +89,26 @@ namespace ad_astris::ecore
 		uint32_t width;
 		uint32_t height;
 	};
+
+	struct CameraComponent
+	{
+		float zNear = 0.1f;
+		float zFar = 10000.0f;
+		float fov = 70.0f;
+		bool isActive{ false };
+		float movementSpeed{ 10.0f };
+		float mouseSensitivity{ 0.1f };
+
+		XMFLOAT3 eye = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		XMFLOAT3 at = XMFLOAT3(0.0f, 0.0f, 1.0f);
+		XMFLOAT3 up = XMFLOAT3(0.0f, 1.0f, 0.0f);
+		XMFLOAT4X4 view;
+		XMFLOAT4X4 projection;
+		XMFLOAT4X4 viewProjection;
+		XMFLOAT4X4 inverseView;
+		XMFLOAT4X4 inverseProjection;
+		XMFLOAT4X4 inverseViewProjection;
+	};
 	
 	struct StaticObjectTag { };
 	struct MovableObjectTag { };
@@ -115,6 +134,7 @@ namespace ad_astris::ecore
 		entityManager->register_component<AffectWorldComponent>(true);
 		entityManager->register_component<VisibleComponent>(true);
 		entityManager->register_component<ExtentComponent>(true);
+		entityManager->register_component<CameraComponent>(true);
 		entityManager->register_tag<StaticObjectTag>();
 		entityManager->register_tag<MovableObjectTag>();
 		entityManager->register_tag<PointLightTag>();
@@ -139,3 +159,4 @@ REFLECT_COMPONENT(ad_astris::ecore::CastShadowComponent, castShadows)
 REFLECT_COMPONENT(ad_astris::ecore::AffectWorldComponent, isWorldAffected)
 REFLECT_COMPONENT(ad_astris::ecore::VisibleComponent, isVisible)
 REFLECT_COMPONENT(ad_astris::ecore::ExtentComponent, width, height)
+REFLECT_COMPONENT(ad_astris::ecore::CameraComponent, zNear, zFar, fov, isActive, movementSpeed, mouseSensitivity)

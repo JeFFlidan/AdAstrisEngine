@@ -25,6 +25,7 @@ namespace ad_astris::ecore
 			ecs::EntityManager* get_entity_manager();
 			void build_entities();
 			void add_entity(ecs::Entity& entity);
+			ecs::Entity create_entity(ecs::EntityCreationContext& creationContext);
 
 		private:
 			World* _owningWorld{ nullptr }; // ?

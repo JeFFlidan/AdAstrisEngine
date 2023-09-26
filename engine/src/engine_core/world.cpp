@@ -3,19 +3,21 @@
 using namespace ad_astris;
 using namespace ecore;
 
-void World::init()
+World::World(WorldCreationContext& creationContext) : _eventManager(creationContext.eventManager), _taskComposer(creationContext.taskComposer)
 {
 	_entityManager = std::make_unique<ecs::EntityManager>();
 }
 
-void World::cleanup()
+ecs::Entity World::create_entity(ecs::EntityCreationContext& creationContext)
 {
-
+	ecs::Entity entity = _entityManager->create_entity(creationContext);
+	_currentLevel->add_entity(entity);
+	return entity;
 }
 
-ecs::EntityManager* World::get_entity_manager()
+void World::add_entity(ecs::Entity& entity)
 {
-	return _entityManager.get();
+	_currentLevel->add_entity(entity);
 }
 
 void World::add_level(Level* level, bool isActive, bool isDefault)
@@ -23,7 +25,10 @@ void World::add_level(Level* level, bool isActive, bool isDefault)
 	level->set_owning_world(this);
 	_allLevels.insert(level);
 	if (isActive)
+	{
 		_activeLevels.insert(level);
+		_currentLevel = level;
+	}
 	if (isDefault)
 		_defaultLevel = level;
 }

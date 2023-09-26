@@ -12,7 +12,6 @@
 #include <cgltf/cgltf.h>
 #include <complex>
 #include <json/json.hpp>
-#include <glm/glm/gtc/type_ptr.hpp>
 
 #include <filesystem>
 
@@ -125,9 +124,9 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 			cgltf_attribute* attributes = primitive.attributes;
 			size_t attributesCount = primitives->attributes_count;
 
-			glm::vec3* position = nullptr;
-			glm::vec3* normal = nullptr;
-			glm::vec2* texCoord = nullptr;
+			XMFLOAT3* position = nullptr;
+			XMFLOAT3* normal = nullptr;
+			XMFLOAT2* texCoord = nullptr;
 			size_t count = 0;
 			for (size_t q = 0; q != attributesCount; ++q)
 			{
@@ -137,7 +136,7 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 					case cgltf_attribute_type_position:
 					{
 						cgltf_accessor* accessor = attribute.data;
-						position = new glm::vec3[accessor->count];
+						position = new XMFLOAT3[accessor->count];
 						cgltf_buffer_view* bufferView = accessor->buffer_view;
 						float* bufferData = static_cast<float*>(bufferView->buffer->data);
 						bufferData += bufferView->offset / sizeof(float);
@@ -151,7 +150,7 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 					case cgltf_attribute_type_normal:
 					{
 						cgltf_accessor* accessor = attribute.data;
-						normal = new glm::vec3[accessor->count];
+						normal = new XMFLOAT3[accessor->count];
 
 						cgltf_buffer_view* bufferView = accessor->buffer_view;
 						float* bufferData = static_cast<float*>(bufferView->buffer->data);
@@ -164,7 +163,7 @@ void resource::ResourceConverter::convert_to_model_info_from_gltf(io::URI& path,
 					case cgltf_attribute_type_texcoord:
 					{
 						cgltf_accessor* accessor = attribute.data;
-						texCoord = new glm::vec2[accessor->count];
+						texCoord = new XMFLOAT2[accessor->count];
 						
 						cgltf_buffer_view* bufferView = accessor->buffer_view;
 						float* bufferData = static_cast<float*>(bufferView->buffer->data);

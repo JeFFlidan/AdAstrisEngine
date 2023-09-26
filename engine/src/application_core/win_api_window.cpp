@@ -1,5 +1,6 @@
 ﻿#include "win_api_window.h"
 #include "window_events.h"
+#include "editor_events.h"
 
 #include <iostream>
 #include <memory>
@@ -7,20 +8,15 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-using namespace ad_astris::acore;
+using namespace ad_astris;
+using namespace acore;
 using namespace impl;
 
 LRESULT CALLBACK window_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	using namespace ad_astris;
-
-	if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
-	{
-		return true;
-	}
+	ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam);
 	
 	auto window = reinterpret_cast<WinApiWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-	WindowEvents windowEvents;
 	
 	switch (uMsg)
 	{
@@ -50,62 +46,7 @@ LRESULT CALLBACK window_proc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			window->set_height(resizedEvent.get_height());
 			break;
 		}
-		case WM_KEYDOWN:
-		{
-			window->parse_keys(windowEvents.keyDownEvent, wParam);
-			break;
-		}
-		case WM_KEYUP:
-		{
-			window->parse_keys(windowEvents.keyUpEvent, wParam);
-			break;
-		}
-		case WM_LBUTTONDOWN:
-		{
-			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonDownEvent, MouseButton::LEFT);
-			break;
-		}
-		case WM_LBUTTONUP:
-		{
-			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonUpEvent, MouseButton::LEFT);
-			break;
-		}
-		case WM_MBUTTONDOWN:
-		{
-			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonDownEvent, MouseButton::MIDDLE);
-			break;
-		}
-		case WM_MBUTTONUP:
-		{
-			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonUpEvent, MouseButton::MIDDLE);
-			break;
-		}
-		case WM_RBUTTONDOWN:
-		{
-			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonDownEvent, MouseButton::RIGHT);
-			break;
-		}
-		case WM_RBUTTONUP:
-		{
-			window->setup_mouse_button_down_up_event(&windowEvents.mouseButtonUpEvent, MouseButton::RIGHT);
-			break;
-		}
-		case WM_MOUSEMOVE:
-		{
-			if (wParam & MK_LBUTTON)
-			{
-				window->setup_mouse_move_with_pressed_button_event(windowEvents.mouseMoveLeftButton);
-			}
-			else if (wParam & MK_RBUTTON)
-			{
-				window->setup_mouse_move_with_pressed_button_event(windowEvents.mouseMoveRightButton);
-			}
-			break;
-		}
 	}
-
-	if (window)
-		windowEvents.enqueue_events(window->get_event_manager());
 
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
@@ -136,8 +77,8 @@ WinApiWindow::WinApiWindow(WindowCreationContext& creationContext, events::Event
 	rect.bottom = rect.top + height;
 
 	AdjustWindowRect(&rect, style, false);
-
 	LPVOID lpData = static_cast<LPVOID>(this);
+
 	_hWnd = CreateWindowEx(
 		0,
 		_className,
@@ -154,6 +95,13 @@ WinApiWindow::WinApiWindow(WindowCreationContext& creationContext, events::Event
 	);
 
 	ShowWindow(_hWnd, SW_SHOW);
+	
+	QueryPerformanceFrequency(&_ticksPerSecond);
+	QueryPerformanceCounter(&_lastTickCount);
+	
+	_rawInputParser.init();
+	subscribe_to_events();
+	_cursor = GetCursor();
 }
 
 WinApiWindow::~WinApiWindow()
@@ -164,6 +112,9 @@ WinApiWindow::~WinApiWindow()
 bool WinApiWindow::process_messages()
 {
 	MSG msg{};
+	
+	InputEvent inputEvent;
+	_rawInputParser.read_raw_inputs(inputEvent);
 
 	while (PeekMessage(&msg, nullptr, 0u, 0u, PM_REMOVE))
 	{
@@ -178,6 +129,35 @@ bool WinApiWindow::process_messages()
 		DispatchMessage(&msg);
 	}
 
+	XMFLOAT2 cursorPos = get_cursor_coords_relative_to_window();
+	inputEvent.set_position(cursorPos);
+	inputEvent.set_viewport_state(_viewportState.isHovered);
+	_eventManager->enqueue_event(inputEvent);
+	
+	QueryPerformanceCounter(&_currentTickCount);
+	uint64_t elapsedTicks = _currentTickCount.QuadPart - _lastTickCount.QuadPart;
+	uint64_t elapsedTicksMicroseconds = elapsedTicks * 1000000 / _ticksPerSecond.QuadPart;
+	float deltaTime = (float)elapsedTicksMicroseconds / 1000000.0f;
+	_lastTickCount = _currentTickCount;
+	DeltaTimeUpdateEvent event(deltaTime);
+	_eventManager->trigger_event(event);			// Maybe enqueue
+
+	if (_viewportState.isHovered && WinApiUtils::is_key_down(VK_RBUTTON))
+	{
+		SetCursor(NULL);
+		RECT viewportRect;
+		viewportRect.left = _viewportState.viewportMin.x;
+		viewportRect.top = _viewportState.viewportMin.y;
+		viewportRect.right = _viewportState.viewportMax.x;
+		viewportRect.bottom = _viewportState.viewportMax.y;
+		ClipCursor(&viewportRect);
+	}
+	else
+	{
+		SetCursor(_cursor);
+		ClipCursor(NULL);
+	}
+
 	return true;
 }
 
@@ -186,178 +166,21 @@ void WinApiWindow::close()
 	DestroyWindow(_hWnd);
 }
 
-void WinApiWindow::parse_keys(KeyEvent& keyEvent, WPARAM wParam)
-{
-	switch (wParam)
-	{
-		case VK_SPACE:
-			keyEvent.add_key(Key::SPACE);
-			break;
-		case VK_TAB:
-			keyEvent.add_key(Key::TAB);
-			break;
-		case VK_ESCAPE:
-			keyEvent.add_key(Key::ESCAPE);
-			break;
-		case VK_RETURN:
-			keyEvent.add_key(Key::ENTER);
-			break;
-		case VK_LEFT:
-			keyEvent.add_key(Key::LEFT);
-			break;
-		case VK_UP:
-			keyEvent.add_key(Key::UP);
-			break;
-		case VK_RIGHT:
-			keyEvent.add_key(Key::RIGHT);
-			break;
-		case VK_DOWN:
-			keyEvent.add_key(Key::DOWN);
-			break;
-		case VK_SHIFT:
-			keyEvent.add_key(Key::LEFT_SHIFT);
-			break;
-		case VK_MENU:
-			keyEvent.add_key(Key::LEFT_ALT);
-			break;
-		case VK_CONTROL:
-			keyEvent.add_key(Key::LEFT_CTRL);
-			break;
-		case 0x30:
-			keyEvent.add_key(Key::_0);
-			break;
-		case 0x31:
-			keyEvent.add_key(Key::_1);
-			break;
-		case 0x32:
-			keyEvent.add_key(Key::_2);
-			break;
-		case 0x33:
-			keyEvent.add_key(Key::_3);
-			break;
-		case 0x34:
-			keyEvent.add_key(Key::_4);
-			break;
-		case 0x35:
-			keyEvent.add_key(Key::_5);
-			break;
-		case 0x36:
-			keyEvent.add_key(Key::_6);
-			break;
-		case 0x37:
-			keyEvent.add_key(Key::_7);
-			break;
-		case 0x38:
-			keyEvent.add_key(Key::_8);
-			break;
-		case 0x39:
-			keyEvent.add_key(Key::_9);
-			break;
-		case 0x41:
-			keyEvent.add_key(Key::A);
-			break;
-		case 0x42:
-			keyEvent.add_key(Key::B);
-			break;
-		case 0x43:
-			keyEvent.add_key(Key::C);
-			break;
-		case 0x44:
-			keyEvent.add_key(Key::D);
-			break;
-		case 0x45:
-			keyEvent.add_key(Key::E);
-			break;
-		case 0x46:
-			keyEvent.add_key(Key::F);
-			break;
-		case 0x47:
-			keyEvent.add_key(Key::G);
-			break;
-		case 0x48:
-			keyEvent.add_key(Key::H);
-			break;
-		case 0x49:
-			keyEvent.add_key(Key::I);
-			break;
-		case 0x4A:
-			keyEvent.add_key(Key::J);
-			break;
-		case 0x4B:
-			keyEvent.add_key(Key::K);
-			break;
-		case 0x4C:
-			keyEvent.add_key(Key::L);
-			break;
-		case 0x4D:
-			keyEvent.add_key(Key::M);
-			break;
-		case 0x4E:
-			keyEvent.add_key(Key::N);
-			break;
-		case 0x4F:
-			keyEvent.add_key(Key::O);
-			break;
-		case 0x50:
-			keyEvent.add_key(Key::P);
-			break;
-		case 0x51:
-			keyEvent.add_key(Key::Q);
-			break;
-		case 0x52:
-			keyEvent.add_key(Key::R);
-			break;
-		case 0x53:
-			keyEvent.add_key(Key::S);
-			break;
-		case 0x54:
-			keyEvent.add_key(Key::T);
-			break;
-		case 0x55:
-			keyEvent.add_key(Key::U);
-			break;
-		case 0x56:
-			keyEvent.add_key(Key::V);
-			break;
-		case 0x57:
-			keyEvent.add_key(Key::W);
-			break;
-		case 0x58:
-			keyEvent.add_key(Key::X);
-			break;
-		case 0x59:
-			keyEvent.add_key(Key::Y);
-			break;
-		case 0x5A:
-			keyEvent.add_key(Key::Z);
-			break;
-	}
-}
-
-void WinApiWindow::setup_mouse_button_down_up_event(MouseButtonEvent* event, MouseButton button)
-{
-	POINT cursorPosition = get_cursor_coords_relative_to_window();
-	*event = MouseButtonEvent(button, cursorPosition.x, cursorPosition.y);
-}
-
-void WinApiWindow::setup_mouse_move_with_pressed_button_event(MouseMoveWithPressedButtonEvent& mouseMoveButtonEvent)
-{
-	POINT cursorPos = get_cursor_coords_relative_to_window();
-	mouseMoveButtonEvent.set_event_is_valid();
-	mouseMoveButtonEvent.set_x_position(cursorPos.x);
-	mouseMoveButtonEvent.set_y_position(cursorPos.y);
-}
-
-POINT WinApiWindow::get_cursor_coords_relative_to_window()
+XMFLOAT2 WinApiWindow::get_cursor_coords_relative_to_window()
 {
 	POINT point;
-	if (!GetCursorPos(&point))
+	if (!GetCursorPos(&point) || !ScreenToClient(_hWnd, &point))
 	{
-		return POINT();
+		return XMFLOAT2(0.0, 0.0);
 	}
-	if (!ScreenToClient(_hWnd, &point))
+	return XMFLOAT2(point.x, point.y);
+}
+
+void WinApiWindow::subscribe_to_events()
+{
+	events::EventDelegate<ViewportHoverEvent> delegate1 = [&](ViewportHoverEvent& event)
 	{
-		return POINT();
-	}
-	return point;
+		_viewportState = event.get_viewport_state();
+	};
+	_eventManager->subscribe(delegate1);
 }

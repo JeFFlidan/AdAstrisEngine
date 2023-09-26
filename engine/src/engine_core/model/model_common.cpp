@@ -61,9 +61,9 @@ model::StaticModelInfo model::Utils::unpack_static_model_info(std::string& strMe
 	data.resize(7);
 	data = metaData["bounds"].get<std::vector<float>>();
 	
-	info.bounds.origin = glm::vec3(data[0], data[1], data[2]);
+	info.bounds.origin = XMFLOAT3(data[0], data[1], data[2]);
 	info.bounds.radius = data[3];
-	info.bounds.extents = glm::vec3(data[4], data[5], data[6]);
+	info.bounds.extents = XMFLOAT3(data[4], data[5], data[6]);
 
 	return info;
 }

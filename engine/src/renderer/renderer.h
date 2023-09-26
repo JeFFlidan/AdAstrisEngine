@@ -26,11 +26,13 @@ namespace ad_astris::renderer::impl
 			virtual void init(RendererInitializationContext& rendererInitContext) override;
 			virtual void cleanup() override;
 
+			virtual void set_new_world(ecore::World* world) override { _world = world; }
+
 			virtual void bake() override;
-			virtual void draw() override;
+			virtual void draw(DrawContext& drawContext) override;
 		
 		private:
-			std::unique_ptr<MaterialManager> _materialManager{ nullptr };
+			//std::unique_ptr<MaterialManager> _materialManager{ nullptr };
 			std::unique_ptr<SceneManager> _sceneManager{ nullptr };
 			ecore::RendererSubsettings* _rendererSubsettings{ nullptr };
 			rhi::IEngineRHI* _rhi{ nullptr };
@@ -42,20 +44,18 @@ namespace ad_astris::renderer::impl
 			events::EventManager* _eventManager{ nullptr };
 			tasks::TaskComposer* _taskComposer{ nullptr };
 			acore::IWindow* _mainWindow{ nullptr };
-			bool* _isRunning{ nullptr };
-			
-			std::unique_ptr<TriangleTest> _triangleTest{ nullptr };
+			ecore::World* _world{ nullptr };
+
+			std::vector<std::unique_ptr<rcore::IRenderPassExecutor>> _renderPassExecutors;
 
 			rhi::Sampler _samplers[SAMPLER_COUNT];
-
-			rhi::SwapChain _swapChain;
-
+		
 			uint32_t _frameIndex{ 0 };
 
 			void get_current_frame_index();
-			void create_swap_chain();
 			void create_samplers();
-		
-			void test_rhi();
+			void create_uniform_buffers();
+			void setup_cameras(DrawContext& preDrawContext);
+			void setup_frame_data(DrawContext& preDrawContext);
 	};
 }

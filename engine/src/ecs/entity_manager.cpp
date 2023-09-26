@@ -4,6 +4,8 @@
 
 using namespace ad_astris::ecs;
 
+constexpr uint32_t COMPONENT_SIZE = 2048;
+
 ArchetypeHandle EntityManager::create_archetype(ArchetypeCreationContext& context)
 {
 	if (context._componentIDs.empty())
@@ -157,14 +159,14 @@ Entity EntityManager::build_entity_from_json(UUID& uuid, std::string& json)
 	for (auto& componentInfo : jsonWithComponents.items())
 	{
 		std::string componentName = componentInfo.key();
-		uint32_t typeId = TypeInfoTable::get_component_id(componentName);
+		uint32_t typeId = TYPE_INFO_TABLE->get_component_id(componentName);
 		serializers::BaseSerializer* serializer = serializers::get_table()->get_serializer(typeId);
 		serializer->deserialize(creationContext, componentInfo.value());
 	}
 
 	for (auto& tagName : tagNames)
 	{
-		creationContext._tagIDs.push_back(TypeInfoTable::get_tag_id(tagName));
+		creationContext._tagIDs.push_back(TYPE_INFO_TABLE->get_tag_id(tagName));
 	}
 
 	Entity entity = create_entity(creationContext, uuid);
@@ -177,7 +179,7 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 	Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
 	uint32_t column = entityInArchetype.column;
 	uint32_t componentsNumberInArchetype = archetype._chunkStructure.componentIds.size();
-	uint8_t componentPtr[constants::MAX_COMPONENT_SIZE];
+	uint8_t componentPtr[COMPONENT_SIZE];
 	
 	nlohmann::json componentsJson;
 	
@@ -201,7 +203,7 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 	tagNames.reserve(tagIDs.size());
 	for (auto& tagID : tagIDs)
 	{
-		tagNames.push_back(TypeInfoTable::get_tag_name(tagID));
+		tagNames.push_back(TYPE_INFO_TABLE->get_tag_name(tagID));
 	}
 
 	entityJson["tags"] = tagNames;

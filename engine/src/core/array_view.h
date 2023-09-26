@@ -39,10 +39,10 @@ namespace ad_astris
 		public:
 			ConstArrayView(const T* data, size_t size) : _data(data), _size(size) { }
 		
-			T operator[](size_t index) const
+			const T* operator[](size_t index) const
 			{
 				assert(index < _size);
-				return _data[index];
+				return &_data[index];
 			}
 
 			const T* data() const

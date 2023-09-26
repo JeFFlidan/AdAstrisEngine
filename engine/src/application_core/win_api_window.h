@@ -1,8 +1,10 @@
 ﻿#pragma once
 
 #include "window_events.h"
+#include "editor_events.h"
 #include "events/event_manager.h"
 #include "window.h"
+#include "win_api_raw_input_parser.h"
 #include <windows.h>
 
 namespace ad_astris::acore::impl
@@ -28,11 +30,6 @@ namespace ad_astris::acore::impl
 			void set_width(uint32_t width) { _width = width; }
 			void set_height(uint32_t height) { _height = height; }
 
-			void parse_keys(KeyEvent& keyEvent, WPARAM wParam);
-			void setup_mouse_button_down_up_event(MouseButtonEvent* event, MouseButton button);
-			void setup_mouse_move_with_pressed_button_event(MouseMoveWithPressedButtonEvent& mouseMoveButtonEvent);
-			POINT get_cursor_coords_relative_to_window();
-
 			events::EventManager* get_event_manager()
 			{
 				return _eventManager;
@@ -53,8 +50,19 @@ namespace ad_astris::acore::impl
 			uint32_t _width;
 			uint32_t _height;
 			bool _isRunning{ true };
+
+			LARGE_INTEGER _ticksPerSecond;
+			LARGE_INTEGER _lastTickCount;
+			LARGE_INTEGER _currentTickCount;
+
+			WinApiRawInputParser _rawInputParser;
 		
 			events::EventManager* _eventManager{ nullptr };
+			ViewportState _viewportState;
+			HCURSOR _cursor;
+		
+			XMFLOAT2 get_cursor_coords_relative_to_window();
+			void subscribe_to_events();
 	};
 }
 

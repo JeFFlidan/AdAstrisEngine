@@ -19,7 +19,7 @@ namespace ad_astris::vulkan
 
 			VkSwapchainKHR get_swap_chain() { return _swapChain.swapchain; }
 			VkFormat get_format() { return _swapChain.image_format; }
-			uint32_t get_buffers_count() { return _swapChain.get_images().value().size(); }
+			uint32_t get_buffers_count() { return _bufferCount; }
 			uint32_t get_width() { return _swapChainInfo.width; }
 			uint32_t get_height() { return _swapChainInfo.height; }
 
@@ -43,6 +43,7 @@ namespace ad_astris::vulkan
 			rhi::SwapChainInfo _swapChainInfo;
 			std::vector<VkImageView> _imageViews;
 			std::vector<VkImage> _images;
+			uint32_t _bufferCount{ 0 };
 		
 			void create_swap_chain_internal(VkSwapchainKHR oldSwapChain = VK_NULL_HANDLE);
 	};

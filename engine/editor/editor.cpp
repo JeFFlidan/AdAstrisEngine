@@ -29,24 +29,28 @@ void Editor::init(EditorInitContext& initContext)
 	rhi::UIWindowBackendCallbacks::ImGuiAllocators imGuiAllocators = callbacks->getImGuiAllocators();
 	ImGui::SetAllocatorFunctions(imGuiAllocators.allocFunc, imGuiAllocators.freeFunc);
 
-	ImGui::LoadIniSettingsFromDisk((_fileSystem->get_engine_root_path() + "/configs/editor.ini").c_str());
+	ImGui::LoadIniSettingsFromDisk((_fileSystem->get_engine_root_path() + "/configs/ui/editor.ini").c_str());
 	
 	_uiBeginFrameCallback = callbacks->beginFrameCallback;
+
+	UIWindowInitContext uiWindowInitContext;
+	uiWindowInitContext.eventManager = _eventManager;
+	uiWindowInitContext.fileSystem = _fileSystem;
 	
 	auto dockingWindow = std::make_shared<uicore::DockingWindow>();
 	dockingWindow->set_window_size(initContext.mainWindow->get_width(), initContext.mainWindow->get_height());
 	_uiWindows.push_back(dockingWindow);
-	_uiWindows.emplace_back(new ViewportWindow(callbacks->getViewportImageCallback));
-	_uiWindows.emplace_back(new ContentBrowserWindow());
-	_uiWindows.emplace_back(new PropertiesWindow());
-	_uiWindows.emplace_back(new OutlinerWindow());
+	_uiWindows.emplace_back(new ViewportWindow(uiWindowInitContext,callbacks->getViewportImageCallback));
+	_uiWindows.emplace_back(new ContentBrowserWindow(uiWindowInitContext));
+	_uiWindows.emplace_back(new PropertiesWindow(uiWindowInitContext));
+	_uiWindows.emplace_back(new OutlinerWindow(uiWindowInitContext));
 
 	uicore::Utils::setup_dark_theme();
 }
 
 void Editor::cleanup()
 {
-	ImGui::SaveIniSettingsToDisk((_fileSystem->get_engine_root_path() + "/configs/editor.ini").c_str());
+	ImGui::SaveIniSettingsToDisk((_fileSystem->get_engine_root_path() + "/configs/ui/editor.ini").c_str());
 }
 
 void Editor::draw()

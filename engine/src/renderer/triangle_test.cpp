@@ -3,7 +3,8 @@
 
 using namespace ad_astris::renderer::impl;
 
-TriangleTest::TriangleTest(rhi::IEngineRHI* rhi, io::FileSystem* fileSystem, rcore::IShaderManager* shaderManager, uint32_t width, uint32_t height) : _rhi(rhi)
+TriangleTest::TriangleTest(RenderingInitContext& initContext, io::FileSystem* fileSystem, rcore::IShaderManager* shaderManager)
+	: RenderingBase(initContext)
 {
 	rhi::Shader* vertexShader = shaderManager->load_shader("engine/shaders/triangleVS.hlsl", rhi::ShaderType::VERTEX);
 	auto fragmentShader = shaderManager->load_shader("engine/shaders/trianglePS.hlsl", rhi::ShaderType::FRAGMENT);
@@ -37,50 +38,31 @@ TriangleTest::TriangleTest(rhi::IEngineRHI* rhi, io::FileSystem* fileSystem, rco
 
 	_rhi->create_graphics_pipeline(&_pipeline, &pipelineInfo);
 	LOG_INFO("TriangleTest::TriangleTest(): Created pipeline")
-
-	rhi::TextureInfo textureInfo;
-	textureInfo.format = rhi::Format::R8G8B8A8_UNORM;
-	textureInfo.width = width;
-	textureInfo.height = height;
-	textureInfo.textureUsage = rhi::ResourceUsage::COLOR_ATTACHMENT | rhi::ResourceUsage::SAMPLED_TEXTURE;
-	textureInfo.textureDimension = rhi::TextureDimension::TEXTURE2D;
-	textureInfo.layersCount = 1;
-	textureInfo.mipLevels = 1;
-	textureInfo.memoryUsage = rhi::MemoryUsage::GPU;
-	textureInfo.samplesCount = rhi::SampleCount::BIT_1;
-	rhi->create_texture(&_outputTexture, &textureInfo);
-
-	rhi::TextureViewInfo textureViewInfo;
-	textureViewInfo.baseLayer = 0;
-	textureViewInfo.textureAspect = rhi::TextureAspect::COLOR;
-	textureViewInfo.baseMipLevel = 0;
-	rhi->create_texture_view(&_outputTextureView, &textureViewInfo, &_outputTexture);
 }
 
-void TriangleTest::draw(rhi::CommandBuffer cmd)
+void TriangleTest::prepare_render_pass(rcore::IRenderGraph* renderGraph, rcore::IRendererResourceManager* rendererResourceManager)
 {
-	auto pipelineBarrier = rhi::PipelineBarrier::set_texture_barrier(&_outputTexture, rhi::ResourceLayout::UNDEFINED, rhi::ResourceLayout::COLOR_ATTACHMENT);
-	std::vector<rhi::PipelineBarrier> pipelineBarriers = { pipelineBarrier };
-	_rhi->add_pipeline_barriers(&cmd, pipelineBarriers);
+	rendererResourceManager->allocate_color_attachment("TriangleOutput", _mainWindow->get_width(), _mainWindow->get_height());
+	rendererResourceManager->allocate_texture_view("TriangleOutput", "TriangleOutput");
 
-	rhi::RenderTarget renderTarget;
-	renderTarget.target = &_outputTextureView;
-	renderTarget.storeOp = rhi::StoreOp::STORE;
-	renderTarget.loadOp = rhi::LoadOp::CLEAR;
-	renderTarget.clearValue.color = { 0.5f, 0.5f, 0.5f, 1.0f };
-	
-	rhi::RenderingBeginInfo beginInfo;
-	beginInfo.renderTargets.push_back(renderTarget);
-	
-	_rhi->begin_rendering(&cmd, &beginInfo);
-	_rhi->bind_pipeline(&cmd, &_pipeline);
+	rcore::IRenderPass* renderPass = renderGraph->add_new_pass("TriangleTest", rcore::RenderGraphQueue::GRAPHICS);
+	renderPass->add_color_output("TriangleOutput");
+	renderPass->set_executor(this);
+}
 
-	_rhi->draw(&cmd, 3);
+void TriangleTest::execute(rhi::CommandBuffer* cmd)
+{
+	rhi::Viewport viewport;
+	viewport.width = _mainWindow->get_width();
+	viewport.height = _mainWindow->get_height();
+	std::vector<rhi::Viewport> viewports = { viewport };
+	_rhi->set_viewports(cmd, viewports);
 
-	_rhi->end_rendering(&cmd);
-
-	pipelineBarrier = rhi::PipelineBarrier::set_texture_barrier(&_outputTexture, rhi::ResourceLayout::COLOR_ATTACHMENT, rhi::ResourceLayout::SHADER_READ);
-	pipelineBarriers.clear();
-	pipelineBarriers.push_back(pipelineBarrier);
-	_rhi->add_pipeline_barriers(&cmd, pipelineBarriers);
+	rhi::Scissor scissor;
+	scissor.right = _mainWindow->get_width();
+	scissor.bottom = _mainWindow->get_height();
+	std::vector<rhi::Scissor> scissors = { scissor };
+	_rhi->set_scissors(cmd, scissors);
+	_rhi->bind_pipeline(cmd, &_pipeline);
+	_rhi->draw(cmd, 3);
 }

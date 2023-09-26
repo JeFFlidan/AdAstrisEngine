@@ -31,18 +31,18 @@ namespace ad_astris::ecs
 			template<typename T>
 			void register_system()
 			{
-				TypeInfoTable::add_system<T>();
-				_systemByID[TypeInfoTable::get_system_id<T>()] = std::make_unique<T>();
-				_systemByID[TypeInfoTable::get_system_id<T>()]->subscribe_to_events(_managers);
-				_systemByID[TypeInfoTable::get_system_id<T>()]->configure_execution_order();
-				_systemByID[TypeInfoTable::get_system_id<T>()]->configure_query();
+				TYPE_INFO_TABLE->add_system<T>();
+				_systemByID[TYPE_INFO_TABLE->get_system_id<T>()] = std::make_unique<T>();
+				_systemByID[TYPE_INFO_TABLE->get_system_id<T>()]->subscribe_to_events(_managers);
+				_systemByID[TYPE_INFO_TABLE->get_system_id<T>()]->configure_execution_order();
+				_systemByID[TYPE_INFO_TABLE->get_system_id<T>()]->configure_query();
  			}
 
 			// Returns a pointer to the existing system. You can get custom systems or engine default systems
 			template<typename T>
 			T* get_system()
 			{
-				return reinterpret_cast<T*>(_systemByID[TypeInfoTable::get_system_id<T>()]);
+				return reinterpret_cast<T*>(_systemByID[TYPE_INFO_TABLE->get_system_id<T>()]);
 			}
 
 			/** Main purpose is changing default engine system to custom one. 
@@ -55,7 +55,7 @@ namespace ad_astris::ecs
 				// TODO I have to think about locks or something like that.
 				// Maybe, it is a good idea to implement queue for updating for the next frame?
 				// And should think about generating new execution order
-				uint32_t oldSystemID = TypeInfoTable::get_system_id(oldSystemName);
+				uint32_t oldSystemID = TYPE_INFO_TABLE->get_system_id(oldSystemName);
 				_systemByID[oldSystemID] = new T();
 			}
 

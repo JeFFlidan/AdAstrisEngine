@@ -10,17 +10,11 @@ namespace ad_astris::ecore
 	{
 		public:
 			MaterialBase() = default;
-			MaterialBase(ObjectName* materialName, UUID generalMaterialTemplateUUID);
-
-			UUID get_material_template_uuid()
-			{
-				return _materialTemplateUUID;
-			}
+			MaterialBase(ObjectName* materialName);
 
 		protected:
 			std::unique_ptr<IMaterialSettings> _materialSettings;
 			UUID _materialUUID;
-			UUID _materialTemplateUUID;
 
 		public:
 			// ========== Begin Object interface ==========

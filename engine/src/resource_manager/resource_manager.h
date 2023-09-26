@@ -163,7 +163,6 @@ namespace ad_astris::resource
 				}
 				if (_resourceDataTable.check_resource_in_table(uuid))
 				{
-					LOG_INFO("Get resource object")
 					return _resourceDataTable.get_resource_object(uuid);
 				}
 

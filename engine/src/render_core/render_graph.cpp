@@ -18,13 +18,6 @@ void RenderGraph::init(rhi::IEngineRHI* engineRHI)
 	_rhi = engineRHI;
 }
 
-void RenderGraph::update_attachments()
-{
-	clear_collections();
-	build_rendering_begin_info();
-	build_barriers();
-}
-
 void RenderGraph::cleanup()
 {
 	// TODO

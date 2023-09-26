@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "material_base.h"
+#include "material_common.h"
 #include "resource_manager/resource_manager.h"
 
 namespace ad_astris::ecore
@@ -10,7 +11,7 @@ namespace ad_astris::ecore
 		public:
 			OpaquePBRMaterial();
 			// Constructor to create new OpaquePBRMaterial
-			OpaquePBRMaterial(OpaquePBRMaterialSettings& materialSettings, ObjectName* materialName, UUID generalMaterialTemplate);
+			OpaquePBRMaterial(OpaquePBRMaterialSettings& materialSettings, ObjectName* materialName);
 
 			OpaquePBRMaterial(const OpaquePBRMaterial& other) = delete;
 			OpaquePBRMaterial& operator=(const OpaquePBRMaterial& other) = delete;
@@ -27,7 +28,7 @@ namespace ad_astris::ecore
 	{
 		public:
 			TransparentMaterial();
-			TransparentMaterial(TransparentMaterialSettings& materialSettings, ObjectName* materialName, UUID generalMaterialTemplate);
+			TransparentMaterial(TransparentMaterialSettings& materialSettings, ObjectName* materialName);
 
 			TransparentMaterial(const TransparentMaterial& other) = delete;
 			TransparentMaterial& operator=(const TransparentMaterial& other) = delete;
@@ -47,7 +48,6 @@ namespace ad_astris::resource
 	struct FirstCreationContext<ecore::OpaquePBRMaterial>
 	{
 		ecore::OpaquePBRMaterialSettings materialSettings;
-		UUID materialTemplateUUID;
 		std::string materialName;
 		io::URI materialPath;
 	};
@@ -56,7 +56,6 @@ namespace ad_astris::resource
 	struct FirstCreationContext<ecore::TransparentMaterial>
 	{
 		ecore::TransparentMaterialSettings materialSettings;
-		UUID materialTemplateUUID;
 		std::string materialName;
 		io::URI materialPath;
 	};

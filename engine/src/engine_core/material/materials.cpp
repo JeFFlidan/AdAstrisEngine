@@ -9,8 +9,8 @@ OpaquePBRMaterial::OpaquePBRMaterial()
 	_materialSettings = std::make_unique<OpaquePBRMaterialSettings>();
 }
 
-OpaquePBRMaterial::OpaquePBRMaterial(OpaquePBRMaterialSettings& materialSettings, ObjectName* materialName, UUID generalMaterialTemplate)
-	: MaterialBase(materialName, generalMaterialTemplate)
+OpaquePBRMaterial::OpaquePBRMaterial(OpaquePBRMaterialSettings& materialSettings, ObjectName* materialName)
+	: MaterialBase(materialName)
 {
 	_materialSettings = std::make_unique<OpaquePBRMaterialSettings>(materialSettings);
 }
@@ -25,8 +25,8 @@ TransparentMaterial::TransparentMaterial()
 	_materialSettings = std::make_unique<TransparentMaterialSettings>();
 }
 
-TransparentMaterial::TransparentMaterial(TransparentMaterialSettings& materialSettings, ObjectName* materialName, UUID generalMaterialTemplate)
-	: MaterialBase(materialName, generalMaterialTemplate)
+TransparentMaterial::TransparentMaterial(TransparentMaterialSettings& materialSettings, ObjectName* materialName)
+	: MaterialBase(materialName)
 {
 	_materialSettings = std::make_unique<TransparentMaterialSettings>(materialSettings);
 }

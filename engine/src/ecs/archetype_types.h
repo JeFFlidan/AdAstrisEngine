@@ -62,8 +62,8 @@ namespace ad_astris::ecs
 			template<typename T>
 			void set_up_components()
 			{
-				uint32_t id = TypeInfoTable::get_component_id<T>();
-				uint32_t size = TypeInfoTable::get_component_size<T>();
+				uint32_t id = TYPE_INFO_TABLE->get_component_id<T>();
+				uint32_t size = TYPE_INFO_TABLE->get_component_size<T>();
 				_allComponentsSize += size;
 				_idToSize[id] = size;
 				_componentIDs.push_back(id);
@@ -72,7 +72,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			void set_up_tag()
 			{
-				uint32_t id = TypeInfoTable::get_tag_id<T>();
+				uint32_t id = TYPE_INFO_TABLE->get_tag_id<T>();
 				_tagIDs.push_back(id);
 			}
 	};

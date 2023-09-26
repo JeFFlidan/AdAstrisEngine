@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "scene_submanager_base.h"
-#include "common.h"
 #include "engine_core/texture/texture2D.h"
 
 namespace ad_astris::renderer::impl

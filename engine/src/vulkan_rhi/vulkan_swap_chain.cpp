@@ -12,6 +12,7 @@ vulkan::VulkanSwapChain::VulkanSwapChain(rhi::SwapChainInfo* swapChainInfo, Vulk
 	create_swap_chain_internal();
 	_imageViews = _swapChain.get_image_views().value();
 	_images = _swapChain.get_images().value();
+	_bufferCount = _imageViews.size();
 }
 
 void vulkan::VulkanSwapChain::recreate(rhi::SwapChainInfo* swapChainInfo)

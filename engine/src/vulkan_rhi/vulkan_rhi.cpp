@@ -140,26 +140,41 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufI
 		return;
 	}
 	
-	VkBufferUsageFlags bufferUsage = get_buffer_usage(bufInfo->bufferUsage);
+	buffer->bufferInfo = *bufInfo;
+	create_buffer(buffer, data);
+}
+
+void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
+{
+	if (!buffer)
+	{
+		LOG_ERROR("Can't create buffer if buffer parameter is invalid")
+		return;
+	}
+	
+	VkBufferUsageFlags bufferUsage = get_buffer_usage(buffer->bufferInfo.bufferUsage);
 	if (!bufferUsage)
 	{
 		LOG_ERROR("Invalid buffer usage")
 		return;
 	}
 	
-	VmaMemoryUsage memoryUsage = get_memory_usage(bufInfo->memoryUsage);
+	VmaMemoryUsage memoryUsage = get_memory_usage(buffer->bufferInfo.memoryUsage);
 	if (memoryUsage == VMA_MEMORY_USAGE_UNKNOWN)
 	{
 		LOG_ERROR("Invalid memory usage (buffer)")
 		return;
 	}
-
-	_vulkanBuffers.emplace_back(new VulkanBuffer(&_allocator, bufInfo->size, bufferUsage, memoryUsage));
+	
+	_vulkanBuffers.emplace_back(new VulkanBuffer(&_allocator, buffer->bufferInfo.size, bufferUsage, memoryUsage));
 	VulkanBuffer* vulkanBuffer = _vulkanBuffers.back().get();
 	buffer->data = vulkanBuffer;
-	buffer->size = bufInfo->size;
+	buffer->size = buffer->bufferInfo.size;
 	buffer->type = rhi::Resource::ResourceType::BUFFER;
-	buffer->bufferInfo = *bufInfo;
+
+	if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::STORAGE_BUFFER))
+		_descriptorManager->allocate_bindless_descriptor(vulkanBuffer, buffer->size, 0);
+	
 	if (data == nullptr)
 		return;
 	if (data != nullptr && memoryUsage == VMA_MEMORY_USAGE_GPU_ONLY)
@@ -167,7 +182,7 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufI
 		LOG_ERROR("Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
 		return;
 	}
-	vulkanBuffer->copy_from(&_allocator, data, bufInfo->size);
+	vulkanBuffer->copy_from(&_allocator, data, buffer->size);
 }
 
 void vulkan::VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
@@ -207,6 +222,20 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 		return;
 	}
 
+	texture->textureInfo = *texInfo;
+	create_texture(texture);
+}
+
+void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
+{
+	if (!texture)
+	{
+		LOG_ERROR("VulkanRHI::create_texture(): Invalid rhi::Texture pointer")
+		return;
+	}
+
+	rhi::TextureInfo* texInfo = &texture->textureInfo;
+	
 	if (texInfo->format == rhi::Format::UNDEFINED)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Undefined format")
@@ -262,7 +291,6 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 	}
 	texture->data = vkTexture;
 	texture->type = rhi::Resource::ResourceType::TEXTURE;
-	texture->textureInfo = *texInfo;
 
 	if (has_flag(texInfo->textureUsage, rhi::ResourceUsage::COLOR_ATTACHMENT)
 		|| has_flag(texInfo->textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
@@ -278,6 +306,19 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	{
 		LOG_ERROR("Can't create texture view if one of the parameters is invalid")
 	}
+
+	textureView->viewInfo = *viewInfo;
+	create_texture_view(textureView, texture);
+}
+
+void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture)
+{
+	if (!textureView || !texture)
+	{
+		LOG_ERROR("Can't create texture view if one of the parameters is invalid")
+	}
+
+	rhi::TextureViewInfo* viewInfo = &textureView->viewInfo;
 	
 	rhi::TextureInfo texInfo = texture->textureInfo;
 	VulkanTexture* vkTexture = static_cast<VulkanTexture*>(texture->data);
@@ -752,9 +793,9 @@ void vulkan::VulkanRHI::set_viewports(rhi::CommandBuffer* cmd, std::vector<rhi::
 	{
 		rhi::Viewport& viewport = viewports[i];
 		vulkanViewports[i].x = viewport.x;
-		vulkanViewports[i].y = viewport.y;
+		vulkanViewports[i].y = viewport.height;
 		vulkanViewports[i].width = viewport.width;
-		vulkanViewports[i].height = viewport.height;
+		vulkanViewports[i].height = -(int32_t)viewport.height;
 		vulkanViewports[i].minDepth = viewport.minDepth;
 		vulkanViewports[i].maxDepth = viewport.maxDepth;
 	}
@@ -789,7 +830,7 @@ void vulkan::VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer*
 		LOG_ERROR("VulkanRHI::bind_vertex_buffer(): Invalid pointers")
 		return;
 	}
-	if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::VERTEX_BUFFER))
+	if (!has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::VERTEX_BUFFER))
 	{
 		LOG_ERROR("VulkanRHI::bind_vertex_buffer(): Buffer wasn't created with VERTEX_BUFFER usage")
 		return;
@@ -808,7 +849,7 @@ void vulkan::VulkanRHI::bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* 
 		LOG_ERROR("VulkanRHI::bind_index_buffer(): Invalid pointers")
 		return;
 	}
-	if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::INDEX_BUFFER))
+	if (!has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::INDEX_BUFFER))
 	{
 		LOG_ERROR("VulkanRHI::bind_index_buffer(): Buffer wasn't created with INDEX_BUFFER usage")
 		return;

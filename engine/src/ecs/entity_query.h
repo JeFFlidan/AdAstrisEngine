@@ -20,10 +20,10 @@ namespace ad_astris::ecs
 			template<typename T>
 			void add_component_requirement(ComponentAccess componentAccess)
 			{
-				if (!TypeInfoTable::check_component_in_table<T>())
-					TypeInfoTable::add_component_info<T>();
+				if (!TYPE_INFO_TABLE->check_component_in_table<T>())
+					TYPE_INFO_TABLE->add_component_info<T>();
 				
-				uint32_t id = TypeInfoTable::get_component_id<T>();
+				uint32_t id = TYPE_INFO_TABLE->get_component_id<T>();
 				_componentIDToAccess[id] = componentAccess;
 				_requiredComponentIDs.push_back(id);
 			}
@@ -31,10 +31,10 @@ namespace ad_astris::ecs
 			template<typename T>
 			void add_tag_requirement()
 			{
-				if (!TypeInfoTable::check_tag_in_table<T>())
-					TypeInfoTable::add_tag<T>();
+				if (!TYPE_INFO_TABLE->check_tag_in_table<T>())
+					TYPE_INFO_TABLE->add_tag<T>();
 					
-				_requiredTagIDs.push_back(TypeInfoTable::get_tag_id<T>());
+				_requiredTagIDs.push_back(TYPE_INFO_TABLE->get_tag_id<T>());
 			}
 
 		protected:

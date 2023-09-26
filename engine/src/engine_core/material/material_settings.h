@@ -40,7 +40,7 @@ namespace ad_astris::ecore
 		UUID metallicTextureUUID;
 		UUID ambientOcclusionTextureUUID;
 		UUID normalTextureUUID;
-		glm::vec4 tintColor;
+		XMFLOAT4 tintColor;
 		float roughnessValue;
 		float metallicValue;
 		bool useTintColor{ false };
@@ -54,7 +54,7 @@ namespace ad_astris::ecore
 		UUID baseColorTextureUUID;
 		UUID opacityTextureUUID;
 		UUID ambientOcclusionTextureUUID;
-		glm::vec4 tintColor;
+		XMFLOAT4 tintColor;
 		float opacityValue;
 		bool useTintColor{ false };
 		bool useOpacityValue{ false };

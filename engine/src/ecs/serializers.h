@@ -27,7 +27,7 @@ namespace ad_astris::ecs
 				template<typename COMPONENT_TYPE>
 				void add_serializer(BaseSerializer* serializer)
 				{
-					uint32_t id = TypeInfoTable::get_component_id<COMPONENT_TYPE>();
+					uint32_t id = TYPE_INFO_TABLE->get_component_id<COMPONENT_TYPE>();
 					std::lock_guard<std::mutex> lock(_mutex);
 					_serializerByTypeID[id] = serializer;
 				}

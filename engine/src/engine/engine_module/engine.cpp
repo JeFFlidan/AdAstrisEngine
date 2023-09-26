@@ -1,9 +1,15 @@
 ﻿#include "engine_core/material/materials.h"
-#include "engine_core/material/material_template.h"
 #include "engine_core/fwd.h"
+#include "application_core/editor_events.h"
 #include "engine.h"		// Really strange bug with this include. For now I placed it under all other includes, however, I must fix this bug properly in the future
+#include "basic_systems.h"
+#include "application_core/window_events.h"
+#include "engine_events.h"
+#include "engine_core/basic_components.h"
+#include "engine_core/basic_events.h"
 
 using namespace ad_astris::engine::impl;
+#define GET_ID(x) compile_time_fnv1(#x)
 
 void Engine::init(EngineInitializationContext& engineInitContext)
 {
@@ -18,21 +24,29 @@ void Engine::init(EngineInitializationContext& engineInitContext)
 	_resourceManager = std::make_unique<resource::ResourceManager>(_fileSystem, _eventManager);
 	LOG_INFO("Engine::init(): Initialized resource manager")
 
-	_world = std::make_unique<ecore::World>();
-	_world->init();
+	ecs::create_type_info_table();
+	
+	ecore::WorldCreationContext worldCreationContext;
+	worldCreationContext.eventManager = _eventManager;
+	worldCreationContext.taskComposer = _taskComposer.get();
+	_world = std::make_unique<ecore::World>(worldCreationContext);
 	LOG_INFO("Engine::init(): Initialized world")
 
-	register_ecs_objects();
-
-	_engineObjectsCreator = std::make_unique<EngineObjectsCreator>(_world->get_entity_manager(), _eventManager);
-	LOG_INFO("Engine::init(): Initialized engine objects creator")
-
+	ecs::EngineManagers managers;
+	managers.eventManager = _eventManager;
+	managers.resourceManager = _resourceManager.get();
+	managers.taskComposer = _taskComposer.get();
+	managers.entityManager = _world->get_entity_manager();
 	_systemManager = std::make_unique<ecs::SystemManager>();
-	_systemManager->init();
+	_systemManager->init(managers);
 	LOG_INFO("Engine::init(): Initialized system manager")
+	register_ecs_objects();
 	_systemManager->generate_execution_order();
 	_systemManager->add_entity_manager(_world->get_entity_manager());
 	LOG_INFO("Engine::init(): Generated execution order")
+	
+	_engineObjectsCreator = std::make_unique<EngineObjectsCreator>(_world.get());
+	LOG_INFO("Engine::init(): Initialized engine objects creator")
 
 	switch (engineInitContext.projectInfo->newProjectTemplate)
 	{
@@ -57,6 +71,8 @@ void Engine::init(EngineInitializationContext& engineInitContext)
 	rendererInitContext.projectSettings = _projectSettings.get();
 	rendererInitContext.resourceManager = _resourceManager.get();
 	rendererInitContext.taskComposer = _taskComposer.get();
+	rendererInitContext.world = _world.get();
+	rendererInitContext.typeInfoTable = ecs::get_active_type_info_table();
 	auto rendererModule = _moduleManager->load_module<renderer::IRendererModule>("Renderer");
 	_renderer = rendererModule->get_renderer();
 	_renderer->init(rendererInitContext);
@@ -78,11 +94,20 @@ void Engine::init(EngineInitializationContext& engineInitContext)
 	LOG_INFO("Engine::init(): Baked renderer")
 
 	LOG_INFO("Engine::init(): Engine initialization completed")
+
+	set_active_camera_delegate();
+	_eventManager->dispatch_events();
+	_eventManager->unsubscribe(ecore::EntityCreatedEvent::get_type_id_static(), _activeCameraDelegate.target_type().name());
 }
 
 void Engine::execute()
 {
-	_renderer->draw();
+	pre_update();
+	_systemManager->execute();
+	renderer::DrawContext drawContext;
+	drawContext.activeCamera = _activeCamera;
+	drawContext.deltaTime = 0.0f;	// TODO
+	_renderer->draw(drawContext);
 }
 
 void Engine::save_and_cleanup(bool needToSave)
@@ -113,6 +138,23 @@ void Engine::create_new_blank_project()
 	_projectSettings->setup_default_settings(defaultSettingsContext);
 	_projectSettings->deserialize(_fileSystem->get_project_root_path() + "/configs/project_settings.ini");
 	_projectSettings->serialize(_fileSystem);
+
+	ecore::EditorObjectCreationContext editorObjectCreationContext;
+	editorObjectCreationContext.uuid = 	_resourceManager->convert_to_aares<ecore::StaticModel>(_fileSystem->get_engine_root_path() + "/starter_content/models/gun.obj", "content").get_resource()->get_uuid();
+	LOG_INFO("RESOURCE UUID: {}", (uint64_t)editorObjectCreationContext.uuid)
+	editorObjectCreationContext.location = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	editorObjectCreationContext.scale = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	editorObjectCreationContext.rotation = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	ecs::Entity entity = _engineObjectsCreator->create_static_model(editorObjectCreationContext);
+	auto modelComponent = _world->get_entity_manager()->get_component<ecore::ModelComponent>(entity);
+	LOG_INFO("CREATED STATIC MODEL, {}", modelComponent->modelUUID)
+
+	ecore::EditorObjectCreationContext creationContext{ };
+	creationContext.location = XMFLOAT3(0.0f, 0.0f, 10.0f);
+	_activeCamera = _engineObjectsCreator->create_camera(creationContext);
+	auto cameraComponent = _world->get_entity_manager()->get_component<ecore::CameraComponent>(_activeCamera);
+	cameraComponent->isActive = true;
+	
 	//create_material_templates();
 	LOG_INFO("Engine::init(): Saved project with default settings")
 
@@ -127,17 +169,14 @@ void Engine::load_existing_project()
 {
 	_projectSettings = std::make_unique<ecore::ProjectSettings>();
 	_projectSettings->deserialize(_fileSystem->get_project_root_path() + "/configs/project_settings.ini");
-	LOG_INFO("Engine::init(): Loaded project settings config")
 	auto projectDescriptionSubsettings = _projectSettings->get_subsettings<ecore::ProjectDescriptionSubsettings>();
-	LOG_INFO("After loading project description ")
 	io::URI levelRelativePath = projectDescriptionSubsettings->get_default_level_path().c_str();
 	io::URI levelPath = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), levelRelativePath);
-	LOG_INFO("Level path: {}", levelPath.c_str())
 	ecore::LevelHandle level = _resourceManager->load_level(levelPath);
-	LOG_INFO("After loading level")
 	_world->add_level(level.get_resource(), true, true);
+	
 	level.get_resource()->build_entities();
-	LOG_INFO("After building entities")
+	
 	LOG_INFO("Engine::init(): Loaded default level {}", level.get_resource()->get_name()->get_full_name())
 }
 
@@ -145,126 +184,6 @@ void Engine::create_material_templates()
 {
 	using namespace ecore::material;
 	
-	ShaderPassCreateInfo gbufferShaderPassCreateInfo;
-	gbufferShaderPassCreateInfo.vertexShaderPath = "shaders/deferred/GBuffer.vert";
-	gbufferShaderPassCreateInfo.fragmentShaderPath = "shaders/deferred/GBuffer.frag";
-	gbufferShaderPassCreateInfo.passType = ShaderPassType::GBUFFER;
-	
-	ShaderPassCreateInfo deferredShaderPassCreateInfo;
-	deferredShaderPassCreateInfo.vertexShaderPath = "shaders/deferred/deferred_lighting.vert";
-	deferredShaderPassCreateInfo.fragmentShaderPath = "shaders/deferred/deferred_lighting.frag";
-	deferredShaderPassCreateInfo.passType = ShaderPassType::DEFERRED_LIGHTING;
-	
-	ShaderPassCreateInfo oitPrepassShaderPassCreateInfo;
-	oitPrepassShaderPassCreateInfo.vertexShaderPath = "shaders/oit/oit_geometry.vert";
-	oitPrepassShaderPassCreateInfo.fragmentShaderPath = "shaders/oit/oit_geometry.frag";
-	oitPrepassShaderPassCreateInfo.passType = ShaderPassType::OIT_PREPASS;
-	
-	ShaderPassCreateInfo oitShaderPassCreateInfo;
-	oitShaderPassCreateInfo.vertexShaderPath = "shaders/oit/transparency.vert";
-	oitShaderPassCreateInfo.fragmentShaderPath = "shaders/oit/transparency.frag";
-	oitShaderPassCreateInfo.passType = ShaderPassType::OIT;
-	
-	ShaderPassCreateInfo taaShaderPassCreateInfo;
-	taaShaderPassCreateInfo.vertexShaderPath = "shaders/common_shaders/quad.vert";
-	taaShaderPassCreateInfo.fragmentShaderPath = "shaders/anti_aliasing/taa.frag";
-	taaShaderPassCreateInfo.passType = ShaderPassType::TAA;
-	
-	ShaderPassCreateInfo directionalLightShaderPassCreateInfo;
-	directionalLightShaderPassCreateInfo.vertexShaderPath = "shaders/shadow_mapping/dir_light_depth_map.vert";
-	directionalLightShaderPassCreateInfo.fragmentShaderPath = "shaders/shadow_mapping/depth_map.frag";
-	directionalLightShaderPassCreateInfo.passType = ShaderPassType::DIRECTIONAL_LIGHT_SHADOWS;
-	
-	ShaderPassCreateInfo pointLightShaderPassCreateInfo;
-	pointLightShaderPassCreateInfo.vertexShaderPath = "shaders/shadow_mapping/point_light_depth_map.vert";
-	pointLightShaderPassCreateInfo.fragmentShaderPath = "shaders/shadow_mapping/point_light_depth_map.frag";
-	pointLightShaderPassCreateInfo.passType = ShaderPassType::POINT_LIGHT_SHADOWS;
-	
-	ShaderPassCreateInfo spotLightShaderPassCreateInfo;
-	spotLightShaderPassCreateInfo.vertexShaderPath = "shaders/shadow_mapping/spot_light_depth_map.vert";
-	spotLightShaderPassCreateInfo.fragmentShaderPath = "shaders/shadow_mapping/depth_map.frag";
-	spotLightShaderPassCreateInfo.passType = ShaderPassType::SPOT_LIGHT_SHADOWS;
-	
-	ShaderPassCreateInfo compositeShaderPassCreateInfo;
-	compositeShaderPassCreateInfo.vertexShaderPath = "shaders/common_shaders/quad.vert";
-	compositeShaderPassCreateInfo.fragmentShaderPath = "shaders/postprocessing/composite.frag";
-	compositeShaderPassCreateInfo.passType = ShaderPassType::COMPOSITE;
-	
-	ShaderPassCreateInfo postprocessingShaderPassCreateInfo;
-	postprocessingShaderPassCreateInfo.vertexShaderPath = "shaders/common_shaders/quad.vert";
-	postprocessingShaderPassCreateInfo.fragmentShaderPath = "shaders/postprocessing/postprocessing.frag";
-	postprocessingShaderPassCreateInfo.passType = ShaderPassType::POSTPROCESSING;
-	
-	ShaderPassCreateInfo cullingShaderPassCreateInfo;
-	cullingShaderPassCreateInfo.computeShader = "shaders/compute/draw_cull.comp";
-	cullingShaderPassCreateInfo.passType = ShaderPassType::CULLING;
-	
-	ShaderPassCreateInfo reduceDepthShaderPassCreateInfo;
-	reduceDepthShaderPassCreateInfo.computeShader = "shaders/compute/reduce_depth.comp";
-	reduceDepthShaderPassCreateInfo.passType = ShaderPassType::REDUCE_DEPTH;
-	
-	resource::FirstCreationContext<ecore::MaterialTemplate> opaquePBRTemplate;
-	opaquePBRTemplate.shaderPassCreateInfos = {
-		directionalLightShaderPassCreateInfo,
-		pointLightShaderPassCreateInfo,
-		spotLightShaderPassCreateInfo,
-		gbufferShaderPassCreateInfo,
-		deferredShaderPassCreateInfo
-	};
-	opaquePBRTemplate.materialTemplateName = "OpaquePBRMaterialTemplate";
-	opaquePBRTemplate.materialType = MaterialType::GRAPHICS;
-	
-	resource::FirstCreationContext<ecore::MaterialTemplate> oitTemplate;
-	oitTemplate.shaderPassCreateInfos = {
-		oitPrepassShaderPassCreateInfo,
-		oitShaderPassCreateInfo
-	};
-	oitTemplate.materialTemplateName = "OITMaterialTemplate";
-	oitTemplate.materialType = MaterialType::GRAPHICS;
-	
-	resource::FirstCreationContext<ecore::MaterialTemplate> taaTemplate;
-	taaTemplate.shaderPassCreateInfos = {
-		taaShaderPassCreateInfo
-	};
-	taaTemplate.materialTemplateName = "TAAMaterialTemplate";
-	taaTemplate.materialType = MaterialType::GRAPHICS;
-	
-	resource::FirstCreationContext<ecore::MaterialTemplate> compositeTemplate;
-	compositeTemplate.shaderPassCreateInfos = {
-		compositeShaderPassCreateInfo
-	};
-	compositeTemplate.materialTemplateName = "CompositeMaterialTemplate";
-	compositeTemplate.materialType = MaterialType::GRAPHICS;
-	
-	resource::FirstCreationContext<ecore::MaterialTemplate> postprocessingTemplate;
-	postprocessingTemplate.shaderPassCreateInfos = {
-		postprocessingShaderPassCreateInfo
-	};
-	postprocessingTemplate.materialTemplateName = "PostprocessingMaterialTemplate";
-	postprocessingTemplate.materialType = MaterialType::GRAPHICS;
-	
-	resource::FirstCreationContext<ecore::MaterialTemplate> cullingTemplate;
-	cullingTemplate.shaderPassCreateInfos = {
-		cullingShaderPassCreateInfo
-	};
-	cullingTemplate.materialTemplateName = "CullingMaterialTemplate";
-	cullingTemplate.materialType = MaterialType::COMPUTE;
-	
-	resource::FirstCreationContext<ecore::MaterialTemplate> reduceDepthTemplate;
-	reduceDepthTemplate.shaderPassCreateInfos = {
-		reduceDepthShaderPassCreateInfo
-	};
-	reduceDepthTemplate.materialTemplateName = "ReduceDepthMaterialTemplate";
-	reduceDepthTemplate.materialType = MaterialType::COMPUTE;
-	
-	ecore::MaterialTemplateHandle opaqueTemplateHandle = _resourceManager->create_new_resource(opaquePBRTemplate);
-	ecore::MaterialTemplateHandle oitTemplateHandle = _resourceManager->create_new_resource(oitTemplate);
-	_resourceManager->create_new_resource(taaTemplate);
-	_resourceManager->create_new_resource(compositeTemplate);
-	_resourceManager->create_new_resource(postprocessingTemplate);
-	_resourceManager->create_new_resource(cullingTemplate);
-	_resourceManager->create_new_resource(reduceDepthTemplate);
-
 	ecore::OpaquePBRMaterialSettings opaquePBRMaterialSettings;
 	opaquePBRMaterialSettings.baseColorTextureUUID = UUID();
 	opaquePBRMaterialSettings.roughnessTextureUUID = UUID();
@@ -280,7 +199,6 @@ void Engine::create_material_templates()
 	opaquePBRMaterialCreationContext.materialName = "DefaultPBR";
 	opaquePBRMaterialCreationContext.materialPath = "content/materials";
 	opaquePBRMaterialCreationContext.materialSettings = opaquePBRMaterialSettings;
-	opaquePBRMaterialCreationContext.materialTemplateUUID = opaqueTemplateHandle.get_resource()->get_uuid();
 	
 	ecore::OpaquePBRMaterialHandle opaquePbrMaterialHandle = _resourceManager->create_new_resource(opaquePBRMaterialCreationContext);
 	LOG_INFO("Created opaque material: {}", opaquePbrMaterialHandle.get_resource()->get_name()->get_full_name())
@@ -296,7 +214,6 @@ void Engine::create_material_templates()
 	transparentMaterialCreationContext.materialName = "DefaultTransparent";
 	transparentMaterialCreationContext.materialPath = "content/materials";
 	transparentMaterialCreationContext.materialSettings = transparentMaterialSettings;
-	transparentMaterialCreationContext.materialTemplateUUID = oitTemplateHandle.get_resource()->get_uuid();
 	
 	ecore::TransparentMaterialHandle transparentMaterialHandle = _resourceManager->create_new_resource(transparentMaterialCreationContext);
 	LOG_INFO("Created transparent material: {}", transparentMaterialHandle.get_resource()->get_name()->get_full_name())
@@ -305,4 +222,31 @@ void Engine::create_material_templates()
 void Engine::register_ecs_objects()
 {
 	ecore::register_basic_components(_world->get_entity_manager());
+	_systemManager->register_system<TransformUpdateSystem>();
+	_systemManager->register_system<CameraUpdateSystem>();
+}
+
+void Engine::pre_update()
+{
+	UpdateActiveCameraEvent event(_activeCamera);
+	_eventManager->trigger_event(event);
+}
+
+void Engine::set_active_camera_delegate()
+{
+	events::EventDelegate<ecore::EntityCreatedEvent> _activeCameraDelegate = [this](ecore::EntityCreatedEvent& event)
+	{
+		LOG_INFO("START EVENT")
+		ecs::Entity entity = event.get_entity();
+		if (event.get_entity_manager()->does_entity_have_component<ecore::CameraComponent>(entity))
+		{
+			LOG_INFO("HAS COMPONENT")
+			auto camera = event.get_entity_manager()->get_component<ecore::CameraComponent>(entity);
+			if (camera->isActive)
+				_activeCamera = entity;
+			LOG_INFO("IS ACTIVE {}", camera->isActive)
+		}
+		LOG_INFO("FINISH EVENT")
+	};
+	_eventManager->subscribe(_activeCameraDelegate);
 }

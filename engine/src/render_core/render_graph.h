@@ -26,7 +26,6 @@ namespace ad_astris::rcore::impl
 			RenderGraph& operator=(const RenderGraph&&) = delete;
 		
 			virtual void init(rhi::IEngineRHI* engineRHI) override;
-			virtual void update_attachments() override;
 			virtual void cleanup() override;
 
 			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue) override;

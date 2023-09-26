@@ -7,6 +7,7 @@
 #include "application_core/window.h"
 #include "core/module_manager.h"
 #include "rhi/ui_window_backend.h"
+#include "engine_core/world.h"
 
 namespace ad_astris::renderer
 {
@@ -19,6 +20,14 @@ namespace ad_astris::renderer
 		events::EventManager* eventManager;
 		acore::IWindow* mainWindow;
 		rhi::UIWindowBackendCallbacks uiBackendCallbacks;
+		ecore::World* world;
+		ecs::TypeInfoTable* typeInfoTable;
+	};
+
+	struct DrawContext
+	{
+		ecs::Entity activeCamera;
+		float deltaTime;
 	};
 	
 	class IRenderer
@@ -29,8 +38,10 @@ namespace ad_astris::renderer
 			virtual void init(RendererInitializationContext& initializationContext) = 0;
 			virtual void cleanup() = 0;
 
+			virtual void set_new_world(ecore::World* world) = 0;
+
 			virtual void bake() = 0;
-			virtual void draw() = 0;
+			virtual void draw(DrawContext& drawContext) = 0;
 	};
 
 	class IRendererModule : public IModule

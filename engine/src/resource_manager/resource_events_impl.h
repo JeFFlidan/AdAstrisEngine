@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "resource_formats.h"
-#include "engine_core/material/material_template.h"
 #include "engine_core/material/materials.h"
 #include "engine_core/model/static_model.h"
 #include "engine_core/texture/texture2D.h"
@@ -34,19 +33,5 @@ namespace ad_astris::resource::impl
 
 		private:
 			ecore::Texture2D* _texture;
-	};
-	
-	class MaterialTemplateEvent
-	{
-		public:
-			MaterialTemplateEvent(ecore::MaterialTemplate* materialTemplate) : _materialTemplate(materialTemplate) { }
-
-			ResourceAccessor<ecore::MaterialTemplate> get_material_template_handle()
-			{
-				return _materialTemplate;
-			}
-
-		private:
-			ecore::MaterialTemplate* _materialTemplate;
 	};
 }

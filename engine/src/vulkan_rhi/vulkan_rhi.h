@@ -41,14 +41,17 @@ namespace ad_astris::vulkan
 			virtual bool acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex) final override;
 		
 			virtual void create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data = nullptr) final override;
+			virtual void create_buffer(rhi::Buffer* buffer, void* data = nullptr) final override;
 			virtual void destroy_buffer(rhi::Buffer* buffer) final override;
 
 			virtual void update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data) final override;
 			virtual void create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo) final override;
+			virtual void create_texture(rhi::Texture* texture) final override;
 			virtual void create_texture_view(
 				rhi::TextureView* textureView,
 				rhi::TextureViewInfo* viewInfo,
 				rhi::Texture* texture) final override;
+			virtual void create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture) final override;
 			virtual void create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo) final override;
 			virtual void create_shader(rhi::Shader* shader, rhi::ShaderInfo* shaderInfo) final override;
 			virtual void create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo) final override;
@@ -114,6 +117,7 @@ namespace ad_astris::vulkan
 			virtual void add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vector<rhi::PipelineBarrier>& barriers) final override;
 
 			virtual void wait_for_gpu() override;
+			virtual uint32_t get_buffer_count() override { return _swapChain->get_buffers_count(); }
 
 			VulkanDevice* get_device() { return _device.get(); }
 			VkInstance get_instance() { return _instance; }

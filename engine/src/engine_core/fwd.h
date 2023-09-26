@@ -23,7 +23,6 @@ namespace ad_astris
 		typedef resource::ResourceAccessor<StaticModel> StaticModelHandle;
 		typedef resource::ResourceAccessor<Texture2D> Texture2DHandle;
 		typedef resource::ResourceAccessor<Shader> ShaderHandle;
-		typedef resource::ResourceAccessor<MaterialTemplate> MaterialTemplateHandle;
 		typedef resource::ResourceAccessor<Level> LevelHandle;
 		typedef resource::ResourceAccessor<OpaquePBRMaterial> OpaquePBRMaterialHandle;
 		typedef resource::ResourceAccessor<TransparentMaterial> TransparentMaterialHandle;

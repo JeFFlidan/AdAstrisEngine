@@ -1,7 +1,10 @@
 #include "level.h"
 #include "level_common.h"
+#include "engine_core/basic_events.h"
 
 #include <json/json.hpp>
+
+#include "engine_core/world.h"
 
 using namespace ad_astris::ecore::level;
 
@@ -34,6 +37,9 @@ void Utils::build_entities_from_json(std::string& entitiesInfo, Level* level)
 		std::string componentsJson = info.value();
 		ecs::Entity entity = entityManager->build_entity_from_json(uuid, componentsJson);
 		entities.push_back(entity);
+		EntityCreatedEvent event(entity, entityManager);
+		LOG_INFO("")
+		level->get_owning_world()->get_event_manager()->enqueue_event(event);
 	}
 }
 
@@ -44,6 +50,8 @@ void Utils::build_json_from_entities(nlohmann::json& jsonForEntities, Level* lev
 
 	for (auto& entity : entities)
 	{
+		LOG_INFO("ENTITY {}", entity.get_uuid())
 		entityManager->build_components_json_from_entity(entity, jsonForEntities);
+		LOG_INFO("ENTITY FINISH")
 	}
 }
