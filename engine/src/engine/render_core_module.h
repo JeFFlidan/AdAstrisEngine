@@ -274,10 +274,41 @@ namespace ad_astris::rcore
 				uint32_t baseLayer = 0,
 				rhi::TextureAspect aspect = rhi::TextureAspect::UNDEFINED) = 0;
 
+			virtual void update_2d_texture(rhi::CommandBuffer* cmd, const std::string& textureName, void* textureData, uint32_t width, uint32_t height) = 0;
+
 			virtual rhi::Texture* get_texture(const std::string& textureName) = 0;
 			virtual rhi::TextureView* get_texture_view(const std::string& textureViewName) = 0;
 			virtual void add_texture(const std::string& textureName, rhi::Texture& texture) = 0;
 			virtual void add_texture_view(const std::string& textureViewName, rhi::TextureView& textureView) = 0;
+	};
+
+	enum class BuiltinPipelineType
+	{
+		GBUFFER = 0,
+		DEFERRED_LIGHTING,
+		OIT_GEOMETRY,
+		OIT
+	};
+
+	struct PipelineManagerInitContext
+	{
+		rhi::IEngineRHI* rhi{ nullptr };
+		IShaderManager* shaderManager{ nullptr };
+		tasks::TaskComposer* taskComposer{ nullptr };
+	};
+	
+	class IPipelineManager
+	{
+		public:
+			~IPipelineManager() { }
+			virtual void init(PipelineManagerInitContext& initContext) = 0;
+			// If Vulkan is used, creates all builtin pipelines for dynamic rendering.
+			virtual void bind_render_pass_to_pipeline(IRenderPass* renderPass, BuiltinPipelineType type) = 0;
+			virtual void create_builtin_pipelines() = 0;
+			virtual rhi::Pipeline* get_builtin_pipeline(BuiltinPipelineType pipelineType) = 0;
+			
+			// virtual rhi::Pipeline* create_custom_pipeline() = 0;
+			// virtual rhi::Pipeline* get_custom_pipeline() = 0;
 	};
 	
 	class IRenderCoreModule : public IModule
@@ -286,6 +317,7 @@ namespace ad_astris::rcore
 			virtual IRenderGraph* get_render_graph() = 0;
 			virtual IShaderManager* get_shader_manager() = 0;
 			virtual IRendererResourceManager* get_renderer_resource_manager() = 0;
+			virtual IPipelineManager* get_pipeline_manager() = 0;
 	};
 }
 

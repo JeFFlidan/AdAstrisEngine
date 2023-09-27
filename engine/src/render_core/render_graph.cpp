@@ -298,7 +298,7 @@ void RenderGraph::build_rendering_begin_info()
 		{
 			rhi::RenderTarget& renderTarget = beginInfo.renderTargets.emplace_back();
 			renderTarget.target = get_physical_texture_view(depthTextureDesc->get_name());
-			renderTarget.clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
+			renderTarget.clearValue.depthStencil.depth = 1.0f;
 			renderTarget.loadOp = rhi::LoadOp::CLEAR;
 			renderTarget.storeOp = rhi::StoreOp::STORE;
 		}

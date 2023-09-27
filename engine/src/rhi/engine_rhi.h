@@ -78,8 +78,7 @@ namespace ad_astris::rhi
 			virtual void copy_buffer_to_texture(
 				CommandBuffer* cmd,
 				Buffer* srcBuffer,
-				Texture* dstTexture,
-				ResourceUsage textureUsage) = 0;
+				Texture* dstTexture) = 0;
 			virtual void set_viewports(CommandBuffer* cmd, std::vector<Viewport>& viewports) = 0;
 			virtual void set_scissors(CommandBuffer* cmd, std::vector<Scissor>& scissors) = 0 ;
 			// Can bind only one vertex buffer.

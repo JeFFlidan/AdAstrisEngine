@@ -677,6 +677,8 @@ namespace ad_astris::rhi
 		std::vector<VertexBindingDescription> bindingDescriptrions;
 		std::vector<VertexAttributeDescription> attributeDescriptions;
 		RenderPass renderPass;
+		std::vector<Format> colorAttachmentFormats; // Only if no RenderPass
+		Format depthFormat;		// Only if no RenderPass
 	};
 
 	struct ComputePipelineInfo

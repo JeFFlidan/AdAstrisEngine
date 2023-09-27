@@ -1,5 +1,6 @@
 #include "render_graph.h"
 #include "renderer_resource_manager.h"
+#include "pipeline_manager.h"
 #include "shader_compiler/shader_manager.h"
 #include "engine/render_core_module.h"
 #include "core/module_manager.h"
@@ -15,11 +16,13 @@ namespace ad_astris::rcore
 			virtual IShaderManager* get_shader_manager() override;
 			virtual IRenderGraph* get_render_graph() override;
 			virtual IRendererResourceManager* get_renderer_resource_manager() override;
+			virtual IPipelineManager* get_pipeline_manager() override;
 
 		private:
 			std::unique_ptr<IRenderGraph> _renderGraph;
 			std::unique_ptr<IShaderManager> _shaderManager;
 			std::unique_ptr<IRendererResourceManager> _rendererResourceManager;
+			std::unique_ptr<IPipelineManager> _pipelineManager;
 	};
 
 	void RenderCoreModule::startup_module(ModuleManager* moduleManager)
@@ -36,6 +39,7 @@ namespace ad_astris::rcore
 		_rendererResourceManager = std::make_unique<impl::RendererResourceManager>();
 		_renderGraph = std::make_unique<impl::RenderGraph>(_rendererResourceManager.get());
 		_shaderManager = std::make_unique<impl::ShaderManager>();
+		_pipelineManager = std::make_unique<impl::PipelineManager>(_rendererResourceManager.get());
 	}
 
 	IShaderManager* RenderCoreModule::get_shader_manager()
@@ -51,6 +55,11 @@ namespace ad_astris::rcore
 	IRendererResourceManager* RenderCoreModule::get_renderer_resource_manager()
 	{
 		return _rendererResourceManager.get();
+	}
+
+	IPipelineManager* RenderCoreModule::get_pipeline_manager()
+	{
+		return _pipelineManager.get();
 	}
 
 	extern "C" RENDER_CORE_API IRenderCoreModule* register_module()

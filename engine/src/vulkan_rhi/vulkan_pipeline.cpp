@@ -1,6 +1,7 @@
 #include "vulkan_pipeline.h"
 #include "vulkan_shader.h"
 #include "vulkan_common.h"
+#include "rhi/utils.h"
 #include "profiler/logger.h"
 
 using namespace ad_astris;
@@ -214,6 +215,10 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(
 	colorBlendState.pAttachments = colorBlendAttachments.data();
 	colorBlendState.logicOpEnable = info->colorBlendState.isLogicOpEnabled ? VK_TRUE : VK_FALSE;
 	colorBlendState.logicOp = get_logic_op(info->colorBlendState.logicOp);
+	colorBlendState.blendConstants[0] = 1.0f;
+	colorBlendState.blendConstants[1] = 1.0f;
+	colorBlendState.blendConstants[2] = 1.0f;
+	colorBlendState.blendConstants[3] = 1.0f;
 	
 	std::vector<VkPipelineShaderStageCreateInfo> pipelineStages; 
 	for (auto& shader : info->shaderStages)
@@ -287,14 +292,16 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(
 	}
 
 	_layout = layoutCache->get_layout(info->shaderStages);
+
 	
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.renderPass = VK_NULL_HANDLE;
 	pipelineInfo.layout = _layout->get_handle();
 	if (info->renderPass.handle)
+	{
 		pipelineInfo.renderPass = get_vk_obj(&info->renderPass)->get_handle();
-	else
-		pipelineInfo.renderPass = VK_NULL_HANDLE;
+	}
 	pipelineInfo.subpass = 0;
 	pipelineInfo.stageCount = pipelineStages.size();
 	pipelineInfo.pStages = pipelineStages.data();
@@ -307,6 +314,27 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(
 	pipelineInfo.pColorBlendState = &colorBlendState;
 	pipelineInfo.pDepthStencilState = &depthStencilState;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+	
+	VkPipelineRenderingCreateInfo pipelineRenderingCreateInfo{};
+	pipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+	pipelineRenderingCreateInfo.viewMask = 0;
+	//pipelineRenderingCreateInfo.colorAttachmentCount = info->colorAttachmentFormats.size();
+	
+	std::vector<VkFormat> colorAttachFormats;
+	for (auto& rhiFormat : info->colorAttachmentFormats)
+		colorAttachFormats.push_back(get_format(rhiFormat));
+	
+	pipelineRenderingCreateInfo.pColorAttachmentFormats = colorAttachFormats.size() ? colorAttachFormats.data() : nullptr;
+	pipelineRenderingCreateInfo.colorAttachmentCount = colorAttachFormats.size();
+	LOG_INFO("COLOR ATTACHMENTS COUNT: {}", colorAttachFormats.size())
+	if (info->depthFormat != rhi::Format::UNDEFINED)
+	{
+		pipelineRenderingCreateInfo.depthAttachmentFormat = get_format(info->depthFormat);
+		if (rhi::Utils::support_stencil(info->depthFormat))
+			pipelineRenderingCreateInfo.stencilAttachmentFormat = get_format(info->depthFormat);
+	}
+	
+	pipelineInfo.pNext =  &pipelineRenderingCreateInfo;
 	
 	VK_CHECK(vkCreateGraphicsPipelines(_device->get_device(), pipelineCache, 1, &pipelineInfo, nullptr, &_pipeline));
 }

@@ -106,6 +106,7 @@ bool RendererResourceManager::update_buffer(
 		_isDeviceWaiting.store(true);
 	}
 	_rhi->destroy_buffer(gpuBuffer);
+	gpuBuffer->bufferInfo.size *= 2.0f;			// TODO Make it more effective
 	_rhi->create_buffer(gpuBuffer, &gpuBuffer->bufferInfo);
 	rhi::Buffer& stagingBuffer = get_new_staging_buffer();
 	allocate_staging_buffer(stagingBuffer, allObjects, 0, allObjectCount * objectSizeInBytes);
@@ -303,6 +304,16 @@ rhi::TextureView* RendererResourceManager::allocate_texture_view(
 	return textureView;
 }
 
+void RendererResourceManager::update_2d_texture(rhi::CommandBuffer* cmd, const std::string& textureName, void* textureData, uint32_t width, uint32_t height)
+{
+	rhi::Texture* texture = get_texture(textureName);
+
+	rhi::Buffer buffer;
+	allocate_staging_buffer(buffer, textureData, 0, width * height * 4);
+
+	_rhi->copy_buffer_to_texture(cmd, &buffer, texture);
+}
+
 rhi::Texture* RendererResourceManager::get_texture(const std::string& textureName)
 {
 	std::scoped_lock<std::mutex> locker(_textureMutex);
@@ -337,7 +348,7 @@ void RendererResourceManager::allocate_staging_buffer(rhi::Buffer& buffer, void*
 {
 	rhi::BufferInfo bufferInfo;
 	bufferInfo.size = newObjectsSize;
-	bufferInfo.bufferUsage = rhi::ResourceUsage::TRANSFER_SRC | rhi::ResourceUsage::STORAGE_BUFFER;
+	bufferInfo.bufferUsage = rhi::ResourceUsage::TRANSFER_SRC;
 	bufferInfo.memoryUsage = rhi::MemoryUsage::CPU;
 	
 	uint8_t* data = reinterpret_cast<uint8_t*>(allObjects);

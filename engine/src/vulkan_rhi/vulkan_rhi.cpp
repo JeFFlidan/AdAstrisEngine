@@ -752,7 +752,7 @@ void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcT
 		VK_FILTER_LINEAR);
 }
 
-void vulkan::VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Texture* dstTexture, rhi::ResourceUsage textureUsage)
+void vulkan::VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Texture* dstTexture)
 {
 	if (!cmd || !srcBuffer || !dstTexture)
 	{
@@ -816,7 +816,7 @@ void vulkan::VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buf
 	vkCmdPipelineBarrier(
 		vkCmd->get_handle(),
 		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
 		0, 0, nullptr, 0, nullptr,
 		1, &imageBarrierToReadable);
 }
