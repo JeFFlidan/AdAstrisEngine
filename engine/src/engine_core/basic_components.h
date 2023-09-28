@@ -43,6 +43,11 @@ namespace ad_astris::ecore
 		float intensity;
 	};
 
+	struct IntensityComponent
+	{
+		float intensity;		// For point and spot lights in candela, for directional lights in lux 
+	};
+
 	struct ColorComponent
 	{
 		XMFLOAT4 color;
@@ -135,6 +140,7 @@ namespace ad_astris::ecore
 		entityManager->register_component<VisibleComponent>(true);
 		entityManager->register_component<ExtentComponent>(true);
 		entityManager->register_component<CameraComponent>(true);
+		entityManager->register_component<IntensityComponent>(true);
 		entityManager->register_tag<StaticObjectTag>();
 		entityManager->register_tag<MovableObjectTag>();
 		entityManager->register_tag<PointLightTag>();
@@ -160,3 +166,4 @@ REFLECT_COMPONENT(ad_astris::ecore::AffectWorldComponent, isWorldAffected)
 REFLECT_COMPONENT(ad_astris::ecore::VisibleComponent, isVisible)
 REFLECT_COMPONENT(ad_astris::ecore::ExtentComponent, width, height)
 REFLECT_COMPONENT(ad_astris::ecore::CameraComponent, zNear, zFar, fov, isActive, movementSpeed, mouseSensitivity)
+REFLECT_COMPONENT(ad_astris::ecore::IntensityComponent, intensity)

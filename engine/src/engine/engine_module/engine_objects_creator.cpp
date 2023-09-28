@@ -39,7 +39,7 @@ ecs::Entity EngineObjectsCreator::create_point_light(
 {
 	ecs::EntityCreationContext entityCreationContext;
 	setup_basic_light_components(entityCreationContext, objectCreationContext);
-	entityCreationContext.add_component<LuminanceIntensityComponent>(1500.0f);
+	entityCreationContext.add_component<IntensityComponent>(8.0f);
 	entityCreationContext.add_component<AttenuationRadiusComponent>(1000.0f);
 	entityCreationContext.add_tag<StaticObjectTag>();
 	entityCreationContext.add_tag<PointLightTag>();
@@ -52,7 +52,7 @@ ecs::Entity EngineObjectsCreator::create_directional_light(
 {
 	ecs::EntityCreationContext entityCreationContext;
 	setup_basic_light_components(entityCreationContext, objectCreationContext);
-	entityCreationContext.add_component<CandelaIntensityComponent>(2.0f);
+	entityCreationContext.add_component<IntensityComponent>(1.0f);
 	entityCreationContext.add_tag<StaticObjectTag>();
 	entityCreationContext.add_tag<DirectionalLightTag>();
 
@@ -64,7 +64,7 @@ ecs::Entity EngineObjectsCreator::create_spot_light(
 {
 	ecs::EntityCreationContext entityCreationContext;
 	setup_basic_light_components(entityCreationContext, objectCreationContext);
-	entityCreationContext.add_component<LuminanceIntensityComponent>(1500.0f);
+	entityCreationContext.add_component<IntensityComponent>(8.0f);
 	entityCreationContext.add_component<AttenuationRadiusComponent>(1000.0f);
 	entityCreationContext.add_component<OuterConeAngleComponent>(45.0f);
 	entityCreationContext.add_component<InnerConeAngleComponent>(0.0f);
@@ -94,7 +94,7 @@ ecs::Entity EngineObjectsCreator::create_camera(EditorObjectCreationContext& obj
 void EngineObjectsCreator::setup_static_model_archetype()
 {
 	ecs::ArchetypeCreationContext context;
-	context.add_components<TransformComponent, ModelComponent, CastShadowComponent, VisibleComponent>();
+	context.add_components<TransformComponent, ModelComponent, CastShadowComponent, VisibleComponent, OpaquePBRMaterialComponent>();
 	context.add_tags<StaticObjectTag>();
 	_world->get_entity_manager()->create_archetype(context);
 }
@@ -102,7 +102,7 @@ void EngineObjectsCreator::setup_static_model_archetype()
 void EngineObjectsCreator::setup_skeletal_model_archetype()
 {
 	ecs::ArchetypeCreationContext context;
-	context.add_components<TransformComponent, ModelComponent, CastShadowComponent, VisibleComponent>();
+	context.add_components<TransformComponent, ModelComponent, CastShadowComponent, VisibleComponent, OpaquePBRMaterialComponent>();
 	context.add_tags<MovableObjectTag>();
 	_world->get_entity_manager()->create_archetype(context);
 }
@@ -110,7 +110,7 @@ void EngineObjectsCreator::setup_skeletal_model_archetype()
 void EngineObjectsCreator::setup_point_light_archetype()
 {
 	ecs::ArchetypeCreationContext context;
-	context.add_components<TransformComponent, LuminanceIntensityComponent, ColorComponent, AttenuationRadiusComponent,
+	context.add_components<TransformComponent, IntensityComponent, ColorComponent, AttenuationRadiusComponent,
 		LightTemperatureComponent, CastShadowComponent, VisibleComponent, AffectWorldComponent, ExtentComponent>();
 	context.add_tags<StaticObjectTag, PointLightTag>();
 	_world->get_entity_manager()->create_archetype(context);
@@ -119,7 +119,7 @@ void EngineObjectsCreator::setup_point_light_archetype()
 void EngineObjectsCreator::setup_directional_light_archetype()
 {
 	ecs::ArchetypeCreationContext context;
-	context.add_components<TransformComponent, CandelaIntensityComponent, ColorComponent,
+	context.add_components<TransformComponent, IntensityComponent, ColorComponent,
 		LightTemperatureComponent, CastShadowComponent, VisibleComponent, AffectWorldComponent, ExtentComponent>();
 	context.add_tags<StaticObjectTag, DirectionalLightTag>();
 	_world->get_entity_manager()->create_archetype(context);
@@ -128,7 +128,7 @@ void EngineObjectsCreator::setup_directional_light_archetype()
 void EngineObjectsCreator::setup_spot_light_archetype()
 {
 	ecs::ArchetypeCreationContext context;
-	context.add_components<TransformComponent, LuminanceIntensityComponent, ColorComponent, AttenuationRadiusComponent,
+	context.add_components<TransformComponent, IntensityComponent, ColorComponent, AttenuationRadiusComponent,
 		LightTemperatureComponent, CastShadowComponent, VisibleComponent, AffectWorldComponent,
 		OuterConeAngleComponent, InnerConeAngleComponent, ExtentComponent>();
 	context.add_tags<StaticObjectTag, SpotLightTag>();
@@ -151,6 +151,7 @@ void EngineObjectsCreator::setup_basic_model_components(
 	entityCreationContext.add_component<ModelComponent>(objectCreationContext.uuid);
 	entityCreationContext.add_component<CastShadowComponent>(true);
 	entityCreationContext.add_component<VisibleComponent>(true);
+	entityCreationContext.add_component<OpaquePBRMaterialComponent>(objectCreationContext.materialUUID);
 }
 
 void EngineObjectsCreator::setup_basic_light_components(

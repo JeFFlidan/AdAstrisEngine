@@ -92,7 +92,7 @@ bool RendererResourceManager::update_buffer(
 	uint64_t offsetInBytes = (allObjectCount - newObjectCount) * objectSizeInBytes;
 	uint64_t newObjectsSizeInBytes = newObjectCount * objectSizeInBytes;
 
-	if (offsetInBytes + newObjectsSizeInBytes < gpuBuffer->size)
+	if (offsetInBytes + newObjectsSizeInBytes <= gpuBuffer->size)
 	{
 		rhi::Buffer& stagingBuffer = get_new_staging_buffer();
 		allocate_staging_buffer(stagingBuffer, allObjects, offsetInBytes, newObjectsSizeInBytes);

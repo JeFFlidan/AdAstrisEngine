@@ -211,6 +211,13 @@ struct RendererModelInstance
 	float3 empty;
 };
 
+enum RendererEntityType
+{
+	DIRECTIONAL_LIGHT = 0,
+	POINT_LIGHT,
+	SPOT_LIGHT
+};
+
 // Must be aligned to 16 bytes. For now RendererEntity supports point, spot and directional lights
 struct RendererEntity
 {
@@ -397,6 +404,27 @@ UNIFORM_BUFFER(cameraData, CameraUB, UB_CAMERA_SLOT);
 struct CullingDataUB
 {
 	float P00, P11, znear, zfar;
+};
+
+struct Attachments
+{
+	uint gAlbedoIndex;
+	uint gNormalIndex;
+	uint gSurfaceIndex;
+	uint gDepthIndex;
+};
+
+enum SamplerType
+{
+	SAMPLER_LINEAR_REPEAT = 0,
+	SAMPLER_LINEAR_CLAMP,
+	SAMPLER_LINEAR_MIRROR,
+
+	SAMPLER_NEAREST_REPEAT,
+	SAMPLER_NEAREST_CLAMP,
+	SAMPLER_NEAREST_MIRROR,
+
+	SAMPLER_COUNT
 };
 
 #endif // SHADER_INTEROP_RENDERER

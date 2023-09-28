@@ -78,6 +78,7 @@ std::string texture::Utils::pack_texture2D_info(Texture2DInfo* info)
 	textureMetaData["sRGB"] = info->sRGB;
 	textureMetaData["brightness"] = info->brightness;
 	textureMetaData["saturation"] = info->saturation;
+	textureMetaData["uuid"] = (uint64_t)info->uuid;
 	return textureMetaData.dump();
 }
 
@@ -97,6 +98,7 @@ texture::Texture2DInfo texture::Utils::unpack_texture2D_info(std::string strMeta
 	info.sRGB = textureMetaData["sRGB"];
 	info.brightness = textureMetaData["brightness"];
 	info.saturation = textureMetaData["saturation"];
+	info.uuid = UUID(textureMetaData["uuid"]);
 
 	return info;
 }

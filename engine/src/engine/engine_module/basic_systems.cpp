@@ -161,7 +161,6 @@ void CameraUpdateSystem::execute(ecs::EngineManagers& managers, tasks::TaskGroup
 		{
 			auto transformComponent = transformConstView[execInfo.globalTaskIndex];
 			auto& cameraComponent = cameraView[execInfo.globalTaskIndex];
-
 			XMMATRIX worldTransform = XMLoadFloat4x4(&transformComponent->world);
 			XMVECTOR eye = XMVector3Transform(XMVectorSet(0, 0, 0, 1), worldTransform);
 			XMVECTOR at = XMVector3Normalize(XMVector3TransformNormal(XMVectorSet(0, 0, 1, 0), worldTransform));
@@ -171,7 +170,7 @@ void CameraUpdateSystem::execute(ecs::EngineManagers& managers, tasks::TaskGroup
 			XMStoreFloat3(&cameraComponent.up, up);
 			
 			XMMATRIX view = XMMatrixLookToLH(eye, at, up);
-			XMMATRIX projection = XMMatrixPerspectiveFovLH(XMConvertToRadians(cameraComponent.fov), _width / _height, cameraComponent.zFar, cameraComponent.zNear);
+			XMMATRIX projection = XMMatrixPerspectiveFovLH(XMConvertToRadians(cameraComponent.fov), _width / _height, cameraComponent.zNear, cameraComponent.zFar);
 			XMMATRIX viewProjection = XMMatrixMultiply(view, projection);
 			XMMATRIX invView = XMMatrixInverse(nullptr, view);
 			XMMATRIX invProjection = XMMatrixInverse(nullptr, projection);

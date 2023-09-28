@@ -16,9 +16,10 @@ SceneManager::SceneManager(SceneManagerInitializationContext& initContext)
 	submanagerInitContext.world = initContext.world;
 
 	subscribe_to_events();
-	
-	add_submanager<ModelSubmanager>(submanagerInitContext);
-	//add_submanager<LightSubmanager>(submanagerInitContext);
+
+	_materialSubmanager = std::make_unique<MaterialSubmanager>(submanagerInitContext);
+	_modelSubmanager = std::make_unique<ModelSubmanager>(submanagerInitContext, _materialSubmanager.get());
+	_entitySubmanager = std::make_unique<EntitySubmanager>(submanagerInitContext);
 }
 
 SceneManager::~SceneManager()
@@ -31,15 +32,17 @@ void SceneManager::setup_global_buffers()
 	rhi::CommandBuffer transferCmdBuffer;
 	_rhi->begin_command_buffer(&transferCmdBuffer, rhi::QueueType::TRANSFER);
 
-	for (auto& pair : _submanagerByItsName)
-	{
-		pair.second->update(transferCmdBuffer);
-		pair.second->cleanup_after_update();
-	}
+	// ORDER IS IMPORTANT!!!
+	_materialSubmanager->update(transferCmdBuffer);
+	_modelSubmanager->update(transferCmdBuffer);
+	_entitySubmanager->update(transferCmdBuffer);
+
+	_materialSubmanager->cleanup_after_update();
+	_modelSubmanager->cleanup_after_update();
+	_entitySubmanager->cleanup_after_update();
 	
 	_rhi->submit(rhi::QueueType::TRANSFER, true);
 	_rendererResourceManager->cleanup_staging_buffers();
-	_submanagersToUpdate.clear();
 }
 
 void SceneManager::subscribe_to_events()
@@ -55,9 +58,23 @@ void SceneManager::subscribe_to_events()
 			if (entityManager->does_entity_have_tag<ecore::StaticObjectTag>(entity))
 			{
 				auto handle = _resourceManager->get_resource<ecore::StaticModel>(modelComponent->modelUUID);
-				get_model_submanager()->add_static_model(handle, entity);
+				_modelSubmanager->add_static_model(handle, entity);
+			}
+
+			if (entityManager->does_entity_have_component<ecore::OpaquePBRMaterialComponent>(entity))
+			{
+				auto materialComponent = entityManager->get_component_const<ecore::OpaquePBRMaterialComponent>(entity);
+				_materialSubmanager->add_cpu_opaque_material_uuid(materialComponent->materialUUID);
 			}
 		}
+		LOG_INFO("BEFORE ADDING ENTITY")
+		if (entityManager->does_entity_have_tag<ecore::SpotLightTag>(entity))
+			_entitySubmanager->add_entity(entity);
+		else if (entityManager->does_entity_have_tag<ecore::PointLightTag>(entity))
+			_entitySubmanager->add_entity(entity);
+		else if (entityManager->does_entity_have_tag<ecore::DirectionalLightTag>(entity))
+			_entitySubmanager->add_entity(entity);
+		LOG_INFO("AFTER ADDING ENTITY")
 		// TODO lights and textures
 	};
 	_eventManager->subscribe(delegate1);

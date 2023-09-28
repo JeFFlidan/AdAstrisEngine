@@ -68,6 +68,7 @@ VulkanPipelineLayout::VulkanPipelineLayout(
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	createInfo.pSetLayouts = descriptorLayouts.data();
 	createInfo.setLayoutCount = descriptorLayouts.size();
+
 	if (_pushConstantRange.size > 0)
 	{
 		createInfo.pPushConstantRanges = &_pushConstantRange;
@@ -230,7 +231,7 @@ void VulkanPipelineLayoutCache::merge_shader_reflects(
 			intermediateContext.pushConstant.size = std::max(
 				intermediateContext.pushConstant.size,
 				reflectContext->pushConstantRange.size);
-			intermediateContext.pushConstant.stageFlags |= reflectContext->pushConstantRange.stageFlags;
+			intermediateContext.pushConstant.stageFlags = VK_SHADER_STAGE_ALL;
 		}
 		else
 		{

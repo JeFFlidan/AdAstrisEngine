@@ -33,6 +33,7 @@ static const uint BINDLESS_DESCRIPTOR_SET_SAMPLER = 6;
 [[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_TEXEL_BUFFER)]] RWBuffer<float3> bindlessRWBuffersFloat3[];
 [[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_TEXEL_BUFFER)]] RWBuffer<float4> bindlessRWBuffersFloat4[];
 
+[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_SAMPLED_IMAGE)]] Texture2D bindlessTextures2D[];
 [[vk::binding(0, BINDLESS_DESCRIPTOR_SET_SAMPLED_IMAGE)]] Texture2D<float> bindlessTextures2DFloat[];
 [[vk::binding(0, BINDLESS_DESCRIPTOR_SET_SAMPLED_IMAGE)]] Texture2D<float2> bindlessTextures2DFloat2[];
 [[vk::binding(0, BINDLESS_DESCRIPTOR_SET_SAMPLED_IMAGE)]] Texture2D<float4> bindlessTextures2DFloat4[];
@@ -87,5 +88,16 @@ inline RendererModelInstance get_model_instance(uint modelInstanceIndex)
 {
     return bindlessStructuredModelInstances[get_frame().modelInstanceBufferIndex][modelInstanceIndex];
 }
+
+inline float3 get_world_position_from_depth(float depth, float2 texCoord, float cameraIndex = 0)
+{
+    float x = texCoord.x * 2 - 1;
+    float y = (1 - texCoord.y) * 2 - 1;
+    float4 clipSpaceLocation = float4(x, y, depth, 1.0);
+    float4 worldSpaceLocation = mul(clipSpaceLocation, get_camera(cameraIndex).inverseViewProjection);
+    return worldSpaceLocation.xyz / worldSpaceLocation.w;
+}
+
+static const float PI = 3.14159265359;
 
 #endif  // SHADER_COMMON

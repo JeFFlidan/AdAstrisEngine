@@ -9,6 +9,7 @@ void RendererSubsettings::serialize(Config& config)
 	Section section(get_type_name<RendererSubsettings>());
 	serialize_graphics_api(section);
 	serialize_swap_chain_desc(section);
+	section.set_option("DefaultMaterialUUID", (uint64_t)_defaultMaterialUUID);
 
 	config.set_section(section);
 }
@@ -17,6 +18,7 @@ void RendererSubsettings::deserialize(Section& section)
 {
 	deserialize_graphics_api(section);
 	deserialize_swap_chain_desc(section);
+	_defaultMaterialUUID= section.get_option_value<uint64_t>("DefaultMaterialUUID");
 }
 
 void RendererSubsettings::setup_default_values()

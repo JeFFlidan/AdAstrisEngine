@@ -7,6 +7,8 @@
 #include "engine_events.h"
 #include "engine_core/basic_components.h"
 #include "engine_core/basic_events.h"
+#include "ui_core/ecs_user_interface.h"
+#include "engine_core/material/materials.h"
 
 using namespace ad_astris::engine::impl;
 #define GET_ID(x) compile_time_fnv1(#x)
@@ -86,7 +88,7 @@ void Engine::init(EngineInitializationContext& engineInitContext)
 	}
 	else
 	{
-		create_material_templates();
+		//create_material_templates();
 		LOG_INFO("Engine::init(): Created material templates for new project")
 	}
 
@@ -139,30 +141,47 @@ void Engine::create_new_blank_project()
 	_projectSettings->deserialize(_fileSystem->get_project_root_path() + "/configs/project_settings.ini");
 	_projectSettings->serialize(_fileSystem);
 
+	LOG_INFO("BEFORE CREATING DEFAULT MATERIAL")
+	create_default_material();
+	
 	ecore::EditorObjectCreationContext editorObjectCreationContext;
-	editorObjectCreationContext.uuid = 	_resourceManager->convert_to_aares<ecore::StaticModel>(_fileSystem->get_engine_root_path() + "/starter_content/models/gun.obj", "content").get_resource()->get_uuid();
+	editorObjectCreationContext.uuid = 	_resourceManager->convert_to_aares<ecore::StaticModel>(_fileSystem->get_engine_root_path() + "/starter_content/models/scene.obj", "content").get_resource()->get_uuid();
 	LOG_INFO("RESOURCE UUID: {}", (uint64_t)editorObjectCreationContext.uuid)
 	editorObjectCreationContext.location = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	editorObjectCreationContext.scale = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	editorObjectCreationContext.rotation = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	editorObjectCreationContext.materialUUID = get_default_material_uuid();
+	LOG_INFO("MATERIAL UUID: {}", get_default_material_uuid())
 	ecs::Entity entity = _engineObjectsCreator->create_static_model(editorObjectCreationContext);
 	auto modelComponent = _world->get_entity_manager()->get_component<ecore::ModelComponent>(entity);
 	LOG_INFO("CREATED STATIC MODEL, {}", modelComponent->modelUUID)
 
 	ecore::EditorObjectCreationContext creationContext{ };
-	creationContext.location = XMFLOAT3(0.0f, 0.0f, 10.0f);
+	creationContext.location = XMFLOAT3(0.0f, 0.0f, 60.0f);
 	_activeCamera = _engineObjectsCreator->create_camera(creationContext);
 	auto cameraComponent = _world->get_entity_manager()->get_component<ecore::CameraComponent>(_activeCamera);
 	cameraComponent->isActive = true;
-	
-	//create_material_templates();
-	LOG_INFO("Engine::init(): Saved project with default settings")
 
-	// io::URI uri = "C:/Users/zaver/materials/wedged-cobblestone-ue/wedged-cobblestone_albedo.png";
-	// io::URI aaresURI = "content";
-	// LOG_INFO("BEFORE LOADING TEXTURE")
-	// _resourceManager->convert_to_aares<ecore::Texture2D>(uri, aaresURI);
-	// LOG_INFO("AFTER LOADING TEXTURE")
+	BasicSystemsUtils::rotate(XMFLOAT3(-50.0f, 10.0f, 0.0f), creationContext.rotation);
+	_engineObjectsCreator->create_directional_light(creationContext);
+	BasicSystemsUtils::rotate(XMFLOAT3(25.0f, -90.0f, 0.0f), creationContext.rotation);
+	creationContext.location = XMFLOAT3(0.0f, 15.0f, 0.0f);
+	ecs::Entity spotLight = _engineObjectsCreator->create_spot_light(creationContext);
+	creationContext.location = XMFLOAT3(12.0f, 950.0f, 25.0f);
+	ecs::Entity pointLight = _engineObjectsCreator->create_point_light(creationContext);
+
+	auto color = _world->get_entity_manager()->get_component<ecore::ColorComponent>(spotLight);
+	color->color = XMFLOAT4(0.0f, 1.0f, 0.0, 1.0f);
+	color = _world->get_entity_manager()->get_component<ecore::ColorComponent>(pointLight);
+	color->color =  XMFLOAT4(1.0f, 0.0f, 0.0, 1.0f);
+	auto angleComponent = _world->get_entity_manager()->get_component<ecore::OuterConeAngleComponent>(spotLight);
+	angleComponent->angle = 10.0f;
+
+	auto attenuationComponent = _world->get_entity_manager()->get_component<ecore::AttenuationRadiusComponent>(pointLight);
+	attenuationComponent->attenuationRadius = 16;
+	attenuationComponent = _world->get_entity_manager()->get_component<ecore::AttenuationRadiusComponent>(spotLight);
+	attenuationComponent->attenuationRadius = 300;
+	
+	LOG_INFO("Engine::init(): Saved project with default settings")
 }
 
 void Engine::load_existing_project()
@@ -178,45 +197,6 @@ void Engine::load_existing_project()
 	level.get_resource()->build_entities();
 	
 	LOG_INFO("Engine::init(): Loaded default level {}", level.get_resource()->get_name()->get_full_name())
-}
-
-void Engine::create_material_templates()
-{
-	using namespace ecore::material;
-	
-	ecore::OpaquePBRMaterialSettings opaquePBRMaterialSettings;
-	opaquePBRMaterialSettings.baseColorTextureUUID = UUID();
-	opaquePBRMaterialSettings.roughnessTextureUUID = UUID();
-	opaquePBRMaterialSettings.metallicTextureUUID = UUID();
-	opaquePBRMaterialSettings.ambientOcclusionTextureUUID = UUID();
-	opaquePBRMaterialSettings.normalTextureUUID = UUID();
-	opaquePBRMaterialSettings.useRoughnessValue = true;
-	opaquePBRMaterialSettings.roughnessValue = 0.5f;
-	opaquePBRMaterialSettings.useMetallicValue = true;
-	opaquePBRMaterialSettings.metallicValue = 0.5f;
-	
-	resource::FirstCreationContext<ecore::OpaquePBRMaterial> opaquePBRMaterialCreationContext;
-	opaquePBRMaterialCreationContext.materialName = "DefaultPBR";
-	opaquePBRMaterialCreationContext.materialPath = "content/materials";
-	opaquePBRMaterialCreationContext.materialSettings = opaquePBRMaterialSettings;
-	
-	ecore::OpaquePBRMaterialHandle opaquePbrMaterialHandle = _resourceManager->create_new_resource(opaquePBRMaterialCreationContext);
-	LOG_INFO("Created opaque material: {}", opaquePbrMaterialHandle.get_resource()->get_name()->get_full_name())
-	
-	ecore::TransparentMaterialSettings transparentMaterialSettings;
-	transparentMaterialSettings.baseColorTextureUUID = UUID();
-	transparentMaterialSettings.ambientOcclusionTextureUUID = UUID();
-	transparentMaterialSettings.opacityTextureUUID = UUID();
-	transparentMaterialSettings.useOpacityValue = true;
-	transparentMaterialSettings.opacityValue = 0.3f;
-	
-	resource::FirstCreationContext<ecore::TransparentMaterial> transparentMaterialCreationContext;
-	transparentMaterialCreationContext.materialName = "DefaultTransparent";
-	transparentMaterialCreationContext.materialPath = "content/materials";
-	transparentMaterialCreationContext.materialSettings = transparentMaterialSettings;
-	
-	ecore::TransparentMaterialHandle transparentMaterialHandle = _resourceManager->create_new_resource(transparentMaterialCreationContext);
-	LOG_INFO("Created transparent material: {}", transparentMaterialHandle.get_resource()->get_name()->get_full_name())
 }
 
 void Engine::register_ecs_objects()
@@ -249,4 +229,56 @@ void Engine::set_active_camera_delegate()
 		LOG_INFO("FINISH EVENT")
 	};
 	_eventManager->subscribe(_activeCameraDelegate);
+}
+
+void Engine::create_default_material()
+{
+	tasks::TaskGroup taskGroup;
+	ecore::Texture2D* albedo, *normal, *roughness, *metallic, *ao;
+	
+	std::vector<io::URI> paths = {
+		_fileSystem->get_engine_root_path() + "/starter_content/textures/DustyCobbleAlbedo.tga",
+		_fileSystem->get_engine_root_path() + "/starter_content/textures/DustyCobbleAO.tga",
+		_fileSystem->get_engine_root_path() + "/starter_content/textures/DustyCobbleNormal.tga",
+		_fileSystem->get_engine_root_path() + "/starter_content/textures/DustyCobbleRoughness.tga",
+		_fileSystem->get_engine_root_path() + "/starter_content/textures/BlackMetallic.tga",
+	};
+	
+	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo)
+	{
+		albedo = _resourceManager->convert_to_aares<ecore::Texture2D>(paths[0], "content").get_resource();
+	});
+	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo)
+	{
+		ao = _resourceManager->convert_to_aares<ecore::Texture2D>(paths[1], "content").get_resource();
+	});
+	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo)
+	{
+		normal = _resourceManager->convert_to_aares<ecore::Texture2D>(paths[2], "content").get_resource();
+	});
+	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo)
+	{
+		roughness = _resourceManager->convert_to_aares<ecore::Texture2D>(paths[3], "content").get_resource();
+	});
+	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo)
+	{
+		metallic = _resourceManager->convert_to_aares<ecore::Texture2D>(paths[4], "content").get_resource();
+	});
+	_taskComposer->wait(taskGroup);
+	
+	resource::FirstCreationContext<ecore::OpaquePBRMaterial> creationContext;
+	creationContext.materialName = "DefaultOpaqueMaterial";
+	creationContext.materialPath = _fileSystem->get_project_root_path() + "/content";
+	creationContext.materialSettings.metallicTextureUUID = metallic->get_uuid();
+	creationContext.materialSettings.baseColorTextureUUID = albedo->get_uuid();
+	creationContext.materialSettings.roughnessTextureUUID = roughness->get_uuid();
+	creationContext.materialSettings.normalTextureUUID = normal->get_uuid();
+	creationContext.materialSettings.ambientOcclusionTextureUUID = ao->get_uuid();
+	auto material = _resourceManager->create_new_resource(creationContext).get_resource();
+	_projectSettings->get_subsettings<ecore::RendererSubsettings>()->set_default_material_uuid(material->get_uuid());
+}
+
+ad_astris::UUID Engine::get_default_material_uuid()
+{
+	return _projectSettings->get_subsettings<ecore::RendererSubsettings>()->get_default_material_uuid();
 }

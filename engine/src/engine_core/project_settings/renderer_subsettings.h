@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "engine_core/uuid.h"
 #include "engine_core/subsettings.h"
 #include "profiler/logger.h"
 
@@ -53,6 +54,16 @@ namespace ad_astris::ecore
 			{
 				return _swapChainDesc.height;
 			}
+
+			void set_default_material_uuid(UUID uuid)
+			{
+				_defaultMaterialUUID = uuid;
+			}
+
+			UUID get_default_material_uuid()
+			{
+				return _defaultMaterialUUID;
+			}
 		
 		private:
 			GraphicsAPI _graphicsAPI{ GraphicsAPI::UNDEFINED };
@@ -64,6 +75,8 @@ namespace ad_astris::ecore
 				bool useVSync;
 				bool useTripleBuffering;
 			} _swapChainDesc;
+
+			UUID _defaultMaterialUUID;
 				
 			void serialize_graphics_api(Section& section);
 			void deserialize_graphics_api(Section& section);

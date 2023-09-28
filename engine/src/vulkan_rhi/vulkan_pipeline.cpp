@@ -363,3 +363,8 @@ void vulkan::VulkanPipeline::create_compute_pipeline(
 	
 	VK_CHECK(vkCreateComputePipelines(_device->get_device(), pipelineCache, 1, &createInfo, nullptr, &_pipeline));
 }
+
+void vulkan::VulkanPipeline::push_constants(VkCommandBuffer cmd, void* data)
+{
+	_layout->push_constant(cmd, data);
+}

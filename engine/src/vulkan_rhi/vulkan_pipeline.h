@@ -26,6 +26,8 @@ namespace ad_astris::vulkan
 
 			VkPipeline get_handle() { return _pipeline; }
 			rhi::PipelineType get_type() { return _type; }
+
+			void push_constants(VkCommandBuffer cmd, void* data);
 		
 		private:
 			VulkanDevice* _device;

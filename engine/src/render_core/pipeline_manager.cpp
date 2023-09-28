@@ -33,6 +33,7 @@ void PipelineManager::create_builtin_pipelines()
 {
 	tasks::TaskGroup taskGroup;
 	_taskComposer->execute(taskGroup, [this](tasks::TaskExecutionInfo){ create_gbuffer_pipeline(); });
+	_taskComposer->execute(taskGroup, [this](tasks::TaskExecutionInfo){ create_deferred_lighting_pipeline(); });
 	_taskComposer->wait(taskGroup);
 }
 
@@ -49,6 +50,8 @@ void PipelineManager::load_builtin_shaders()
 	tasks::TaskGroup taskGroup;
 	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo execInfo) { _shaderManager->load_shader("engine/shaders/objectVS.hlsl", rhi::ShaderType::VERTEX); });
 	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo execInfo) { _shaderManager->load_shader("engine/shaders/gbufferPS.hlsl", rhi::ShaderType::FRAGMENT); });
+	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo execInfo) { _shaderManager->load_shader("engine/shaders/outputPlaneVS.hlsl", rhi::ShaderType::VERTEX); });
+	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo execInfo) { _shaderManager->load_shader("engine/shaders/deferredLightingPS.hlsl", rhi::ShaderType::FRAGMENT); });
 	_taskComposer->wait(taskGroup);
 }
 
@@ -87,7 +90,7 @@ void PipelineManager::setup_default_graphics_pipeline_info(rhi::GraphicsPipeline
 	pipelineInfo.rasterizationState.cullMode = rhi::CullMode::BACK;
 	pipelineInfo.rasterizationState.polygonMode = rhi::PolygonMode::FILL;
 	pipelineInfo.rasterizationState.isBiasEnabled = false;
-	pipelineInfo.rasterizationState.frontFace = rhi::FrontFace::COUNTER_CLOCKWISE;
+	pipelineInfo.rasterizationState.frontFace = rhi::FrontFace::CLOCKWISE;
 
 	rhi::ColorBlendAttachmentState attachState;
 	attachState.isBlendEnabled = false;
@@ -155,5 +158,38 @@ void PipelineManager::create_gbuffer_pipeline()
 
 void PipelineManager::create_deferred_lighting_pipeline()
 {
+	rhi::GraphicsPipelineInfo pipelineInfo;
+	setup_default_graphics_pipeline_info(pipelineInfo);
+	setup_formats(BuiltinPipelineType::DEFERRED_LIGHTING, pipelineInfo.colorAttachmentFormats, pipelineInfo.depthFormat);
+	rhi::Shader* vertexShader = _shaderManager->get_shader("engine/shaders/outputPlaneVS.hlsl");
+	rhi::Shader* fragmentShader = _shaderManager->get_shader("engine/shaders/deferredLightingPS.hlsl");
+
+	LOG_WARNING("IS UNDEFINED: {}", pipelineInfo.depthFormat == rhi::Format::UNDEFINED)
+
+	pipelineInfo.shaderStages.push_back(*vertexShader);
+	pipelineInfo.shaderStages.push_back(*fragmentShader);
+
+	pipelineInfo.attributeDescriptions.clear();
+
+	rhi::VertexAttributeDescription vertexAttributeDescription;
+	vertexAttributeDescription.binding = 0;
+	vertexAttributeDescription.format = rhi::Format::R32G32B32_SFLOAT;
+	vertexAttributeDescription.location = 0;
+	vertexAttributeDescription.offset = offsetof(ecore::model::VertexF32PC, position);
+	pipelineInfo.attributeDescriptions.push_back(vertexAttributeDescription);
+
+	vertexAttributeDescription.format = rhi::Format::R32G32_SFLOAT;
+	vertexAttributeDescription.location = 1;
+	vertexAttributeDescription.offset = offsetof(ecore::model::VertexF32PC, texCoord);
+	pipelineInfo.attributeDescriptions.push_back(vertexAttributeDescription);
+
+	pipelineInfo.bindingDescriptrions.back().stride = sizeof(ecore::model::VertexF32PC);
 	
+	pipelineInfo.rasterizationState.cullMode = rhi::CullMode::NONE;
+	
+	rhi::Pipeline pipeline;
+	_rhi->create_graphics_pipeline(&pipeline, &pipelineInfo);
+	std::scoped_lock<std::mutex> locker(_builtinPipelinesMutex);
+	_builtinPipelineStateByItsType[BuiltinPipelineType::DEFERRED_LIGHTING].pipeline = pipeline;
+
 }

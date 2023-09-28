@@ -30,7 +30,7 @@ namespace ad_astris::ecore::texture
 		// Data for operations under hood
 		UUID uuid;
 		uint64_t size{ 0 };
-		uint64_t width{0};
+		uint64_t width{ 0 };
 		uint64_t height{ 0 };
 		std::string originalFile;
 

@@ -42,9 +42,10 @@ namespace ad_astris::engine::impl
 		
 			void create_new_blank_project();
 			void load_existing_project();
-			void create_material_templates();
 			void register_ecs_objects();
 			void pre_update();
 			void set_active_camera_delegate();
+			void create_default_material();
+			UUID get_default_material_uuid();
 	};
 }

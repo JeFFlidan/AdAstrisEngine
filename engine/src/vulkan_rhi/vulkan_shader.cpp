@@ -68,7 +68,7 @@ void vulkan::VulkanShader::reflect(rhi::ShaderInfo* shaderInfo)
 	for (auto& pushConstant : pushConstants)
 	{
 		auto& vkPushConstant = _reflectContext.pushConstantRange;
-		vkPushConstant.stageFlags |= pushConstant->flags;
+		vkPushConstant.stageFlags = get_shader_stage(shaderInfo->shaderType);
 		vkPushConstant.offset = pushConstant->offset;
 		vkPushConstant.size = pushConstant->size;
 		_reflectContext.isPushConstantUsed = true;

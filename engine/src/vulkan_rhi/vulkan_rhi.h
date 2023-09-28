@@ -92,6 +92,7 @@ namespace ad_astris::vulkan
 				rhi::Texture* dstTexture) final override;
 			virtual void set_viewports(rhi::CommandBuffer* cmd, std::vector<rhi::Viewport>& viewports) final override;
 			virtual void set_scissors(rhi::CommandBuffer* cmd, std::vector<rhi::Scissor>& scissors) final override;
+			virtual void push_constants(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline, void* data) override;
 			virtual void bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;
 			virtual void bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer) final override;
 			virtual void bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline) final override;

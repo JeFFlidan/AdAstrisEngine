@@ -861,6 +861,12 @@ void vulkan::VulkanRHI::set_scissors(rhi::CommandBuffer* cmd, std::vector<rhi::S
 	vkCmdSetScissor(vulkanCmd->get_handle(), 0, scissors.size(), vulkanScissors);
 }
 
+void vulkan::VulkanRHI::push_constants(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline, void* data)
+{
+	VulkanPipeline* vkPipeline = get_vk_obj(pipeline);
+	vkPipeline->push_constants(get_vk_obj(cmd)->get_handle(), data);
+}
+
 void vulkan::VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
 {
 	if (!cmd || !buffer)

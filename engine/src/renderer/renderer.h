@@ -2,7 +2,6 @@
 
 #include "api.h"
 #include "enums.h"
-#include "triangle_test.h"
 #include "material_manager.h"
 #include "scene_manager/scene_manager.h"
 #include "engine/renderer_module.h"
@@ -41,21 +40,20 @@ namespace ad_astris::renderer::impl
 			rcore::IShaderManager* _shaderManager{ nullptr };
 			resource::ResourceManager* _resourceManager{ nullptr };
 			rcore::IRendererResourceManager* _rendererResourceManager{ nullptr };
+			rcore::IPipelineManager* _pipelineManager{ nullptr };
 			events::EventManager* _eventManager{ nullptr };
 			tasks::TaskComposer* _taskComposer{ nullptr };
 			acore::IWindow* _mainWindow{ nullptr };
 			ecore::World* _world{ nullptr };
 
 			std::vector<std::unique_ptr<rcore::IRenderPassExecutor>> _renderPassExecutors;
-
-			rhi::Sampler _samplers[SAMPLER_COUNT];
 		
 			uint32_t _frameIndex{ 0 };
 
 			void get_current_frame_index();
-			void create_samplers();
 			void create_uniform_buffers();
 			void setup_cameras(DrawContext& preDrawContext);
 			void setup_frame_data(DrawContext& preDrawContext);
+			void set_backbuffer(const std::string& textureName);
 	};
 }

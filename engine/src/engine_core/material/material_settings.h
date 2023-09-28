@@ -6,10 +6,7 @@
 
 namespace ad_astris::ecore
 {
-#define REGISTER_MATERIAL_SETTINGS(Type, ...)\
-	REFL_TYPE(Type)											\
-		FOR_EACH(REFLECT_SERIALIZABLE_FIELD, __VA_ARGS__)	\
-		REFL_END
+#define REGISTER_MATERIAL_SETTINGS(Type, ...) REFLECT_SERIALIZABLE_FIELDS(Type, __VA_ARGS__)
 
 #define IMPLEMENT_MATERIAL_SETTINGS_METHODS()										\
 	virtual std::string serialize() override										\
@@ -61,5 +58,17 @@ namespace ad_astris::ecore
 	};
 }
 
-REGISTER_MATERIAL_SETTINGS(ad_astris::ecore::OpaquePBRMaterialSettings, baseColorTextureUUID, roughnessTextureUUID, metallicTextureUUID, roughnessValue)
+REGISTER_MATERIAL_SETTINGS(
+	ad_astris::ecore::OpaquePBRMaterialSettings,
+	baseColorTextureUUID,
+	roughnessTextureUUID,
+	metallicTextureUUID,
+	ambientOcclusionTextureUUID,
+	normalTextureUUID,
+	tintColor, 
+	roughnessValue,
+	metallicValue,
+	useTintColor,
+	useRoughnessValue,
+	useMetallicValue)
 REGISTER_MATERIAL_SETTINGS(ad_astris::ecore::TransparentMaterialSettings, tintColor)

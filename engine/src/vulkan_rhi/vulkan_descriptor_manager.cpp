@@ -244,7 +244,7 @@ void VulkanDescriptorManager::allocate_uniform_buffer(VulkanBuffer* buffer, uint
 	
 	for (auto& zeroSetInfo : _zeroDescriptorSetByItsHash)
 	{
-		if (slot > zeroSetInfo.second.bindingCount)
+		if (slot >= zeroSetInfo.second.bindingCount)
 			continue;
 
 		auto& writeDescriptorSet = writes.emplace_back();

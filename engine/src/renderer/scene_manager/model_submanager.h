@@ -5,13 +5,14 @@
 #include "resource_manager/resource_events.h"
 #include "engine_core/fwd.h"
 #include "shader_interop_renderer.h"
+#include "material_submanager.h"
 
 namespace ad_astris::renderer::impl
 {
 	class ModelSubmanager final : public SceneSubmanagerBase
 	{
 		public:
-			ModelSubmanager(SceneSubmanagerInitializationContext& initContext);
+			ModelSubmanager(SceneSubmanagerInitializationContext& initContext, MaterialSubmanager* materialSubmanager);
 
 			virtual void update(rhi::CommandBuffer& cmdBuffer) override;
 			virtual void cleanup_after_update() override;
@@ -44,6 +45,8 @@ namespace ad_astris::renderer::impl
 			const std::string INDEX_BUFFER_F32PNTC_NAME = "index_buffer_f32pntc";
 			const std::string OUTPUT_PLANE_VERTEX_BUFFER_NAME = "output_plane_buffer";
 			const std::string MODEL_INSTANCE_BUFFER_NAME = "model_instance_buffer";
+
+			MaterialSubmanager* _materialSubmanager;
 		
 			bool _areGPUBuffersAllocated{ false };
 

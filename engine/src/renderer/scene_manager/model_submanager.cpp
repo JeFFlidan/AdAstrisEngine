@@ -7,7 +7,8 @@ using namespace ad_astris::renderer::impl;
 
 constexpr uint32_t MODEL_INSTANCES_INIT_NUMBER = 512;
 
-ModelSubmanager::ModelSubmanager(SceneSubmanagerInitializationContext& initContext) : SceneSubmanagerBase(initContext)
+ModelSubmanager::ModelSubmanager(SceneSubmanagerInitializationContext& initContext, MaterialSubmanager* materialSubmanager)
+	: SceneSubmanagerBase(initContext), _materialSubmanager(materialSubmanager)
 {
 	subscribe_to_events();
 	_modelInstances.reserve(MODEL_INSTANCES_INIT_NUMBER);
@@ -82,7 +83,7 @@ void ModelSubmanager::allocate_gpu_buffers(rhi::CommandBuffer& cmd)
 
 	ecore::Plane plane;
 	uint64_t size = plane.vertices.size() * sizeof(ecore::model::VertexF32PC);
-	_rendererResourceManager->allocate_storage_buffer(OUTPUT_PLANE_VERTEX_BUFFER_NAME, size);
+	rhi::Buffer* buffer = _rendererResourceManager->allocate_vertex_buffer(OUTPUT_PLANE_VERTEX_BUFFER_NAME, size);
 	_rendererResourceManager->update_buffer(
 		&cmd,
 		OUTPUT_PLANE_VERTEX_BUFFER_NAME,
@@ -90,7 +91,6 @@ void ModelSubmanager::allocate_gpu_buffers(rhi::CommandBuffer& cmd)
 		plane.vertices.data(),
 		plane.vertices.size(),
 		plane.vertices.size());
-
 	_areGPUBuffersAllocated = true;
 }
 
@@ -125,9 +125,10 @@ void ModelSubmanager::update_cpu_arrays()
 		}
 	}
 
+	ecs::EntityManager* entityManager = _world->get_entity_manager();
 	for (auto entity : _staticModelEntities)
 	{
-		auto modelComponent = _world->get_entity_manager()->get_component_const<ecore::ModelComponent>(entity);
+		auto modelComponent = entityManager->get_component_const<ecore::ModelComponent>(entity);
 		ecore::StaticModelHandle modelHandle = _resourceManager->get_resource<ecore::StaticModel>(modelComponent->modelUUID);
 		ecore::StaticModel* staticModel = modelHandle.get_resource();
 		RendererModelInstance& modelInstance = _modelInstances.emplace_back();
@@ -135,9 +136,21 @@ void ModelSubmanager::update_cpu_arrays()
 		ecore::model::ModelBounds bounds = staticModel->get_model_bounds();
 		modelInstance.sphereBoundsRadius = bounds.radius;
 		modelInstance.sphereBoundsCenter = bounds.origin;
-		auto transform = _world->get_entity_manager()->get_component_const<ecore::TransformComponent>(entity);
+		auto transform = entityManager->get_component_const<ecore::TransformComponent>(entity);
 		modelInstance.transform.set_transfrom(transform->world);
-		modelInstance.transform.set_transfrom(transform->world);		// TODO change matrix
+
+		XMMATRIX matrix = XMLoadFloat4x4(&transform->world);
+		matrix = XMMatrixInverse(nullptr, XMMatrixTranspose(matrix));
+		XMFLOAT4X4 transformInverseTranspose;
+		XMStoreFloat4x4(&transformInverseTranspose, matrix);
+		modelInstance.transformInverseTranspose.set_transfrom(transformInverseTranspose);		// TODO change matrix
+
+		if (entityManager->does_entity_have_component<ecore::OpaquePBRMaterialComponent>(entity))
+		{
+			auto materialComponent = entityManager->get_component<ecore::OpaquePBRMaterialComponent>(entity);
+			modelInstance.materialIndex = _materialSubmanager->get_gpu_material_index(materialComponent->materialUUID);
+		}
+		// TODO transparent materials
 	}
 }
 

@@ -16,9 +16,6 @@ namespace ad_astris::engine::impl
 	{
 		public:
 			OVERRIDE_SYSTEM_METHODS()
-
-		private:
-			void execute(tasks::TaskExecutionInfo& taskExecInfo);
 	};
 
 	class CameraUpdateSystem : public ecs::System

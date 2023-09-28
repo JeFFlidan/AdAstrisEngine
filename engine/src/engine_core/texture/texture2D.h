@@ -7,6 +7,13 @@
 
 namespace ad_astris::ecore
 {
+	struct Texture2DGPUAllocationContext
+	{
+		uint32_t width;
+		uint32_t height;
+		uint8_t* data;
+	};
+	
 	class Texture2D : public Object
 	{
 		friend texture::Utils;
@@ -18,6 +25,15 @@ namespace ad_astris::ecore
 			texture::Texture2DInfo get_info()
 			{
 				return _textureInfo;
+			}
+
+			Texture2DGPUAllocationContext get_allocation_context()
+			{
+				Texture2DGPUAllocationContext data;
+				data.data = _data;
+				data.width = _textureInfo.width;
+				data.height = _textureInfo.height;
+				return data;
 			}
 		public:
 			// ========== Begin Object interface ==========

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "renderer/rendering_base.h"
+#include "shader_interop_renderer.h"
 
 namespace ad_astris::renderer::impl
 {
@@ -16,7 +17,10 @@ namespace ad_astris::renderer::impl
 	{
 		public:
 			DeferredLighting(RenderingInitContext& initContext) : RenderingBase(initContext) { }
-			virtual void prepare_render_pass(rcore::IRenderGraph* renderGraph, rcore::IRendererResourceManager* rendererResourceManager) override;
+			virtual void prepare_render_pass(rcore::IRenderGraph* renderGraph, rcore::IRendererResourceManager* rendererResourceManagerxt) override;
 			virtual void execute(rhi::CommandBuffer* cmd) override;
+
+		private:
+			Attachments _attachments;
 	};
 }

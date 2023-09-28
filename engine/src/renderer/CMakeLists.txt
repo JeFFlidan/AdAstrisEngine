@@ -9,9 +9,6 @@ file(GLOB RENDERER_FILES
     ${DIR_ENGINE_SRC}/renderer/*/*.h
 )
 
-include(CMakePrintHelpers)
-cmake_print_variables(RENDERER_FILES)
-
 add_library(${LIBRARY_NAME} SHARED ${RENDERER_FILES})
 set_target_properties(${LIBRARY_NAME} PROPERTIES OUTPUT_NAME ${LIBRARY_NAME})
 

@@ -2,12 +2,12 @@
 
 #include "scene_submanager_base.h"
 #include "model_submanager.h"
-#include "light_submanager.h"
+#include "entity_submanager.h"
 #include "rhi/engine_rhi.h"
+#include "renderer/enums.h"
 #include "events/event_manager.h"
 #include "multithreading/task_composer.h"
-#include "core/reflection.h"
-#include "ecs/ecs.h"
+#include "material_submanager.h"
 
 namespace ad_astris::renderer::impl
 {
@@ -22,37 +22,37 @@ namespace ad_astris::renderer::impl
 		
 			rhi::Buffer* get_vertex_buffer_f32pntc()
 			{
-				return get_model_submanager()->get_vertex_buffer_f32pntc();
+				return _modelSubmanager->get_vertex_buffer_f32pntc();
 			}
 
 			rhi::Buffer* get_index_buffer_f32pntc()
 			{
-				return get_model_submanager()->get_index_buffer_f32pntc();
+				return _modelSubmanager->get_index_buffer_f32pntc();
 			}
 
 			rhi::Buffer* get_output_plane_vertex_buffer()
 			{
-				return get_model_submanager()->get_output_plane_vertex_buffer();
-			}
-
-			 rhi::Buffer* get_point_light_storage_buffer()
-			{
-				return get_light_submanager()->get_point_light_storage_buffer();
-			}
-
-			rhi::Buffer* get_directional_light_storage_buffer()
-			{
-				return get_light_submanager()->get_directional_light_storage_buffer();
-			}
-	
-			rhi::Buffer* get_spot_light_storage_buffer()
-			{
-				return get_light_submanager()->get_spot_light_storage_buffer();
+				return _modelSubmanager->get_output_plane_vertex_buffer();
 			}
 
 			rhi::Buffer* get_model_instance_storage_buffer()
 			{
-				return get_model_submanager()->get_model_instance_buffer();
+				return _modelSubmanager->get_model_instance_buffer();
+			}
+
+			rhi::Buffer* get_material_storage_buffer()
+			{
+				return _materialSubmanager->get_material_buffer();
+			}
+
+			rhi::Buffer* get_entity_storage_buffer()
+			{
+				return _entitySubmanager->get_entity_buffer();
+			}
+
+			rhi::Sampler get_sampler(SamplerType samplerType)
+			{
+				return _materialSubmanager->get_sampler(samplerType);
 			}
 		
 		private:
@@ -62,24 +62,9 @@ namespace ad_astris::renderer::impl
 			resource::ResourceManager* _resourceManager{ nullptr };
 			rcore::IRendererResourceManager* _rendererResourceManager{ nullptr };
 
-			std::unordered_map<std::string, std::unique_ptr<SceneSubmanagerBase>> _submanagerByItsName;
-			std::vector<SceneSubmanagerBase*> _submanagersToUpdate;
-
-			ModelSubmanager* get_model_submanager()
-			{
-				return static_cast<ModelSubmanager*>(_submanagerByItsName[get_type_name<ModelSubmanager>()].get());
-			}
-
-			LightSubmanager* get_light_submanager()
-			{
-				return static_cast<LightSubmanager*>(_submanagerByItsName[get_type_name<LightSubmanager>()].get());
-			}
-
-			template<typename T>
-			void add_submanager(SceneSubmanagerInitializationContext& initContext)
-			{
-				_submanagerByItsName[get_type_name<T>()] = std::move(std::make_unique<T>(initContext));
-			}
+			std::unique_ptr<ModelSubmanager> _modelSubmanager;
+			std::unique_ptr<MaterialSubmanager> _materialSubmanager;
+			std::unique_ptr<EntitySubmanager> _entitySubmanager;
 
 			void subscribe_to_events();
 	};
