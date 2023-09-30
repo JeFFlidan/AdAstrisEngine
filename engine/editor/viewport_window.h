@@ -10,11 +10,19 @@ namespace ad_astris::editor::impl
 	{
 		public:
 			ViewportWindow(UIWindowInitContext& initContext, std::function<uint64_t()> callback);
-			virtual void draw_window(void* data) override;
+			virtual void draw_window(void* data = nullptr) override;
+
+			void set_selected_entity(ecs::Entity entity) { _selectedEntity = entity; }	// Temporary solution until implementing mouse picking
 
 		private:
 			std::function<uint64_t()> _textureCallback{ nullptr };
 			uint64_t _textureIndex;
 			ImVec2 _viewportExtent{ 0, 0 };
+			ecs::Entity _selectedEntity;
+			ecs::Entity _activeCamera;
+			int32_t _gizmoType{ -1 };
+
+			void draw_gizmo();
+			void subscribe_to_events();
 	};
 }

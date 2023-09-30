@@ -78,6 +78,9 @@ void EntitySubmanager::allocate_gpu_buffers()
 void EntitySubmanager::update_cpu_arrays()
 {
 	ecs::EntityManager* entityManager = _world->get_entity_manager();
+	_pointLightCount.store(0);
+	_spotLightCount.store(0);
+	_directionalLightCount.store(0);
 
 	tasks::TaskGroup taskGroup;
 	_taskComposer->dispatch(taskGroup, _engineEntities.size(), DISPATCH_GROUP_SIZE, [&](tasks::TaskExecutionInfo execInfo)
@@ -115,6 +118,11 @@ void EntitySubmanager::setup_light(ecs::Entity entity)
 	auto transformComponent = entityManager->get_component_const<ecore::TransformComponent>(entity);
 	rendererEntity.location = transformComponent->location;
 
+	auto isVisible = entityManager->get_component<ecore::VisibleComponent>(entity)->isVisible;
+	auto isWorldAffected = entityManager->get_component<ecore::AffectWorldComponent>(entity)->isWorldAffected;
+	if (!isVisible || !isWorldAffected)
+		return;
+
 	if (entityManager->does_entity_have_tag<ecore::DirectionalLightTag>(entity))
 	{
 		rendererEntity.set_type(DIRECTIONAL_LIGHT);
@@ -123,6 +131,7 @@ void EntitySubmanager::setup_light(ecs::Entity entity)
 		XMFLOAT3 directionStorage;
 		XMStoreFloat3(&directionStorage, direction);
 		rendererEntity.set_direction(directionStorage);
+		_directionalLightCount.fetch_add(1);
 		return;
 	}
 	if (entityManager->does_entity_have_tag<ecore::PointLightTag>(entity))
@@ -130,6 +139,7 @@ void EntitySubmanager::setup_light(ecs::Entity entity)
 		rendererEntity.set_type(POINT_LIGHT);
 		auto attenuationComponent = entityManager->get_component_const<ecore::AttenuationRadiusComponent>(entity);
 		rendererEntity.set_attenuation_radius(attenuationComponent->attenuationRadius);
+		_pointLightCount.fetch_add(1);
 		return;
 	}
 	if (entityManager->does_entity_have_tag<ecore::SpotLightTag>(entity))
@@ -144,8 +154,8 @@ void EntitySubmanager::setup_light(ecs::Entity entity)
 		auto attenuationComponent = entityManager->get_component_const<ecore::AttenuationRadiusComponent>(entity);
 		rendererEntity.set_attenuation_radius(attenuationComponent->attenuationRadius);
 
-		float outerConeAngle = entityManager->get_component_const<ecore::OuterConeAngleComponent>(entity)->angle;
-		float innerConeAngle = entityManager->get_component_const<ecore::InnerConeAngleComponent>(entity)->angle;
+		float outerConeAngle = entityManager->get_component_const<ecore::OuterConeAngleComponent>(entity)->outerConeAngle;
+		float innerConeAngle = entityManager->get_component_const<ecore::InnerConeAngleComponent>(entity)->innerConeAngle;
 
 		outerConeAngle = XMConvertToRadians(outerConeAngle);
 		innerConeAngle = XMConvertToRadians(innerConeAngle);
@@ -157,6 +167,7 @@ void EntitySubmanager::setup_light(ecs::Entity entity)
 		rendererEntity.set_outer_cone_angle_cos(outerConeAngle);
 		rendererEntity.set_angle_scale(lightAngleScale);
 		rendererEntity.set_angle_offset(lightAngleOffset);
+		_spotLightCount.fetch_add(1);
 	}
 }
 

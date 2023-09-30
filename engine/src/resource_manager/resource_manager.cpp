@@ -100,9 +100,14 @@ ResourceAccessor<ecore::OpaquePBRMaterial> ResourceManager::create_new_resource(
 	resData.metadata.type = ResourceType::MATERIAL;
 	resData.metadata.objectName = objectName;
 	resData.object = _resourcePool.allocate<ecore::OpaquePBRMaterial>(creationContext.materialSettings, objectName);
-	resData.file = _resourcePool.allocate<resource::ResourceFile>(absoluteMaterialPath);
-
+	resData.object->set_path(absoluteMaterialPath);
+	resData.file = _resourcePool.allocate<ResourceFile>(absoluteMaterialPath);
+	resData.object->make_dirty();
+	
 	_resourceDataTable.add_resource(&resData);
+
+	OpaquePBRMaterialCreatedEvent event(static_cast<ecore::OpaquePBRMaterial*>(resData.object));
+	_eventManager->enqueue_event(event);
 
 	return resData.object;
 }
@@ -123,6 +128,7 @@ ResourceAccessor<ecore::TransparentMaterial> ResourceManager::create_new_resourc
 	resData.metadata.objectName = objectName;
 	resData.object = _resourcePool.allocate<ecore::TransparentMaterial>(creationContext.materialSettings, objectName);
 	resData.file = _resourcePool.allocate<resource::ResourceFile>(absoluteMaterialPath);
+	resData.object->make_dirty();
 
 	_resourceDataTable.add_resource(&resData);
 
@@ -148,7 +154,6 @@ void ResourceManager::destroy_resource(UUID uuid)
 void ResourceManager::write_to_disk(io::File* file)
 {
 	io::URI path = file->get_file_path();		// temporary solution
-
 	uint8_t* data{ nullptr };
 	uint64_t size = 0;
 	file->serialize(data, size);
@@ -183,7 +188,6 @@ void ResourceManager::send_resource_loaded_event(T* resourceObject)
 template<>
 void ResourceManager::send_resource_loaded_event(ecore::StaticModel* resourceObject)
 {
-	LOG_INFO("Sending static model event")
 	StaticModelLoadedInEngineEvent event(resourceObject);
 	_eventManager->enqueue_event(event);
 }
@@ -191,7 +195,6 @@ void ResourceManager::send_resource_loaded_event(ecore::StaticModel* resourceObj
 template<>
 void ResourceManager::send_resource_loaded_event(ecore::Texture2D* resourceObject)
 {
-	LOG_INFO("Sending texture2D event")
 	Texture2DLoadedEvent event(resourceObject);
 	_eventManager->enqueue_event(event);
 }

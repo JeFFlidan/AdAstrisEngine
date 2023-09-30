@@ -35,3 +35,8 @@ std::unordered_set<std::string>& ThumbnailTableManager::draw()
 
 	return _widgetSelectionManager->get_current_selected_widget_names();
 }
+
+void ThumbnailTableManager::reset()
+{
+	_widgetSelectionManager->reset();
+}

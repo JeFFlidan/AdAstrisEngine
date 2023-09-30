@@ -35,6 +35,7 @@ void TransformUpdateSystem::subscribe_to_events(ecs::EngineManagers& managers)
 		
 		managers.entityManager->set_entity_component(entity, transform);
 	};
+	managers.eventManager->subscribe(delegate1);
 }
 
 void TransformUpdateSystem::configure_query()

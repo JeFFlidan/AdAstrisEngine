@@ -58,8 +58,10 @@ static const uint BINDLESS_DESCRIPTOR_SET_SAMPLER = 6;
 
 #if defined(__spirv__)
 [[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] StructuredBuffer<RendererModelInstance> bindlessStructuredModelInstances[];
+[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] StructuredBuffer<RendererModelInstanceID> bindlessStructuredModelInstanceIDs[];
 [[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] StructuredBuffer<RendererMaterial> bindlessStructuredMaterials[];
 [[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] StructuredBuffer<RendererEntity> bindlessStructuredEntities[];
+[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] StructuredBuffer<CullingInstanceIndices> bindlessStructuredCullingInstanceIndices[];
 #endif
 
 inline FrameUB get_frame()
@@ -84,9 +86,14 @@ inline RendererMaterial get_material(uint materialIndex)
     return bindlessStructuredMaterials[get_frame().materialBufferIndex][materialIndex];
 }
 
-inline RendererModelInstance get_model_instance(uint modelInstanceIndex)
+inline RendererModelInstanceID get_model_instance_id(uint hlslInstanceID)
 {
-    return bindlessStructuredModelInstances[get_frame().modelInstanceBufferIndex][modelInstanceIndex];
+    return bindlessStructuredModelInstanceIDs[get_frame().modelInstanceIDBufferIndex][hlslInstanceID];
+}
+
+inline RendererModelInstance get_model_instance(uint hlslInstanceID)
+{
+    return bindlessStructuredModelInstances[get_frame().modelInstanceBufferIndex][get_model_instance_id(hlslInstanceID).id];
 }
 
 inline float3 get_world_position_from_depth(float depth, float2 texCoord, float cameraIndex = 0)
@@ -94,7 +101,7 @@ inline float3 get_world_position_from_depth(float depth, float2 texCoord, float 
     float x = texCoord.x * 2 - 1;
     float y = (1 - texCoord.y) * 2 - 1;
     float4 clipSpaceLocation = float4(x, y, depth, 1.0);
-    float4 worldSpaceLocation = mul(clipSpaceLocation, get_camera(cameraIndex).inverseViewProjection);
+    float4 worldSpaceLocation = mul(get_camera(cameraIndex).inverseViewProjection, clipSpaceLocation);
     return worldSpaceLocation.xyz / worldSpaceLocation.w;
 }
 

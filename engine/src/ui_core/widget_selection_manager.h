@@ -57,6 +57,9 @@ namespace ad_astris::uicore
 				return _selectedWidgetNames;
 			}
 
+			void reset();
+			bool are_any_widgets_hovered() { return _areAnyWidgetsHovered; }
+
 		private:
 			std::vector<std::unique_ptr<internal::BaseWidget>> _widgets;
 			std::vector<uint32_t> _selectedWidgetIndices;
@@ -71,6 +74,7 @@ namespace ad_astris::uicore
 			bool _editableButtonLabel{ false };
 			bool _drawButtonsHorizontally{ false };
 			bool _permanentSelection{ false };
+			bool _areAnyWidgetsHovered{ false };
 
 			void create_default_style_callback();
 	};

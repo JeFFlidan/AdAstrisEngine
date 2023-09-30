@@ -11,7 +11,8 @@ namespace ad_astris::uicore
 	{
 		int32_t width;
 		int32_t height;
-		uint32_t textureID;
+		uint32_t textureID{ 0 };
+		uint64_t textureID64{ 0 };
 		ImVec2 uv0 = { 0, 0 };
 		ImVec2 uv1 = { 1, 1 };
 	};

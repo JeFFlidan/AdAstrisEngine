@@ -1235,12 +1235,13 @@ vkb::Instance vulkan::VulkanRHI::create_instance()
 	vkb::InstanceBuilder builder;
 	builder.set_app_name("AdAstris Engine");
 	builder.require_api_version(1, 3, 0);
-#ifndef VK_RELEASE
-	builder.use_default_debug_messenger();
-	builder.request_validation_layers(true);
-#else
+// #ifndef VK_RELEASE
+// 	builder.use_default_debug_messenger();
+// 	builder.request_validation_layers(true);
+// #else
+// 	builder.request_validation_layers(false);
+// #endif
 	builder.request_validation_layers(false);
-#endif
 	LOG_INFO("Finish creating Vulkan instance")
 	return builder.build().value();
 }

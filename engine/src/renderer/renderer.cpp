@@ -3,6 +3,7 @@
 #include "engine/vulkan_rhi_module.h"
 #include "application/editor_module.h"
 #include "lighting/deferred_lighting.h"
+#include "compute/occlusion_culling.h"
 #include "transparency/oit.h"
 #include "postprocessing/temporal_filter.h"
 #include "swap_chain_pass.h"
@@ -107,8 +108,9 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	uiBackendInitContext.rhi = _rhi;
 	uiBackendInitContext.sampler = _sceneManager->get_sampler(SAMPLER_LINEAR_CLAMP);
 	uiBackendInitContext.window = rendererInitContext.mainWindow;
+	uiBackendInitContext.fileSystem = _resourceManager->get_file_system();
 
-	_uiWindowBackend->init(uiBackendInitContext);
+	_uiWindowBackend->init(uiBackendInitContext, _sceneManager->get_sampler(SAMPLER_LINEAR_CLAMP));
 	_uiWindowBackend->get_callbacks(rendererInitContext.uiBackendCallbacks);
 	LOG_INFO("Renderer::init(): Initialized ui backend")
 	
@@ -132,17 +134,9 @@ void Renderer::bake()
 	renderingInitContext.mainWindow = _mainWindow;
 	renderingInitContext.sceneManager = _sceneManager.get();
 	renderingInitContext.pipelineManager = _pipelineManager;
-	//
+	
 	_renderPassExecutors.emplace_back(new GBuffer(renderingInitContext));
 	_renderPassExecutors.emplace_back(new DeferredLighting(renderingInitContext));
-	// LOG_INFO("AFTER EMPLACING GBUFFER")
-	// _renderPassExecutors.emplace_back(new DeferredLighting(renderingInitContext));
-	// LOG_INFO("AFTER EMPLACING DEFERRED")
-	// _renderPassExecutors.emplace_back(new TemporalFilter(renderingInitContext));
-	// _renderPassExecutors.emplace_back(new OITGeometry(renderingInitContext));
-	// _renderPassExecutors.emplace_back(new OIT(renderingInitContext));
-
-	//_renderPassExecutors.emplace_back(new ObjectTest(renderingInitContext, _resourceManager->get_file_system(), _shaderManager));
 	
 	for (auto& executor : _renderPassExecutors)
 		executor->prepare_render_pass(_renderGraph, _rendererResourceManager);
@@ -173,7 +167,7 @@ void Renderer::draw(DrawContext& drawContext)
 		set_backbuffer("DeferredLightingOutput");
 		return;
 	}
-
+	
 	_sceneManager->setup_global_buffers();
 	setup_cameras(drawContext);
 	setup_frame_data(drawContext);
@@ -218,7 +212,7 @@ void Renderer::setup_cameras(DrawContext& preDrawContext)
 	auto cameraComponent = _world->get_entity_manager()->get_component<ecore::CameraComponent>(preDrawContext.activeCamera);
 	auto transformComponent = _world->get_entity_manager()->get_component_const<ecore::TransformComponent>(preDrawContext.activeCamera);
 	RendererCamera rendererCamera[16];
-	rendererCamera[0].location = transformComponent->location;
+	rendererCamera[0].location = cameraComponent->eye;
 	rendererCamera[0].view = cameraComponent->view;
 	rendererCamera[0].projection = cameraComponent->projection;
 	rendererCamera[0].viewProjection = cameraComponent->viewProjection;
@@ -239,11 +233,13 @@ void Renderer::setup_frame_data(DrawContext& preDrawContext)
 	rhi::Buffer* modelInstanceBuffer = _sceneManager->get_model_instance_storage_buffer();
 	rhi::Buffer* materialBuffer = _sceneManager->get_material_storage_buffer();
 	rhi::Buffer* entityBuffer = _sceneManager->get_entity_storage_buffer();
+	rhi::Buffer* modelInstanceIDBuffer = _sceneManager->get_indirect_buffer_desc()->get_model_instance_id_buffer();
 	frameData.modelInstanceBufferIndex = _rhi->get_descriptor_index(modelInstanceBuffer);
 	frameData.materialBufferIndex = _rhi->get_descriptor_index(materialBuffer);
 	frameData.entityBufferIndex = _rhi->get_descriptor_index(entityBuffer);
+	frameData.modelInstanceIDBufferIndex = _rhi->get_descriptor_index(modelInstanceIDBuffer);
 	frameData.lightArrayOffset = 0;
-	frameData.lightArrayCount = 3;	// TODO Take info from scene manager
+	frameData.lightArrayCount = _sceneManager->get_light_count();	// TODO Take info from scene manager
 	rhi::Buffer* frameUB = _rendererResourceManager->get_buffer("FrameUB" + std::to_string(_frameIndex));
 	_rhi->update_buffer_data(frameUB, sizeof(FrameUB), &frameData);
 	_rhi->bind_uniform_buffer(frameUB, UB_FRAME_SLOT);
@@ -251,6 +247,5 @@ void Renderer::setup_frame_data(DrawContext& preDrawContext)
 
 void Renderer::set_backbuffer(const std::string& textureName)
 {
-	rhi::Sampler sampler = _sceneManager->get_sampler(SAMPLER_LINEAR_CLAMP);
-	_uiWindowBackend->set_backbuffer(_rendererResourceManager->get_texture_view(textureName), &sampler);
+	_uiWindowBackend->set_backbuffer(_rendererResourceManager->get_texture_view(textureName), _sceneManager->get_sampler(SAMPLER_LINEAR_CLAMP));
 }

@@ -34,6 +34,7 @@ void PipelineManager::create_builtin_pipelines()
 	tasks::TaskGroup taskGroup;
 	_taskComposer->execute(taskGroup, [this](tasks::TaskExecutionInfo){ create_gbuffer_pipeline(); });
 	_taskComposer->execute(taskGroup, [this](tasks::TaskExecutionInfo){ create_deferred_lighting_pipeline(); });
+	//_taskComposer->execute(taskGroup, [this](tasks::TaskExecutionInfo){ create_occlusion_culling_pipeline(); });
 	_taskComposer->wait(taskGroup);
 }
 
@@ -52,6 +53,7 @@ void PipelineManager::load_builtin_shaders()
 	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo execInfo) { _shaderManager->load_shader("engine/shaders/gbufferPS.hlsl", rhi::ShaderType::FRAGMENT); });
 	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo execInfo) { _shaderManager->load_shader("engine/shaders/outputPlaneVS.hlsl", rhi::ShaderType::VERTEX); });
 	_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo execInfo) { _shaderManager->load_shader("engine/shaders/deferredLightingPS.hlsl", rhi::ShaderType::FRAGMENT); });
+	//_taskComposer->execute(taskGroup, [&](tasks::TaskExecutionInfo execInfo) { _shaderManager->load_shader("engine/shaders/occlusionCullingCS.hlsl", rhi::ShaderType::COMPUTE); });
 	_taskComposer->wait(taskGroup);
 }
 
@@ -164,8 +166,6 @@ void PipelineManager::create_deferred_lighting_pipeline()
 	rhi::Shader* vertexShader = _shaderManager->get_shader("engine/shaders/outputPlaneVS.hlsl");
 	rhi::Shader* fragmentShader = _shaderManager->get_shader("engine/shaders/deferredLightingPS.hlsl");
 
-	LOG_WARNING("IS UNDEFINED: {}", pipelineInfo.depthFormat == rhi::Format::UNDEFINED)
-
 	pipelineInfo.shaderStages.push_back(*vertexShader);
 	pipelineInfo.shaderStages.push_back(*fragmentShader);
 
@@ -192,4 +192,14 @@ void PipelineManager::create_deferred_lighting_pipeline()
 	std::scoped_lock<std::mutex> locker(_builtinPipelinesMutex);
 	_builtinPipelineStateByItsType[BuiltinPipelineType::DEFERRED_LIGHTING].pipeline = pipeline;
 
+}
+
+void PipelineManager::create_occlusion_culling_pipeline()
+{
+	rhi::ComputePipelineInfo pipelineInfo;
+	pipelineInfo.shaderStage = *_shaderManager->get_shader("engine/shaders/occlusionCullingCS.hlsl");
+	rhi::Pipeline pipeline;
+	_rhi->create_compute_pipeline(&pipeline, &pipelineInfo);
+	std::scoped_lock<std::mutex> locker(_builtinPipelinesMutex);
+	_builtinPipelineStateByItsType[BuiltinPipelineType::OCCLUSION_CULLING].pipeline = pipeline;
 }

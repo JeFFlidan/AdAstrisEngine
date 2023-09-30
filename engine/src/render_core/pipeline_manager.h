@@ -34,5 +34,6 @@ namespace ad_astris::rcore::impl
 			void setup_formats(BuiltinPipelineType type, std::vector<rhi::Format>& colorAttachFormats, rhi::Format& depthAttachFormat);
 			void create_gbuffer_pipeline();
 			void create_deferred_lighting_pipeline();
+			void create_occlusion_culling_pipeline();
 	};
 }

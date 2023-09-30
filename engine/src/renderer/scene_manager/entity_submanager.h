@@ -21,13 +21,13 @@ namespace ad_astris::renderer::impl
 				return _rendererResourceManager->get_buffer(RENDERER_ENTITY_BUFFER_NAME);
 			}
 
-			void add_entity(ecs::Entity entity)
+			void add_light_entity(ecs::Entity entity)
 			{
-				LOG_INFO("BEFOER PUSH BACK")
 				_engineEntities.push_back(entity);
-				LOG_INFO("AFTER PUSH BACK")
 			}
 
+			uint32_t get_light_count() { return _pointLightCount + _spotLightCount + _directionalLightCount; }
+		
 		private:
 			const std::string RENDERER_ENTITY_BUFFER_NAME = "renderer_entity_buffer";
 			const std::string MATRIX_BUFFER_NAME = "matrix_buffer";

@@ -67,14 +67,13 @@ void SceneManager::subscribe_to_events()
 				_materialSubmanager->add_cpu_opaque_material_uuid(materialComponent->materialUUID);
 			}
 		}
-		LOG_INFO("BEFORE ADDING ENTITY")
+
 		if (entityManager->does_entity_have_tag<ecore::SpotLightTag>(entity))
-			_entitySubmanager->add_entity(entity);
+			_entitySubmanager->add_light_entity(entity);
 		else if (entityManager->does_entity_have_tag<ecore::PointLightTag>(entity))
-			_entitySubmanager->add_entity(entity);
+			_entitySubmanager->add_light_entity(entity);
 		else if (entityManager->does_entity_have_tag<ecore::DirectionalLightTag>(entity))
-			_entitySubmanager->add_entity(entity);
-		LOG_INFO("AFTER ADDING ENTITY")
+			_entitySubmanager->add_light_entity(entity);
 		// TODO lights and textures
 	};
 	_eventManager->subscribe(delegate1);

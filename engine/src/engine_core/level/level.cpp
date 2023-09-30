@@ -7,11 +7,17 @@
 using namespace ad_astris;
 using namespace ecore;
 
+Level::Level()
+{
+	_isDirty = true;
+}
+
 Level::Level(io::URI& path, ObjectName* levelName)
 {
 	_levelInfo.uuid = UUID();
 	_name = levelName;
 	_path = path;
+	_isDirty = true;
 }
 
 World* Level::get_owning_world()
@@ -53,9 +59,7 @@ void Level::serialize(io::File* file)
 	levelMainJson["level_metadata"] = levelMetadata;
 
 	nlohmann::json jsonForEntities;
-	LOG_INFO("AFTER BUILDING JSON {}", _entities.size())
 	level::Utils::build_json_from_entities(jsonForEntities, this);
-	LOG_INFO("AFTER BUILDING JSON")
 	levelMainJson["entities"] = jsonForEntities.dump();
 	std::string newMetadata = levelMainJson.dump();
 	file->set_metadata(newMetadata);

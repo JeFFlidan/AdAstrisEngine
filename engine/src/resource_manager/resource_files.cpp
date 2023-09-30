@@ -115,8 +115,6 @@ LevelFile::~LevelFile()
 void LevelFile::serialize(uint8_t*& data, uint64_t& size)
 {
 	data = new uint8_t[_metadata.size() + sizeof(uint64_t)];
-	LOG_INFO("Meta data in file serialize: {}", _metadata)
-	LOG_INFO("Array size: {}", _metadata.size() + sizeof(uint64_t))
 	uint64_t metadataSize = _metadata.size();
 	memcpy(data, &metadataSize, sizeof(uint64_t));
 	memcpy(data + sizeof(uint64_t), _metadata.data(), metadataSize);

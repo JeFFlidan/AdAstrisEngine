@@ -47,7 +47,17 @@ void GBuffer::execute(rhi::CommandBuffer* cmd)
 	rhi::Buffer* indexBuffer = _sceneManager->get_index_buffer_f32pntc();
 	_rhi->bind_vertex_buffer(cmd, vertexBuffer);
 	_rhi->bind_index_buffer(cmd, indexBuffer);
-	_rhi->draw_indexed(cmd, 27018, 1, 0, 0, 0);
+	//_rhi->draw_indexed(cmd, 27018, 1, 0, 0, 0);
+
+	IndirectBufferDesc* indirectBufferDesc = _sceneManager->get_indirect_buffer_desc();
+	rhi::Buffer* indirectBuffer = indirectBufferDesc->get_indirect_buffer();
+	uint32_t offset = 0;
+	for (uint32_t i = 0; i != indirectBufferDesc->get_indirect_command_count(); ++i)
+	{
+		_rhi->draw_indexed_indirect(cmd, indirectBuffer, offset, 1, sizeof(DrawIndexedIndirectCommand));
+		uint32_t batchInstanceCount = indirectBufferDesc->get_batch_instance_count(i);
+		offset += batchInstanceCount * sizeof(DrawIndexedIndirectCommand);
+	}
 }
 
 void DeferredLighting::prepare_render_pass(rcore::IRenderGraph* renderGraph, rcore::IRendererResourceManager* rendererResourceManager)

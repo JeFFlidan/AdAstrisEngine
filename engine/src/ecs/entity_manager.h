@@ -262,6 +262,9 @@ namespace ad_astris::ecs
 					return true;
 				return false;
 			}
+
+			void get_entity_all_component_ids(Entity entity, std::vector<uint32_t>& ids);
+			void* get_entity_component_by_id(Entity entity, uint32_t id);
 		
 		private:
 			struct EntityInArchetypeInfo

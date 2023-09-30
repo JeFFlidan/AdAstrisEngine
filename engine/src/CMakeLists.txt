@@ -18,10 +18,16 @@ file(GLOB ENGINE_CORE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/resource_manager/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/rhi/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/events/*.*
-    ${CMAKE_CURRENT_SOURCE_DIR}/multithreading/*.*)
+    ${CMAKE_CURRENT_SOURCE_DIR}/multithreading/*.*
+    ${DIR_ENGINE_SRC}/ui_core/*
+    ${DIR_ENGINE_SRC}/ui_core/*/*)
 target_sources(engine_core PRIVATE ${ENGINE_CORE_FILES})
 
+add_library(nfd STATIC IMPORTED)
+set_target_properties(nfd PROPERTIES IMPORTED_LOCATION ${DIR_THIRD_PARTY}/nfd/nfd.lib)
+
 target_link_libraries(engine_core
+    nfd
     tinyobjloader 
     inicpp 
     reflection
@@ -41,12 +47,4 @@ add_executable(AdAstrisEngine main.cpp)
 target_include_directories(AdAstrisEngine PUBLIC ${DIR_ENGINE_SRC})
 target_link_libraries(AdAstrisEngine engine_core)
 
-add_library(ui_core STATIC)
-file(GLOB UI_CORE_FILES
-    ${DIR_ENGINE_SRC}/ui_core/*
-    ${DIR_ENGINE_SRC}/ui_core/*/*)
-add_library(nfd STATIC IMPORTED)
-target_sources(ui_core PRIVATE ${UI_CORE_FILES})
-set_target_properties(nfd PROPERTIES IMPORTED_LOCATION ${DIR_THIRD_PARTY}/nfd/nfd.lib)
-target_link_libraries(ui_core engine_core nfd imgui)
     

@@ -1,4 +1,5 @@
 ﻿#include "engine_core/material/materials.h"
+#include "resource_manager/resource_events.h"
 #include "engine_core/fwd.h"
 #include "application_core/editor_events.h"
 #include "engine.h"		// Really strange bug with this include. For now I placed it under all other includes, however, I must fix this bug properly in the future
@@ -7,7 +8,7 @@
 #include "engine_events.h"
 #include "engine_core/basic_components.h"
 #include "engine_core/basic_events.h"
-#include "ui_core/ecs_user_interface.h"
+#include "ui_core/ecs_ui_manager.h"
 #include "engine_core/material/materials.h"
 
 using namespace ad_astris::engine::impl;
@@ -19,6 +20,8 @@ void Engine::init(EngineInitializationContext& engineInitContext)
 	_moduleManager = engineInitContext.moduleManager;
 	_eventManager = engineInitContext.eventManager;
 	_mainWindow = engineInitContext.mainWindow;
+
+	subscribe_to_events();
 
 	_taskComposer = std::make_unique<tasks::TaskComposer>();
 	LOG_INFO("Engine::init(): Initialized task composer")
@@ -32,6 +35,7 @@ void Engine::init(EngineInitializationContext& engineInitContext)
 	worldCreationContext.eventManager = _eventManager;
 	worldCreationContext.taskComposer = _taskComposer.get();
 	_world = std::make_unique<ecore::World>(worldCreationContext);
+	_ecsUIManager = std::make_unique<uicore::ECSUiManager>(_world->get_entity_manager(), ecs::get_active_type_info_table());
 	LOG_INFO("Engine::init(): Initialized world")
 
 	ecs::EngineManagers managers;
@@ -98,12 +102,12 @@ void Engine::init(EngineInitializationContext& engineInitContext)
 	LOG_INFO("Engine::init(): Engine initialization completed")
 
 	set_active_camera_delegate();
-	_eventManager->dispatch_events();
-	_eventManager->unsubscribe(ecore::EntityCreatedEvent::get_type_id_static(), _activeCameraDelegate.target_type().name());
+	//_eventManager->unsubscribe(ecore::EntityCreatedEvent::get_type_id_static(), _activeCameraDelegate.target_type().name());
 }
 
 void Engine::execute()
 {
+	create_new_resources();
 	pre_update();
 	_systemManager->execute();
 	renderer::DrawContext drawContext;
@@ -145,7 +149,7 @@ void Engine::create_new_blank_project()
 	create_default_material();
 	
 	ecore::EditorObjectCreationContext editorObjectCreationContext;
-	editorObjectCreationContext.uuid = 	_resourceManager->convert_to_aares<ecore::StaticModel>(_fileSystem->get_engine_root_path() + "/starter_content/models/scene.obj", "content").get_resource()->get_uuid();
+	editorObjectCreationContext.uuid = 	_resourceManager->convert_to_aares<ecore::StaticModel>(_fileSystem->get_engine_root_path() + "/starter_content/models/plane.obj", "content").get_resource()->get_uuid();
 	LOG_INFO("RESOURCE UUID: {}", (uint64_t)editorObjectCreationContext.uuid)
 	editorObjectCreationContext.location = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	editorObjectCreationContext.scale = XMFLOAT3(1.0f, 1.0f, 1.0f);
@@ -154,32 +158,18 @@ void Engine::create_new_blank_project()
 	ecs::Entity entity = _engineObjectsCreator->create_static_model(editorObjectCreationContext);
 	auto modelComponent = _world->get_entity_manager()->get_component<ecore::ModelComponent>(entity);
 	LOG_INFO("CREATED STATIC MODEL, {}", modelComponent->modelUUID)
-
+	
 	ecore::EditorObjectCreationContext creationContext{ };
-	creationContext.location = XMFLOAT3(0.0f, 0.0f, 60.0f);
+	creationContext.location = XMFLOAT3(0.0f, 35.0f, 0.0f);
 	_activeCamera = _engineObjectsCreator->create_camera(creationContext);
 	auto cameraComponent = _world->get_entity_manager()->get_component<ecore::CameraComponent>(_activeCamera);
 	cameraComponent->isActive = true;
 
-	BasicSystemsUtils::rotate(XMFLOAT3(-50.0f, 10.0f, 0.0f), creationContext.rotation);
 	_engineObjectsCreator->create_directional_light(creationContext);
-	BasicSystemsUtils::rotate(XMFLOAT3(25.0f, -90.0f, 0.0f), creationContext.rotation);
-	creationContext.location = XMFLOAT3(0.0f, 15.0f, 0.0f);
-	ecs::Entity spotLight = _engineObjectsCreator->create_spot_light(creationContext);
-	creationContext.location = XMFLOAT3(12.0f, 950.0f, 25.0f);
+	creationContext.location = XMFLOAT3(12.0f, 100.0f, 25.0f);
 	ecs::Entity pointLight = _engineObjectsCreator->create_point_light(creationContext);
 
-	auto color = _world->get_entity_manager()->get_component<ecore::ColorComponent>(spotLight);
-	color->color = XMFLOAT4(0.0f, 1.0f, 0.0, 1.0f);
-	color = _world->get_entity_manager()->get_component<ecore::ColorComponent>(pointLight);
-	color->color =  XMFLOAT4(1.0f, 0.0f, 0.0, 1.0f);
-	auto angleComponent = _world->get_entity_manager()->get_component<ecore::OuterConeAngleComponent>(spotLight);
-	angleComponent->angle = 10.0f;
-
-	auto attenuationComponent = _world->get_entity_manager()->get_component<ecore::AttenuationRadiusComponent>(pointLight);
-	attenuationComponent->attenuationRadius = 16;
-	attenuationComponent = _world->get_entity_manager()->get_component<ecore::AttenuationRadiusComponent>(spotLight);
-	attenuationComponent->attenuationRadius = 300;
+	_resourceManager->save_resources();
 	
 	LOG_INFO("Engine::init(): Saved project with default settings")
 }
@@ -201,7 +191,7 @@ void Engine::load_existing_project()
 
 void Engine::register_ecs_objects()
 {
-	ecore::register_basic_components(_world->get_entity_manager());
+	ecore::register_basic_components(_world->get_entity_manager(), _ecsUIManager.get());
 	_systemManager->register_system<TransformUpdateSystem>();
 	_systemManager->register_system<CameraUpdateSystem>();
 }
@@ -216,17 +206,13 @@ void Engine::set_active_camera_delegate()
 {
 	events::EventDelegate<ecore::EntityCreatedEvent> _activeCameraDelegate = [this](ecore::EntityCreatedEvent& event)
 	{
-		LOG_INFO("START EVENT")
 		ecs::Entity entity = event.get_entity();
 		if (event.get_entity_manager()->does_entity_have_component<ecore::CameraComponent>(entity))
 		{
-			LOG_INFO("HAS COMPONENT")
 			auto camera = event.get_entity_manager()->get_component<ecore::CameraComponent>(entity);
 			if (camera->isActive)
 				_activeCamera = entity;
-			LOG_INFO("IS ACTIVE {}", camera->isActive)
 		}
-		LOG_INFO("FINISH EVENT")
 	};
 	_eventManager->subscribe(_activeCameraDelegate);
 }
@@ -281,4 +267,88 @@ void Engine::create_default_material()
 ad_astris::UUID Engine::get_default_material_uuid()
 {
 	return _projectSettings->get_subsettings<ecore::RendererSubsettings>()->get_default_material_uuid();
+}
+
+void Engine::subscribe_to_events()
+{
+	events::EventDelegate<acore::ResourceImportEvent> delegate1 = [&](acore::ResourceImportEvent& event)
+	{
+		_resourcePaths.push_back({ event.get_resource_path(), event.get_aares_path() });
+	};
+	_eventManager->subscribe(delegate1);
+
+	events::EventDelegate<acore::ProjectSavingStartEvent> delegate2 = [&](acore::ProjectSavingStartEvent& event)
+	{
+		_resourceManager->save_resources();
+	};
+	_eventManager->subscribe(delegate2);
+
+	events::EventDelegate<acore::OpaquePBRMaterialCreationEvent> delegate3 = [&](acore::OpaquePBRMaterialCreationEvent& event)
+	{
+		resource::FirstCreationContext<ecore::OpaquePBRMaterial> firstCreationContext;
+		firstCreationContext.materialName = event.get_material_name();
+		firstCreationContext.materialPath = event.get_material_path();
+		firstCreationContext.materialSettings.baseColorTextureUUID = event.get_albedo_texture_uuid();
+		firstCreationContext.materialSettings.normalTextureUUID = event.get_normal_texture_uuid();
+		firstCreationContext.materialSettings.roughnessTextureUUID = event.get_roughness_texture_uuid();
+		firstCreationContext.materialSettings.metallicTextureUUID = event.get_metallic_texture_uuid();
+		firstCreationContext.materialSettings.ambientOcclusionTextureUUID = event.get_ao_texture_uuid();
+		_materialsToCreate.push_back(firstCreationContext);
+	};
+	_eventManager->subscribe(delegate3);
+
+	events::EventDelegate<acore::EditorPointLightCreationEvent> delegate4 = [&](acore::EditorPointLightCreationEvent& event)
+	{
+		ecore::EditorObjectCreationContext& objectCreationContext = _pointLightsToCreate.emplace_back();
+		objectCreationContext.location = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	};
+	_eventManager->subscribe(delegate4);
+
+	events::EventDelegate<acore::EditorStaticModelCreationEvent> delegate5 = [&](acore::EditorStaticModelCreationEvent& event)
+	{
+		ecore::EditorObjectCreationContext& objectCreationContext = _staticModelsToCreate.emplace_back();
+		objectCreationContext.materialUUID = event.get_material_uuid();
+		objectCreationContext.uuid = event.get_model_uuid();
+	};
+	_eventManager->subscribe(delegate5);
+}
+
+void Engine::create_new_resources()
+{
+	tasks::TaskGroup& taskGroup = *_taskComposer->allocate_task_group();
+	for (auto& paths : _resourcePaths)
+	{
+		_taskComposer->execute(taskGroup, [this, paths](tasks::TaskExecutionInfo execInfo)
+		{
+			io::URI resourcePath = paths.first;
+			io::URI aaresPath = paths.second;
+			std::string fileExtension = io::Utils::get_file_extension(resourcePath);
+			if (fileExtension == "jpg" || fileExtension == "tga" || fileExtension == "png")
+				_resourceManager->convert_to_aares<ecore::Texture2D>(resourcePath, aaresPath).get_resource();
+			if (fileExtension == "obj")
+				_resourceManager->convert_to_aares<ecore::StaticModel>(resourcePath, aaresPath).get_resource();
+		});
+	}
+	_taskComposer->wait(taskGroup);
+	_taskComposer->free_task_group(&taskGroup);
+	_resourcePaths.clear();
+
+	for (auto& newMaterial : _materialsToCreate)
+	{
+		_resourceManager->create_new_resource(newMaterial);
+	}
+	if (!_materialsToCreate.empty())
+	{
+		_resourceManager->save_resources();
+	}
+	_materialsToCreate.clear();
+
+	for (auto& context : _pointLightsToCreate)
+		_engineObjectsCreator->create_point_light(context);
+
+	for (auto& context : _staticModelsToCreate)
+		_engineObjectsCreator->create_static_model(context);
+
+	_pointLightsToCreate.clear();
+	_staticModelsToCreate.clear();
 }

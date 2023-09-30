@@ -14,6 +14,7 @@ void MaterialBase::serialize(io::File* file)
 	metadataJson["material_settings"] = _materialSettings->serialize();
 	std::string metadataStr = metadataJson.dump();
 	file->set_metadata(metadataStr);
+	_isDirty = false;
 }
 
 void MaterialBase::deserialize(io::File* file, ObjectName* objectName)

@@ -16,7 +16,7 @@ namespace ad_astris::uicore
 	};
 
 	// TODO Add more file types
-	enum class FileFilter
+	enum class FileFilter : uint64_t
 	{
 		ALL = 0,
 		AARES = 1ULL << 0,
@@ -24,6 +24,7 @@ namespace ad_astris::uicore
 		AAPROJECT = 1ULL << 2,
 		PNG = 1ULL << 3,
 		TGA = 1ULL << 4,
+		OBJ = 1ULL << 5
 	};
 	
 	class FileExplorer

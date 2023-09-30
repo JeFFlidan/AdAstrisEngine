@@ -17,3 +17,5 @@ target_link_libraries(${LIBRARY_NAME}
 	vkbootstrap 
 	spirv_reflect 
 	engine_core)
+
+target_include_directories(${LIBRARY_NAME} PUBLIC ${DIR_THIRD_PARTY}/vulkan_base)

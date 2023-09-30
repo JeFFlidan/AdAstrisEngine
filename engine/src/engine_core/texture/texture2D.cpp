@@ -9,6 +9,7 @@ void ecore::Texture2D::serialize(io::File* file)
 {
 	std::string strMetadata = texture::Utils::pack_texture2D_info(&_textureInfo);
 	file->set_metadata(strMetadata);
+	_isDirty = false;
 }
 
 void ecore::Texture2D::deserialize(io::File* file, ObjectName* objectName)

@@ -94,7 +94,7 @@ void resource::ResourceDataTable::save_resources()
 	{
 		ResourceData& resourceData = pair.second;
 
-		if (resourceData.metadata.type == ResourceType::SHADER || !resourceData.object)
+		if (resourceData.metadata.type == ResourceType::SHADER || !resourceData.object || !resourceData.object->is_dirty())
 			continue;
 		
 		io::File* file = resourceData.file;

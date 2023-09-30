@@ -13,6 +13,7 @@ ModelSubmanager::ModelSubmanager(SceneSubmanagerInitializationContext& initConte
 	subscribe_to_events();
 	_modelInstances.reserve(MODEL_INSTANCES_INIT_NUMBER);
 	_staticModelEntities.reserve(MODEL_INSTANCES_INIT_NUMBER);
+	_indirectBufferDesc = std::make_unique<IndirectBufferDesc>(this, 0);	// TEMP
 }
 
 void ModelSubmanager::update(rhi::CommandBuffer& cmdBuffer)
@@ -26,6 +27,7 @@ void ModelSubmanager::cleanup_after_update()
 	_loadedModelsIndexArraySize_F32PNTC = 0;
 	_loadedStaticModelHandles.clear();
 	_modelInstances.clear();
+	_indirectBufferDesc->cleanup_after_update();
 }
 
 bool ModelSubmanager::need_update()
@@ -43,7 +45,7 @@ void ModelSubmanager::update_gpu_buffers(rhi::CommandBuffer& cmd)
 	if (!_areGPUBuffersAllocated)
 		allocate_gpu_buffers(cmd);
 
-	update_cpu_arrays();
+	update_cpu_arrays(cmd);
 
 	if (!_modelInstances.empty())
 	{
@@ -73,6 +75,8 @@ void ModelSubmanager::update_gpu_buffers(rhi::CommandBuffer& cmd)
 			_indexArray_F32PNTC.size(),
 			_loadedModelsIndexArraySize_F32PNTC);
 	}
+	
+	_indirectBufferDesc->update_gpu_buffers(cmd);
 }
 
 void ModelSubmanager::allocate_gpu_buffers(rhi::CommandBuffer& cmd)
@@ -94,7 +98,7 @@ void ModelSubmanager::allocate_gpu_buffers(rhi::CommandBuffer& cmd)
 	_areGPUBuffersAllocated = true;
 }
 
-void ModelSubmanager::update_cpu_arrays()
+void ModelSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 {
 	uint32_t vertexArrayOffset_F32PNTC = _vertexArray_F32PNTC.size();
 	uint32_t indexArrayOffset_F32PNTC = _indexArray_F32PNTC.size();
@@ -105,52 +109,68 @@ void ModelSubmanager::update_cpu_arrays()
 	for (auto& staticModelHandle : _loadedStaticModelHandles)
 	{
 		staticModelData = staticModelHandle.get_resource()->get_model_data();
-		switch (staticModelHandle.get_resource()->get_vertex_format())
+
+		if (_indirectBufferDesc->add_model(staticModelHandle.get_resource()->get_uuid(), vertexArrayOffset_F32PNTC, indexArrayOffset_F32PNTC, staticModelData))
 		{
-			case ecore::model::VertexFormat::F32_PNTC:
+			switch (staticModelHandle.get_resource()->get_vertex_format())
 			{
-				memcpy(
-					_vertexArray_F32PNTC.data() + vertexArrayOffset_F32PNTC,
-					staticModelData.vertexBuffer,
-					staticModelData.vertexBufferSize);
-				memcpy(_indexArray_F32PNTC.data() + indexArrayOffset_F32PNTC,
-					staticModelData.indexBuffer,
-					staticModelData.indexBufferSize);
-				break;
-			}
-			case ecore::model::VertexFormat::F32_PC:
-			{
-				//TODO
+				case ecore::model::VertexFormat::F32_PNTC:
+				{
+					memcpy(
+						_vertexArray_F32PNTC.data() + vertexArrayOffset_F32PNTC,
+						staticModelData.vertexBuffer,
+						staticModelData.vertexBufferSize);
+					memcpy(_indexArray_F32PNTC.data() + indexArrayOffset_F32PNTC,
+						staticModelData.indexBuffer,
+						staticModelData.indexBufferSize);
+					vertexArrayOffset_F32PNTC += staticModelData.vertexBufferSize;
+					indexArrayOffset_F32PNTC += staticModelData.indexBufferSize;
+					break;
+				}
+				case ecore::model::VertexFormat::F32_PC:
+				{
+					//TODO
+				}
 			}
 		}
 	}
 
 	ecs::EntityManager* entityManager = _world->get_entity_manager();
-	for (auto entity : _staticModelEntities)
+	uint32_t instanceCounter = 0;
+	for (auto uuid : _indirectBufferDesc->get_uuids())
 	{
-		auto modelComponent = entityManager->get_component_const<ecore::ModelComponent>(entity);
-		ecore::StaticModelHandle modelHandle = _resourceManager->get_resource<ecore::StaticModel>(modelComponent->modelUUID);
-		ecore::StaticModel* staticModel = modelHandle.get_resource();
-		RendererModelInstance& modelInstance = _modelInstances.emplace_back();
-		modelInstance.materialIndex = 0;	// TODO change
-		ecore::model::ModelBounds bounds = staticModel->get_model_bounds();
-		modelInstance.sphereBoundsRadius = bounds.radius;
-		modelInstance.sphereBoundsCenter = bounds.origin;
-		auto transform = entityManager->get_component_const<ecore::TransformComponent>(entity);
-		modelInstance.transform.set_transfrom(transform->world);
-
-		XMMATRIX matrix = XMLoadFloat4x4(&transform->world);
-		matrix = XMMatrixInverse(nullptr, XMMatrixTranspose(matrix));
-		XMFLOAT4X4 transformInverseTranspose;
-		XMStoreFloat4x4(&transformInverseTranspose, matrix);
-		modelInstance.transformInverseTranspose.set_transfrom(transformInverseTranspose);		// TODO change matrix
-
-		if (entityManager->does_entity_have_component<ecore::OpaquePBRMaterialComponent>(entity))
+		for (auto& entity : _entitiesByModelUUID[uuid])
 		{
-			auto materialComponent = entityManager->get_component<ecore::OpaquePBRMaterialComponent>(entity);
-			modelInstance.materialIndex = _materialSubmanager->get_gpu_material_index(materialComponent->materialUUID);
+			auto modelComponent = entityManager->get_component_const<ecore::ModelComponent>(entity);
+			ecore::StaticModelHandle modelHandle = _resourceManager->get_resource<ecore::StaticModel>(modelComponent->modelUUID);
+			ecore::StaticModel* staticModel = modelHandle.get_resource();
+
+			uint32_t modelInstanceIndex = _modelInstances.size();
+			_indirectBufferDesc->add_instance(modelInstanceIndex, staticModel->get_uuid());
+		
+			RendererModelInstance& modelInstance = _modelInstances.emplace_back();
+			modelInstance.materialIndex = 0;	// TODO change
+			ecore::model::ModelBounds bounds = staticModel->get_model_bounds();
+			modelInstance.sphereBoundsRadius = bounds.radius;
+			modelInstance.sphereBoundsCenter = bounds.origin;
+			auto transform = entityManager->get_component_const<ecore::TransformComponent>(entity);
+			modelInstance.transform.set_transfrom(transform->world);
+
+			XMMATRIX matrix = XMLoadFloat4x4(&transform->world);
+			matrix = XMMatrixInverse(nullptr, XMMatrixTranspose(matrix));
+			XMFLOAT4X4 transformInverseTranspose;
+			XMStoreFloat4x4(&transformInverseTranspose, matrix);
+			modelInstance.transformInverseTranspose.set_transfrom(transformInverseTranspose);		// TODO change matrix
+
+			if (entityManager->does_entity_have_component<ecore::OpaquePBRMaterialComponent>(entity))
+			{
+				auto materialComponent = entityManager->get_component<ecore::OpaquePBRMaterialComponent>(entity);
+				modelInstance.materialIndex = _materialSubmanager->get_gpu_material_index(cmd, materialComponent->materialUUID);
+			}
+			// TODO transparent materials
+
+			_indirectBufferDesc->add_renderer_model_instance_id(instanceCounter++);
 		}
-		// TODO transparent materials
 	}
 }
 
@@ -161,4 +181,98 @@ void ModelSubmanager::add_static_model(ecore::StaticModelHandle handle, ecs::Ent
 	ecore::StaticModelData modelData = handle.get_resource()->get_model_data();
 	_loadedModelsVertexArraySize_F32PNTC += modelData.vertexBufferSize;
 	_loadedModelsIndexArraySize_F32PNTC += modelData.indexBufferSize;
+	_entitiesByModelUUID[handle.get_resource()->get_uuid()].push_back(entity);
+}
+
+IndirectBufferDesc::IndirectBufferDesc(ModelSubmanager* modelSubmanager, uint32_t indirectBufferIndex)
+	: _modelSubmanager(modelSubmanager), _indirectBufferIndex(indirectBufferIndex)
+{
+	allocate_gpu_buffers();
+}
+
+void IndirectBufferDesc::cleanup_after_update()
+{
+	_cullingInstanceIndices.clear();
+	_modelInstanceIDs.clear();
+}
+
+bool IndirectBufferDesc::add_model(
+	UUID cpuModelUUID,
+	uint32_t vertexOffset,
+	uint32_t indexOffset,
+	ecore::StaticModelData& modelData)
+{
+	auto it = _indirectBatchIndexByCPUModelUUID.find(cpuModelUUID);
+	if (it == _indirectBatchIndexByCPUModelUUID.end())
+	{
+		uint32_t index = _indirectCommands.size();
+		DrawIndexedIndirectCommand& command = _indirectCommands.emplace_back();
+		command.firstIndex = indexOffset;
+		command.indexCount = modelData.indexBufferSize / sizeof(uint32_t);
+		command.vertexOffset = vertexOffset;
+		command.instanceCount = 1;		// will be filled in the culling compute shader
+		command.firstInstance = _instanceCount++;
+		_indirectBatchIndexByCPUModelUUID[cpuModelUUID] = index;
+		_uuidInRightOrder.push_back(cpuModelUUID);
+		return true;
+	}
+	
+	_indirectCommands[it->second].instanceCount += 1;
+	++_instanceCount;
+	return false;
+}
+
+void IndirectBufferDesc::add_instance(uint32_t objectIndex, UUID modelUUID)
+{
+	CullingInstanceIndices& instanceIndices = _cullingInstanceIndices.emplace_back();
+	instanceIndices.batchID = _indirectBatchIndexByCPUModelUUID[modelUUID];
+	instanceIndices.instanceID = objectIndex;
+}
+
+void IndirectBufferDesc::update_gpu_buffers(rhi::CommandBuffer& cmd)
+{
+	if (!_indirectCommands.empty() && !_modelInstanceIDs.empty())
+	{
+		_modelSubmanager->get_renderer_resource_manager()->update_buffer(
+			&cmd,
+			get_name_with_index("indirect_buffer"),
+			sizeof(DrawIndexedIndirectCommand),
+			_indirectCommands.data(),
+			_indirectCommands.size(),
+			_indirectCommands.size());
+
+		// _modelSubmanager->get_renderer_resource_manager()->update_buffer(
+		// 	&cmd,
+		// 	get_name_with_index("culling_indices_buffer"),
+		// 	sizeof(CullingInstanceIndices),
+		// 	_cullingInstanceIndices.data(),
+		// 	_cullingInstanceIndices.size(),
+		// 	_cullingInstanceIndices.size());
+
+		_modelSubmanager->get_renderer_resource_manager()->update_buffer(
+			&cmd,
+			get_name_with_index("model_instance_id_buffer"),
+			sizeof(RendererModelInstanceID),
+			_modelInstanceIDs.data(),
+			_modelInstanceIDs.size(),
+			_modelInstanceIDs.size());
+	}
+}
+
+void IndirectBufferDesc::allocate_gpu_buffers()
+{
+	_indirectBuffer = _modelSubmanager->get_renderer_resource_manager()->allocate_indirect_buffer(
+		get_name_with_index("indirect_buffer"),
+		sizeof(DrawIndexedIndirectCommand) * MODEL_INSTANCES_INIT_NUMBER);
+	// _modelSubmanager->get_renderer_resource_manager()->allocate_storage_buffer(
+	// 	get_name_with_index("culling_indices_buffer"),
+	// 	sizeof(CullingInstanceIndices) * MODEL_INSTANCES_INIT_NUMBER);
+	_modelInstanceIDBuffer = _modelSubmanager->get_renderer_resource_manager()->allocate_storage_buffer(
+		get_name_with_index("model_instance_id_buffer"),
+		sizeof(RendererModelInstanceID) * MODEL_INSTANCES_INIT_NUMBER);
+}
+
+std::string IndirectBufferDesc::get_name_with_index(const std::string& name)
+{
+	return name + std::to_string(_indirectBufferIndex);
 }

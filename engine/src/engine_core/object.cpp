@@ -5,6 +5,11 @@
 
 using namespace ad_astris;
 
+void ecore::Object::set_path(const io::URI& path)
+{
+	_path = path;
+}
+
 io::URI ecore::Object::get_path()
 {
 	return _path;

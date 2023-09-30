@@ -36,7 +36,7 @@ rhi::Shader* ShaderManager::load_shader(
 
 	if (_shaderCache.is_shader_outdated(relativeShaderPath, isEngineShader))
 	{
-		LOG_INFO("SHADER {} IS OUTDATED", relativeShaderPath.c_str())
+		// LOG_INFO("SHADER {} IS OUTDATED", relativeShaderPath.c_str())
 		rhi::ShaderFormat shaderFormat{ rhi::ShaderFormat::UNDEFINED };
 		std::string shaderExtension = io::Utils::get_file_extension(relativeShaderPath);
 		if (shaderExtension == "hlsl")
@@ -88,7 +88,7 @@ rhi::Shader* ShaderManager::load_shader(
 	}
 	else
 	{
-		LOG_INFO("LOAD SHADER")
+		// LOG_INFO("LOAD SHADER")
 		std::vector<uint8_t> shaderData;
 		_shaderCache.load_shader_bin(io::Utils::get_file_name(relativeShaderPath), shaderData, isEngineShader);
 

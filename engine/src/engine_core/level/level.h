@@ -16,7 +16,7 @@ namespace ad_astris::ecore
 		
 		// TODO
 		public:
-			Level() = default;
+			Level();
 			// Constructor to create level with default settings
 			Level(io::URI& path, ObjectName* levelName);
 

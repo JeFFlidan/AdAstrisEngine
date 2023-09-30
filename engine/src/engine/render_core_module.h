@@ -287,7 +287,8 @@ namespace ad_astris::rcore
 		GBUFFER = 0,
 		DEFERRED_LIGHTING,
 		OIT_GEOMETRY,
-		OIT
+		OIT,
+		OCCLUSION_CULLING,
 	};
 
 	struct PipelineManagerInitContext

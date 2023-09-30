@@ -28,6 +28,7 @@ void FontManager::load_default_fonts(const std::string& rootPath)
 
 	_defaultFontSize14Info.fontHandle = io.Fonts->AddFontFromFileTTF((rootPath + "/fonts/unispace bd.ttf").c_str(), 14.0f);
 	_defaultFontSize14Info.fontSize = 14.0f;
+	IM_ASSERT(_defaultFontSize14Info.fontHandle != nullptr);
 }
 
 ImFont* FontManager::load_custom_font(const std::string& fontAbsolutePath, float fontSize)

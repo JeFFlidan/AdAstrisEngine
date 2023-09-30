@@ -24,6 +24,8 @@ namespace ad_astris::engine::impl
 			virtual void execute() override;
 			virtual void save_and_cleanup(bool needToSave) override;
 
+			virtual uicore::ECSUiManager* get_ecs_ui_manager() override { return _ecsUIManager.get(); }
+
 		private:
 			io::FileSystem* _fileSystem{ nullptr };
 			ModuleManager* _moduleManager{ nullptr };
@@ -31,6 +33,7 @@ namespace ad_astris::engine::impl
 			acore::IWindow* _mainWindow{ nullptr };
 			std::unique_ptr<resource::ResourceManager> _resourceManager{ nullptr };
 			std::unique_ptr<ecs::SystemManager> _systemManager{ nullptr };
+			std::unique_ptr<uicore::ECSUiManager> _ecsUIManager{ nullptr };
 			std::unique_ptr<tasks::TaskComposer> _taskComposer{ nullptr };
 			renderer::IRenderer* _renderer{ nullptr };
 			std::unique_ptr<ecore::World> _world{ nullptr };
@@ -39,7 +42,12 @@ namespace ad_astris::engine::impl
 
 			ecs::Entity _activeCamera;
 			events::EventDelegate<ecore::EntityCreatedEvent> _activeCameraDelegate;
-		
+
+			std::vector<std::pair<io::URI, io::URI>> _resourcePaths;
+			std::vector<resource::FirstCreationContext<ecore::OpaquePBRMaterial>> _materialsToCreate;
+			std::vector<ecore::EditorObjectCreationContext> _pointLightsToCreate;
+			std::vector<ecore::EditorObjectCreationContext> _staticModelsToCreate;
+
 			void create_new_blank_project();
 			void load_existing_project();
 			void register_ecs_objects();
@@ -47,5 +55,7 @@ namespace ad_astris::engine::impl
 			void set_active_camera_delegate();
 			void create_default_material();
 			UUID get_default_material_uuid();
+			void subscribe_to_events();
+			void create_new_resources();
 	};
 }

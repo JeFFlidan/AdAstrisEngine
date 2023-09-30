@@ -228,3 +228,10 @@ void ecs::Archetype::get_component_by_component_type_id(
 	void* component = chunk.get_entity_component(columnIndex, typeId);
 	memcpy(tempComponentsArray, component, componentSize);
 }
+
+void* ecs::Archetype::get_component_by_component_type_id(Entity& entity, uint32_t columnIndex, uint32_t typeID)
+{
+	ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
+	uint32_t componentSize = _chunkStructure.componentIdToSize[typeID];
+	return chunk.get_entity_component(columnIndex, typeID);
+}

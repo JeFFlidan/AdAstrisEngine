@@ -78,13 +78,13 @@ ecs::Entity EngineObjectsCreator::create_camera(EditorObjectCreationContext& obj
 {
 	ecs::EntityCreationContext entityCreationContext;
 	CameraComponent cameraComponent{};
-	cameraComponent.movementSpeed = 30.0f;   
-	cameraComponent.mouseSensitivity = 0.1f;
+	cameraComponent.movementSpeed = 60.0f; 
+	cameraComponent.mouseSensitivity = 0.12f;
 	entityCreationContext.add_component(cameraComponent);
 
 	TransformComponent transformComponent;
 	transformComponent.location = objectCreationContext.location;
-	transformComponent.rotation = objectCreationContext.rotation;
+	transformComponent.rotation = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	transformComponent.scale = objectCreationContext.scale;
 	entityCreationContext.add_component(transformComponent);
 
@@ -147,7 +147,11 @@ void EngineObjectsCreator::setup_basic_model_components(
 	ecs::EntityCreationContext& entityCreationContext,
 	EditorObjectCreationContext& objectCreationContext)
 {
-	entityCreationContext.add_component<TransformComponent>(objectCreationContext.location, objectCreationContext.rotation, objectCreationContext.scale);
+	TransformComponent transformComponent;
+	transformComponent.location = objectCreationContext.location;
+	transformComponent.rotationEuler = objectCreationContext.rotationEuler;
+	transformComponent.scale = objectCreationContext.scale;
+	entityCreationContext.add_component<TransformComponent>(transformComponent);
 	entityCreationContext.add_component<ModelComponent>(objectCreationContext.uuid);
 	entityCreationContext.add_component<CastShadowComponent>(true);
 	entityCreationContext.add_component<VisibleComponent>(true);
@@ -158,7 +162,11 @@ void EngineObjectsCreator::setup_basic_light_components(
 	ecs::EntityCreationContext& entityCreationContext,
 	EditorObjectCreationContext& objectCreationContext)
 {
-	entityCreationContext.add_component<TransformComponent>(objectCreationContext.location, objectCreationContext.rotation, objectCreationContext.scale);
+	TransformComponent transformComponent;
+	transformComponent.location = objectCreationContext.location;
+	transformComponent.rotationEuler = objectCreationContext.rotationEuler;
+	transformComponent.scale = objectCreationContext.scale;
+	entityCreationContext.add_component<TransformComponent>(transformComponent);
 	entityCreationContext.add_component<ColorComponent>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 	entityCreationContext.add_component<LightTemperatureComponent>(false, 6500.0f);
 	entityCreationContext.add_component<CastShadowComponent>(true);

@@ -362,7 +362,7 @@ struct FrameUB
 	int entityBufferIndex;
 	int materialBufferIndex;
 	int modelInstanceBufferIndex;
-	uint empty1;
+	int modelInstanceIDBufferIndex;
 
 	uint lightArrayOffset;
 	uint lightArrayCount;
@@ -414,6 +414,11 @@ struct Attachments
 	uint gDepthIndex;
 };
 
+struct IDColor
+{
+	float4 color;
+};
+
 enum SamplerType
 {
 	SAMPLER_LINEAR_REPEAT = 0,
@@ -425,6 +430,34 @@ enum SamplerType
 	SAMPLER_NEAREST_MIRROR,
 
 	SAMPLER_COUNT
+};
+
+// Indirect drawing
+struct RendererModelInstanceID
+{
+	uint id;
+	uint3 empty;
+};
+
+struct DrawIndexedIndirectCommand
+{
+	uint indexCount;
+	uint instanceCount;
+	uint firstIndex;
+	int vertexOffset;
+	uint firstInstance;
+};
+
+struct CullingInstanceIndices
+{
+	uint instanceID;
+	uint batchID;
+};
+
+struct IndirectBufferIndices
+{
+	uint cullingInstanceIndicesBufferIndex;
+	uint indirectCommandsBufferIndex;
 };
 
 #endif // SHADER_INTEROP_RENDERER

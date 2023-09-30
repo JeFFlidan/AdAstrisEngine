@@ -76,17 +76,12 @@ void RenderGraph::bake()
 
 	std::reverse(_sortedPasses.begin(), _sortedPasses.end());
 	filter_pass_order();
-
-	LOG_INFO("Before optimizing pass order")
+	
 	optimize_pass_order();
-
-	LOG_INFO("Before building physical resources")
+	
 	build_physical_resources();
-	LOG_INFO("Before building rendering begin info")
 	build_rendering_begin_info();
-	LOG_INFO("Before building barriers")
 	build_barriers();
-	LOG_INFO("After building barriers")
 }
 
 void RenderGraph::log()

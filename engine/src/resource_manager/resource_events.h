@@ -35,4 +35,16 @@ namespace ad_astris::resource
 			EVENT_TYPE_DECL(Texture2DLoadedEvent)
 			Texture2DLoadedEvent(ecore::Texture2D* texture) : Texture2DEvent(texture) { }
 	};
+
+	class OpaquePBRMaterialCreatedEvent : public events::IEvent
+	{
+		public:
+			EVENT_TYPE_DECL(OpaquePBRMaterialCreatedEvent)
+			OpaquePBRMaterialCreatedEvent(ecore::OpaquePBRMaterial* material) : _materialHandle(material) { }
+
+			ecore::OpaquePBRMaterialHandle get_material_handle() { return _materialHandle; }
+
+		private:
+			ecore::OpaquePBRMaterialHandle _materialHandle;
+	};
 }

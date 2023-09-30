@@ -11,10 +11,10 @@ file(GLOB RENDER_CORE_FILES
 add_library(${LIBRARY_NAME} SHARED ${RENDER_CORE_FILES})
 set_target_properties(${LIBRARY_NAME} PROPERTIES OUTPUT_NAME ${LIBRARY_NAME})
 
-find_package(Vulkan REQUIRED)
+# find_package(Vulkan REQUIRED)
 
 if (GLSL_SUPPORT)
 	add_compile_definitions(GLSL_SUPPORT)
 endif()
 
-target_link_libraries(${LIBRARY_NAME} Vulkan::Vulkan engine_core)
+target_link_libraries(${LIBRARY_NAME} engine_core)

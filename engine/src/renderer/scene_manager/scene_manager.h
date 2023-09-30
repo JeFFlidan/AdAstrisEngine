@@ -55,6 +55,10 @@ namespace ad_astris::renderer::impl
 				return _materialSubmanager->get_sampler(samplerType);
 			}
 		
+			IndirectBufferDesc* get_indirect_buffer_desc() { return _modelSubmanager->get_indirect_buffer_desc(); }
+
+			uint32_t get_light_count() { return _entitySubmanager->get_light_count(); }
+		
 		private:
 			rhi::IEngineRHI* _rhi{ nullptr };
 			events::EventManager* _eventManager{ nullptr };

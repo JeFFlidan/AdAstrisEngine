@@ -26,6 +26,9 @@ namespace ad_astris::uicore
 				return _thumbnailSize;
 			}
 
+			void reset();
+			bool are_any_widgets_hovered() { return _widgetSelectionManager->are_any_widgets_hovered(); }
+
 		private:
 			std::unique_ptr<WidgetSelectionManager> _widgetSelectionManager;
 			uint32_t _thumbnailSize;

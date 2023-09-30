@@ -244,3 +244,15 @@ void EntityManager::copy_vector(
 	dstTypeIDs.resize(srcTypeIDs.size());
 	memcpy(dstTypeIDs.data(), srcTypeIDs.data(), srcTypeIDs.size() * sizeof(uint32_t));
 }
+
+void EntityManager::get_entity_all_component_ids(Entity entity, std::vector<uint32_t>& ids)
+{
+	Archetype& archetype = _archetypes[_entityToItsInfoInArchetype[entity].archetypeId];
+	ids = archetype._chunkStructure.componentIds;
+}
+
+void* EntityManager::get_entity_component_by_id(Entity entity, uint32_t id)
+{
+	Archetype& archetype = _archetypes[_entityToItsInfoInArchetype[entity].archetypeId];
+	return archetype.get_component_by_component_type_id(entity, _entityToItsInfoInArchetype[entity].column, id);
+}

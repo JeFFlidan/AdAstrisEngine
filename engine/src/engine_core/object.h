@@ -47,7 +47,8 @@ namespace ad_astris::ecore
 				return "NoType";
 			}
 			// End method for resources
-		
+
+			void set_path(const io::URI& path);
 			io::URI get_path();
 			ObjectName* get_name();
 
@@ -57,6 +58,8 @@ namespace ad_astris::ecore
 			}
 
 			virtual void accept(resource::IResourceVisitor& resourceVisitor) { }
+			bool is_dirty() { return _isDirty; }
+			void make_dirty() { _isDirty = true; }
 
 			/** Changes filename in the engine and on disc. 
 			 * @param newName can consist of two types of name. If you pass an absolute path to the file, the engine object will be
@@ -71,5 +74,6 @@ namespace ad_astris::ecore
 		protected:
 			ObjectName* _name{ nullptr };
 			io::URI _path;
+			bool _isDirty{ false };
 	};
 }

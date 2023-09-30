@@ -326,7 +326,6 @@ void vulkan::VulkanPipeline::create_graphics_pipeline(
 	
 	pipelineRenderingCreateInfo.pColorAttachmentFormats = colorAttachFormats.size() ? colorAttachFormats.data() : nullptr;
 	pipelineRenderingCreateInfo.colorAttachmentCount = colorAttachFormats.size();
-	LOG_INFO("COLOR ATTACHMENTS COUNT: {}", colorAttachFormats.size())
 	if (info->depthFormat != rhi::Format::UNDEFINED)
 	{
 		pipelineRenderingCreateInfo.depthAttachmentFormat = get_format(info->depthFormat);

@@ -1,16 +1,19 @@
 ﻿#include "vulkan_ui_window_backend.h"
 #include "vulkan_common.h"
 #include "vulkan_queue.h"
+#include "ui_core/font_manager.h"
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_win32.h"
+#include <stb_image/stb_image.h>
 
 using namespace ad_astris;
 using namespace vulkan;
 
-void VulkanUIWindowBackend::init(rhi::UIWindowBackendInitContext& initContext)
+void VulkanUIWindowBackend::init(rhi::UIWindowBackendInitContext& initContext, rhi::Sampler sampler)
 {
 	_rhi = static_cast<VulkanRHI*>(initContext.rhi);
 	_mainWindow = initContext.window;
+	_fileSystem = initContext.fileSystem;
 	
 	VkDescriptorPoolSize poolSizes[] = {
 		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
@@ -60,18 +63,46 @@ void VulkanUIWindowBackend::init(rhi::UIWindowBackendInitContext& initContext)
 	
 	ImGui_ImplVulkan_Init(&vulkanInitInfo, VK_NULL_HANDLE);
 	rhi::CommandBuffer cmdBuffer;
+
+	//uicore::FontManager::load_default_fonts(initContext.fileSystem->get_engine_root_path().c_str());
+
+	io.Fonts->AddFontDefault();
+	_fontSize17 = io.Fonts->AddFontFromFileTTF((initContext.fileSystem->get_engine_root_path() + "/fonts/unispace bd.ttf").c_str(), 17.0f);
+	_fontSize14 = io.Fonts->AddFontFromFileTTF((initContext.fileSystem->get_engine_root_path() + "/fonts/unispace bd.ttf").c_str(), 14.0f);
+	
 	_rhi->begin_command_buffer(&cmdBuffer, rhi::QueueType::GRAPHICS);
 	ImGui_ImplVulkan_CreateFontsTexture(get_vk_obj(&cmdBuffer)->get_handle());
+	
+	std::vector<std::pair<io::URI, editor::IconType>> relativePathAndIconType = {
+		{ "/icons/3Dmodel.png", editor::IconType::MODEL_FILE },
+		{ "/icons/folder.png", editor::IconType::FOLDER },
+		{ "/icons/image.png", editor::IconType::TEXTURE_FILE },
+		{ "/icons/level.png", editor::IconType::LEVEL_FILE },
+		{ "/icons/material.png", editor::IconType::MATERIAL_FILE }
+	};
+
+	for (auto& pair : relativePathAndIconType)
+	{
+		io::URI filePath = _fileSystem->get_engine_root_path() + pair.first;
+		uicore::TextureInfo textureInfo;
+		unsigned char* imageData = stbi_load(filePath.c_str(), &textureInfo.width, &textureInfo.height, NULL, 4);
+		if (imageData == NULL)
+			LOG_FATAL("Failed to load icon {}", filePath.c_str());
+		create_icon(cmdBuffer, sampler, textureInfo, imageData);
+		_icons[pair.second] = textureInfo;
+		stbi_image_free(imageData);
+	}
+	
 	_rhi->submit(rhi::QueueType::GRAPHICS, true);
 	ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
-void VulkanUIWindowBackend::set_backbuffer(rhi::TextureView* textureView, rhi::Sampler* sampler)
+void VulkanUIWindowBackend::set_backbuffer(rhi::TextureView* textureView, rhi::Sampler sampler)
 {
 	if (_descriptorSet == VK_NULL_HANDLE)
 	{
 		_descriptorSet = ImGui_ImplVulkan_AddTexture(
-		   get_vk_obj(sampler)->get_handle(),
+		   get_vk_obj(&sampler)->get_handle(),
 		   get_vk_obj(textureView)->get_handle(),
 		   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
@@ -79,7 +110,7 @@ void VulkanUIWindowBackend::set_backbuffer(rhi::TextureView* textureView, rhi::S
 	{
 		ImGui_ImplVulkan_UpdateTexture(
 			_descriptorSet,
-			get_vk_obj(sampler)->get_handle(),
+			get_vk_obj(&sampler)->get_handle(),
 			get_vk_obj(textureView)->get_handle(),
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
@@ -134,4 +165,53 @@ void VulkanUIWindowBackend::get_callbacks(rhi::UIWindowBackendCallbacks& callbac
 		ImGui::GetAllocatorFunctions(&allocators.allocFunc, &allocators.freeFunc, &userData);
 		return allocators;
 	};
+
+	callbacks.getDefaultFont14 = [this]()->ImFont*
+	{
+		return _fontSize14;
+	};
+
+	callbacks.getDefaultFont17 = [this]()->ImFont*
+	{
+		return _fontSize17;
+	};
+
+	callbacks.getContentIcons = [this]()->std::unordered_map<editor::IconType, uicore::TextureInfo>
+	{
+		return _icons;
+	};
+}
+
+void VulkanUIWindowBackend::create_icon(rhi::CommandBuffer& cmd, rhi::Sampler& sampler, uicore::TextureInfo& iconInfo, unsigned char* imageData)
+{
+	rhi::Texture texture;
+	texture.textureInfo.width = iconInfo.width;
+	texture.textureInfo.height = iconInfo.height;
+	texture.textureInfo.layersCount = 1;
+	texture.textureInfo.mipLevels = 1;
+	texture.textureInfo.format = rhi::Format::R8G8B8A8_UNORM;
+	texture.textureInfo.memoryUsage = rhi::MemoryUsage::GPU;
+	texture.textureInfo.samplesCount = rhi::SampleCount::BIT_1;
+	texture.textureInfo.textureDimension = rhi::TextureDimension::TEXTURE2D;
+	texture.textureInfo.textureUsage = rhi::ResourceUsage::SAMPLED_TEXTURE | rhi::ResourceUsage::TRANSFER_DST;
+	_rhi->create_texture(&texture);
+
+	rhi::Buffer buffer;
+	buffer.bufferInfo.size = iconInfo.width * iconInfo.height * 4;
+	buffer.bufferInfo.bufferUsage = rhi::ResourceUsage::TRANSFER_SRC;
+	buffer.bufferInfo.memoryUsage = rhi::MemoryUsage::CPU;
+	_rhi->create_buffer(&buffer, imageData);
+
+	_rhi->copy_buffer_to_texture(&cmd, &buffer, &texture);
+
+	rhi::TextureView textureView;
+	textureView.viewInfo.baseLayer = 0;
+	textureView.viewInfo.baseMipLevel = 0;
+	textureView.viewInfo.textureAspect = rhi::TextureAspect::COLOR;
+	_rhi->create_texture_view(&textureView, &texture);
+	
+	iconInfo.textureID64 = (uint64_t)ImGui_ImplVulkan_AddTexture(
+		   get_vk_obj(&sampler)->get_handle(),
+		   get_vk_obj(&textureView)->get_handle(),
+		   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }

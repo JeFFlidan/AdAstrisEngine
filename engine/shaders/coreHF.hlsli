@@ -154,17 +154,17 @@ float4 main(PixelInput input) : SV_Target
     RendererMaterial material = get_material(modelInstance.materialIndex);
     SamplerState sampler = bindlessSamplers[material.get_sampler_index()];
     output.gAlbedo = material.textures[ALBEDO].get_texture().Sample(sampler, input.texCoord);
-    float aoVal = material.textures[AO].get_texture().Sample(sampler, input.texCoord).x;
-    float roughVal = material.textures[ROUGHNESS].get_texture().Sample(sampler, input.texCoord).x;
-    float metallicVal = material.textures[METALLIC].get_texture().Sample(sampler, input.texCoord).x;
+    float aoVal = material.textures[AO].get_texture().Sample(sampler, input.texCoord).r;
+    float roughVal = material.textures[ROUGHNESS].get_texture().Sample(sampler, input.texCoord).r;
+    float metallicVal = material.textures[METALLIC].get_texture().Sample(sampler, input.texCoord).r;
     output.gSurface = float4(aoVal, roughVal, metallicVal, 1.0f);
 
     float3 N = normalize(input.normal);
     float3 T = normalize(input.tangent);
-    float3 B = cross(N, T);
+    float3 B = cross(T, N);
     float3x3 TBN = float3x3(T, B, N);
     float3 normal = material.textures[NORMAL].get_texture().Sample(sampler, input.texCoord).xyz;
-    normal = mul(normalize(normal), TBN);
+    normal = normalize(mul(TBN, normalize(2.0 * normal - 1.0)));
     output.gNormal = float4(normal, 1.0f);
     output.gNormal = normalize(output.gNormal);
 
@@ -215,8 +215,9 @@ float4 main(PixelInput input) : SV_Target
             }
         }
     }
-    
-    float3 finalColor = spotLightsL0 + pointLightsL0 + dirLightsL0;
+
+    float3 ambient = float3(0.01, 0.01, 0.01) * surface.albedo.xyz * surface.ao;
+    float3 finalColor = dirLightsL0 + spotLightsL0 + pointLightsL0 + ambient;
     return float4(finalColor.x, finalColor.y, finalColor.z, 1.0f);
 #endif
 }

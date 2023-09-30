@@ -40,6 +40,7 @@ void ecore::StaticModel::serialize(io::File* file)
 {
 	std::string newMetadata = model::Utils::pack_static_model_info(&_modelInfo);
 	file->set_metadata(newMetadata);
+	_isDirty = false;
 }
 
 void ecore::StaticModel::deserialize(io::File* file, ObjectName* objectName)

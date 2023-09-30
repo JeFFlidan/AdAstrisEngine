@@ -158,6 +158,12 @@ bool WinApiWindow::process_messages()
 		ClipCursor(NULL);
 	}
 
+	if (WinApiUtils::is_key_down(WinApiUtils::parse_key(Key::LEFT_CTRL)) && WinApiUtils::is_key_toggle(WinApiUtils::parse_key(Key::S)))
+	{
+		ProjectSavingStartEvent savingEvent;
+		_eventManager->trigger_event(savingEvent);
+	}
+
 	return true;
 }
 

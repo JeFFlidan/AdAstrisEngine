@@ -1,5 +1,5 @@
 ﻿#include "material_submanager.h"
-
+#include "resource_manager/resource_events.h"
 #include "engine_core/material/materials.h"
 #include "engine_core/material/material_settings.h"
 
@@ -41,18 +41,22 @@ bool MaterialSubmanager::need_update()
 	return true;
 }
 
-uint32_t MaterialSubmanager::get_gpu_material_index(UUID cpuMaterialUUID)
+uint32_t MaterialSubmanager::get_gpu_material_index(rhi::CommandBuffer& cmd, UUID cpuMaterialUUID)
 {
 	auto it = _gpuOpaqueMaterialIndexByCPUMaterialUUID.find(cpuMaterialUUID);
 	if (it != _gpuOpaqueMaterialIndexByCPUMaterialUUID.end())
 		return it->second;
-
-	LOG_FATAL("MaterialSubmanager::get_gpu_material_index(): There is no gpu material by uuid {}", cpuMaterialUUID)
+	create_gpu_material(cmd, cpuMaterialUUID);
+	//LOG_FATAL("MaterialSubmanager::get_gpu_material_index(): There is no gpu material by uuid {}", cpuMaterialUUID)
 }
 
 void MaterialSubmanager::subscribe_to_events()
 {
-	
+	events::EventDelegate<resource::OpaquePBRMaterialCreatedEvent> delegate1 = [&](resource::OpaquePBRMaterialCreatedEvent& event)
+	{
+		_gpuOpaqueMaterialIndexByCPUMaterialUUID.insert({ event.get_material_handle().get_resource()->get_uuid(), 0 });
+	};
+	_eventManager->subscribe(delegate1);
 }
 
 void MaterialSubmanager::allocate_gpu_buffers()
@@ -65,69 +69,7 @@ void MaterialSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 {
 	for (auto pair : _gpuOpaqueMaterialIndexByCPUMaterialUUID)
 	{
-		ecore::OpaquePBRMaterial* material = _resourceManager->get_resource<ecore::OpaquePBRMaterial>(pair.first).get_resource();
-		ecore::OpaquePBRMaterialSettings* materialSettings = material->get_material_settings();
-
-		uint32_t rendererMaterialIndex = _rendererMaterials.size();
-		RendererMaterial& rendererMaterial = _rendererMaterials.emplace_back();
-		_gpuOpaqueMaterialIndexByCPUMaterialUUID[material->get_uuid()] = rendererMaterialIndex;
-
-		auto it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->baseColorTextureUUID);
-		if (it == _gpuTextureViewByCPUTextureUUID.end())
-		{
-			rhi::TextureView* view = allocate_2d_texture(cmd, materialSettings->baseColorTextureUUID);
-			rendererMaterial.textures[ALBEDO].textureIndex = _rhi->get_descriptor_index(view);
-		}
-		else
-		{
-			rendererMaterial.textures[ALBEDO].textureIndex = _rhi->get_descriptor_index(it->second);
-		}
-
-		it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->roughnessTextureUUID);
-		if (it == _gpuTextureViewByCPUTextureUUID.end())
-		{
-			rhi::TextureView* view = allocate_2d_texture(cmd, materialSettings->roughnessTextureUUID);
-			rendererMaterial.textures[ROUGHNESS].textureIndex = _rhi->get_descriptor_index(view);
-		}
-		else
-		{
-			rendererMaterial.textures[ROUGHNESS].textureIndex = _rhi->get_descriptor_index(it->second);
-		}
-
-		it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->normalTextureUUID);
-		if (it == _gpuTextureViewByCPUTextureUUID.end())
-		{
-			rhi::TextureView* view = allocate_2d_texture(cmd, materialSettings->normalTextureUUID);
-			rendererMaterial.textures[NORMAL].textureIndex = _rhi->get_descriptor_index(view);
-		}
-		else
-		{
-			rendererMaterial.textures[NORMAL].textureIndex = _rhi->get_descriptor_index(it->second);
-		}
-
-		it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->ambientOcclusionTextureUUID);
-		if (it == _gpuTextureViewByCPUTextureUUID.end())
-		{
-			rhi::TextureView* view = allocate_2d_texture(cmd, materialSettings->ambientOcclusionTextureUUID);
-			rendererMaterial.textures[AO].textureIndex = _rhi->get_descriptor_index(view);
-		}
-		else
-		{
-			rendererMaterial.textures[AO].textureIndex = _rhi->get_descriptor_index(it->second);
-		}
-
-		it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->metallicTextureUUID);
-		if (it == _gpuTextureViewByCPUTextureUUID.end())
-		{
-			rhi::TextureView* view = allocate_2d_texture(cmd, materialSettings->metallicTextureUUID);
-			rendererMaterial.textures[METALLIC].textureIndex = _rhi->get_descriptor_index(view);
-		}
-		else
-		{
-			rendererMaterial.textures[METALLIC].textureIndex = _rhi->get_descriptor_index(it->second);
-		}
-
-		rendererMaterial.set_sampler_index(_rhi->get_descriptor_index(&_samplers[SAMPLER_LINEAR_REPEAT]));
+		create_gpu_material(cmd, pair.first);
 	}
 }
 
@@ -169,5 +111,74 @@ void MaterialSubmanager::create_samplers()
 
 	samplerInfo.addressMode = rhi::AddressMode::MIRRORED_REPEAT;
 	_rhi->create_sampler(&_samplers[SAMPLER_NEAREST_MIRROR], &samplerInfo);
+
+}
+
+void MaterialSubmanager::create_gpu_material(rhi::CommandBuffer& cmd, UUID cpuMaterialUUID)
+{
+	ecore::OpaquePBRMaterial* material = _resourceManager->get_resource<ecore::OpaquePBRMaterial>(cpuMaterialUUID).get_resource();
+
+	ecore::OpaquePBRMaterialSettings* materialSettings = material->get_material_settings();
+
+	uint32_t rendererMaterialIndex = _rendererMaterials.size();
+	RendererMaterial& rendererMaterial = _rendererMaterials.emplace_back();
+	_gpuOpaqueMaterialIndexByCPUMaterialUUID[material->get_uuid()] = rendererMaterialIndex;
+
+	auto it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->baseColorTextureUUID);
+	if (it == _gpuTextureViewByCPUTextureUUID.end())
+	{
+		rhi::TextureView* view = allocate_2d_texture(cmd, materialSettings->baseColorTextureUUID);
+		rendererMaterial.textures[ALBEDO].textureIndex = _rhi->get_descriptor_index(view);
+	}
+	else
+	{
+		rendererMaterial.textures[ALBEDO].textureIndex = _rhi->get_descriptor_index(it->second);
+	}
+
+	it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->roughnessTextureUUID);
+	if (it == _gpuTextureViewByCPUTextureUUID.end())
+	{
+		rhi::TextureView* view = allocate_2d_texture(cmd, materialSettings->roughnessTextureUUID);
+		rendererMaterial.textures[ROUGHNESS].textureIndex = _rhi->get_descriptor_index(view);
+	}
+	else
+	{
+		rendererMaterial.textures[ROUGHNESS].textureIndex = _rhi->get_descriptor_index(it->second);
+	}
+
+	it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->normalTextureUUID);
+	if (it == _gpuTextureViewByCPUTextureUUID.end())
+	{
+		rhi::TextureView* view = allocate_2d_texture(cmd, materialSettings->normalTextureUUID);
+		rendererMaterial.textures[NORMAL].textureIndex = _rhi->get_descriptor_index(view);
+	}
+	else
+	{
+		rendererMaterial.textures[NORMAL].textureIndex = _rhi->get_descriptor_index(it->second);
+	}
+
+	it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->ambientOcclusionTextureUUID);
+	if (it == _gpuTextureViewByCPUTextureUUID.end())
+	{
+		rhi::TextureView* view = allocate_2d_texture(cmd, materialSettings->ambientOcclusionTextureUUID);
+		rendererMaterial.textures[AO].textureIndex = _rhi->get_descriptor_index(view);
+	}
+	else
+	{
+		rendererMaterial.textures[AO].textureIndex = _rhi->get_descriptor_index(it->second);
+	}
+
+	it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->metallicTextureUUID);
+	if (it == _gpuTextureViewByCPUTextureUUID.end())
+	{
+		rhi::TextureView* view = allocate_2d_texture(cmd, materialSettings->metallicTextureUUID);
+		rendererMaterial.textures[METALLIC].textureIndex = _rhi->get_descriptor_index(view);
+	}
+	else
+	{
+		rendererMaterial.textures[METALLIC].textureIndex = _rhi->get_descriptor_index(it->second);
+	}
+
+	rendererMaterial.set_sampler_index(_rhi->get_descriptor_index(&_samplers[SAMPLER_LINEAR_REPEAT]));
 
 }

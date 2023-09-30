@@ -13,4 +13,5 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES OUTPUT_NAME ${LIBRARY_NAME})
 
 include_directories(${DIR_THIRD_PARTY})
 
-target_link_libraries(${LIBRARY_NAME} ui_core engine_core imgui)
+target_link_libraries(${LIBRARY_NAME} engine_core)
+target_compile_options(${LIBRARY_NAME} PRIVATE "/Zc:preprocessor")

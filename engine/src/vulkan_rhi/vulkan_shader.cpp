@@ -96,8 +96,8 @@ void vulkan::VulkanShader::reflect(rhi::ShaderInfo* shaderInfo)
 
 	spvReflectDestroyShaderModule(&reflectModule);
 
-	LOG_INFO("Bindless sets bindings count: {}", _reflectContext.bindlessBindings.size())
-	LOG_INFO("Zero sets bindings count: {}", _reflectContext.zeroSetBindings.size())
+	// LOG_INFO("Bindless sets bindings count: {}", _reflectContext.bindlessBindings.size())
+	// LOG_INFO("Zero sets bindings count: {}", _reflectContext.zeroSetBindings.size())
 }
 
 VkPipelineLayout vulkan::VulkanShaderStages::get_pipeline_layout(VkDevice device)

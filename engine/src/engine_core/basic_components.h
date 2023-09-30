@@ -9,6 +9,7 @@ namespace ad_astris::ecore
 	{
 		XMFLOAT3 location{ 0.0f, 0.0f, 0.0f };
 		XMFLOAT4 rotation{ 0.0f, 0.0f, 0.0f, 1.0f };
+		XMFLOAT3 rotationEuler{ 0.0f, 0.0f, 0.0f };
 		XMFLOAT3 scale{ 1.0f, 1.0f, 1.0f };
 		XMFLOAT4X4 world = math::IDENTITY_MATRIX;
 	};
@@ -60,12 +61,12 @@ namespace ad_astris::ecore
 
 	struct InnerConeAngleComponent
 	{
-		float angle;
+		float innerConeAngle;
 	};
 	
 	struct OuterConeAngleComponent
 	{
-		float angle;
+		float outerConeAngle;
 	};
 
 	struct LightTemperatureComponent
@@ -121,26 +122,26 @@ namespace ad_astris::ecore
 	struct DirectionalLightTag { };
 	struct SpotLightTag { };
 
-	inline void register_basic_components(ecs::EntityManager* entityManager)
+	inline void register_basic_components(ecs::EntityManager* entityManager, uicore::ECSUiManager* ecsUIManager)
 	{
-		entityManager->register_component<TransformComponent>(true);
-		entityManager->register_component<ModelComponent>(true);
-		entityManager->register_component<TextureComponent>(true);
-		entityManager->register_component<OpaquePBRMaterialComponent>(true);
-		entityManager->register_component<TransparentMaterialComponent>(true);
-		entityManager->register_component<LuminanceIntensityComponent>(true);
-		entityManager->register_component<CandelaIntensityComponent>(true);
-		entityManager->register_component<ColorComponent>(true);
-		entityManager->register_component<AttenuationRadiusComponent>(true);
-		entityManager->register_component<InnerConeAngleComponent>(true);
-		entityManager->register_component<OuterConeAngleComponent>(true);
-		entityManager->register_component<LightTemperatureComponent>(true);
-		entityManager->register_component<CastShadowComponent>(true);
-		entityManager->register_component<AffectWorldComponent>(true);
-		entityManager->register_component<VisibleComponent>(true);
-		entityManager->register_component<ExtentComponent>(true);
-		entityManager->register_component<CameraComponent>(true);
-		entityManager->register_component<IntensityComponent>(true);
+		ecs::register_component<TransformComponent>(entityManager, ecsUIManager);
+		ecs::register_component<ModelComponent>(entityManager, ecsUIManager);
+		ecs::register_component<TextureComponent>(entityManager, ecsUIManager);
+		ecs::register_component<OpaquePBRMaterialComponent>(entityManager, ecsUIManager);
+		ecs::register_component<TransparentMaterialComponent>(entityManager, ecsUIManager);
+		ecs::register_component<LuminanceIntensityComponent>(entityManager, ecsUIManager);
+		ecs::register_component<CandelaIntensityComponent>(entityManager, ecsUIManager);
+		ecs::register_component<ColorComponent>(entityManager, ecsUIManager);
+		ecs::register_component<AttenuationRadiusComponent>(entityManager, ecsUIManager);
+		ecs::register_component<InnerConeAngleComponent>(entityManager, ecsUIManager);
+		ecs::register_component<OuterConeAngleComponent>(entityManager, ecsUIManager);
+		ecs::register_component<LightTemperatureComponent>(entityManager, ecsUIManager);
+		ecs::register_component<CastShadowComponent>(entityManager, ecsUIManager);
+		ecs::register_component<AffectWorldComponent>(entityManager, ecsUIManager);
+		ecs::register_component<VisibleComponent>(entityManager, ecsUIManager);
+		ecs::register_component<ExtentComponent>(entityManager, ecsUIManager);
+		ecs::register_component<CameraComponent>(entityManager, ecsUIManager);
+		ecs::register_component<IntensityComponent>(entityManager, ecsUIManager);
 		entityManager->register_tag<StaticObjectTag>();
 		entityManager->register_tag<MovableObjectTag>();
 		entityManager->register_tag<PointLightTag>();
@@ -149,7 +150,7 @@ namespace ad_astris::ecore
 	}
 }
 
-REFLECT_COMPONENT(ad_astris::ecore::TransformComponent, location, rotation, scale)
+REFLECT_COMPONENT(ad_astris::ecore::TransformComponent, location, rotation, rotationEuler, scale)
 REFLECT_COMPONENT(ad_astris::ecore::ModelComponent, modelUUID)
 REFLECT_COMPONENT(ad_astris::ecore::TextureComponent, textureUUID)
 REFLECT_COMPONENT(ad_astris::ecore::OpaquePBRMaterialComponent, materialUUID)
@@ -158,8 +159,8 @@ REFLECT_COMPONENT(ad_astris::ecore::LuminanceIntensityComponent, intensity)
 REFLECT_COMPONENT(ad_astris::ecore::CandelaIntensityComponent, intensity)
 REFLECT_COMPONENT(ad_astris::ecore::ColorComponent, color)
 REFLECT_COMPONENT(ad_astris::ecore::AttenuationRadiusComponent, attenuationRadius)
-REFLECT_COMPONENT(ad_astris::ecore::InnerConeAngleComponent, angle)
-REFLECT_COMPONENT(ad_astris::ecore::OuterConeAngleComponent, angle)
+REFLECT_COMPONENT(ad_astris::ecore::InnerConeAngleComponent, innerConeAngle)
+REFLECT_COMPONENT(ad_astris::ecore::OuterConeAngleComponent, outerConeAngle)
 REFLECT_COMPONENT(ad_astris::ecore::LightTemperatureComponent, isTemperatureUsed, temperature)
 REFLECT_COMPONENT(ad_astris::ecore::CastShadowComponent, castShadows)
 REFLECT_COMPONENT(ad_astris::ecore::AffectWorldComponent, isWorldAffected)

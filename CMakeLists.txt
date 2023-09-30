@@ -16,7 +16,7 @@ project ("AdAstrisEngine")
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(Vulkan REQUIRED)
+# find_package(Vulkan REQUIRED)
 
 option(BUILD_THIRD_PARTY "Build third party libs" OFF)
 option(BUILD_ENGINE_CORE "Build engine core" OFF)
@@ -64,7 +64,7 @@ if (BUILD_EDITOR)
     add_subdirectory(engine/editor)
 endif()
 
-find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin ${DIR_THIRD_PARTY}/vulkan_base/glslang)
+# find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin ${DIR_THIRD_PARTY}/vulkan_base/glslang)
 include_directories(${DIR_THIRD_PARTY})
 include_directories(${DIR_THIRD_PARTY}/json)
 include_directories(${DIR_ENGINE_SRC})

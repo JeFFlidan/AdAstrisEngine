@@ -1,7 +1,9 @@
 ﻿#include "viewport_window.h"
 #include "application_core/editor_events.h"
-#include "profiler/logger.h"
+#include "engine_core/basic_events.h"
+#include "engine_core/basic_components.h"
 #include <imgui/imgui.h>
+#include <imgui/ImGuizmo.h>
 
 using namespace ad_astris;
 using namespace editor;
@@ -9,7 +11,7 @@ using namespace impl;
 
 ViewportWindow::ViewportWindow(UIWindowInitContext& initContext, std::function<uint64_t()> callback) : UIWindowInternal(initContext), _textureCallback(callback)
 {
-
+	subscribe_to_events();
 }
 
 void ViewportWindow::draw_window(void* data)
@@ -40,6 +42,68 @@ void ViewportWindow::draw_window(void* data)
 
 	acore::ViewportHoverEvent event(viewportState);
 	_eventManager->enqueue_event(event);
+
+	if (ImGui::IsKeyPressed(ImGuiKey_W) && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
+		_gizmoType = ImGuizmo::OPERATION::TRANSLATE;
+	else if (ImGui::IsKeyPressed(ImGuiKey_E))
+		_gizmoType = ImGuizmo::OPERATION::ROTATE;
+	else if (ImGui::IsKeyPressed(ImGuiKey_R))
+		_gizmoType = ImGuizmo::OPERATION::SCALE;
+	if (ImGui::IsKeyPressed(ImGuiKey_Tab))
+		_gizmoType = -1;
+
+	if (_selectedEntity && _gizmoType != -1)
+		draw_gizmo();
 	
 	ImGui::End();
+}
+
+void ViewportWindow::draw_gizmo()
+{
+	ImGuizmo::SetOrthographic(false);
+	ImGuizmo::SetDrawlist();
+	float windowWidth = ImGui::GetWindowWidth();
+	float windowHeight = ImGui::GetWindowHeight();
+	ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+	
+	auto cameraComponent = _ecsUiManager->get_component_const<ecore::CameraComponent>(_activeCamera);
+	auto& projection = cameraComponent->projection;
+	auto& view = cameraComponent->view;
+
+	auto entityTransformComponent = _ecsUiManager->get_component<ecore::TransformComponent>(_selectedEntity);
+	auto& world = entityTransformComponent->world;
+	
+	ImGuizmo::Manipulate(&view._11, &projection._11, (ImGuizmo::OPERATION)_gizmoType, ImGuizmo::MODE::WORLD, &world._11);
+
+	if (ImGuizmo::IsUsing())
+	{
+		XMMATRIX mat = XMLoadFloat4x4(&world);
+		XMVECTOR translation, rotation, scale;
+		XMMatrixDecompose(&scale, &rotation, &translation, mat);
+		//entityTransformComponent->rotationEuler = math::to_euler_angles(rotation);
+		//entityTransformComponent->rotationEuler.x = XMConvertToDegrees(entityTransformComponent->rotationEuler.x);
+		//entityTransformComponent->rotationEuler.y = XMConvertToDegrees(entityTransformComponent->rotationEuler.y);
+		//entityTransformComponent->rotationEuler.z = XMConvertToDegrees(entityTransformComponent->rotationEuler.z);
+		XMStoreFloat3(&entityTransformComponent->location, translation);
+		XMStoreFloat4(&entityTransformComponent->rotation, rotation);
+		XMStoreFloat3(&entityTransformComponent->scale, scale);
+		entityTransformComponent->rotationEuler.x = XMConvertToDegrees(std::atan2f(world(1, 2), world(2, 2))); 
+		entityTransformComponent->rotationEuler.y = XMConvertToDegrees(std::atan2f(-world(0, 2), sqrtf(world(1, 2) * world(1, 2) + world(2, 2) * world(2, 2)))); 
+		entityTransformComponent->rotationEuler.z = XMConvertToDegrees(std::atan2f(world(0, 1), world(0, 0)));
+	}
+}
+
+void ViewportWindow::subscribe_to_events()
+{
+	events::EventDelegate<ecore::EntityCreatedEvent> _activeCameraDelegate = [this](ecore::EntityCreatedEvent& event)
+	{
+		ecs::Entity entity = event.get_entity();
+		if (event.get_entity_manager()->does_entity_have_component<ecore::CameraComponent>(entity))
+		{
+			auto camera = event.get_entity_manager()->get_component<ecore::CameraComponent>(entity);
+			if (camera->isActive)
+				_activeCamera = entity;
+		}
+	};
+	_eventManager->subscribe(_activeCameraDelegate);
 }

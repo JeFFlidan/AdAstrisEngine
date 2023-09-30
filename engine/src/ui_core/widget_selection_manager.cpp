@@ -70,7 +70,23 @@ bool WidgetSelectionManager::draw_one_widget(uint32_t widgetIndex)
 	{
 		_setCustomStyleCallback();
 	}
+	
 	bool widgetPressed = baseWidget->draw();
+
+	if (ImGui::IsItemHovered())
+		_areAnyWidgetsHovered = true;
+
+	if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+	{
+		if (_hoveredWidgetMouseDoubleClickedCallback)
+			_hoveredWidgetMouseDoubleClickedCallback(*baseWidget);
+	}
+	if (ImGui::IsItemHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+	{
+		if (_hoveredWidgetRightMouseButtonClickedCallback)
+			_hoveredWidgetRightMouseButtonClickedCallback(*baseWidget);
+	}
+	
 	if (_drawImageButtonLabel)
 		ImGui::Text(baseWidget->get_name().c_str());
 	if (_selectedWidgetNames.find(baseWidget->get_name()) != _selectedWidgetNames.end())
@@ -142,19 +158,14 @@ bool WidgetSelectionManager::draw_one_widget(uint32_t widgetIndex)
 			}
 		}
 	}
-
-	if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-	{
-		if (_hoveredWidgetMouseDoubleClickedCallback)
-			_hoveredWidgetMouseDoubleClickedCallback(*baseWidget);
-	}
-	if (ImGui::IsItemHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-	{
-		if (_hoveredWidgetRightMouseButtonClickedCallback)
-			_hoveredWidgetRightMouseButtonClickedCallback(*baseWidget);
-	}
 	
 	return widgetPressed;
+}
+
+void WidgetSelectionManager::reset()
+{
+	_widgets.clear();
+	_areAnyWidgetsHovered = false;
 }
 
 void WidgetSelectionManager::create_default_style_callback()

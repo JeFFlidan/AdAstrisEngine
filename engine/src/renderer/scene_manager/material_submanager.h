@@ -15,7 +15,7 @@ namespace ad_astris::renderer::impl
 			virtual bool need_update() override;
 
 			void add_cpu_opaque_material_uuid(UUID uuid) { _gpuOpaqueMaterialIndexByCPUMaterialUUID.insert({ uuid, 0 }); }
-			uint32_t get_gpu_material_index(UUID cpuMaterialUUID);
+			uint32_t get_gpu_material_index(rhi::CommandBuffer& cmd, UUID cpuMaterialUUID);
 
 			rhi::Buffer* get_material_buffer() { return _rendererResourceManager->get_buffer(MATERIAL_BUFFER_NAME); }
 			rhi::Sampler get_sampler(SamplerType type) { return _samplers[type]; }
@@ -36,5 +36,6 @@ namespace ad_astris::renderer::impl
 			void allocate_gpu_buffers();
 			rhi::TextureView* allocate_2d_texture(rhi::CommandBuffer& cmd, UUID uuid);
 			void create_samplers();
+			void create_gpu_material(rhi::CommandBuffer& cmd, UUID cpuMaterialUUID);
 	};
 }

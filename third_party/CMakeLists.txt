@@ -1,4 +1,7 @@
-find_package(Vulkan REQUIRED)
+# find_package(Vulkan REQUIRED)
+
+add_library(vulkan STATIC IMPORTED)
+set_target_properties(vulkan PROPERTIES IMPORTED_LOCATION ${DIR_THIRD_PARTY}/vulkan_base/libs/vulkan-1.lib)
 
 add_library(vkbootstrap STATIC)
 add_library(glm INTERFACE)
@@ -19,7 +22,8 @@ target_include_directories(vkbootstrap PUBLIC vkbootstrap)
 file(GLOB VKBOOTSTRAP_FILES "vkbootstrap/*")
 target_sources(vkbootstrap PRIVATE ${VKBOOTSTRAP_FILES})
 
-target_link_libraries(vkbootstrap PUBLIC Vulkan::Vulkan $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
+target_link_libraries(vkbootstrap PUBLIC vulkan $<$<BOOL:UNIX>:${CMAKE_DL_LIBS}>)
+target_include_directories(vkbootstrap PUBLIC vulkan_base)
 
 #both vma and glm and header only libs so we only need the include path
 target_include_directories(vma INTERFACE vma)
@@ -47,8 +51,9 @@ add_library(imgui STATIC)
 target_include_directories(imgui PUBLIC imgui)
 file(GLOB IMGUI_FILES "imgui/*")
 target_sources(imgui PRIVATE ${IMGUI_FILES})
+target_include_directories(imgui PUBLIC vulkan_base)
 
-target_link_libraries(imgui PUBLIC Vulkan::Vulkan)
+target_link_libraries(imgui PUBLIC vulkan)
 
 target_include_directories(stb_image INTERFACE stb_image)
 

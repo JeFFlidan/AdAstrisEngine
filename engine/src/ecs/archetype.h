@@ -181,6 +181,8 @@ namespace ad_astris::ecs
 				uint32_t columnIndex,
 				uint32_t typeId,
 				uint8_t* tempComponentsArray);
+
+			void* get_component_by_component_type_id(Entity& entity, uint32_t columnIndex, uint32_t typeID);
 		
 			template<typename T>
 			T* get_converted_component(ArchetypeChunk& chunk, uint32_t columnIndex)

@@ -69,28 +69,25 @@ inline float3 calculate_spot_light(in RendererEntity entity, in SurfaceDesc surf
 	float3 unnormalizedLightVector = entity.location - surface.location;
 	float3 normalizedLightVector = normalize(unnormalizedLightVector);
 	float3 halfway = normalize(normalizedLightVector + surface.view);
+	// THINK WHAT TO DO WITH THE FACTOR
 	float factor = dot(normalizedLightVector, entity.get_direction());
-	if (factor > cos(entity.get_outer_cone_angle()))
-	{
-		float attenuation = calculate_spot_light_attenuation(
-		   entity.get_direction(),
-		   unnormalizedLightVector,
-		   entity.get_attenuation_radius(),
-		   entity.get_angle_scale(),
-		   entity.get_angle_offset());
-		float3 radiance = entity.get_color().xyz * attenuation;
-		return surface.calculate(normalizedLightVector, halfway, radiance);
-	}
-	return float3(0.0f, 0.0f, 0.0f);
+	float attenuation = calculate_spot_light_attenuation(
+	   entity.get_direction(),
+	   unnormalizedLightVector,
+	   entity.get_attenuation_radius(),
+	   entity.get_angle_scale(),
+	   entity.get_angle_offset());
+	float3 radiance = entity.get_color().xyz * attenuation;
+	return surface.calculate(normalizedLightVector, halfway, radiance);
 }
 
 inline float3 calculate_directional_light(in RendererEntity entity, in SurfaceDesc surface)
 {
-	float3 lightVector = normalize(entity.get_direction());
+	float3 lightVector = -entity.get_direction();
 	float3 halfway = normalize(lightVector + surface.view);
 	float4 lightColor = entity.get_color();
-	float3 radiance = float3(lightColor.x, lightColor.y, lightColor.z) * 3.0;
+	float3 radiance = float3(lightColor.x, lightColor.y, lightColor.z);
 	return surface.calculate(lightVector, halfway, radiance);
 }
 
-#endif // LIGHTING_HF
+#endif // LIGHTING_HFw
