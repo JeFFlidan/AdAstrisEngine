@@ -18,8 +18,8 @@ class CmakeBuilder:
     }
 
 
-    fully_dependent_modules = { '-render_core', '-engine', '-renderer', '-app', '-tests', '-vulkan_rhi', '-editor' }
-    partially_dependent_modules = { '-project_launcher' }
+    fully_dependent_modules = { '-render_core', '-engine', '-renderer', '-app', '-tests', '-vulkan_rhi', '-editor', '-project_launcher' }
+    partially_dependent_modules = {  }
 
 
     def __init__(self):

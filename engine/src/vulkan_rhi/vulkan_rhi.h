@@ -12,6 +12,7 @@
 #include "vulkan_swap_chain.h"
 #include "vulkan_descriptor_manager.h"
 #include "vulkan_pipeline_layout_cache.h"
+#include "vulkan_pipeline_cache.h"
 #include "core/pool_allocator.h"
 
 #include <vulkan/vulkan.h>
@@ -135,7 +136,7 @@ namespace ad_astris::vulkan
 			std::unique_ptr<VulkanSwapChain> _swapChain{ nullptr };
 			std::unique_ptr<VulkanDescriptorManager> _descriptorManager{ nullptr };
 			std::unique_ptr<VulkanPipelineLayoutCache> _pipelineLayoutCache{ nullptr };
-			VkPipelineCache _pipelineCache;
+			VulkanPipelineCache _pipelineCache;
 
 			std::vector<std::unique_ptr<VulkanPipeline>> _vulkanPipelines;
 			std::mutex _pipelinesMutex;
@@ -167,8 +168,6 @@ namespace ad_astris::vulkan
 
 			vkb::Instance create_instance();
 			void create_allocator();
-			void create_pipeline_cache();
-			void save_pipeline_cache();
 
 			void set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier);
 			void recreate_swap_chain();

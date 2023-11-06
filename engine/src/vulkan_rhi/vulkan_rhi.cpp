@@ -38,7 +38,7 @@ void vulkan::VulkanRHI::init(rhi::RHIInitContext& initContext)
 	_descriptorManager = std::make_unique<VulkanDescriptorManager>(_device.get(), _swapChain->get_buffers_count());
 	_pipelineLayoutCache = std::make_unique<VulkanPipelineLayoutCache>(_device.get(), _descriptorManager.get());
 	create_allocator();
-	create_pipeline_cache();
+	_pipelineCache.load_pipeline_cache(_device.get(), _fileSystem);
 
 	auto& properties = _device->get_physical_device_vulkan_1_2_properties();
 	auto& properties11 = _device->get_physical_device_vulkan_1_1_properties();
@@ -55,7 +55,7 @@ void vulkan::VulkanRHI::init(rhi::RHIInitContext& initContext)
 void vulkan::VulkanRHI::cleanup()
 {
 	_cmdManager->wait_all_fences();
-	save_pipeline_cache();
+	_pipelineCache.save_pipeline_cache(_device.get(), _fileSystem);
 	
 	for (auto& pipeline : _vulkanPipelines)
 		pipeline->cleanup();
@@ -78,8 +78,8 @@ void vulkan::VulkanRHI::cleanup()
 	for (auto& buffer : _vulkanBuffers)
 		buffer->destroy_buffer(&_allocator);
 	
+	_pipelineCache.destroy(_device.get());
 	VkDevice device = _device.get()->get_device();
-	vkDestroyPipelineCache(device, _pipelineCache, nullptr);
 	vmaDestroyAllocator(_allocator);
 	_pipelineLayoutCache->cleanup();
 	_descriptorManager->cleanup();
@@ -542,7 +542,7 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 		return;
 	}
 	
-	auto vulkanPipeline = std::make_unique<VulkanPipeline>(_device.get(), info, _pipelineCache, _pipelineLayoutCache.get());
+	auto vulkanPipeline = std::make_unique<VulkanPipeline>(_device.get(), info, _pipelineCache.get_handle(), _pipelineLayoutCache.get());
 
 	{
 		std::scoped_lock<std::mutex> locker(_pipelinesMutex);
@@ -561,7 +561,7 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 		return;
 	}
 	
-	auto vulkanPipeline = std::make_unique<VulkanPipeline>(_device.get(), info, _pipelineCache, _pipelineLayoutCache.get());
+	auto vulkanPipeline = std::make_unique<VulkanPipeline>(_device.get(), info, _pipelineCache.get_handle(), _pipelineLayoutCache.get());
 
 	{
 		std::scoped_lock<std::mutex> locker(_pipelinesMutex);
@@ -1255,39 +1255,6 @@ void vulkan::VulkanRHI::create_allocator()
 	allocatorInfo.instance = _instance;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
 	LOG_INFO("End creating allocator")
-}
-
-void vulkan::VulkanRHI::create_pipeline_cache()
-{
-	size_t size = 0;
-	void* data = nullptr;
-	
-	if (io::Utils::exists(_fileSystem->get_project_root_path(), "intermediate/pipeline_cache.bin"))
-		data = _fileSystem->map_to_read(_fileSystem->get_project_root_path() + "/intermediate/pipeline_cache.bin", size);
-
-	VkPipelineCacheCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-	createInfo.initialDataSize = size;
-	createInfo.pInitialData = data;
-
-	VK_CHECK(vkCreatePipelineCache(_device.get()->get_device(), &createInfo, nullptr, &_pipelineCache));
-
-	if (data)
-		_fileSystem->unmap_after_reading(data);
-}
-
-void vulkan::VulkanRHI::save_pipeline_cache()
-{
-	VkDevice device = _device.get()->get_device();
-	size_t cacheSize;
-	vkGetPipelineCacheData(device, _pipelineCache, &cacheSize, nullptr);
-	std::vector<uint8_t> cacheData(cacheSize);
-	vkGetPipelineCacheData(device, _pipelineCache, &cacheSize, cacheData.data());
-
-	io::URI cachePath = _fileSystem->get_project_root_path() + "/intermediate/pipeline_cache.bin";
-	io::Stream* stream = _fileSystem->open(cachePath, "wb");
-	stream->write(cacheData.data(), sizeof(uint8_t), cacheSize);
-	_fileSystem->close(stream);
 }
 
 void vulkan::VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier)
