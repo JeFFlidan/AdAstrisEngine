@@ -1,6 +1,8 @@
 /build
 /engine/src/render_core/build
 /engine/src/vulkan_rhi/build
+/engine/src/*/build
+/engine/src/*/*/build
 /engine/src/CMakeFiles
 /bin
 /src/
@@ -30,13 +32,4 @@ src/CMakeFiles
 /*/.#*.*\
 /engine/devtools/*/build
 /engine/devtools/*/*/*.krz
-<<<<<<< HEAD
-src/file_system/Makefile
-src/file_system/main.cpp
-src/file_system/app.exe
-=======
-CMakeCache.txt
-Makefile
-src/vulkan_renderer/vk_render_graph.h
-src/vulkan_renderer/vk_render_graph.cpp
->>>>>>> master
+/intermediate

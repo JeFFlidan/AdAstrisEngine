@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import re
 
 
 class CmakeBuilder:
@@ -55,12 +56,10 @@ class CmakeBuilder:
         
         subprocess.check_call(f'cmake {self.cmake_disable_flags_command} {self.build_path}')
         
-        if '-vs2017' in self.flags:
-            subprocess.check_call(f'cmake {self.cmake_prepare_command} -G "Visual Studio 15 2017" -B {self.build_path}', shell=True)
-        elif '-vs2019' in self.flags:
-            subprocess.check_call(f'cmake {self.cmake_prepare_command} -G "Visual Studio 16 2019" -B {self.build_path}', shell=True)
-        else:
-            subprocess.check_call(f'cmake {self.cmake_prepare_command} -G "Visual Studio 17 2022" -B {self.build_path}', shell=True)
+        generator_name = self.__get_generator_name()
+        build_type = self.__get_build_type()
+        subprocess.check_call(f'cmake {self.cmake_prepare_command} -G "{generator_name}" -B {self.build_path} -DCMAKE_BUILD_TYPE={build_type}', shell=True)
+        subprocess.check_call(f'cmake --build {self.build_path} --parallel 8')
 
         is_bin_dir = os.path.isdir(self.root_path + '\\bin')
         if not is_bin_dir:
@@ -101,7 +100,23 @@ class CmakeBuilder:
     def __setup_disable_flags_command(self):
         for key in self.all_compile_flags:
             self.cmake_disable_flags_command += self.all_compile_flags[key] + '=OFF '
-
+            
+            
+    def __get_generator_name(self):
+        if '-vs2017' in self.flags:
+            return "Visual Studio 15 2017"
+        if '-vs2019' in self.flags:
+            return "Visual Studio 16 2019"
+        return "Visual Studio 17 2022"
+            
+            
+    def __get_build_type(self):
+        if '-debug' in self.flags:
+            return 'Debug'
+        if '-release' in self.flags:
+            return 'Release'
+        raise RuntimeError("No build type")
+    
 
     def __print_info(self):
         print('\nThis script simplifies compilation of engine and all of its plugins.\n')
@@ -119,13 +134,13 @@ class CmakeBuilder:
         print('\t-renderer         = Compiles Renderer module.\n')
         print('\t-project_launcher = Compiles Project Launcher Module.\n')
         print('\t-editor           = Compiles editor.\n')
-        print('\t-vs2017           = Uses cmake generator for Visual Studio 15 2017\n')
-        print('\t-vs2019           = Uses cmake generator for Visual Studio 16 2019\n')
-        print('\t-vs2022           = Uses cmake generator for Visual Studio 17 2022\n')
-        print('\t-release          = Sets build type to release\n')
-        print('\t-debug            = Sets build type to debug\n')
-        print('\t-glsl_support     = Enables glsl support. Not implemented yet\n')
-        print('\t-reset_cache      = Resets CMake cache. Only dev')
+        print('\t-vs2017           = Uses cmake generator for Visual Studio 15 2017.\n')
+        print('\t-vs2019           = Uses cmake generator for Visual Studio 16 2019.\n')
+        print('\t-vs2022           = Uses cmake generator for Visual Studio 17 2022.\n')
+        print('\t-release          = Sets build type to release.\n')
+        print('\t-debug            = Sets build type to debug.\n')
+        print('\t-glsl_support     = Enables glsl support. Not implemented yet.\n')
+        print('\t-reset_cache      = Resets CMake cache. Only dev.\n')
 
 
 if __name__ == '__main__':
