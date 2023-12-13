@@ -21,9 +21,3 @@ ResourcePool::ResourcePool()
 	create_pool_for_new_resource<ecore::OpaquePBRMaterial>();
 	create_pool_for_new_resource<ecore::TransparentMaterial>();
 }
-
-void ResourcePool::cleanup()
-{
-	for (auto& alloc : _poolAllocatorByTypeName)
-		alloc.second->cleanup();
-}
