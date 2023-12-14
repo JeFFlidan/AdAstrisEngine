@@ -203,6 +203,7 @@ void VulkanUIWindowBackend::create_icon(rhi::CommandBuffer& cmd, rhi::Sampler& s
 	_rhi->create_buffer(&buffer, imageData);
 
 	_rhi->copy_buffer_to_texture(&cmd, &buffer, &texture);
+	_rhi->destroy_buffer(&buffer);
 
 	rhi::TextureView textureView;
 	textureView.viewInfo.baseLayer = 0;

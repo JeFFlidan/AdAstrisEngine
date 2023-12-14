@@ -1,17 +1,19 @@
 ﻿#pragma once
 
-#include "api.h"
 #include "rhi/resources.h"
 #include "vulkan_command_manager.h"
 #include "vulkan_render_pass.h"
 #include "vulkan_pipeline.h"
 #include "vulkan_buffer.h"
 #include "vulkan_texture.h"
+#include "vulkan_texture_view.h"
+#include "vulkan_sampler.h"
 #include "vulkan_shader.h"
 
-#include <iostream>
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
+
+#include <iostream>
 
 #define VK_CHECK(x)												 \
 	do																 \

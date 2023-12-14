@@ -1,17 +1,19 @@
 #pragma once
 
-#include "rhi/resources.h"
+#include "vulkan_object.h"
 #include "vulkan_device.h"
+#include "rhi/resources.h"
 #include <vulkan/vulkan.h>
 
 namespace ad_astris::vulkan
 {
-	class VulkanRenderPass
+	class VulkanRenderPass : public IVulkanObject
 	{
 		public:
+			VulkanRenderPass() = default;
 			VulkanRenderPass(VulkanDevice* device, rhi::RenderPassInfo* passInfo);
 
-			void cleanup();
+			void destroy(VulkanDevice* device) override;
 
 			VkRenderPassBeginInfo get_begin_info(rhi::ClearValues& rhiClearValue, uint32_t imageIndex = 0);
 

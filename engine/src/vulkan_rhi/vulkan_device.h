@@ -6,11 +6,11 @@
 	#endif
 #endif
 
-#include "api.h"
 #include "application_core/window.h"
 #include "profiler/logger.h"
 #include "engine/vulkan_rhi_module.h"
 #include <vkbootstrap/VkBootstrap.h>
+#include <vma/vk_mem_alloc.h>
 #include <vector>
 #include <string>
 
@@ -34,6 +34,7 @@ namespace ad_astris::vulkan
 			VkSurfaceKHR get_surface() { return _surface; }
 			VkPhysicalDevice get_physical_device() { return _physicalDevice; }
 			VkDevice get_device() { return _device; }
+			VmaAllocator get_allocator() { return _allocator; }
 
 			uint32_t get_max_multiview_view_count() { return _maxMultiviewView; }
 
@@ -67,6 +68,7 @@ namespace ad_astris::vulkan
 			VkInstance _instance{ VK_NULL_HANDLE };
 			VkPhysicalDevice _physicalDevice{ VK_NULL_HANDLE };
 			VkDevice _device{ VK_NULL_HANDLE };
+			VmaAllocator _allocator;
 			VkPhysicalDeviceProperties2 _properties2{};
 			VkPhysicalDeviceVulkan11Properties _properties1_1{};
 			VkPhysicalDeviceVulkan12Properties _properties1_2{};
@@ -103,5 +105,6 @@ namespace ad_astris::vulkan
 			void get_properties();
 			void set_feature(VkBool32 supported, VkBool32& feature, std::string featureName);
 			void set_optional_extension(std::string& ext);
+			void create_allocator();
 	};
 }

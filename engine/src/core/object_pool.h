@@ -1,12 +1,11 @@
 ﻿#pragma once
 
-#include "non_copyable_non_movable.h"
 #include "pool_allocator.h"
 #include "reflection.h"
 
 namespace ad_astris
 {
-	class ObjectPool : public NonCopyableNonMovable
+	class ObjectPool
 	{
 		public:
 			template<typename ResourceType, typename... ARGS>
@@ -26,7 +25,7 @@ namespace ad_astris
 			}
 
 			template<typename ResourceType>
-			void create_pool_for_new_resource()
+			void create_pool_for_new_resource(uint32_t initialObjectCount = 64)
 			{
 				std::string typeName = get_type_name<ResourceType>();
 				auto it = _poolAllocatorByTypeName.find(typeName);
@@ -34,8 +33,9 @@ namespace ad_astris
 				{
 					return;
 				}
-				auto typedAllocator = std::make_unique<TypedPoolAllocator<ResourceType>>();
-				_poolAllocatorByTypeName[typeName] = std::move(typedAllocator);
+				std::unique_ptr<GeneralPoolAllocator> allocator = std::make_unique<TypedPoolAllocator<ResourceType>>();
+				allocator->allocate_new_pool(initialObjectCount);
+				_poolAllocatorByTypeName[typeName] = std::move(allocator);
 			}
 
 			void cleanup()
@@ -54,6 +54,11 @@ namespace ad_astris
 						return allocate_internal();
 					}
 
+					void allocate_new_pool(uint32_t objectCount)
+					{
+						allocate_new_pool_internal(objectCount);
+					}
+
 					template<typename ResourceType>
 					void free(ResourceType* resource)
 					{
@@ -67,6 +72,7 @@ namespace ad_astris
 
 				protected:
 					virtual void* allocate_internal() { return nullptr; }
+					virtual void allocate_new_pool_internal(uint32_t objectCount) { }
 					virtual void free_internal(void* resource) { }
 					virtual void cleanup_internal() { }
 			};
@@ -80,6 +86,11 @@ namespace ad_astris
 					virtual void* allocate_internal() override
 					{
 						return _pool.allocate();
+					}
+
+					virtual void allocate_new_pool_internal(uint32_t objectCount) override
+					{
+						_pool.allocate_new_pool(objectCount);
 					}
 
 					virtual void free_internal(void* resource) override

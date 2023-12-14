@@ -11,11 +11,11 @@
 
 using namespace ad_astris;
 
-vulkan::VulkanDevice::VulkanDevice(vkb::Instance& instance, acore::IWindow* window)
+vulkan::VulkanDevice::VulkanDevice(vkb::Instance& instance, acore::IWindow* window) : _instance(instance.instance)
 {
 	LOG_INFO("Start initing Device class (Vulkan)")
 
-	create_surface(instance, window);
+	create_surface(_instance, window);
 	vkb::PhysicalDevice vkbPhysDevice = pick_physical_device(instance);
 	vkb::Device vkbDevice = pick_device(vkbPhysDevice);
 
@@ -45,6 +45,7 @@ vulkan::VulkanDevice::VulkanDevice(vkb::Instance& instance, acore::IWindow* wind
 	_physicalDevice = vkbPhysDevice.physical_device;
 	_device = vkbDevice.device;
 	get_properties();
+	create_allocator();
 
 	LOG_INFO("Finished initing Device class (Vulkan)")
 }
@@ -60,6 +61,7 @@ void vulkan::VulkanDevice::cleanup()
 	delete _presentQueue;
 	delete _computeQueue;
 	delete _transferQueue;
+	vmaDestroyAllocator(_allocator);
 	vkDestroyDevice(_device, nullptr);
 	if (_surface == VK_NULL_HANDLE)
 		LOG_ERROR("NULL HANDLE")
@@ -245,4 +247,13 @@ void vulkan::VulkanDevice::set_optional_extension(std::string& ext)
 {
 	if (ext == "VK_EXT_mesh_shader")
 		_isOptionalExtensionsEnabled.meshShader = 1;
+}
+
+void vulkan::VulkanDevice::create_allocator()
+{
+	VmaAllocatorCreateInfo allocatorInfo{};
+	allocatorInfo.physicalDevice = _physicalDevice;
+	allocatorInfo.device = _device;
+	allocatorInfo.instance = _instance;
+	vmaCreateAllocator(&allocatorInfo, &_allocator);
 }

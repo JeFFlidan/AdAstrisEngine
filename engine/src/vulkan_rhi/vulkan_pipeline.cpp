@@ -26,9 +26,9 @@ vulkan::VulkanPipeline::VulkanPipeline(
 	_type = rhi::PipelineType::COMPUTE;
 }
 
-void vulkan::VulkanPipeline::cleanup()
+void vulkan::VulkanPipeline::destroy(VulkanDevice* device)
 {
-	vkDestroyPipeline(_device->get_device(), _pipeline, nullptr);
+	vkDestroyPipeline(device->get_device(), _pipeline, nullptr);
 }
 
 void vulkan::VulkanPipeline::bind(VkCommandBuffer cmd, uint32_t frameIndex)

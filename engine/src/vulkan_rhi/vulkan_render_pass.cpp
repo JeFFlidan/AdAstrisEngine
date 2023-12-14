@@ -12,7 +12,7 @@ vulkan::VulkanRenderPass::VulkanRenderPass(VulkanDevice* device, rhi::RenderPass
 	create_framebuffer(passInfo->renderBuffers);
 }
 
-void vulkan::VulkanRenderPass::cleanup()
+void vulkan::VulkanRenderPass::destroy(VulkanDevice* device)
 {
 	for (auto& framebuffer : _framebuffers)
 		vkDestroyFramebuffer(_device->get_device(), framebuffer, nullptr);

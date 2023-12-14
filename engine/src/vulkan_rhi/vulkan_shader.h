@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vulkan_object.h"
 #include "rhi/resources.h"
 #include <vulkan/vulkan.h>
 
@@ -18,7 +19,7 @@ namespace ad_astris::vulkan
 		std::vector<VkDescriptorSetLayoutBinding> zeroSetBindings;
 	};
 	
-	class VulkanShader
+	class VulkanShader : public IVulkanObject
 	{
 		public:
 			struct Binding
@@ -35,9 +36,10 @@ namespace ad_astris::vulkan
 				}
 			};
 
+			VulkanShader() = default;
 			VulkanShader(VkDevice device) : _device(device) {}
 
-			void cleanup()
+			void destroy(VulkanDevice* device) override
 			{
 				if (_shaderModule != VK_NULL_HANDLE)
 					vkDestroyShaderModule(_device, _shaderModule, nullptr);

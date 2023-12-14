@@ -4,11 +4,8 @@
 #include "rhi/resources.h"
 #include "vulkan_device.h"
 #include "vulkan_command_manager.h"
-#include "vulkan_buffer.h"
-#include "vulkan_texture.h"
-#include "vulkan_render_pass.h"
-#include "vulkan_pipeline.h"
-#include "vulkan_shader.h"
+#include "vulkan_object_pool.h"
+#include "vulkan_attachment_manager.h"
 #include "vulkan_swap_chain.h"
 #include "vulkan_descriptor_manager.h"
 #include "vulkan_pipeline_layout_cache.h"
@@ -130,44 +127,18 @@ namespace ad_astris::vulkan
 			acore::IWindow* _mainWindow{ nullptr };
 			VkInstance _instance{ VK_NULL_HANDLE };
 			VkDebugUtilsMessengerEXT _debugMessenger{ VK_NULL_HANDLE };
-			VmaAllocator _allocator;
 			std::unique_ptr<VulkanDevice> _device{ nullptr };
 			std::unique_ptr<VulkanCommandManager> _cmdManager{ nullptr };
 			std::unique_ptr<VulkanSwapChain> _swapChain{ nullptr };
 			std::unique_ptr<VulkanDescriptorManager> _descriptorManager{ nullptr };
 			std::unique_ptr<VulkanPipelineLayoutCache> _pipelineLayoutCache{ nullptr };
 			VulkanPipelineCache _pipelineCache;
-
-			std::vector<std::unique_ptr<VulkanPipeline>> _vulkanPipelines;
-			std::mutex _pipelinesMutex;
-			std::vector<std::unique_ptr<VulkanShader>> _vulkanShaders;
-			std::mutex _shadersMutex;
-			std::vector<std::unique_ptr<VulkanRenderPass>> _vulkanRenderPasses;
-			std::vector<std::unique_ptr<VulkanSampler>> _vulkanSamplers;
-			std::vector<std::unique_ptr<VulkanTextureView>> _vulkanTextureViews;
-			std::mutex _texturesViewMutex;
-			std::vector<std::unique_ptr<VulkanTexture>> _vulkanTextures;
-			std::mutex _texturesMutex;
-			std::vector<std::unique_ptr<VulkanBuffer>> _vulkanBuffers;
-			std::mutex _buffersMutex;
-
-			struct AttachmentDesc
-			{
-				VkImageCreateInfo imageCreateInfo;
-				struct ViewDesc
-				{
-					uint32_t viewArrayIndex;
-					VkImageViewCreateInfo imageViewCreateInfo;
-				};
-				std::vector<ViewDesc> viewDescriptions;
-			};
-			ThreadSafePoolAllocator<AttachmentDesc> _attachmentDescPool;
-			std::unordered_map<VulkanTexture*, AttachmentDesc*> _viewIndicesByTexturePtr;
+			VulkanObjectPool _vkObjectPool;
+			VulkanAttachmentManager _attachmentManager;
 
 			uint32_t _currentImageIndex{ 0 };
 
 			vkb::Instance create_instance();
-			void create_allocator();
 
 			void set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier);
 			void recreate_swap_chain();

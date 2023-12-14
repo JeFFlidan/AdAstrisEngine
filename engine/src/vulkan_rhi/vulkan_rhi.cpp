@@ -37,7 +37,6 @@ void vulkan::VulkanRHI::init(rhi::RHIInitContext& initContext)
 	
 	_descriptorManager = std::make_unique<VulkanDescriptorManager>(_device.get(), _swapChain->get_buffers_count());
 	_pipelineLayoutCache = std::make_unique<VulkanPipelineLayoutCache>(_device.get(), _descriptorManager.get());
-	create_allocator();
 	_pipelineCache.load_pipeline_cache(_device.get(), _fileSystem);
 
 	auto& properties = _device->get_physical_device_vulkan_1_2_properties();
@@ -46,8 +45,7 @@ void vulkan::VulkanRHI::init(rhi::RHIInitContext& initContext)
 	LOG_INFO("MAX IMAGES: {}", properties.maxDescriptorSetUpdateAfterBindSampledImages);
 	LOG_INFO("MAX STORAGE IMAGES: {}", properties.maxDescriptorSetUpdateAfterBindStorageImages)
 	LOG_INFO("MAX STORAGE BUFFERS: {}", properties.maxDescriptorSetUpdateAfterBindStorageBuffers)
-
-	_attachmentDescPool.allocate_new_pool(64);
+	
 	//LOG_INFO("TEST: {}", properties11.subgroupSize);
 }
 
@@ -56,35 +54,11 @@ void vulkan::VulkanRHI::cleanup()
 {
 	_cmdManager->wait_all_fences();
 	_pipelineCache.save_pipeline_cache(_device.get(), _fileSystem);
-	
-	for (auto& pipeline : _vulkanPipelines)
-		pipeline->cleanup();
-	
-	for (auto& shader : _vulkanShaders)
-		shader->cleanup();
-	
-	for (auto& renderPass : _vulkanRenderPasses)
-		renderPass->cleanup();
-	
-	for (auto& sampler : _vulkanSamplers)
-		sampler->destroy(_device.get());
-	
-	for (auto& textureView : _vulkanTextureViews)
-		textureView->destroy(_device.get());
-	
-	for (auto& texture : _vulkanTextures)
-		texture->destroy_texture(_allocator);
-	
-	for (auto& buffer : _vulkanBuffers)
-		buffer->destroy_buffer(&_allocator);
-	
+	_vkObjectPool.cleanup(_device.get());
 	_pipelineCache.destroy(_device.get());
-	VkDevice device = _device.get()->get_device();
-	vmaDestroyAllocator(_allocator);
 	_pipelineLayoutCache->cleanup();
 	_descriptorManager->cleanup();
 	_cmdManager->cleanup();
-	_attachmentDescPool.cleanup();
 	_device->cleanup();
 	vkb::destroy_debug_utils_messenger(_instance, _debugMessenger, nullptr);
 	vkDestroyInstance(_instance, nullptr);
@@ -152,27 +126,7 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 		return;
 	}
 	
-	VkBufferUsageFlags bufferUsage = get_buffer_usage(buffer->bufferInfo.bufferUsage);
-	if (!bufferUsage)
-	{
-		LOG_ERROR("Invalid buffer usage")
-		return;
-	}
-	
-	VmaMemoryUsage memoryUsage = get_memory_usage(buffer->bufferInfo.memoryUsage);
-	if (memoryUsage == VMA_MEMORY_USAGE_UNKNOWN)
-	{
-		LOG_ERROR("Invalid memory usage (buffer)")
-		return;
-	}
-
-	auto vulkanBufferTemp = std::make_unique<VulkanBuffer>(&_allocator, buffer->bufferInfo.size, bufferUsage, memoryUsage);
-	VulkanBuffer* vulkanBuffer = nullptr;
-	{
-		std::scoped_lock<std::mutex> locker(_buffersMutex);
-		_vulkanBuffers.push_back(std::move(vulkanBufferTemp));
-		vulkanBuffer = _vulkanBuffers.back().get();
-	}
+	auto vulkanBuffer = _vkObjectPool.allocate<VulkanBuffer>(_device.get(), &buffer->bufferInfo);
 	
 	buffer->data = vulkanBuffer;
 	buffer->size = buffer->bufferInfo.size;
@@ -183,24 +137,19 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 	
 	if (data == nullptr)
 		return;
-	if (data != nullptr && memoryUsage == VMA_MEMORY_USAGE_GPU_ONLY)
+	if (data != nullptr && buffer->bufferInfo.memoryUsage == rhi::MemoryUsage::GPU)
 	{
 		LOG_ERROR("Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
 		return;
 	}
-	vulkanBuffer->copy_from(&_allocator, data, buffer->size);
+	vulkanBuffer->copy_from(_device.get(), data, buffer->size);
 }
 
 void vulkan::VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
 {
 	VulkanBuffer* vulkanBuffer = get_vk_obj(buffer);
-	vulkanBuffer->destroy_buffer(&_allocator);
-
-	std::scoped_lock<std::mutex> locker(_buffersMutex);
-	_vulkanBuffers.erase(std::remove_if(_vulkanBuffers.begin(), _vulkanBuffers.end(), [&](auto& object)
-	{
-		return vulkanBuffer == object.get();
-	}), _vulkanBuffers.end());
+	_vkObjectPool.free(vulkanBuffer);
+	
 	buffer->data = nullptr;
 }
 
@@ -219,7 +168,7 @@ void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, v
 	}
 
 	VulkanBuffer* vulkanBuffer = static_cast<VulkanBuffer*>(buffer->data);
-	vulkanBuffer->copy_from(&_allocator, data, size);
+	vulkanBuffer->copy_from(_device.get(), data, size);
 }
 
 void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo)
@@ -242,61 +191,9 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 		return;
 	}
 
-	rhi::TextureInfo* texInfo = &texture->textureInfo;
-	
-	if (texInfo->format == rhi::Format::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Undefined format")
-		return;
-	}
-	if (texInfo->textureUsage == rhi::ResourceUsage::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Undefined texture usage.")
-		return;
-	}
-	if (texInfo->memoryUsage == rhi::MemoryUsage::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Undefined memory usage.")
-		return;
-	}
-	if (texInfo->samplesCount == rhi::SampleCount::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Undefined sample count.")
-		return;
-	}
-	if (texInfo->textureDimension == rhi::TextureDimension::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Undefined texture dimension.")
-		return;
-	}
-	
-	VmaMemoryUsage memoryUsage = get_memory_usage(texInfo->memoryUsage);
-	
 	VkImageCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	createInfo.format = get_format(texInfo->format);
-	createInfo.arrayLayers = texInfo->layersCount;
-	createInfo.mipLevels = texInfo->mipLevels;
-	createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	createInfo.extent = VkExtent3D{ texInfo->width, texInfo->height, 1 };
-	createInfo.samples = get_sample_count(texInfo->samplesCount);
+	auto vkTexture = _vkObjectPool.allocate<VulkanTexture>(_device.get(), &texture->textureInfo, createInfo);
 	
-	if (has_flag(texInfo->resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
-	{
-		createInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-	}
-
-	VkImageUsageFlags imgUsage = get_image_usage(texInfo->textureUsage);
-	createInfo.usage = imgUsage;
-	createInfo.imageType = get_image_type(texInfo->textureDimension);
-
-	auto vkTextureTemp = std::make_unique<VulkanTexture>(createInfo, &_allocator, memoryUsage);
-	VulkanTexture* vkTexture = nullptr;
-	{
-		std::scoped_lock<std::mutex> locker(_texturesMutex);
-		_vulkanTextures.push_back(std::move(vkTextureTemp));
-		vkTexture = _vulkanTextures.back().get();
-	}
 	if (vkTexture->get_handle() == VK_NULL_HANDLE)
 	{
 		LOG_ERROR("VulkanRHI::create_texture(): Failed to allocate VkImage")
@@ -305,12 +202,7 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 	texture->data = vkTexture;
 	texture->type = rhi::Resource::ResourceType::TEXTURE;
 
-	if (has_flag(texInfo->textureUsage, rhi::ResourceUsage::COLOR_ATTACHMENT)
-		|| has_flag(texInfo->textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
-	{
-		_viewIndicesByTexturePtr[vkTexture] = _attachmentDescPool.allocate();
-		_viewIndicesByTexturePtr[vkTexture]->imageCreateInfo = createInfo;
-	}
+	_attachmentManager.add_attachment_texture(vkTexture, createInfo);
 }
 
 void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::TextureViewInfo* viewInfo, rhi::Texture* texture)
@@ -333,111 +225,29 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 
 	rhi::TextureViewInfo* viewInfo = &textureView->viewInfo;
 	
-	rhi::TextureInfo texInfo = texture->textureInfo;
-	VulkanTexture* vkTexture = static_cast<VulkanTexture*>(texture->data);
-	
-	VkFormat format = get_format(texInfo.format);
-	VkImageUsageFlags imgUsage = get_image_usage(texInfo.textureUsage);
-
-	VkImageAspectFlags aspectFlags;
-	if (viewInfo->textureAspect == rhi::TextureAspect::UNDEFINED)
-	{
-		if ((imgUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-			aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
-		else
-			aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-	}
-	else
-	{
-		aspectFlags = get_image_aspect(viewInfo->textureAspect);
-	}
-	
 	VkImageViewCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	auto vkTextureView = _vkObjectPool.allocate<VulkanTextureView>(_device.get(), viewInfo, texture, createInfo);
 
-	if (texInfo.textureDimension == rhi::TextureDimension::TEXTURE1D)
-	{
-		if (texInfo.layersCount == 1)
-		{
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
-		}
-		else
-		{
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-		}
-	}
-	else if (texInfo.textureDimension == rhi::TextureDimension::TEXTURE2D)
-	{
-		if (texInfo.layersCount > 1)
-		{
-			if (has_flag(texInfo.resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
-			{
-				if (texInfo.layersCount > 6)
-				{
-					createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-				}
-				else
-				{
-					createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-				}
-			}
-			else
-			{
-				createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-			}
-		}
-		else
-		{
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		}
-	}
-	else if (texInfo.textureDimension == rhi::TextureDimension::TEXTURE3D)
-	{
-		createInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
-	}
-	else
-	{
-		LOG_ERROR("VulkanRHI::create_texture_view(): Undefined texture dimension")
-		return;
-	}
-	
-	//createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	createInfo.image = vkTexture->get_handle();
-	createInfo.format = format;
-	createInfo.subresourceRange.baseMipLevel = viewInfo->baseMipLevel;
-	createInfo.subresourceRange.levelCount = texInfo.mipLevels;
-	createInfo.subresourceRange.baseArrayLayer = viewInfo->baseLayer;
-	createInfo.subresourceRange.layerCount = texInfo.layersCount;
-	createInfo.subresourceRange.aspectMask = aspectFlags;
-
-	auto vkTextureViewTemp = std::make_unique<VulkanTextureView>(_device.get(), createInfo);
-
-	uint32_t vkTextureViewIndex;
-	{
-		std::scoped_lock<std::mutex> locker(_texturesViewMutex);
-		vkTextureViewIndex = _vulkanTextureViews.size();
-		_vulkanTextureViews.push_back(std::move(vkTextureViewTemp));
-		textureView->handle = _vulkanTextureViews.back().get();
-	}
+	if (!vkTextureView)
+		LOG_FATAL("VulkanRHI::create_texture_view(): Failed to create texture view")
 	
 	textureView->texture = texture;
+	textureView->handle = vkTextureView;
 
-	if ((imgUsage & VK_IMAGE_USAGE_SAMPLED_BIT) == VK_IMAGE_USAGE_SAMPLED_BIT)
+	rhi::TextureInfo texInfo = texture->textureInfo;
+	VkImageUsageFlags imgUsage = get_image_usage(texInfo.textureUsage);
+
+	if (has_flag(imgUsage, (VkImageUsageFlags)VK_IMAGE_USAGE_SAMPLED_BIT))
 	{
 		_descriptorManager->allocate_bindless_descriptor(get_vk_obj(textureView), TextureDescriptorHeapType::TEXTURES);
 	}
-	else if ((imgUsage & VK_IMAGE_USAGE_STORAGE_BIT) == VK_IMAGE_USAGE_STORAGE_BIT)
+	else if (has_flag(imgUsage, (VkImageUsageFlags)VK_IMAGE_USAGE_STORAGE_BIT))
 	{
 		_descriptorManager->allocate_bindless_descriptor(get_vk_obj(textureView), TextureDescriptorHeapType::STORAGE_TEXTURES);
 	}
 
-	if (has_flag(texInfo.textureUsage, rhi::ResourceUsage::COLOR_ATTACHMENT)
-		|| has_flag(texInfo.textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
-	{
-		AttachmentDesc::ViewDesc& viewDesc = _viewIndicesByTexturePtr[vkTexture]->viewDescriptions.emplace_back();
-		viewDesc.viewArrayIndex = vkTextureViewIndex;
-		viewDesc.imageViewCreateInfo = createInfo;
-	}
+	VulkanTexture* vkTexture = get_vk_obj(texture);
+	_attachmentManager.add_attachment_texture_view(vkTextureView, vkTexture, imgUsage, createInfo);
 }
 
 void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo)
@@ -457,56 +267,12 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 		LOG_ERROR("VulkanRHI::create_sampler(): Undefined filter. Failed to create VkSampler")
 		return;
 	}
-
-	VkSamplerCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	get_filter(sampInfo->filter, createInfo);
-	createInfo.addressModeU = get_address_mode(sampInfo->addressMode);
-	createInfo.addressModeV = createInfo.addressModeU;
-	createInfo.addressModeW = createInfo.addressModeU;
-	createInfo.minLod = sampInfo->minLod;
-	createInfo.maxLod = sampInfo->maxLod;
-	if (createInfo.anisotropyEnable == VK_TRUE)
-		createInfo.maxAnisotropy = sampInfo->maxAnisotropy;
-	if (sampInfo->borderColor != rhi::BorderColor::UNDEFINED)
-		createInfo.borderColor = get_border_color(sampInfo->borderColor);
-
-	// Using of min max sampler filter
-	VkSamplerReductionModeCreateInfo reductionMode{};
-	reductionMode.sType = VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO;
-	switch (sampInfo->filter)
-	{
-		case rhi::Filter::MINIMUM_MIN_MAG_MIP_NEAREST:
-		case rhi::Filter::MINIMUM_MIN_MAG_NEAREST_MIP_LINEAR:
-		case rhi::Filter::MINIMUM_MIN_NEAREST_MAG_LINEAR_MIP_NEAREST:
-		case rhi::Filter::MINIMUM_MIN_NEAREST_MAG_MIP_LINEAR:
-		case rhi::Filter::MINIMUM_MIN_LINEAR_MAG_MIP_NEAREST:
-		case rhi::Filter::MINIMUM_MIN_LINEAR_MAG_NEAREST_MIP_LINEAR:
-		case rhi::Filter::MINIMUM_MIN_MAG_LINEAR_MIP_NEAREST:
-		case rhi::Filter::MINIMUM_MIN_MAG_MIP_LINEAR:
-		case rhi::Filter::MINIMUM_ANISOTROPIC:
-			reductionMode.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
-			createInfo.pNext = &reductionMode;
-			break;
-		case rhi::Filter::MAXIMUM_MIN_MAG_MIP_NEAREST:
-		case rhi::Filter::MAXIMUM_MIN_MAG_NEAREST_MIP_LINEAR:
-		case rhi::Filter::MAXIMUM_MIN_NEAREST_MAG_LINEAR_MIP_NEAREST:
-		case rhi::Filter::MAXIMUM_MIN_NEAREST_MAG_MIP_LINEAR:
-		case rhi::Filter::MAXIMUM_MIN_LINEAR_MAG_MIP_NEAREST:
-		case rhi::Filter::MAXIMUM_MIN_LINEAR_MAG_NEAREST_MIP_LINEAR:
-		case rhi::Filter::MAXIMUM_MIN_MAG_LINEAR_MIP_NEAREST:
-		case rhi::Filter::MAXIMUM_MIN_MAG_MIP_LINEAR:
-		case rhi::Filter::MAXIMUM_ANISOTROPIC:
-			reductionMode.reductionMode = VK_SAMPLER_REDUCTION_MODE_MAX;
-			createInfo.pNext = &reductionMode;
-			break;
-	}
-
-	_vulkanSamplers.emplace_back(new VulkanSampler(_device.get(), createInfo));
-	sampler->handle = _vulkanSamplers.back().get();
+	
+	auto vkSampler = _vkObjectPool.allocate<VulkanSampler>(_device.get(), sampInfo);
+	sampler->handle = vkSampler;
 	sampler->sampInfo = *sampInfo;
 
-	_descriptorManager->allocate_bindless_descriptor(_vulkanSamplers.back().get());
+	_descriptorManager->allocate_bindless_descriptor(vkSampler);
 }
 
 void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shaderInfo)
@@ -522,16 +288,10 @@ void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shad
 		return;
 	}
 
-	auto vulkanShader = std::make_unique<VulkanShader>(_device->get_device());
-	vulkanShader->create_shader_module(shaderInfo);
+	auto vkShader = _vkObjectPool.allocate<VulkanShader>(_device->get_device());
+	vkShader->create_shader_module(shaderInfo);
 	shader->type = shaderInfo->shaderType;
-
-	{
-		std::scoped_lock<std::mutex> locker(_shadersMutex);
-		_vulkanShaders.push_back(std::move(vulkanShader));
-		VulkanShader* vulkanShader = _vulkanShaders.back().get();
-		shader->handle = vulkanShader;
-	}
+	shader->handle = vkShader;
 }
 
 void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info)
@@ -541,16 +301,11 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Invalid pointers")
 		return;
 	}
-	
-	auto vulkanPipeline = std::make_unique<VulkanPipeline>(_device.get(), info, _pipelineCache.get_handle(), _pipelineLayoutCache.get());
 
-	{
-		std::scoped_lock<std::mutex> locker(_pipelinesMutex);
-		_vulkanPipelines.push_back(std::move(vulkanPipeline));
-		pipeline->handle = _vulkanPipelines.back().get();
-	}
+	auto vulkanPipeline = _vkObjectPool.allocate<VulkanPipeline>(_device.get(), info, _pipelineCache.get_handle(), _pipelineLayoutCache.get());
 	
 	pipeline->type = rhi::PipelineType::GRAPHICS;
+	pipeline->handle = vulkanPipeline;
 }
 
 void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info)
@@ -560,16 +315,12 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid pointers")
 		return;
 	}
-	
-	auto vulkanPipeline = std::make_unique<VulkanPipeline>(_device.get(), info, _pipelineCache.get_handle(), _pipelineLayoutCache.get());
 
-	{
-		std::scoped_lock<std::mutex> locker(_pipelinesMutex);
-		_vulkanPipelines.push_back(std::move(vulkanPipeline));
-		pipeline->handle = _vulkanPipelines.back().get();
-	}
+	
+	auto vulkanPipeline = _vkObjectPool.allocate<VulkanPipeline>(_device.get(), info, _pipelineCache.get_handle(), _pipelineLayoutCache.get());
 	
 	pipeline->type = rhi::PipelineType::COMPUTE;
+	pipeline->handle = vulkanPipeline;
 }
 
 void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
@@ -590,8 +341,8 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 		return;
 	}
 
-	_vulkanRenderPasses.emplace_back(new VulkanRenderPass(_device.get(), passInfo));
-	renderPass->handle = _vulkanRenderPasses.back().get();
+	auto vkRenderPass = _vkObjectPool.allocate<VulkanRenderPass>(_device.get(), passInfo);
+	renderPass->handle = vkRenderPass;
 }
 
 uint32_t vulkan::VulkanRHI::get_descriptor_index(rhi::Buffer* buffer)
@@ -1235,26 +986,15 @@ vkb::Instance vulkan::VulkanRHI::create_instance()
 	vkb::InstanceBuilder builder;
 	builder.set_app_name("AdAstris Engine");
 	builder.require_api_version(1, 3, 0);
-// #ifndef VK_RELEASE
-// 	builder.use_default_debug_messenger();
-// 	builder.request_validation_layers(true);
-// #else
-// 	builder.request_validation_layers(false);
-// #endif
+#ifndef VK_RELEASE
+	builder.use_default_debug_messenger();
+	builder.request_validation_layers(true);
+#else
+	builder.request_validation_layers(false);
+#endif
 	builder.request_validation_layers(false);
 	LOG_INFO("Finish creating Vulkan instance")
 	return builder.build().value();
-}
-
-void vulkan::VulkanRHI::create_allocator()
-{
-	LOG_INFO("Start creating allocator")
-	VmaAllocatorCreateInfo allocatorInfo{};
-	allocatorInfo.physicalDevice = _device->get_physical_device();
-	allocatorInfo.device = _device->get_device();
-	allocatorInfo.instance = _instance;
-	vmaCreateAllocator(&allocatorInfo, &_allocator);
-	LOG_INFO("End creating allocator")
 }
 
 void vulkan::VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier)
@@ -1303,23 +1043,6 @@ void vulkan::VulkanRHI::recreate_swap_chain()
 	vkDeviceWaitIdle(_device->get_device());
 	uint32_t width = _mainWindow->get_width();
 	uint32_t height = _mainWindow->get_height();
-	for (auto& pair : _viewIndicesByTexturePtr)
-	{
-		VulkanTexture* vulkanTexture = pair.first;
-		vulkanTexture->destroy_texture(_allocator);
-		VkImageCreateInfo& imageCreateInfo = pair.second->imageCreateInfo;
-		imageCreateInfo.extent = { width, height, 1 };
-		vulkanTexture->create_texture(imageCreateInfo, &_allocator, VMA_MEMORY_USAGE_GPU_ONLY);
-
-		for (auto& imageViewDesc : pair.second->viewDescriptions)
-		{
-			VulkanTextureView* vulkanTextureView = _vulkanTextureViews[imageViewDesc.viewArrayIndex].get();
-			vulkanTextureView->destroy(_device.get());
-			VkImageViewCreateInfo& viewCreateInfo = imageViewDesc.imageViewCreateInfo;
-			viewCreateInfo.image = vulkanTexture->get_handle();
-			vulkanTextureView->create(_device.get(), viewCreateInfo);
-			_descriptorManager->allocate_bindless_descriptor(vulkanTextureView, TextureDescriptorHeapType::TEXTURES);
-		}
-	}
+	_attachmentManager.recreate_attachments(_device.get(), _descriptorManager.get(), width, height);
 	_swapChain->recreate(width, height);
 }

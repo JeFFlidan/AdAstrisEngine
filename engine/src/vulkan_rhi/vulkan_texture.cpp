@@ -3,25 +3,91 @@
 #include "vulkan_common.h"
 #include "profiler/logger.h"
 
-using namespace ad_astris;
+using namespace ad_astris::vulkan;
 
-vulkan::VulkanTexture::VulkanTexture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage)
+VulkanTexture::VulkanTexture(VulkanDevice* device, VkImageCreateInfo& info, VmaMemoryUsage memoryUsage)
 {
-	allocate_texture(info, allocator, memoryUsage);
+	allocate_texture(info, device->get_allocator(), memoryUsage);
 }
 
-void vulkan::VulkanTexture::destroy_texture(VmaAllocator allocator)
+VulkanTexture::VulkanTexture(VulkanDevice* device, rhi::TextureInfo* textureInfo, VkImageCreateInfo& outCreateInfo)
 {
-	vmaDestroyImage(allocator, _image, _allocation);
-	_image = VK_NULL_HANDLE;
+	create_texture(device, textureInfo, outCreateInfo);
 }
 
-void vulkan::VulkanTexture::create_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage)
+void VulkanTexture::destroy(VulkanDevice* device)
 {
-	allocate_texture(info, allocator, memoryUsage);
+	if (_image != VK_NULL_HANDLE)
+	{
+		vmaDestroyImage(device->get_allocator(), _image, _allocation);
+		_image = VK_NULL_HANDLE;
+	}
 }
 
-void vulkan::VulkanTexture::allocate_texture(VkImageCreateInfo info, VmaAllocator* allocator, VmaMemoryUsage memoryUsage)
+void VulkanTexture::create_texture(VulkanDevice* device, VkImageCreateInfo& info, VmaMemoryUsage memoryUsage)
+{
+	allocate_texture(info, device->get_allocator(), memoryUsage);
+}
+
+void VulkanTexture::create_texture(VulkanDevice* device, rhi::TextureInfo* textureInfo, VkImageCreateInfo& outCreateInfo)
+{
+	VmaAllocationCreateInfo allocCreateInfo{};
+	parse_texture_info(textureInfo, outCreateInfo, allocCreateInfo);
+	allocate_texture(device, outCreateInfo, allocCreateInfo);
+}
+
+void VulkanTexture::parse_texture_info(rhi::TextureInfo* inTextureInfo, VkImageCreateInfo& outImageInfo, VmaAllocationCreateInfo& outAllocInfo)
+{
+	if (inTextureInfo->format == rhi::Format::UNDEFINED)
+	{
+		LOG_ERROR("VulkanRHI::create_texture(): Undefined format")
+		return;
+	}
+	if (inTextureInfo->textureUsage == rhi::ResourceUsage::UNDEFINED)
+	{
+		LOG_ERROR("VulkanRHI::create_texture(): Undefined texture usage.")
+		return;
+	}
+	if (inTextureInfo->memoryUsage == rhi::MemoryUsage::UNDEFINED)
+	{
+		LOG_ERROR("VulkanRHI::create_texture(): Undefined memory usage.")
+		return;
+	}
+	if (inTextureInfo->samplesCount == rhi::SampleCount::UNDEFINED)
+	{
+		LOG_ERROR("VulkanRHI::create_texture(): Undefined sample count.")
+		return;
+	}
+	if (inTextureInfo->textureDimension == rhi::TextureDimension::UNDEFINED)
+	{
+		LOG_ERROR("VulkanRHI::create_texture(): Undefined texture dimension.")
+		return;
+	}
+
+	outImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	outImageInfo.pNext = nullptr;
+	outImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	outImageInfo.format = get_format(inTextureInfo->format);
+	outImageInfo.arrayLayers = inTextureInfo->layersCount;
+	outImageInfo.mipLevels = inTextureInfo->mipLevels;
+	outImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	outImageInfo.extent = VkExtent3D{ inTextureInfo->width, inTextureInfo->height, 1 };
+	outImageInfo.samples = get_sample_count(inTextureInfo->samplesCount);
+	
+	if (has_flag(inTextureInfo->resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
+	{
+		outImageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	}
+
+	VkImageUsageFlags imgUsage = get_image_usage(inTextureInfo->textureUsage);
+	outImageInfo.usage = imgUsage;
+	outImageInfo.imageType = get_image_type(inTextureInfo->textureDimension);
+
+	outAllocInfo.usage = get_memory_usage(inTextureInfo->memoryUsage);
+	outAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+}
+
+void VulkanTexture::allocate_texture(VkImageCreateInfo& info, VmaAllocator allocator, VmaMemoryUsage memoryUsage)
 {
 	this->_extent = info.extent;
 	this->_mipLevels = info.mipLevels;
@@ -30,34 +96,12 @@ void vulkan::VulkanTexture::allocate_texture(VkImageCreateInfo info, VmaAllocato
 	imgAllocInfo.usage = memoryUsage;
 	imgAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);	// VMA allocate the image into VRAM in all situations
 
-	vmaCreateImage(*allocator, &info, &imgAllocInfo, &_image, &_allocation, nullptr);
+	vmaCreateImage(allocator, &info, &imgAllocInfo, &_image, &_allocation, nullptr);
 }
 
-vulkan::VulkanTextureView::VulkanTextureView(VulkanDevice* device, VkImageViewCreateInfo& info)
+void VulkanTexture::allocate_texture(VulkanDevice* device, VkImageCreateInfo& imageCreateInfo, VmaAllocationCreateInfo& allocInfo)
 {
-	VK_CHECK(vkCreateImageView(device->get_device(), &info, nullptr, &_imageView));
-}
-
-void vulkan::VulkanTextureView::create(VulkanDevice* device, VkImageViewCreateInfo& info)
-{
-	VK_CHECK(vkCreateImageView(device->get_device(), &info, nullptr, &_imageView));
-}
-
-void vulkan::VulkanTextureView::destroy(VulkanDevice* device)
-{
-	if (_imageView != VK_NULL_HANDLE)
-		vkDestroyImageView(device->get_device(), _imageView, nullptr);
-	_imageView = VK_NULL_HANDLE;
-}
-
-vulkan::VulkanSampler::VulkanSampler(VulkanDevice* device, VkSamplerCreateInfo& info)
-{
-	VK_CHECK(vkCreateSampler(device->get_device(), &info, nullptr, &_sampler));
-}
-
-void vulkan::VulkanSampler::destroy(VulkanDevice* device)
-{
-	if (_sampler != VK_NULL_HANDLE)
-		vkDestroySampler(device->get_device(), _sampler, nullptr);
-	_sampler = VK_NULL_HANDLE;
+	_extent = imageCreateInfo.extent;
+	_mipLevels = imageCreateInfo.mipLevels;
+	vmaCreateImage(device->get_allocator(), &imageCreateInfo, &allocInfo, &_image, &_allocation, nullptr);
 }

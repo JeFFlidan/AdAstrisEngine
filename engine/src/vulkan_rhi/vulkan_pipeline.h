@@ -1,15 +1,17 @@
 #pragma once
 
-#include "rhi/resources.h"
 #include "vulkan_device.h"
+#include "vulkan_object.h"
 #include "vulkan_pipeline_layout_cache.h"
+#include "rhi/resources.h"
 #include <vulkan/vulkan.h>
 
 namespace ad_astris::vulkan
 {
-	class VulkanPipeline
+	class VulkanPipeline : public IVulkanObject
 	{
 		public:
+			VulkanPipeline() = default;
 			VulkanPipeline(
 				VulkanDevice* device,
 				rhi::GraphicsPipelineInfo* info,
@@ -21,7 +23,7 @@ namespace ad_astris::vulkan
 				VkPipelineCache pipelineCache,
 				VulkanPipelineLayoutCache* layoutCache);
 
-			void cleanup();
+			void destroy(VulkanDevice* device) override;
 			void bind(VkCommandBuffer cmd, uint32_t frameIndex);
 
 			VkPipeline get_handle() { return _pipeline; }
