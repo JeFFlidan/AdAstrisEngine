@@ -816,3 +816,17 @@ VkImageAspectFlags vulkan::get_image_aspect(rhi::TextureAspect textureAspect)
 			return VK_IMAGE_ASPECT_STENCIL_BIT;
 	}
 }
+
+VkQueryType vulkan::get_query_type(rhi::QueryType queryType)
+{
+	switch (queryType)
+	{
+		case rhi::QueryType::OCCLUSION:
+		case rhi::QueryType::BINARY_OCCLUSION:
+			return VK_QUERY_TYPE_OCCLUSION;
+		case rhi::QueryType::PIPELINE_STATISTICS:
+			return VK_QUERY_TYPE_PIPELINE_STATISTICS;
+		case rhi::QueryType::TIMESTAMP:
+			return VK_QUERY_TYPE_TIMESTAMP;
+	}
+}

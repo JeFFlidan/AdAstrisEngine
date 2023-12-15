@@ -295,6 +295,12 @@ namespace ad_astris::rhi
 		SM_6_6,
 		SM_6_7
 	};
+
+	struct ObjectHandle
+	{
+		void* handle{ nullptr };
+		bool is_valid() { return handle; }
+	};
 	
 	struct TextureInfo
 	{
@@ -320,7 +326,7 @@ namespace ad_astris::rhi
 		MemoryUsage memoryUsage{ MemoryUsage::UNDEFINED };
 	};
 	
-	struct Resource
+	struct Resource : public ObjectHandle
 	{
 		enum class ResourceType
 		{
@@ -329,13 +335,13 @@ namespace ad_astris::rhi
 			UNDEFINED_TYPE
 		} type = ResourceType::UNDEFINED_TYPE;
 
-		void* data{ nullptr };		// Pointer to Vulkan or D3D12 buffer 
+		void* mapped_data{ nullptr };		// Pointer to Vulkan or D3D12 buffer 
 		uint64_t size{ 0 };		// Size in bytes
 
 		bool is_buffer() { return type == ResourceType::BUFFER; }
 		bool is_texture() { return type == ResourceType::TEXTURE; }
 		bool is_undefined() { return type == ResourceType::UNDEFINED_TYPE; }
-		bool is_valid() { return data && size; }
+		bool is_mapped_data_valid() { return mapped_data && size; }
 	};
 
 	struct SubresourceRange
@@ -357,12 +363,6 @@ namespace ad_astris::rhi
 	struct Texture : public Resource
 	{
 		TextureInfo textureInfo;
-	};
-
-	struct ObjectHandle
-	{
-		void* handle{ nullptr };
-		bool is_valid() { return handle; }
 	};
 
 	struct SwapChainInfo
@@ -814,6 +814,26 @@ namespace ad_astris::rhi
 		std::vector<RenderTarget> renderTargets;
 		RenderingBeginInfoFlags flags;
 		MultiviewInfo multiviewInfo;		// Not necessary
+	};
+
+	enum class QueryType
+	{
+		UNDEFINED,
+		OCCLUSION,
+		BINARY_OCCLUSION,
+		TIMESTAMP,
+		PIPELINE_STATISTICS
+	};
+
+	struct QueryPoolInfo
+	{
+		QueryType type{ QueryType::UNDEFINED };
+		uint32_t queryCount{ 0 };
+	};
+
+	struct QueryPool : public ObjectHandle
+	{
+		QueryPoolInfo info;
 	};
 }
 

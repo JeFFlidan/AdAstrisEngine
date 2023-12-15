@@ -128,7 +128,8 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 	
 	auto vulkanBuffer = _vkObjectPool.allocate<VulkanBuffer>(_device.get(), &buffer->bufferInfo);
 	
-	buffer->data = vulkanBuffer;
+	buffer->handle = vulkanBuffer;
+	buffer->mapped_data = vulkanBuffer->get_mapped_data();
 	buffer->size = buffer->bufferInfo.size;
 	buffer->type = rhi::Resource::ResourceType::BUFFER;
 
@@ -150,12 +151,12 @@ void vulkan::VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
 	VulkanBuffer* vulkanBuffer = get_vk_obj(buffer);
 	_vkObjectPool.free(vulkanBuffer);
 	
-	buffer->data = nullptr;
+	buffer->handle = nullptr;
 }
 
 void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data)
 {
-	if (!data || !buffer || !buffer->data || size == 0)
+	if (!data || !buffer || !buffer->handle || size == 0)
 	{
 		LOG_ERROR("Can't use update_buffer_data if buffer, data or size is invalid")
 		return;
@@ -167,7 +168,7 @@ void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, v
 		return;
 	}
 
-	VulkanBuffer* vulkanBuffer = static_cast<VulkanBuffer*>(buffer->data);
+	VulkanBuffer* vulkanBuffer = static_cast<VulkanBuffer*>(buffer->handle);
 	vulkanBuffer->copy_from(_device.get(), data, size);
 }
 
@@ -199,7 +200,8 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 		LOG_ERROR("VulkanRHI::create_texture(): Failed to allocate VkImage")
 		return;
 	}
-	texture->data = vkTexture;
+	texture->handle = vkTexture;
+	texture->mapped_data = vkTexture->get_mapped_data();
 	texture->type = rhi::Resource::ResourceType::TEXTURE;
 
 	_attachmentManager.add_attachment_texture(vkTexture, createInfo);
@@ -315,7 +317,6 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid pointers")
 		return;
 	}
-
 	
 	auto vulkanPipeline = _vkObjectPool.allocate<VulkanPipeline>(_device.get(), info, _pipelineCache.get_handle(), _pipelineLayoutCache.get());
 	
@@ -977,6 +978,101 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vect
 void vulkan::VulkanRHI::wait_for_gpu()
 {
 	VK_CHECK(vkDeviceWaitIdle(_device->get_device()));
+}
+
+void vulkan::VulkanRHI::create_query_pool(rhi::QueryPool* queryPool, rhi::QueryPoolInfo* queryPoolInfo)
+{
+	assert(queryPool);
+	assert(queryPoolInfo);
+
+	queryPool->info = *queryPoolInfo;
+	create_query_pool(queryPool);
+}
+
+void vulkan::VulkanRHI::create_query_pool(rhi::QueryPool* queryPool)
+{
+	if (queryPool->info.type == rhi::QueryType::UNDEFINED)
+		LOG_FATAL("VulkanRHI::create_query_pool(): Can't create query pool with rhi::QueryType == UNDEFINED")
+	if (!queryPool->info.queryCount)
+		LOG_FATAL("VulkanRHI::create_query_pool(): Can't create query pool with query count = 0")
+
+	queryPool->handle = _vkObjectPool.allocate<VulkanQueryPool>(_device.get(), &queryPool->info);
+}
+
+void vulkan::VulkanRHI::begin_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex)
+{
+	assert(cmd);
+	assert(queryPool);
+
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanQueryPool* vkQueryPool = get_vk_obj(queryPool);
+	
+	switch (queryPool->info.type)
+	{
+		case rhi::QueryType::OCCLUSION:
+		case rhi::QueryType::PIPELINE_STATISTICS:
+			vkCmdBeginQuery(vkCmd->get_handle(), vkQueryPool->get_handle(), queryIndex, 0);
+			break;
+		case rhi::QueryType::BINARY_OCCLUSION:
+			vkCmdBeginQuery(vkCmd->get_handle(), vkQueryPool->get_handle(), queryIndex, VK_QUERY_CONTROL_PRECISE_BIT);
+			break;
+		case rhi::QueryType::TIMESTAMP:
+			break;
+	}
+}
+
+void vulkan::VulkanRHI::end_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex)
+{
+	assert(cmd);
+	assert(queryPool);
+
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanQueryPool* vkQueryPool = get_vk_obj(queryPool);
+
+	switch (queryPool->info.type)
+	{
+		case rhi::QueryType::OCCLUSION:
+		case rhi::QueryType::BINARY_OCCLUSION:
+		case rhi::QueryType::PIPELINE_STATISTICS:
+			vkCmdEndQuery(vkCmd->get_handle(), vkQueryPool->get_handle(), queryIndex);
+			break;
+		case rhi::QueryType::TIMESTAMP:
+			vkCmdWriteTimestamp2(vkCmd->get_handle(), VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, vkQueryPool->get_handle(), queryIndex);
+			break;
+	}
+}
+
+void vulkan::VulkanRHI::get_query_pool_result(
+	const rhi::QueryPool* queryPool,
+	std::vector<uint64_t>& outputData,
+	uint32_t queryIndex,
+	uint32_t queryCount,
+	uint32_t stride)
+{
+	assert(queryPool);
+
+	VulkanQueryPool* vkQueryPool = get_vk_obj(queryPool);
+	outputData.resize(queryCount);
+	VK_CHECK(vkGetQueryPoolResults(
+		_device->get_device(),
+		vkQueryPool->get_handle(),
+		queryIndex,
+		queryCount,
+		outputData.size() * sizeof(uint64_t),
+		outputData.data(),
+		stride,
+		VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
+}
+
+void vulkan::VulkanRHI::reset_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount)
+{
+	assert(cmd);
+	assert(queryPool);
+
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanQueryPool* vkQueryPool = get_vk_obj(queryPool);
+
+	vkCmdResetQueryPool(vkCmd->get_handle(), vkQueryPool->get_handle(), queryIndex, queryCount);
 }
 
 // private methods

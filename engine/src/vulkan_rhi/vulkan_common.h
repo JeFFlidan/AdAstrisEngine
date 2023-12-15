@@ -9,6 +9,7 @@
 #include "vulkan_texture_view.h"
 #include "vulkan_sampler.h"
 #include "vulkan_shader.h"
+#include "vulkan_query_pool.h"
 
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
@@ -57,44 +58,50 @@ namespace ad_astris::vulkan
 	VkPipelineBindPoint get_pipeline_bind_point(rhi::PipelineType pipelineType);
 	VkImageAspectFlags get_image_aspect(rhi::ResourceUsage usage);
 	VkImageAspectFlags get_image_aspect(rhi::TextureAspect textureAspect);
+	VkQueryType get_query_type(rhi::QueryType queryType);
 
-	inline VulkanCommandBuffer* get_vk_obj(rhi::CommandBuffer* cmd)
+	inline VulkanCommandBuffer* get_vk_obj(const rhi::CommandBuffer* cmd)
 	{
 		return static_cast<VulkanCommandBuffer*>(cmd->handle);
 	}
 
-	inline VulkanRenderPass* get_vk_obj(rhi::RenderPass* pass)
+	inline VulkanRenderPass* get_vk_obj(const rhi::RenderPass* pass)
 	{
 		return static_cast<VulkanRenderPass*>(pass->handle);
 	}
 	
-	inline VulkanPipeline* get_vk_obj(rhi::Pipeline* pipeline)
+	inline VulkanPipeline* get_vk_obj(const rhi::Pipeline* pipeline)
 	{
 		return static_cast<VulkanPipeline*>(pipeline->handle);
 	}
 
-	inline VulkanBuffer* get_vk_obj(rhi::Buffer* buffer)
+	inline VulkanBuffer* get_vk_obj(const rhi::Buffer* buffer)
 	{
-		return static_cast<VulkanBuffer*>(buffer->data);
+		return static_cast<VulkanBuffer*>(buffer->handle);
 	}
 	
-	inline VulkanTexture* get_vk_obj(rhi::Texture* texture)
+	inline VulkanTexture* get_vk_obj(const rhi::Texture* texture)
 	{
-		return static_cast<VulkanTexture*>(texture->data);
+		return static_cast<VulkanTexture*>(texture->handle);
 	}
 	
-	inline VulkanTextureView* get_vk_obj(rhi::TextureView* view)
+	inline VulkanTextureView* get_vk_obj(const rhi::TextureView* view)
 	{
 		return static_cast<VulkanTextureView*>(view->handle);
 	}
 	
-	inline VulkanSampler* get_vk_obj(rhi::Sampler* sampler)
+	inline VulkanSampler* get_vk_obj(const rhi::Sampler* sampler)
 	{
 		return static_cast<VulkanSampler*>(sampler->handle);
 	}
 
-	inline VulkanShader* get_vk_obj(rhi::Shader* shader)
+	inline VulkanShader* get_vk_obj(const rhi::Shader* shader)
 	{
 		return static_cast<VulkanShader*>(shader->handle);
+	}
+
+	inline VulkanQueryPool* get_vk_obj(const rhi::QueryPool* queryPool)
+	{
+		return static_cast<VulkanQueryPool*>(queryPool->handle);
 	}
 }

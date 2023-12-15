@@ -7,7 +7,7 @@ using namespace ad_astris::vulkan;
 
 VulkanTexture::VulkanTexture(VulkanDevice* device, VkImageCreateInfo& info, VmaMemoryUsage memoryUsage)
 {
-	allocate_texture(info, device->get_allocator(), memoryUsage);
+	create_texture(device, info, memoryUsage);
 }
 
 VulkanTexture::VulkanTexture(VulkanDevice* device, rhi::TextureInfo* textureInfo, VkImageCreateInfo& outCreateInfo)
@@ -19,6 +19,9 @@ void VulkanTexture::destroy(VulkanDevice* device)
 {
 	if (_image != VK_NULL_HANDLE)
 	{
+		if (_mappedData)
+			vmaUnmapMemory(device->get_allocator(), _allocation);
+		
 		vmaDestroyImage(device->get_allocator(), _image, _allocation);
 		_image = VK_NULL_HANDLE;
 	}
@@ -26,43 +29,35 @@ void VulkanTexture::destroy(VulkanDevice* device)
 
 void VulkanTexture::create_texture(VulkanDevice* device, VkImageCreateInfo& info, VmaMemoryUsage memoryUsage)
 {
-	allocate_texture(info, device->get_allocator(), memoryUsage);
+	VmaAllocationCreateInfo allocInfo{};
+	allocInfo.usage = memoryUsage;
+	allocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	allocate_texture(device, info, allocInfo);
 }
 
 void VulkanTexture::create_texture(VulkanDevice* device, rhi::TextureInfo* textureInfo, VkImageCreateInfo& outCreateInfo)
 {
-	VmaAllocationCreateInfo allocCreateInfo{};
-	parse_texture_info(textureInfo, outCreateInfo, allocCreateInfo);
-	allocate_texture(device, outCreateInfo, allocCreateInfo);
+	VmaAllocationCreateInfo allocInfo{};
+	parse_texture_info(textureInfo, outCreateInfo, allocInfo);
+	allocate_texture(device, outCreateInfo, allocInfo);
 }
 
 void VulkanTexture::parse_texture_info(rhi::TextureInfo* inTextureInfo, VkImageCreateInfo& outImageInfo, VmaAllocationCreateInfo& outAllocInfo)
 {
 	if (inTextureInfo->format == rhi::Format::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Undefined format")
-		return;
-	}
+		LOG_FATAL("VulkanTexture::parse_texture_info(): Undefined format")
+	
 	if (inTextureInfo->textureUsage == rhi::ResourceUsage::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Undefined texture usage.")
-		return;
-	}
+		LOG_FATAL("VulkanTexture::parse_texture_info(): Undefined texture usage.")
+	
 	if (inTextureInfo->memoryUsage == rhi::MemoryUsage::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Undefined memory usage.")
-		return;
-	}
+		LOG_FATAL("VulkanTexture::parse_texture_info(): Undefined memory usage.")
+	
 	if (inTextureInfo->samplesCount == rhi::SampleCount::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Undefined sample count.")
-		return;
-	}
+		LOG_FATAL("VulkanTexture::parse_texture_info(): Undefined sample count.")
+	
 	if (inTextureInfo->textureDimension == rhi::TextureDimension::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Undefined texture dimension.")
-		return;
-	}
+		LOG_FATAL("VulkanTexture::parse_texture_info(): Undefined texture dimension.")
 
 	outImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	outImageInfo.pNext = nullptr;
@@ -87,21 +82,14 @@ void VulkanTexture::parse_texture_info(rhi::TextureInfo* inTextureInfo, VkImageC
 	outAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
-void VulkanTexture::allocate_texture(VkImageCreateInfo& info, VmaAllocator allocator, VmaMemoryUsage memoryUsage)
-{
-	this->_extent = info.extent;
-	this->_mipLevels = info.mipLevels;
-
-	VmaAllocationCreateInfo imgAllocInfo{};
-	imgAllocInfo.usage = memoryUsage;
-	imgAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);	// VMA allocate the image into VRAM in all situations
-
-	vmaCreateImage(allocator, &info, &imgAllocInfo, &_image, &_allocation, nullptr);
-}
-
 void VulkanTexture::allocate_texture(VulkanDevice* device, VkImageCreateInfo& imageCreateInfo, VmaAllocationCreateInfo& allocInfo)
 {
+	if (_image == VK_NULL_HANDLE)
+		destroy(device);
+	
 	_extent = imageCreateInfo.extent;
 	_mipLevels = imageCreateInfo.mipLevels;
-	vmaCreateImage(device->get_allocator(), &imageCreateInfo, &allocInfo, &_image, &_allocation, nullptr);
+	VK_CHECK(vmaCreateImage(device->get_allocator(), &imageCreateInfo, &allocInfo, &_image, &_allocation, nullptr));
+	if (allocInfo.usage == VMA_MEMORY_USAGE_CPU_ONLY || allocInfo.usage == VMA_MEMORY_USAGE_CPU_TO_GPU)
+		VK_CHECK(vmaMapMemory(device->get_allocator(), _allocation, &_mappedData));
 }

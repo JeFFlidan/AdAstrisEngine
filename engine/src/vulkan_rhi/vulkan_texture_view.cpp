@@ -45,7 +45,7 @@ void VulkanTextureView::parse_texture_view_info(
 	VkImageViewCreateInfo& outCreateInfo)
 {
 	rhi::TextureInfo textureInfo = texture->textureInfo;
-	VulkanTexture* vkTexture = static_cast<VulkanTexture*>(texture->data);
+	VulkanTexture* vkTexture = static_cast<VulkanTexture*>(texture->handle);
 	
 	VkFormat format = get_format(textureInfo.format);
 	VkImageUsageFlags imgUsage = get_image_usage(textureInfo.textureUsage);

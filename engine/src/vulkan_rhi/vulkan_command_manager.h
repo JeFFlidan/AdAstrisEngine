@@ -28,7 +28,7 @@ namespace ad_astris::vulkan
 			VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, VkPipelineStageFlags waitFlag);
 			~VulkanCommandBuffer();
 
-			VkCommandBuffer get_handle() { return _cmdBuffer; }
+			VkCommandBuffer get_handle() const { return _cmdBuffer; }
 		
 		private:
 			VulkanDevice* _device;

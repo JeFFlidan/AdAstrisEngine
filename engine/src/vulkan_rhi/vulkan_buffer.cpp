@@ -6,7 +6,7 @@ using namespace ad_astris::vulkan;
 
 VulkanBuffer::VulkanBuffer(VulkanDevice* device, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
-	allocate_buffer(device->get_allocator(), allocSize, usage, memoryUsage);
+	create_buffer(device, allocSize, usage, memoryUsage);
 }
 
 VulkanBuffer::VulkanBuffer(VulkanDevice* device, rhi::BufferInfo* bufferInfo)
@@ -16,7 +16,15 @@ VulkanBuffer::VulkanBuffer(VulkanDevice* device, rhi::BufferInfo* bufferInfo)
 
 void VulkanBuffer::create_buffer(VulkanDevice* device, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
-	allocate_buffer(device->get_allocator(), allocSize, usage, memoryUsage);
+	VkBufferCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	createInfo.size = allocSize;
+	createInfo.usage = usage;
+
+	VmaAllocationCreateInfo allocInfo{};
+	allocInfo.usage = memoryUsage;
+	
+	allocate_buffer(device, createInfo, allocInfo);
 }
 
 void VulkanBuffer::create_buffer(VulkanDevice* device, rhi::BufferInfo* bufferInfo)
@@ -29,10 +37,7 @@ void VulkanBuffer::create_buffer(VulkanDevice* device, rhi::BufferInfo* bufferIn
 
 void VulkanBuffer::copy_from(VulkanDevice* device, void* srcBuffer, size_t sizeInBytes)
 {
-	void* data;
-	vmaMapMemory(device->get_allocator(), _allocation, &data);
-	memcpy(data, srcBuffer, sizeInBytes);
-	vmaUnmapMemory(device->get_allocator(), _allocation);
+	memcpy(_mappedData, srcBuffer, sizeInBytes);
 	_bufferSize = sizeInBytes;
 }
 
@@ -62,7 +67,14 @@ void VulkanBuffer::copy_buffer_cmd(
 
 void VulkanBuffer::destroy(VulkanDevice* device)
 {
-    vmaDestroyBuffer(device->get_allocator(), _buffer, _allocation);
+	if (_buffer != VK_NULL_HANDLE)
+	{
+		if (_mappedData)
+			vmaUnmapMemory(device->get_allocator(), _allocation);
+		
+		vmaDestroyBuffer(device->get_allocator(), _buffer, _allocation);
+		_buffer = VK_NULL_HANDLE;
+	}
 }
 
 void VulkanBuffer::parse_buffer_info(rhi::BufferInfo* inBufferInfo, VkBufferCreateInfo& outCreateInfo, VmaAllocationCreateInfo& outAllocationInfo)
@@ -74,46 +86,19 @@ void VulkanBuffer::parse_buffer_info(rhi::BufferInfo* inBufferInfo, VkBufferCrea
 	outCreateInfo.usage = get_buffer_usage(inBufferInfo->bufferUsage);
 	
 	if (!outCreateInfo.usage)
-	{
 		LOG_FATAL("VulkanBuffer::parse_buffer_info(): Invalid buffer usage")
-		return;
-	}
 
 	outAllocationInfo.usage = get_memory_usage(inBufferInfo->memoryUsage);
 	if (outAllocationInfo.usage == VMA_MEMORY_USAGE_UNKNOWN)
-	{
-		LOG_FATAL("Invalid memory usage (buffer)")
-	}
-}
-
-void VulkanBuffer::allocate_buffer(
-	VmaAllocator allocator,
-	size_t allocSize,
-	VkBufferUsageFlags usage,
-	VmaMemoryUsage memoryUsage)
-{
-	if (_buffer != VK_NULL_HANDLE)
-		vmaDestroyBuffer(allocator, _buffer, _allocation);
-	
-	_bufferSize = allocSize;
-
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.pNext = nullptr;
-
-	bufferInfo.size = allocSize;
-	bufferInfo.usage = usage;
-
-	VmaAllocationCreateInfo vmaallocInfo{};
-	vmaallocInfo.usage = memoryUsage;
-
-    VkResult res = vmaCreateBuffer(allocator, &bufferInfo, &vmaallocInfo, &_buffer, &_allocation, nullptr);
-    
-    if (res != VK_SUCCESS)
-		LOG_ERROR("Failed to allocate buffer")
+		LOG_FATAL("VulkanBuffer::parse_buffer_info(): Invalid memory usage")
 }
 
 void VulkanBuffer::allocate_buffer(VulkanDevice* device, VkBufferCreateInfo& createInfo, VmaAllocationCreateInfo& allocInfo)
 {
+	if (_buffer != VK_NULL_HANDLE)
+		destroy(device);
+	
 	VK_CHECK(vmaCreateBuffer(device->get_allocator(), &createInfo, &allocInfo, &_buffer, &_allocation, nullptr));
+	if (allocInfo.usage == VMA_MEMORY_USAGE_CPU_ONLY || allocInfo.usage == VMA_MEMORY_USAGE_CPU_TO_GPU)
+		VK_CHECK(vmaMapMemory(device->get_allocator(), _allocation, &_mappedData));
 }

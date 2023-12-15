@@ -117,6 +117,18 @@ namespace ad_astris::vulkan
 			virtual void wait_for_gpu() override;
 			virtual uint32_t get_buffer_count() override { return _swapChain->get_buffers_count(); }
 
+			virtual void create_query_pool(rhi::QueryPool* queryPool, rhi::QueryPoolInfo* queryPoolInfo) override;
+			virtual void create_query_pool(rhi::QueryPool* queryPool) override;
+			virtual void begin_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex) override;
+			virtual void end_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex) override;
+			virtual void get_query_pool_result(
+				const rhi::QueryPool* queryPool,
+				std::vector<uint64_t>& outputData,
+				uint32_t queryIndex,
+				uint32_t queryCount,
+				uint32_t stride) override;
+			virtual void reset_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount) override;
+
 			VulkanDevice* get_device() { return _device.get(); }
 			VkInstance get_instance() { return _instance; }
 			VulkanSwapChain* get_swap_chain() { return _swapChain.get(); }

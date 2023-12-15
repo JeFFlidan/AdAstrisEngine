@@ -111,5 +111,17 @@ namespace ad_astris::rhi
 
 			virtual void wait_for_gpu() = 0;
 			virtual uint32_t get_buffer_count() = 0;
+
+			virtual void create_query_pool(QueryPool* queryPool, QueryPoolInfo* queryPoolInfo) = 0;
+			virtual void create_query_pool(QueryPool* queryPool) = 0;
+			virtual void begin_query(const CommandBuffer* cmd, const QueryPool* queryPool, uint32_t queryIndex) = 0;
+			virtual void end_query(const CommandBuffer* cmd, const QueryPool* queryPool, uint32_t queryIndex) = 0;
+			virtual void get_query_pool_result(
+				const QueryPool* queryPool,
+				std::vector<uint64_t>& outputData,
+				uint32_t queryIndex,
+				uint32_t queryCount,
+				uint32_t stride) = 0;
+			virtual void reset_query(const CommandBuffer* cmd, const QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount) = 0;
 	};
 }

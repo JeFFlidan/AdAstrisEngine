@@ -30,15 +30,16 @@ namespace ad_astris::vulkan
 				VkDeviceSize srcOffset = 0);
 
 			VkBuffer* get_handle() { return &_buffer; }
-			uint64_t get_size() { return _bufferSize; }
+			uint64_t get_size() const { return _bufferSize; }
+			void* get_mapped_data() const { return _mappedData; }
 			
 		private:
 			VkBuffer _buffer = VK_NULL_HANDLE;
 			VmaAllocation _allocation;
 			uint64_t _bufferSize = 0;
+			void* _mappedData{ nullptr };
 		
 			void parse_buffer_info(rhi::BufferInfo* inBufferInfo, VkBufferCreateInfo& outCreateInfo, VmaAllocationCreateInfo& outAllocationInfo);
-			void allocate_buffer(VmaAllocator allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 			void allocate_buffer(VulkanDevice* device, VkBufferCreateInfo& createInfo, VmaAllocationCreateInfo& allocInfo);
 	};
 }
