@@ -110,7 +110,6 @@ namespace ad_astris::rhi
 			virtual void add_pipeline_barriers(CommandBuffer* cmd, std::vector<PipelineBarrier>& barriers) = 0;
 
 			virtual void wait_for_gpu() = 0;
-			virtual uint32_t get_buffer_count() = 0;
 
 			virtual void create_query_pool(QueryPool* queryPool, QueryPoolInfo* queryPoolInfo) = 0;
 			virtual void create_query_pool(QueryPool* queryPool) = 0;
@@ -123,5 +122,8 @@ namespace ad_astris::rhi
 				uint32_t queryCount,
 				uint32_t stride) = 0;
 			virtual void reset_query(const CommandBuffer* cmd, const QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount) = 0;
+		
+			virtual uint32_t get_buffer_count() = 0;
+			virtual uint64_t get_timestamp_frequency() = 0;
 	};
 }

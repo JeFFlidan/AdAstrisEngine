@@ -39,12 +39,15 @@ void vulkan::VulkanRHI::init(rhi::RHIInitContext& initContext)
 	_pipelineLayoutCache = std::make_unique<VulkanPipelineLayoutCache>(_device.get(), _descriptorManager.get());
 	_pipelineCache.load_pipeline_cache(_device.get(), _fileSystem);
 
-	auto& properties = _device->get_physical_device_vulkan_1_2_properties();
+	auto& properties12 = _device->get_physical_device_vulkan_1_2_properties();
 	auto& properties11 = _device->get_physical_device_vulkan_1_1_properties();
-	LOG_INFO("MAX SAMPLERS: {}", properties.maxDescriptorSetUpdateAfterBindSamplers)
-	LOG_INFO("MAX IMAGES: {}", properties.maxDescriptorSetUpdateAfterBindSampledImages);
-	LOG_INFO("MAX STORAGE IMAGES: {}", properties.maxDescriptorSetUpdateAfterBindStorageImages)
-	LOG_INFO("MAX STORAGE BUFFERS: {}", properties.maxDescriptorSetUpdateAfterBindStorageBuffers)
+	LOG_INFO("VulkanRHI::init(): Max samplers: {}", properties12.maxDescriptorSetUpdateAfterBindSamplers)
+	LOG_INFO("VulkanRHI::init(): Max sampled images: {}", properties12.maxDescriptorSetUpdateAfterBindSampledImages);
+	LOG_INFO("VulkanRHI::init(): Max storage images: {}", properties12.maxDescriptorSetUpdateAfterBindStorageImages)
+	LOG_INFO("VulkanRHI::init(): Max storage buffers: {}", properties12.maxDescriptorSetUpdateAfterBindStorageBuffers)
+
+	auto& physicalProperties = _device->get_physical_device_properties();
+	_timestampFrequency = uint64_t(1.0 / (double)physicalProperties.properties.limits.timestampPeriod * 1000 * 1000 * 1000);
 	
 	//LOG_INFO("TEST: {}", properties11.subgroupSize);
 }
@@ -66,11 +69,8 @@ void vulkan::VulkanRHI::cleanup()
 
 void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info)
 {
-	if (!swapChain || !info)
-	{
-		LOG_ERROR("VulkanRHI::create_swap_chain(): Invalid pointers")
-		return;
-	}
+	assert(swapChain && info);
+	
 	_swapChain = std::make_unique<VulkanSwapChain>(info, _device.get());
 	_cmdManager = std::make_unique<VulkanCommandManager>(_device.get(), _swapChain.get());
 	swapChain->handle = _swapChain.get();
@@ -79,11 +79,7 @@ void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapCh
 
 void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
 {
-	if (!swapChain)
-	{
-		LOG_ERROR("VulkanRHI::destroy_swap_chain(): Invalid pointer to rhi::SwapChain")
-		return;
-	}
+	assert(swapChain);
 
 	_swapChain.reset();
 	swapChain->handle = nullptr;
@@ -108,11 +104,7 @@ bool vulkan::VulkanRHI::acquire_next_image(uint32_t& nextImageIndex, uint32_t cu
 
 void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data)
 {
-	if (!buffer)
-	{
-		LOG_ERROR("Can't create buffer if buffer parameter is invalid")
-		return;
-	}
+	assert(buffer && bufInfo);
 	
 	buffer->bufferInfo = *bufInfo;
 	create_buffer(buffer, data);
@@ -120,30 +112,27 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufI
 
 void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 {
-	if (!buffer)
-	{
-		LOG_ERROR("Can't create buffer if buffer parameter is invalid")
-		return;
-	}
+	assert(buffer);
 	
-	auto vulkanBuffer = _vkObjectPool.allocate<VulkanBuffer>(_device.get(), &buffer->bufferInfo);
+	auto vkBuffer = _vkObjectPool.allocate<VulkanBuffer>(_device.get(), &buffer->bufferInfo);
+
+	if (vkBuffer->get_handle() == VK_NULL_HANDLE)
+		LOG_FATAL("VulkanRHI::create_buffer(): Failed to allocate buffer")
 	
-	buffer->handle = vulkanBuffer;
-	buffer->mapped_data = vulkanBuffer->get_mapped_data();
+	buffer->handle = vkBuffer;
+	buffer->mapped_data = vkBuffer->get_mapped_data();
 	buffer->size = buffer->bufferInfo.size;
 	buffer->type = rhi::Resource::ResourceType::BUFFER;
 
 	if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::STORAGE_BUFFER))
-		_descriptorManager->allocate_bindless_descriptor(vulkanBuffer, buffer->size, 0);
+		_descriptorManager->allocate_bindless_descriptor(vkBuffer, buffer->size, 0);
 	
 	if (data == nullptr)
 		return;
 	if (data != nullptr && buffer->bufferInfo.memoryUsage == rhi::MemoryUsage::GPU)
-	{
-		LOG_ERROR("Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
-		return;
-	}
-	vulkanBuffer->copy_from(_device.get(), data, buffer->size);
+		LOG_FATAL("VulkanRHI::create_buffer(): Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
+	
+	vkBuffer->copy_from(_device.get(), data, buffer->size);
 }
 
 void vulkan::VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
@@ -156,17 +145,10 @@ void vulkan::VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
 
 void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data)
 {
-	if (!data || !buffer || !buffer->handle || size == 0)
-	{
-		LOG_ERROR("Can't use update_buffer_data if buffer, data or size is invalid")
-		return;
-	}
+	assert(data && buffer->handle && size);
 	
 	if (buffer->bufferInfo.memoryUsage == rhi::MemoryUsage::GPU)
-	{
-		LOG_ERROR("Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::update_buffer_data(): Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
 
 	VulkanBuffer* vulkanBuffer = static_cast<VulkanBuffer*>(buffer->handle);
 	vulkanBuffer->copy_from(_device.get(), data, size);
@@ -174,11 +156,7 @@ void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, v
 
 void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo)
 {
-	if (!texture)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Invalid rhi::Texture pointer")
-		return;
-	}
+	assert(texture && texInfo);
 
 	texture->textureInfo = *texInfo;
 	create_texture(texture);
@@ -186,20 +164,14 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 
 void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 {
-	if (!texture)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Invalid rhi::Texture pointer")
-		return;
-	}
+	assert(texture);
 
 	VkImageCreateInfo createInfo{};
 	auto vkTexture = _vkObjectPool.allocate<VulkanTexture>(_device.get(), &texture->textureInfo, createInfo);
 	
 	if (vkTexture->get_handle() == VK_NULL_HANDLE)
-	{
-		LOG_ERROR("VulkanRHI::create_texture(): Failed to allocate VkImage")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::create_texture(): Failed to allocate VkImage")
+	
 	texture->handle = vkTexture;
 	texture->mapped_data = vkTexture->get_mapped_data();
 	texture->type = rhi::Resource::ResourceType::TEXTURE;
@@ -209,10 +181,7 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 
 void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::TextureViewInfo* viewInfo, rhi::Texture* texture)
 {
-	if (!textureView || !texture)
-	{
-		LOG_ERROR("Can't create texture view if one of the parameters is invalid")
-	}
+	assert(textureView && viewInfo && texture);
 
 	textureView->viewInfo = *viewInfo;
 	create_texture_view(textureView, texture);
@@ -220,10 +189,7 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 
 void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture)
 {
-	if (!textureView || !texture)
-	{
-		LOG_ERROR("Can't create texture view if one of the parameters is invalid")
-	}
+	assert(textureView && texture);
 
 	rhi::TextureViewInfo* viewInfo = &textureView->viewInfo;
 	
@@ -254,21 +220,13 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 
 void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo)
 {
-	if (!sampler)
-	{
-		LOG_ERROR("Can't create sampler if sampler parameter is invalid")
-		return;
-	}
+	assert(sampler && sampInfo);
+	
 	if (sampInfo->addressMode == rhi::AddressMode::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_sampler(): Undefined address mode. Failed to create VkSampler")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::create_sampler(): Undefined address mode. Failed to create VkSampler")
+	
 	if (sampInfo->filter == rhi::Filter::UNDEFINED)
-	{
-		LOG_ERROR("VulkanRHI::create_sampler(): Undefined filter. Failed to create VkSampler")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::create_sampler(): Undefined filter. Failed to create VkSampler")
 	
 	auto vkSampler = _vkObjectPool.allocate<VulkanSampler>(_device.get(), sampInfo);
 	sampler->handle = vkSampler;
@@ -279,16 +237,7 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 
 void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shaderInfo)
 {
-	if (!shader)
-	{
-		LOG_ERROR("VulkanRHI::create_shader(): Invalid pointer to rhi::Shader")
-		return;
-	}
-	if (!shaderInfo)
-	{
-		LOG_ERROR("VulkanRHI::create_shader(): Invalid pointer to rhi::Shader")
-		return;
-	}
+	assert(shader && shaderInfo);
 
 	auto vkShader = _vkObjectPool.allocate<VulkanShader>(_device->get_device());
 	vkShader->create_shader_module(shaderInfo);
@@ -298,12 +247,8 @@ void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shad
 
 void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info)
 {
-	if (!pipeline || !info)
-	{
-		LOG_ERROR("VulkanRHI::create_graphics_pipeline(): Invalid pointers")
-		return;
-	}
-
+	assert(pipeline && info);
+	
 	auto vulkanPipeline = _vkObjectPool.allocate<VulkanPipeline>(_device.get(), info, _pipelineCache.get_handle(), _pipelineLayoutCache.get());
 	
 	pipeline->type = rhi::PipelineType::GRAPHICS;
@@ -312,11 +257,7 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 
 void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info)
 {
-	if (!pipeline || !info)
-	{
-		LOG_ERROR("VulkanRHI::create_compute_pipeline(): Invalid pointers")
-		return;
-	}
+	assert(pipeline && info);
 	
 	auto vulkanPipeline = _vkObjectPool.allocate<VulkanPipeline>(_device.get(), info, _pipelineCache.get_handle(), _pipelineLayoutCache.get());
 	
@@ -326,21 +267,10 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 
 void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
 {
+	assert(renderPass && passInfo);
+	
 	if (passInfo->renderBuffers.empty())
-	{
-		LOG_ERROR("VulkanRHI::create_render_pass(): There are no render targets")
-		return;
-	}
-	if (!renderPass)
-	{
-		LOG_ERROR("VulkanRHI::create_render_pass(): Invalid pointer to rhi::RenderPass")
-		return;
-	}
-	if (!passInfo)
-	{
-		LOG_ERROR("VulkanRHI::create_render_pass(): Invalid pointer to rhi::RenderPassInfo")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::create_render_pass(): There are no render targets")
 
 	auto vkRenderPass = _vkObjectPool.allocate<VulkanRenderPass>(_device.get(), passInfo);
 	renderPass->handle = vkRenderPass;
@@ -363,6 +293,8 @@ uint32_t vulkan::VulkanRHI::get_descriptor_index(rhi::Sampler* sampler)
 
 void vulkan::VulkanRHI::bind_uniform_buffer(rhi::Buffer* buffer, uint32_t slot, uint32_t size, uint32_t offset)
 {
+	assert(buffer);
+	
 	rhi::BufferInfo& bufferInfo = buffer->bufferInfo;
 	if (!has_flag(bufferInfo.bufferUsage, rhi::ResourceUsage::UNIFORM_BUFFER))
 		LOG_FATAL("VulkanRHI::bind_uniform_buffer(): Can't bind buffer without ResourceUsage::UNIFORM_BUFFER")
@@ -416,21 +348,14 @@ void vulkan::VulkanRHI::wait_fences()
 
 void vulkan::VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Buffer* dstBuffer, uint32_t size, uint32_t srcOffset, uint32_t dstOffset)
 {
-	if (!cmd || !srcBuffer || !dstBuffer)
-	{
-		LOG_INFO("VulkanRHI::copy_buffer(): Invalid pointers")
-		return;
-	}
+	assert(size && cmd->handle && srcBuffer->handle && dstBuffer->handle);
+	
 	if (!has_flag(srcBuffer->bufferInfo.bufferUsage, rhi::ResourceUsage::TRANSFER_SRC))
-	{
-		LOG_INFO("VulkanRHI::copy_buffer(): Source buffer doesn't have TRANSFER_SRC usage")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::copy_buffer(): Source buffer doesn't have TRANSFER_SRC usage")
+		
 	if (!has_flag(dstBuffer->bufferInfo.bufferUsage, rhi::ResourceUsage::TRANSFER_DST))
-	{
-		LOG_INFO("VulkanRHI::copy_buffer(): Destination buffer doesn't have TRANSFER_DST usage")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::copy_buffer(): Destination buffer doesn't have TRANSFER_DST usage")
+	
 	// TODO Maybe here is a bug with command buffer, I have to test this method
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	//VkCommandBuffer vkCmd = *static_cast<VkCommandBuffer*>(cmd->handle);
@@ -454,11 +379,8 @@ void vulkan::VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuf
 
 void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcTexture, rhi::Texture* dstTexture, std::array<int32_t, 3>& srcOffset, std::array<int32_t, 3>& dstOffset, uint32_t srcMipLevel, uint32_t dstMipLevel, uint32_t srcBaseLayer, uint32_t dstBaseLayer)
 {
-	if (!cmd || !srcTexture || !dstTexture)
-	{
-		LOG_INFO("VulkanRHI::blit_texture(): Invalid pointers")
-		return;
-	}
+	assert(cmd->handle && srcTexture->handle && dstTexture->handle);
+	
 	if (!has_flag(srcTexture->textureInfo.textureUsage, rhi::ResourceUsage::TRANSFER_SRC))
 	{
 		LOG_INFO("VulkanRHI::blit_texture(): Source buffer doesn't have TRANSFER_SRC usage")
@@ -506,11 +428,8 @@ void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcT
 
 void vulkan::VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Texture* dstTexture)
 {
-	if (!cmd || !srcBuffer || !dstTexture)
-	{
-		LOG_INFO("VulkanRHI::copy_buffer_to_texture(): Invalid pointers")
-		return;
-	}
+	assert(cmd->handle && srcBuffer->handle && dstTexture->handle);
+	
 	if (!has_flag(srcBuffer->bufferInfo.bufferUsage, rhi::ResourceUsage::TRANSFER_SRC))
 	{
 		LOG_INFO("VulkanRHI::copy_buffer_to_texture(): Source buffer doesn't have TRANSFER_SRC usage")
@@ -575,6 +494,8 @@ void vulkan::VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buf
 
 void vulkan::VulkanRHI::set_viewports(rhi::CommandBuffer* cmd, std::vector<rhi::Viewport>& viewports)
 {
+	assert(cmd && cmd->handle);
+	
 	VkViewport vulkanViewports[MAX_VIEWPORT_COUNT];
 	if (viewports.size() > MAX_VIEWPORT_COUNT)
 		LOG_FATAL("VulkanRHI::set_viewports(): You want to set {} viewports if there cannot be more than {} viewports", viewports.size(), MAX_VIEWPORT_COUNT)
@@ -621,16 +542,11 @@ void vulkan::VulkanRHI::push_constants(rhi::CommandBuffer* cmd, rhi::Pipeline* p
 
 void vulkan::VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
 {
-	if (!cmd || !buffer)
-	{
-		LOG_ERROR("VulkanRHI::bind_vertex_buffer(): Invalid pointers")
-		return;
-	}
+	assert(cmd->handle && buffer->handle);
+	
 	if (!has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::VERTEX_BUFFER))
-	{
-		LOG_ERROR("VulkanRHI::bind_vertex_buffer(): Buffer wasn't created with VERTEX_BUFFER usage")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::bind_vertex_buffer(): Buffer wasn't created with VERTEX_BUFFER usage")
+	
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
 
@@ -640,16 +556,11 @@ void vulkan::VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer*
 
 void vulkan::VulkanRHI::bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
 {
-	if (!cmd || !buffer)
-	{
-		LOG_ERROR("VulkanRHI::bind_index_buffer(): Invalid pointers")
-		return;
-	}
+	assert(cmd->handle && buffer->handle);
+	
 	if (!has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::INDEX_BUFFER))
-	{
-		LOG_ERROR("VulkanRHI::bind_index_buffer(): Buffer wasn't created with INDEX_BUFFER usage")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::bind_index_buffer(): Buffer wasn't created with INDEX_BUFFER usage")
+	
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
 
@@ -659,11 +570,8 @@ void vulkan::VulkanRHI::bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* 
 
 void vulkan::VulkanRHI::bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline)
 {
-	if (!cmd || !pipeline)
-	{
-		LOG_ERROR("VulkanRHI::bind_pipeline(): Invalid pointers")
-		return;
-	}
+	assert(cmd->handle && pipeline->handle);
+	
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanPipeline* vkPipeline = get_vk_obj(pipeline);
 	vkPipeline->bind(vkCmd->get_handle(), _currentImageIndex);
@@ -671,11 +579,7 @@ void vulkan::VulkanRHI::bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pi
 
 void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass, rhi::ClearValues& clearValues)
 {
-	if (!cmd || !renderPass)
-	{
-		LOG_ERROR("VulkanRHI::bind_render_pass(): Invalid pointers")
-		return;
-	}
+	assert(cmd->handle && renderPass->handle);
 
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanRenderPass* pass = get_vk_obj(renderPass);
@@ -687,17 +591,15 @@ void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPa
 
 void vulkan::VulkanRHI::end_render_pass(rhi::CommandBuffer* cmd)
 {
-	if (!cmd)
-	{
-		LOG_ERROR("VulkanRHI::end_render_pass(): Invalid pointer")
-		return;
-	}
+	assert(cmd->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	vkCmdEndRenderPass(vkCmd->get_handle());
 }
 
 void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingBeginInfo* beginInfo)
 {
+	assert(cmd->handle && beginInfo);
+	
 	VkRenderingInfo renderingInfo{};
 	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
 
@@ -789,11 +691,14 @@ void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingB
 
 void vulkan::VulkanRHI::end_rendering(rhi::CommandBuffer* cmd)
 {
+	assert(cmd->handle);
 	vkCmdEndRendering(get_vk_obj(cmd)->get_handle());
 }
 
 void vulkan::VulkanRHI::begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi::ClearValues* clearValues)
 {
+	assert(cmd->handle && clearValues);
+		
 	VkRenderingInfo renderingInfo{};
 	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
 	renderingInfo.pDepthAttachment = nullptr;
@@ -820,17 +725,14 @@ void vulkan::VulkanRHI::begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi:
 
 void vulkan::VulkanRHI::end_rendering_swap_chain(rhi::CommandBuffer* cmd)
 {
+	assert(cmd->handle);
 	vkCmdEndRendering(get_vk_obj(cmd)->get_handle());
 	set_swap_chain_image_barrier(cmd, true);
 }
 
 void vulkan::VulkanRHI::draw(rhi::CommandBuffer* cmd, uint64_t vertexCount)
 {
-	if (!cmd)
-	{
-		LOG_ERROR("VulkanRHI::draw(): Invalid pointer")
-		return;
-	}
+	assert(cmd->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	vkCmdDraw(vkCmd->get_handle(), vertexCount, 1, 0, 0);
 }
@@ -843,22 +745,14 @@ void vulkan::VulkanRHI::draw_indexed(
 	int32_t vertexOffset,
 	uint32_t firstInstance)
 {
-	if (!cmd)
-	{
-		LOG_ERROR("VulkanRHI::draw_indexed(): Invalid pointer")
-		return;
-	}
+	assert(cmd->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	vkCmdDrawIndexed(vkCmd->get_handle(), indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
 void vulkan::VulkanRHI::draw_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
 {
-	if (!cmd || !buffer)
-	{
-		LOG_ERROR("VulkanRHI::draw_indirect(): Invalid pointers")
-		return;
-	}
+	assert(cmd->handle && buffer->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
 	vkCmdDrawIndirect(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, drawCount, stride);
@@ -866,11 +760,7 @@ void vulkan::VulkanRHI::draw_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buff
 
 void vulkan::VulkanRHI::draw_indexed_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
 {
-	if (!cmd || !buffer)
-	{
-		LOG_ERROR("VulkanRHI::draw_indirect(): Invalid pointers")
-		return;
-	}
+	assert(cmd->handle && buffer->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
 	vkCmdDrawIndexedIndirect(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, drawCount, stride);
@@ -878,22 +768,14 @@ void vulkan::VulkanRHI::draw_indexed_indirect(rhi::CommandBuffer* cmd, rhi::Buff
 
 void vulkan::VulkanRHI::dispatch(rhi::CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-	if (!cmd)
-	{
-		LOG_ERROR("VulkanRHI::dispatch(): Invalid pointer")
-		return;
-	}
+	assert(cmd->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	vkCmdDispatch(vkCmd->get_handle(), groupCountX, groupCountY, groupCountZ);
 }
 
 void vulkan::VulkanRHI::fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data)
 {
-	if (!cmd || !buffer)
-	{
-		LOG_ERROR("VulkanRHI::fill_buffer(): Invalid pointers")
-		return;
-	}
+	assert(cmd->handle && buffer->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
 	vkCmdFillBuffer(vkCmd->get_handle(), *vkBuffer->get_handle(), dstOffset, size, data);
@@ -901,6 +783,8 @@ void vulkan::VulkanRHI::fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer
 
 void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vector<rhi::PipelineBarrier>& barriers)
 {
+	assert(cmd->handle && !barriers.empty());
+	
 	std::vector<VkMemoryBarrier> memoryBarriers;
 	std::vector<VkBufferMemoryBarrier> bufferBarriers;
 	std::vector<VkImageMemoryBarrier> imageBarriers;
@@ -982,8 +866,7 @@ void vulkan::VulkanRHI::wait_for_gpu()
 
 void vulkan::VulkanRHI::create_query_pool(rhi::QueryPool* queryPool, rhi::QueryPoolInfo* queryPoolInfo)
 {
-	assert(queryPool);
-	assert(queryPoolInfo);
+	assert(queryPool && queryPoolInfo);
 
 	queryPool->info = *queryPoolInfo;
 	create_query_pool(queryPool);
@@ -991,6 +874,8 @@ void vulkan::VulkanRHI::create_query_pool(rhi::QueryPool* queryPool, rhi::QueryP
 
 void vulkan::VulkanRHI::create_query_pool(rhi::QueryPool* queryPool)
 {
+	assert(queryPool);
+	
 	if (queryPool->info.type == rhi::QueryType::UNDEFINED)
 		LOG_FATAL("VulkanRHI::create_query_pool(): Can't create query pool with rhi::QueryType == UNDEFINED")
 	if (!queryPool->info.queryCount)
@@ -1001,8 +886,7 @@ void vulkan::VulkanRHI::create_query_pool(rhi::QueryPool* queryPool)
 
 void vulkan::VulkanRHI::begin_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex)
 {
-	assert(cmd);
-	assert(queryPool);
+	assert(cmd->handle && queryPool->handle);
 
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanQueryPool* vkQueryPool = get_vk_obj(queryPool);
@@ -1023,8 +907,7 @@ void vulkan::VulkanRHI::begin_query(const rhi::CommandBuffer* cmd, const rhi::Qu
 
 void vulkan::VulkanRHI::end_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex)
 {
-	assert(cmd);
-	assert(queryPool);
+	assert(cmd->handle && queryPool->handle);
 
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanQueryPool* vkQueryPool = get_vk_obj(queryPool);
@@ -1049,7 +932,7 @@ void vulkan::VulkanRHI::get_query_pool_result(
 	uint32_t queryCount,
 	uint32_t stride)
 {
-	assert(queryPool);
+	assert(queryPool->handle);
 
 	VulkanQueryPool* vkQueryPool = get_vk_obj(queryPool);
 	outputData.resize(queryCount);
@@ -1066,8 +949,7 @@ void vulkan::VulkanRHI::get_query_pool_result(
 
 void vulkan::VulkanRHI::reset_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount)
 {
-	assert(cmd);
-	assert(queryPool);
+	assert(cmd->handle && queryPool->handle);
 
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanQueryPool* vkQueryPool = get_vk_obj(queryPool);

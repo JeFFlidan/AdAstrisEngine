@@ -115,7 +115,6 @@ namespace ad_astris::vulkan
 			virtual void add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vector<rhi::PipelineBarrier>& barriers) final override;
 
 			virtual void wait_for_gpu() override;
-			virtual uint32_t get_buffer_count() override { return _swapChain->get_buffers_count(); }
 
 			virtual void create_query_pool(rhi::QueryPool* queryPool, rhi::QueryPoolInfo* queryPoolInfo) override;
 			virtual void create_query_pool(rhi::QueryPool* queryPool) override;
@@ -128,6 +127,9 @@ namespace ad_astris::vulkan
 				uint32_t queryCount,
 				uint32_t stride) override;
 			virtual void reset_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount) override;
+		
+			virtual uint32_t get_buffer_count() override { return _swapChain->get_buffers_count(); }
+			virtual uint64_t get_timestamp_frequency() override { return _timestampFrequency; }
 
 			VulkanDevice* get_device() { return _device.get(); }
 			VkInstance get_instance() { return _instance; }
@@ -149,6 +151,7 @@ namespace ad_astris::vulkan
 			VulkanAttachmentManager _attachmentManager;
 
 			uint32_t _currentImageIndex{ 0 };
+			uint64_t _timestampFrequency{ 0 };
 
 			vkb::Instance create_instance();
 
