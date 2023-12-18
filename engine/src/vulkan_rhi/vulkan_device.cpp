@@ -65,7 +65,7 @@ void vulkan::VulkanDevice::cleanup()
 	vkDestroyDevice(_device, nullptr);
 	if (_surface == VK_NULL_HANDLE)
 		LOG_ERROR("NULL HANDLE")
-	//vkDestroySurfaceKHR(_instance, _surface, nullptr);
+	vkDestroySurfaceKHR(_instance, _surface, nullptr);
 }
 
 void vulkan::VulkanDevice::create_surface(VkInstance instance, acore::IWindow* window)
@@ -133,6 +133,7 @@ vkb::PhysicalDevice vulkan::VulkanDevice::pick_physical_device(vkb::Instance& in
 	VkPhysicalDeviceFeatures enabledFeatures{};
 	set_feature(supportedFeatures.samplerAnisotropy, enabledFeatures.samplerAnisotropy, "samplerAnisotropy");
 	set_feature(supportedFeatures.fragmentStoresAndAtomics, enabledFeatures.fragmentStoresAndAtomics, "fragmentStoresAndAtomics");
+	set_feature(supportedFeatures.pipelineStatisticsQuery, enabledFeatures.pipelineStatisticsQuery, "pipelineStatisticsQuery");
 	
 	physSelector.set_required_features(enabledFeatures);
 	physSelector.set_required_features_12(features1_2);

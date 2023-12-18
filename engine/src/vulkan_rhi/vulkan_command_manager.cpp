@@ -227,8 +227,11 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 	}
 
 	// TODO VkPipelineStageFlags. Maybe I have to remove it because the same flag is set up in get_cmd_buffer method of VulkanCommandPool
-	if (_firstSubmissionInFrame.load())
+	if (_firstCmdBuffer.load())
+	{
 		cmdBuffer->_waitSemaphores.push_back(_syncManager.get_acquire_semaphore(_imageIndex));
+		_firstCmdBuffer.store(false);
+	}
 	// VkPipelineStageFlags flag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	// cmdBuffer->_waitFlags.push_back(flag);
 
@@ -275,8 +278,6 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType, bool useSign
 			break;
 		}
 	}
-
-	_firstSubmissionInFrame.store(false);
 }
 
 bool vulkan::VulkanCommandManager::acquire_next_image(VulkanSwapChain* swapChain, uint32_t& nextImageIndex, uint32_t currentFrameIndex)
@@ -291,7 +292,7 @@ bool vulkan::VulkanCommandManager::acquire_next_image(VulkanSwapChain* swapChain
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 		return false;
 
-	_firstSubmissionInFrame.store(true);
+	_firstCmdBuffer.store(true);
 	_imageIndex = nextImageIndex;
 	
 	return true;

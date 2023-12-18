@@ -1,11 +1,11 @@
 ﻿#pragma once
 
 #include "core/object_pool.h"
+#include "vulkan_device.h"
 #include <set>
 
 namespace ad_astris::vulkan
 {
-	class VulkanDevice;
 	class IVulkanObject;
 	
 	class VulkanObjectPool : private ObjectPool
@@ -22,12 +22,15 @@ namespace ad_astris::vulkan
 			}
 
 			template<typename ResourceType>
-			void free(ResourceType* resource)
+			void free(ResourceType* resource, VulkanDevice* vulkanDevice)
 			{
 				auto it = _vkObjects.find(resource);
 				if (it != _vkObjects.end())
+				{
+					resource->destroy(vulkanDevice);
 					_vkObjects.erase(it);
-				ObjectPool::free(resource);
+					ObjectPool::free(resource);
+				}
 			}
 
 			void cleanup(VulkanDevice* device);

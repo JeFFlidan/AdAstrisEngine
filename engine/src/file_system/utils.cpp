@@ -115,6 +115,19 @@ bool io::Utils::exists(FileSystem* fileSystem, const URI& path)
 	return std::filesystem::exists(std::filesystem::path(newPath.c_str()));
 }
 
+void io::Utils::create_folders(FileSystem* fileSystem, const URI& folderPath)
+{
+	if (is_relative(folderPath))
+	{
+		URI path = get_absolute_path_to_file(fileSystem->get_project_root_path(), folderPath);
+		std::filesystem::create_directories(path.c_str());
+	}
+	else
+	{
+		std::filesystem::create_directories(folderPath.c_str());
+	}
+}
+
 io::URI io::Utils::find_file_with_specific_extension(const URI& folderPath, const std::string& extension)
 {
 	for (const auto& entry : std::filesystem::directory_iterator(folderPath.c_str()))

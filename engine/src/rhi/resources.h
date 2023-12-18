@@ -335,13 +335,13 @@ namespace ad_astris::rhi
 			UNDEFINED_TYPE
 		} type = ResourceType::UNDEFINED_TYPE;
 
-		void* mapped_data{ nullptr };		// Pointer to Vulkan or D3D12 buffer 
+		void* mappedData{ nullptr };		// Pointer to Vulkan or D3D12 buffer 
 		uint64_t size{ 0 };		// Size in bytes
 
 		bool is_buffer() { return type == ResourceType::BUFFER; }
 		bool is_texture() { return type == ResourceType::TEXTURE; }
 		bool is_undefined() { return type == ResourceType::UNDEFINED_TYPE; }
-		bool is_mapped_data_valid() { return mapped_data && size; }
+		bool is_mapped_data_valid() { return mappedData && size; }
 	};
 
 	struct SubresourceRange

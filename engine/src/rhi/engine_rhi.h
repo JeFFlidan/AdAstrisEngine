@@ -121,6 +121,14 @@ namespace ad_astris::rhi
 				uint32_t queryIndex,
 				uint32_t queryCount,
 				uint32_t stride) = 0;
+			virtual void copy_query_pool_results(
+				const CommandBuffer* cmd,
+				const QueryPool* queryPool,
+				uint32_t firstQuery,
+				uint32_t queryCount,
+				uint32_t stride,
+				const Buffer* dstBuffer,
+				uint32_t dstOffset = 0) = 0;
 			virtual void reset_query(const CommandBuffer* cmd, const QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount) = 0;
 		
 			virtual uint32_t get_buffer_count() = 0;

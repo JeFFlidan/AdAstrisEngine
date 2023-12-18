@@ -120,7 +120,7 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 		LOG_FATAL("VulkanRHI::create_buffer(): Failed to allocate buffer")
 	
 	buffer->handle = vkBuffer;
-	buffer->mapped_data = vkBuffer->get_mapped_data();
+	buffer->mappedData = vkBuffer->get_mapped_data();
 	buffer->size = buffer->bufferInfo.size;
 	buffer->type = rhi::Resource::ResourceType::BUFFER;
 
@@ -138,7 +138,7 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 void vulkan::VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
 {
 	VulkanBuffer* vulkanBuffer = get_vk_obj(buffer);
-	_vkObjectPool.free(vulkanBuffer);
+	_vkObjectPool.free(vulkanBuffer, _device.get());
 	
 	buffer->handle = nullptr;
 }
@@ -173,7 +173,7 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 		LOG_FATAL("VulkanRHI::create_texture(): Failed to allocate VkImage")
 	
 	texture->handle = vkTexture;
-	texture->mapped_data = vkTexture->get_mapped_data();
+	texture->mappedData = vkTexture->get_mapped_data();
 	texture->type = rhi::Resource::ResourceType::TEXTURE;
 
 	_attachmentManager.add_attachment_texture(vkTexture, createInfo);
@@ -309,6 +309,7 @@ void vulkan::VulkanRHI::bind_uniform_buffer(rhi::Buffer* buffer, uint32_t slot, 
 void vulkan::VulkanRHI::begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType)
 {
 	cmd->handle = _cmdManager->get_command_buffer(queueType);
+	cmd->queueType = queueType;
 }
 
 void vulkan::VulkanRHI::wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd)
@@ -957,6 +958,35 @@ void vulkan::VulkanRHI::reset_query(const rhi::CommandBuffer* cmd, const rhi::Qu
 	vkCmdResetQueryPool(vkCmd->get_handle(), vkQueryPool->get_handle(), queryIndex, queryCount);
 }
 
+void vulkan::VulkanRHI::copy_query_pool_results(
+	const rhi::CommandBuffer* cmd,
+	const rhi::QueryPool* queryPool,
+	uint32_t firstQuery,
+	uint32_t queryCount,
+	uint32_t stride,
+	const rhi::Buffer* dstBuffer,
+	uint32_t dstOffset)
+{
+	assert(cmd->handle && queryPool->handle && dstBuffer->handle);
+
+	if (cmd->queueType != rhi::QueueType::GRAPHICS && cmd->queueType != rhi::QueueType::COMPUTE)
+		LOG_FATAL("VulkanRHI::copy_query_pool_results(): Can't copy query results using not graphics or compute command buffer")
+
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanQueryPool* vkQueryPool = get_vk_obj(queryPool);
+	VulkanBuffer* vkBuffer = get_vk_obj(dstBuffer);
+
+	vkCmdCopyQueryPoolResults(
+		vkCmd->get_handle(),
+		vkQueryPool->get_handle(),
+		firstQuery,
+		queryCount,
+		*vkBuffer->get_handle(),
+		dstOffset,
+		sizeof(uint64_t),
+		VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+}
+
 // private methods
 vkb::Instance vulkan::VulkanRHI::create_instance()
 {
@@ -970,7 +1000,7 @@ vkb::Instance vulkan::VulkanRHI::create_instance()
 #else
 	builder.request_validation_layers(false);
 #endif
-	builder.request_validation_layers(false);
+	//builder.request_validation_layers(false);
 	LOG_INFO("Finish creating Vulkan instance")
 	return builder.build().value();
 }

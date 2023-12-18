@@ -126,6 +126,14 @@ namespace ad_astris::vulkan
 				uint32_t queryIndex,
 				uint32_t queryCount,
 				uint32_t stride) override;
+			virtual void copy_query_pool_results(
+				const rhi::CommandBuffer* cmd,
+				const rhi::QueryPool* queryPool,
+				uint32_t firstQuery,
+				uint32_t queryCount,
+				uint32_t stride,
+				const rhi::Buffer* dstBuffer,
+				uint32_t dstOffset = 0) override;
 			virtual void reset_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount) override;
 		
 			virtual uint32_t get_buffer_count() override { return _swapChain->get_buffers_count(); }

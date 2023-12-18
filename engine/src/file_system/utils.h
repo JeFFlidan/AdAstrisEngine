@@ -31,6 +31,13 @@ namespace ad_astris::io
 			static bool exists(FileSystem* fileSystem, const URI& path);
 			static URI find_file_with_specific_extension(const URI& folderPath, const std::string& extension);
 
+			/** Creates a new folder (or folders, depending on the number of nonexistent folders in the path) in the project root.
+			 * @param fileSystem must be valid pointer to a FileSystem object.
+			 * @param folderPath relative path or absolute path. If path is relative,
+			 * the project root folder will be used as the base folder. 
+			 */
+			static void create_folders(FileSystem* fileSystem, const URI& folderPath);
+
 			/**
 			 * \brief Reads file data and stores it into a vector
 			 * \param fileSystem must be a valid pointer to the FileSystem

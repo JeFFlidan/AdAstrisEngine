@@ -28,6 +28,6 @@ namespace ad_astris::vulkan
 			ImFont* _fontSize14;
 			ImFont* _fontSize17;
 
-			void create_icon(rhi::CommandBuffer& cmd, rhi::Sampler& sampler, uicore::TextureInfo& iconInfo, unsigned char* imageData);
+			void create_icon(rhi::CommandBuffer& cmd, rhi::Buffer& cpuBuffer, rhi::Sampler& sampler, uicore::TextureInfo& iconInfo, unsigned char* imageData);
 	};
 }

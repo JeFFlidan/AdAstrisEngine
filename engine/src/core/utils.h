@@ -2,6 +2,7 @@
 
 #include "tuple.h"
 #include <vector>
+#include <ctime>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -80,6 +81,27 @@ namespace ad_astris
 			static void hash_combine(uint64_t& seed, const T& val)
 			{
 				seed ^= std::hash<T>()(val) + 0x9e3779b97f4a7c15LLU  + (seed << 12) + (seed >> 4);
+			}
+
+			static std::string get_current_date_time()
+			{
+				constexpr const char* UNDEFINED_TIME = "UNDEFINED_TIME";
+				
+				std::time_t now = std::time(0);
+				std::tm time;
+				auto errorCode = localtime_s(&time, &now);
+				if (errorCode)
+				{
+					LOG_ERROR("CoreUtils::get_current_date_time(): Failed to get date and time using localtime_s. {} will be returned.", UNDEFINED_TIME)
+					return UNDEFINED_TIME;
+				}
+				
+				char date[80];
+				if (std::strftime(date, sizeof(date), "%d-%m-%Y_%H-%M-%S", &time))
+					return date;
+
+				LOG_ERROR("CoreUtils::get_current_date_time(): Failed to format date and time using strftime. {} will be returned.", UNDEFINED_TIME)
+				return UNDEFINED_TIME;
 			}
 	};
 }

@@ -91,6 +91,8 @@ void VulkanBuffer::parse_buffer_info(rhi::BufferInfo* inBufferInfo, VkBufferCrea
 	outAllocationInfo.usage = get_memory_usage(inBufferInfo->memoryUsage);
 	if (outAllocationInfo.usage == VMA_MEMORY_USAGE_UNKNOWN)
 		LOG_FATAL("VulkanBuffer::parse_buffer_info(): Invalid memory usage")
+
+	_bufferSize = inBufferInfo->size;
 }
 
 void VulkanBuffer::allocate_buffer(VulkanDevice* device, VkBufferCreateInfo& createInfo, VmaAllocationCreateInfo& allocInfo)

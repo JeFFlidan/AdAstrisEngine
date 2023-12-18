@@ -167,7 +167,6 @@ void RenderGraph::draw(tasks::TaskGroup* taskGroup)
 	_rhi->begin_rendering_swap_chain(&cmd, &clearValues);
 	_swapChainExecutor->execute(&cmd);
 	_rhi->end_rendering_swap_chain(&cmd);
-	_rhi->submit();
 }
 
 void RenderGraph::solve_graph(RenderPass* passHandle, uint32_t passesInStackCount)

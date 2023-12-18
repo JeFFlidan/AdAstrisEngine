@@ -32,7 +32,7 @@ namespace ad_astris::vulkan
 		
 		private:
 			VulkanDevice* _device;
-			VkCommandBuffer _cmdBuffer;
+			VkCommandBuffer _cmdBuffer{ VK_NULL_HANDLE };
 			VkSemaphore _signalSemaphore;
 			VkPipelineStageFlags _stageFlag;
 			std::vector<VkSemaphore> _waitSemaphores;
@@ -101,7 +101,7 @@ namespace ad_astris::vulkan
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _freeComputeCmdPools;
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedComputeCmdPools;
 			uint32_t _imageIndex{ 0 };
-			std::atomic_bool _firstSubmissionInFrame{ false };
+			std::atomic_bool _firstCmdBuffer{ false };
 
 			class SynchronizationManager
 			{

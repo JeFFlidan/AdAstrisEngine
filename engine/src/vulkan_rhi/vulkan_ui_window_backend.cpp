@@ -81,6 +81,7 @@ void VulkanUIWindowBackend::init(rhi::UIWindowBackendInitContext& initContext, r
 		{ "/icons/material.png", editor::IconType::MATERIAL_FILE }
 	};
 
+	std::vector<rhi::Buffer> cpuBuffers;
 	for (auto& pair : relativePathAndIconType)
 	{
 		io::URI filePath = _fileSystem->get_engine_root_path() + pair.first;
@@ -88,13 +89,16 @@ void VulkanUIWindowBackend::init(rhi::UIWindowBackendInitContext& initContext, r
 		unsigned char* imageData = stbi_load(filePath.c_str(), &textureInfo.width, &textureInfo.height, NULL, 4);
 		if (imageData == NULL)
 			LOG_FATAL("Failed to load icon {}", filePath.c_str());
-		create_icon(cmdBuffer, sampler, textureInfo, imageData);
+		create_icon(cmdBuffer, cpuBuffers.emplace_back(), sampler, textureInfo, imageData);
 		_icons[pair.second] = textureInfo;
 		stbi_image_free(imageData);
 	}
 	
 	_rhi->submit(rhi::QueueType::GRAPHICS, true);
 	ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+	for (auto& buffer : cpuBuffers)
+		_rhi->destroy_buffer(&buffer);
 }
 
 void VulkanUIWindowBackend::set_backbuffer(rhi::TextureView* textureView, rhi::Sampler sampler)
@@ -182,7 +186,7 @@ void VulkanUIWindowBackend::get_callbacks(rhi::UIWindowBackendCallbacks& callbac
 	};
 }
 
-void VulkanUIWindowBackend::create_icon(rhi::CommandBuffer& cmd, rhi::Sampler& sampler, uicore::TextureInfo& iconInfo, unsigned char* imageData)
+void VulkanUIWindowBackend::create_icon(rhi::CommandBuffer& cmd, rhi::Buffer& cpuBuffer, rhi::Sampler& sampler, uicore::TextureInfo& iconInfo, unsigned char* imageData)
 {
 	rhi::Texture texture;
 	texture.textureInfo.width = iconInfo.width;
@@ -195,15 +199,13 @@ void VulkanUIWindowBackend::create_icon(rhi::CommandBuffer& cmd, rhi::Sampler& s
 	texture.textureInfo.textureDimension = rhi::TextureDimension::TEXTURE2D;
 	texture.textureInfo.textureUsage = rhi::ResourceUsage::SAMPLED_TEXTURE | rhi::ResourceUsage::TRANSFER_DST;
 	_rhi->create_texture(&texture);
+	
+	cpuBuffer.bufferInfo.size = iconInfo.width * iconInfo.height * 4;
+	cpuBuffer.bufferInfo.bufferUsage = rhi::ResourceUsage::TRANSFER_SRC;
+	cpuBuffer.bufferInfo.memoryUsage = rhi::MemoryUsage::CPU;
+	_rhi->create_buffer(&cpuBuffer, imageData);
 
-	rhi::Buffer buffer;
-	buffer.bufferInfo.size = iconInfo.width * iconInfo.height * 4;
-	buffer.bufferInfo.bufferUsage = rhi::ResourceUsage::TRANSFER_SRC;
-	buffer.bufferInfo.memoryUsage = rhi::MemoryUsage::CPU;
-	_rhi->create_buffer(&buffer, imageData);
-
-	_rhi->copy_buffer_to_texture(&cmd, &buffer, &texture);
-	_rhi->destroy_buffer(&buffer);
+	_rhi->copy_buffer_to_texture(&cmd, &cpuBuffer, &texture);
 
 	rhi::TextureView textureView;
 	textureView.viewInfo.baseLayer = 0;
