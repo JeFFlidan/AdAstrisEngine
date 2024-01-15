@@ -62,6 +62,11 @@ namespace ad_astris::vulkan
 			{
 				return _properties1_3;
 			}
+
+			const VkPhysicalDeviceMemoryProperties2& get_memory_properties()
+			{
+				return _memoryProperties2;
+			}
 		
 		private:
 			VkSurfaceKHR _surface{ VK_NULL_HANDLE };
@@ -73,6 +78,7 @@ namespace ad_astris::vulkan
 			VkPhysicalDeviceVulkan11Properties _properties1_1{};
 			VkPhysicalDeviceVulkan12Properties _properties1_2{};
 			VkPhysicalDeviceVulkan13Properties _properties1_3{};
+			VkPhysicalDeviceMemoryProperties2 _memoryProperties2{};
 
 			std::vector<std::string> _requieredExtensions{
 				"VK_EXT_descriptor_indexing",
@@ -103,6 +109,7 @@ namespace ad_astris::vulkan
 				std::vector<std::string>& extensions,
 				VkPhysicalDeviceFeatures& features);
 			void get_properties();
+			void get_memory_properties_internal();
 			void set_feature(VkBool32 supported, VkBool32& feature, std::string featureName);
 			void set_optional_extension(std::string& ext);
 			void create_allocator();

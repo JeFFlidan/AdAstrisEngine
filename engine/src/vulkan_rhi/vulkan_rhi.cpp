@@ -987,6 +987,23 @@ void vulkan::VulkanRHI::copy_query_pool_results(
 		VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 }
 
+rhi::GPUMemoryUsage vulkan::VulkanRHI::get_memory_usage()
+{
+	rhi::GPUMemoryUsage memoryUsage;
+	VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+	vmaGetHeapBudgets(_device->get_allocator(), budgets);
+	const VkPhysicalDeviceMemoryProperties& memoryProperties = _device->get_memory_properties().memoryProperties;
+	for (auto i = 0; i != memoryProperties.memoryHeapCount; ++i)
+	{
+		if (memoryProperties.memoryHeaps[i].flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+		{
+			memoryUsage.total += budgets[i].budget;
+			memoryUsage.usage += budgets[i].usage;
+		}
+	}
+	return memoryUsage;
+}
+
 // private methods
 vkb::Instance vulkan::VulkanRHI::create_instance()
 {

@@ -835,6 +835,12 @@ namespace ad_astris::rhi
 	{
 		QueryPoolInfo info;
 	};
+
+	struct GPUMemoryUsage
+	{
+		uint64_t total{ 0 };
+		uint64_t usage{ 0 };
+	};
 }
 
 template<>

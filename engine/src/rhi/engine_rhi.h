@@ -133,5 +133,6 @@ namespace ad_astris::rhi
 		
 			virtual uint32_t get_buffer_count() = 0;
 			virtual uint64_t get_timestamp_frequency() = 0;
+			virtual GPUMemoryUsage get_memory_usage() = 0;
 	};
 }

@@ -45,6 +45,7 @@ vulkan::VulkanDevice::VulkanDevice(vkb::Instance& instance, acore::IWindow* wind
 	_physicalDevice = vkbPhysDevice.physical_device;
 	_device = vkbDevice.device;
 	get_properties();
+	get_memory_properties_internal();
 	create_allocator();
 
 	LOG_INFO("Finished initing Device class (Vulkan)")
@@ -221,6 +222,12 @@ void vulkan::VulkanDevice::get_supported_extensions_and_features(
 	vkGetPhysicalDeviceFeatures(physDevice, &features);
 	
 	LOG_INFO("Finish getting supported extensions and features")
+}
+
+void vulkan::VulkanDevice::get_memory_properties_internal()
+{
+	_memoryProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+	vkGetPhysicalDeviceMemoryProperties2(_physicalDevice, &_memoryProperties2);
 }
 
 void vulkan::VulkanDevice::get_properties()

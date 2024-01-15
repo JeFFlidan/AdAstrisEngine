@@ -138,6 +138,7 @@ namespace ad_astris::vulkan
 		
 			virtual uint32_t get_buffer_count() override { return _swapChain->get_buffers_count(); }
 			virtual uint64_t get_timestamp_frequency() override { return _timestampFrequency; }
+			virtual rhi::GPUMemoryUsage get_memory_usage() override;
 
 			VulkanDevice* get_device() { return _device.get(); }
 			VkInstance get_instance() { return _instance; }
