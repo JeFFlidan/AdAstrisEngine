@@ -8,6 +8,7 @@ constexpr uint32_t RANGE_COUNT = 512;
 ProfilerInstance::ProfilerInstance(ProfilerInstanceInitContext& initContext)
 {
 	_isEnabled = initContext.isEnabled;
+	_frameStatsManager = std::make_unique<FrameStatsManager>(initContext.frameStatsHistoryCapacity);
 
 	if (!_isEnabled)
 		return;
@@ -28,7 +29,7 @@ void ProfilerInstance::begin_cpu_frame()
 		init();
 
 	_cpuFrame = begin_cpu_range("CPU Frame");
-	_statistics.set_current_frame(_currentFrame);
+	_activeFrameStats = _frameStatsManager->allocate_frame_stats(_currentFrameID);
 }
 
 void ProfilerInstance::begin_gpu_frame()
@@ -54,7 +55,7 @@ void ProfilerInstance::end_gpu_frame()
 	gpuFrameRange->endTimeQueryIndex = _nextTimestampQuery.fetch_add(1);
 	GPURange* lastGpuRange = _activeGPURanges.back();
 	_rhi->end_query(&lastGpuRange->cmd, &_timestampQueryPool, gpuFrameRange->endTimeQueryIndex);
-	auto& buffer = get_current_result_buffer();
+	const rhi::Buffer& buffer = get_current_result_buffer();
 	_rhi->copy_query_pool_results(&lastGpuRange->cmd, &_timestampQueryPool, 0, _nextTimestampQuery.load(), sizeof(uint64_t), &buffer);
 }
 
@@ -81,10 +82,12 @@ void ProfilerInstance::end_frame()
 	if (!_isEnabled)
 		return;
 
+	_activeFrameStats->calculate_memory_usage(_rhi);
+	
 	end_cpu_range(_cpuFrame);
 	_activeCPURanges.clear();
 
-	++_currentFrame;
+	++_currentFrameID;
 	
 	const uint64_t* queryResults = (const uint64_t*)get_current_result_buffer().mappedData;
 	double timestampFrequence = (double)_rhi->get_timestamp_frequency() / 1000.0;
@@ -94,7 +97,7 @@ void ProfilerInstance::end_frame()
 		const uint64_t beginTime = queryResults[range->beginTimeQueryIndex];
 		const uint64_t endTime = queryResults[range->endTimeQueryIndex];
 		range->time = (float)abs((double)(endTime - beginTime) / timestampFrequence);
-		_statistics.add_range(range);
+		_activeFrameStats->add_range(range);
 		_gpuRangePool.free(range);
 	}
 
@@ -164,7 +167,7 @@ void ProfilerInstance::end_cpu_range(RangeID rangeID)
 	range->isFinished = true;
 
 	std::scoped_lock<std::mutex> locker(_cpuRangeMutex);
-	_statistics.add_range(range);
+	_activeFrameStats->add_range(range);
 	_cpuRangePool.free(range);
 }
 
@@ -196,8 +199,6 @@ void ProfilerInstance::init()
 	_cpuRangePool.allocate_new_pool(RANGE_COUNT);
 	_gpuRangePool.allocate_new_pool(RANGE_COUNT);
 
-	_statistics.set_max_frame_count(_maxFrameCount);
-
 	uint32_t bufferCount = _rhi->get_buffer_count();
 	for (auto i = 0; i != bufferCount; ++i)
 	{
@@ -213,5 +214,5 @@ void ProfilerInstance::init()
 
 const rhi::Buffer& ProfilerInstance::get_current_result_buffer()
 {
-	return _queryResultBuffers[_currentFrame % _rhi->get_buffer_count()];
+	return _queryResultBuffers[_currentFrameID % _rhi->get_buffer_count()];
 }

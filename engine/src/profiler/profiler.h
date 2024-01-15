@@ -83,6 +83,19 @@ namespace ad_astris::profiler
 					_profilerInstance->finish_collecting_pipeline_statistics();
 			}
 
+			static void set_frame_name(FrameID frameID, const FrameName& frameName)
+			{
+				const FrameStatsManager& frameStatsManager = _profilerInstance->get_frame_stats_manager();
+				frameStatsManager.get_frame_stats(frameID)->set_name(frameName);
+			}
+
+			// Returns a copy of FrameStats object
+			static std::unique_ptr<FrameStats> get_frame_stats(FrameID frameID)
+			{
+				FrameStatsManager& frameStatsManager = _profilerInstance->get_frame_stats_manager();
+				return std::make_unique<FrameStats>(*frameStatsManager.get_frame_stats(frameID));
+			}
+
 			static ProfilerInstance* get_profiler_instance()
 			{
 				return _profilerInstance;

@@ -1,9 +1,12 @@
 ﻿#include "serializer.h"
+#include "logger.h"
 #include "file_system/utils.h"
 #include "core/utils.h"
 #include <json.hpp>
 
 using namespace ad_astris::profiler;
+
+constexpr const char* FRAME_STATS_FILE_EXTENSION = "aaframestats";
 
 void Serializer::init(const ProfilerInstance* profilerInstance, io::FileSystem* fileSystem)
 {
@@ -12,52 +15,34 @@ void Serializer::init(const ProfilerInstance* profilerInstance, io::FileSystem* 
 	_fileSystem = fileSystem;
 }
 
-void Serializer::serialize(const std::string& statisticsFileName)
+void Serializer::save_frame_stats_file(FrameStats* frameStats)
 {
-	if (!is_initialized())
+	std::string serializedMetadata;
+	frameStats->serialize(serializedMetadata);
+
+	io::URI frameStatsFilePath{
+		fmt::format(
+			"{}/intermediate/profiler_stats/{}.{}",
+			_fileSystem->get_project_root_path().c_str(),
+			frameStats->get_name(),
+			FRAME_STATS_FILE_EXTENSION) };
+	
+	io::Utils::write_file(_fileSystem, frameStatsFilePath, serializedMetadata);
+	LOG_INFO("profiler::Serializer::save_frame_stats_file(): Saved frame stats file {}", frameStats->get_name())
+}
+
+void Serializer::read_frame_stats_file(const io::URI& frameStatsFilePath)
+{
+	std::string extension = io::Utils::get_file_extension(frameStatsFilePath);
+	if (extension != FRAME_STATS_FILE_EXTENSION)
 	{
-		LOG_WARNING("profiler::Serializer::serialize(): Profiler is not initialized")
+		LOG_ERROR("profiler::Serializer::read_frame_stats_file(): File has extension {} not {}", extension, FRAME_STATS_FILE_EXTENSION)
 		return;
 	}
 
-	const Statistics& statistics = _profilerInstance->get_statistics();
-
-	auto& cpuRangeTimings = statistics.get_cpu_range_timings();
-	nlohmann::json cpuRangesJson;
-	
-	for (auto& pair : cpuRangeTimings)
-	{
-		const RangeName& rangeName = pair.first;
-		const Timings& timings = pair.second;
-		float avgTime = std::accumulate(timings.begin(), timings.end(), 0.0f) / timings.size();
-		cpuRangesJson[rangeName] = avgTime;
-	}
-	
-	auto& gpuRangeTimings = statistics.get_gpu_range_timings();
-	nlohmann::json gpuRangesJson;
-
-	for (auto& pair : gpuRangeTimings)
-	{
-		const RangeName& rangeName = pair.first;
-		const Timings& timings = pair.second;
-		float avgTime = std::accumulate(timings.begin(), timings.end(), 0.0f) / timings.size();
-		gpuRangesJson[rangeName] = avgTime;
-	}
-
-	nlohmann::json statisticsJson;
-	statisticsJson["cpu_ranges"] = cpuRangesJson.dump();
-	statisticsJson["gpu_ranges"] = gpuRangesJson.dump();
-
-	io::URI statsFolderPath = io::Utils::get_absolute_path_to_file(_fileSystem->get_project_root_path(), "intermediate/profiler_stats");
-	if (!io::Utils::exists(statsFolderPath))
-	{
-		io::Utils::create_folders(_fileSystem, statsFolderPath);
-	}
-
-	std::string completeStatsFileName = statisticsFileName + "_" + CoreUtils::get_current_date_time() + ".aastats";
-	io::URI statsFilePath = io::Utils::get_absolute_path_to_file(statsFolderPath, completeStatsFileName);
-	std::string strStatistics = statisticsJson.dump();
-	io::Utils::write_file(_fileSystem, statsFilePath, strStatistics.c_str(), strStatistics.size());
+	std::string serializedMetadata;
+	io::Utils::read_file(_fileSystem, frameStatsFilePath, serializedMetadata);
+	_profilerInstance->get_frame_stats_manager().build_frame_stats(serializedMetadata);
 }
 
 bool Serializer::is_initialized()

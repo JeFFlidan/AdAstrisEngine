@@ -157,6 +157,15 @@ void io::Utils::read_file(FileSystem* fileSystem, const URI& path, uint8_t** dat
 	fileSystem->unmap_after_reading(tempData);
 }
 
+void io::Utils::read_file(FileSystem* fileSystem, const URI& path, std::string& outputData)
+{
+	size_t size = 0;
+	uint8_t* tempData = static_cast<uint8_t*>(fileSystem->map_to_read(path, size));
+	outputData.resize(size);
+	memcpy(outputData.data(), tempData, size);
+	fileSystem->unmap_after_reading(tempData);
+}
+
 void io::Utils::write_file(FileSystem* fileSystem, const URI& path, const uint8_t* data, size_t dataSize, const std::string& writeMode)
 {
 	Stream* stream = fileSystem->open(path, writeMode.c_str());
@@ -169,6 +178,11 @@ void io::Utils::write_file(FileSystem* fileSystem, const URI& path, const char* 
 	Stream* stream = fileSystem->open(path, writeMode.c_str());
 	stream->write(data, sizeof(char), dataSize);
 	fileSystem->close(stream);
+}
+
+void io::Utils::write_file(FileSystem* fileSystem, const URI& path, std::string& data, const std::string& writeMode)
+{
+	write_file(fileSystem, path, data.data(), data.size(), writeMode);
 }
 
 void io::Utils::serialize_file(

@@ -46,8 +46,10 @@ namespace ad_astris::io
 			 */
 			static void read_file(FileSystem* fileSystem, const URI& path, std::vector<uint8_t>& dataStorage);
 			static void read_file(FileSystem* fileSystem, const URI& path, uint8_t** dataStorage);
+			static void read_file(FileSystem* fileSystem, const URI& path, std::string& outputData);
 			static void write_file(FileSystem* fileSystem, const URI& path, const uint8_t* data, size_t dataSize, const std::string& writeMode = "wb");
 			static void write_file(FileSystem* fileSystem, const URI& path, const char* data, size_t dataSize, const std::string& writeMode = "wb");
+			static void write_file(FileSystem* fileSystem, const URI& path ,std::string& data, const std::string& writeMode = "wb");
 			static void serialize_file(FileSystem* fileSystem, const URI& path, std::vector<uint8_t>& inputBinData, std::string& inputMetadata);
 			static void deserialize_file(FileSystem* fileSystem, const URI& path, std::vector<uint8_t>& outputBinData, std::string& outputMetadata);
 			static uint64_t get_last_write_time(const URI& absolutePath);

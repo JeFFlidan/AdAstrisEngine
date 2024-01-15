@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "statistics.h"
+#include "frame_stats_manager.h"
 #include "core/pool_allocator.h"
 #include "file_system/file_system.h"
 #include "rhi/engine_rhi.h"
@@ -12,9 +12,8 @@ namespace ad_astris::profiler
 	struct ProfilerInstanceInitContext
 	{
 		bool isEnabled{ true };
+		uint64_t frameStatsHistoryCapacity{ FRAME_STATS_HISTORY_CAPACITY };
 	};
-
-	using RangeID = size_t;
 	
 	class ProfilerInstance
 	{
@@ -36,10 +35,9 @@ namespace ad_astris::profiler
 			void finish_collecting_pipeline_statistics();
 		
 			[[nodiscard]] bool is_enabled() const { return _isEnabled; }
-			[[nodiscard]] const Statistics& get_statistics() const { return _statistics; }
+			[[nodiscard]] FrameStatsManager& get_frame_stats_manager() const { return *_frameStatsManager; }
 			void set_rhi(rhi::IEngineRHI* rhi) { _rhi = rhi; }
 			void set_enable(bool isEnabled) { _isEnabled = isEnabled; }
-			void set_max_frame_count(uint32_t maxFrameCount) { _maxFrameCount = maxFrameCount; }
 		
 		private:
 			rhi::IEngineRHI* _rhi{ nullptr };
@@ -50,8 +48,9 @@ namespace ad_astris::profiler
 			std::atomic<uint32_t> _nextTimestampQuery{ 0 };
 			std::atomic<uint32_t> _nextPipelineStatisticsQuery{ 0 };
 		
-			Statistics _statistics;
-		
+			std::unique_ptr<FrameStatsManager> _frameStatsManager{ nullptr };
+
+			FrameStats* _activeFrameStats{ nullptr };
 			PoolAllocator<CPURange> _cpuRangePool;
 			PoolAllocator<GPURange> _gpuRangePool;
 			std::vector<CPURange*> _activeCPURanges;
@@ -61,8 +60,7 @@ namespace ad_astris::profiler
 			RangeID _cpuFrame{ 0 };
 			RangeID _gpuFrame{ 0 };
 		
-			uint32_t _maxFrameCount{ MAX_FRAME_COUNT };
-			uint32_t _currentFrame{ 0 };
+			FrameID _currentFrameID{ 0 };
 		
 			bool _isEnabled{ true };
 			bool _isInitialized{ false };

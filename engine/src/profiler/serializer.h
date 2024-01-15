@@ -8,8 +8,9 @@ namespace ad_astris::profiler
 	{
 		public:
 			static void init(const ProfilerInstance* profilerInstance, io::FileSystem* fileSystem);
-			static void serialize(const std::string& statisticsFileName);
-			//static void deserialize();
+
+			static void save_frame_stats_file(FrameStats* frameStats);
+			static void read_frame_stats_file(const io::URI& frameStatsFilePath);
 
 		private:
 			inline static const ProfilerInstance* _profilerInstance{ nullptr };
