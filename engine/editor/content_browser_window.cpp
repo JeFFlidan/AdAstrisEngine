@@ -22,7 +22,8 @@ ContentBrowserWindow::ContentBrowserWindow(UIWindowInitContext& initContext, rhi
 	std::vector<uicore::FileFilter> filters = {
 		uicore::FileFilter::PNG,
 		uicore::FileFilter::TGA,
-		uicore::FileFilter::OBJ };
+		uicore::FileFilter::OBJ,
+		uicore::FileFilter::GLTF };
 	_fileExplorer = uicore::FileExplorer(uicore::FileExplorerMode::OPEN_MULTIPLE_FILES, filters);
 	
 	_currentPath = _fileSystem->get_project_root_path();

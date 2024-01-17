@@ -35,7 +35,7 @@ void ModelCreationWindow::draw()
 		}
 		ImGui::EndCombo();
 	}
-	if (ImGui::BeginCombo("Normal", _materialDesc.resourceName.c_str()))
+	if (ImGui::BeginCombo("Material", _materialDesc.resourceName.c_str()))
 	{
 		for (auto& materialDesc : materialDescs)
 		{

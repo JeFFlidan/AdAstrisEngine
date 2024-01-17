@@ -11,85 +11,31 @@ MaterialCreationWindow::MaterialCreationWindow(UIWindowInitContext& initContext)
 {
 	_textInputWidget = uicore::TextInputWidget("Material name", 256, "OpaquePBRMaterial");
 	std::vector<ResourceDesc>& textureDescs = _resourceDescriptionsByType[resource::ResourceType::TEXTURE];
-	_albedoDesc = textureDescs[0];
-	_metallicDesc = textureDescs[0];
-	_aoDesc = textureDescs[0];
-	_normalDesc = textureDescs[0];
-	_roughnessDesc = textureDescs[0];
+
+	uicore::ComboBoxValueGetter<ResourceDesc> callback = [&](const ResourceDesc& desc)->const char* { return desc.resourceName.c_str(); };
+
+	_albedoTexturesComboBox = std::make_unique<ResourceComboBox>("Albedo", textureDescs, callback);
+	_albedoTexturesComboBox->set_default_object(textureDescs[0]);
+	_normalTexturesComboBox = std::make_unique<ResourceComboBox>("Normal", textureDescs, callback);
+	_normalTexturesComboBox->set_default_object(textureDescs[0]);
+	_roughnessTexturesComboBox = std::make_unique<ResourceComboBox>("Roughness", textureDescs, callback);
+	_roughnessTexturesComboBox->set_default_object(textureDescs[0]);
+	_metallicTexturesComboBox = std::make_unique<ResourceComboBox>("Metallic", textureDescs, callback);
+	_metallicTexturesComboBox->set_default_object(textureDescs[0]);
+	_aoTexturesComboBox = std::make_unique<ResourceComboBox>("Ambient Occlusion", textureDescs, callback);
+	_aoTexturesComboBox->set_default_object(textureDescs[0]);
 }
 
 void MaterialCreationWindow::draw()
 {
 	ImGui::Begin("Create Material");
 	_textInputWidget.draw();
-
-	std::vector<ResourceDesc>& textureDescs = _resourceDescriptionsByType[resource::ResourceType::TEXTURE];
-
-	if (ImGui::BeginCombo("Albedo", _albedoDesc.resourceName.c_str()))
-	{
-		for (auto& textureDesc : textureDescs)
-		{
-			bool isSelected = _albedoDesc.resourceName == textureDesc.resourceName;
-			if (ImGui::Selectable(textureDesc.resourceName.c_str(), isSelected))
-				_albedoDesc = textureDesc;
-
-			if (isSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
-	if (ImGui::BeginCombo("Normal", _normalDesc.resourceName.c_str()))
-	{
-		for (auto& textureDesc : textureDescs)
-		{
-			bool isSelected = _normalDesc.resourceName == textureDesc.resourceName;
-			if (ImGui::Selectable(textureDesc.resourceName.c_str(), isSelected))
-				_normalDesc = textureDesc;
-
-			if (isSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
-	if (ImGui::BeginCombo("Roughness", _roughnessDesc.resourceName.c_str()))
-	{
-		for (auto& textureDesc : textureDescs)
-		{
-			bool isSelected = _roughnessDesc.resourceName == textureDesc.resourceName;
-			if (ImGui::Selectable(textureDesc.resourceName.c_str(), isSelected))
-				_roughnessDesc = textureDesc;
-
-			if (isSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
-	if (ImGui::BeginCombo("Metallic", _metallicDesc.resourceName.c_str()))
-	{
-		for (auto& textureDesc : textureDescs)
-		{
-			bool isSelected = _metallicDesc.resourceName == textureDesc.resourceName;
-			if (ImGui::Selectable(textureDesc.resourceName.c_str(), isSelected))
-				_metallicDesc = textureDesc;
-
-			if (isSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
-	if (ImGui::BeginCombo("Ambient Occlusion", _aoDesc.resourceName.c_str()))
-	{
-		for (auto& textureDesc : textureDescs)
-        {
-        	bool isSelected = _aoDesc.resourceName == textureDesc.resourceName;
-        	if (ImGui::Selectable(textureDesc.resourceName.c_str(), isSelected))
-        		_aoDesc = textureDesc;
-
-			if (isSelected)
-				ImGui::SetItemDefaultFocus();
-        }
-		ImGui::EndCombo();
-	}
+	
+	_albedoTexturesComboBox->draw();
+	_normalTexturesComboBox->draw();
+	_roughnessTexturesComboBox->draw();
+	_metallicTexturesComboBox->draw();
+	_aoTexturesComboBox->draw();
 
 	ImVec2 regionAvail = ImGui::GetContentRegionAvail();
 	ImGui::SetCursorPos(ImVec2(regionAvail.x - 150, regionAvail.y + 150));
@@ -102,11 +48,11 @@ void MaterialCreationWindow::draw()
 		acore::OpaquePBRMaterialCreationEvent event(
 			_currentDirectory,
 			_textInputWidget.get_text(),
-			_albedoDesc.uuid,
-			_normalDesc.uuid,
-			_roughnessDesc.uuid,
-			_metallicDesc.uuid,
-			_aoDesc.uuid);
+			_albedoTexturesComboBox->get_selected_object().uuid,
+			_normalTexturesComboBox->get_selected_object().uuid,
+			_roughnessTexturesComboBox->get_selected_object().uuid,
+			_metallicTexturesComboBox->get_selected_object().uuid,
+			_aoTexturesComboBox->get_selected_object().uuid);
 		_eventManager->trigger_event(event);
 		_needDrawing = false;
 	}
