@@ -80,6 +80,8 @@ void FileExplorer::parse_one_file_filter_section(FileFilter enumFileFilter)
 		_filterList += "tga,";
 	if (has_flag(enumFileFilter, FileFilter::OBJ))
 		_filterList += "obj,";
+	if (has_flag(enumFileFilter, FileFilter::GLTF))
+		_filterList += "gltf";
 
 	if (_filterList[_filterList.size() - 1] == ',')
 	{

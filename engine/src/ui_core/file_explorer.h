@@ -24,7 +24,8 @@ namespace ad_astris::uicore
 		AAPROJECT = 1ULL << 2,
 		PNG = 1ULL << 3,
 		TGA = 1ULL << 4,
-		OBJ = 1ULL << 5
+		OBJ = 1ULL << 5,
+		GLTF = 1ULL << 6
 	};
 	
 	class FileExplorer
