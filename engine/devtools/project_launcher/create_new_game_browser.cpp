@@ -103,11 +103,12 @@ bool CreateNewGameBrowser::draw_ui()
 		std::string projectName = _projectNameInputWidget.get_text();
 		create_folders(projectPath, projectName);
 
-		std::string projectNameWithAAPROJECTFile = projectPath + "/" + projectName + ".aaproject";
-		Section section(projectNameWithAAPROJECTFile);
+		std::string fullProjectPath = projectPath + "/" + projectName + ".aaproject";
+		Section section(fullProjectPath);
 		section.set_option("Name", projectName);
 		_config->set_section(section);
-		_projectInfo.projectPath = projectNameWithAAPROJECTFile;
+		_projectInfo.projectPath = fullProjectPath;
+		_projectInfo.projectName = projectName;
 		_projectInfo.newProjectTemplate = get_enum_project_template_type(selectedPreset);
 		return true;
 	}

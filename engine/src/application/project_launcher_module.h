@@ -15,6 +15,7 @@ namespace ad_astris::devtools
 	struct ProjectInfo
 	{
 		std::string projectPath;
+		std::string projectName;
 		NewProjectTemplate newProjectTemplate{ NewProjectTemplate::OLD_PROJECT };
 	};
 	

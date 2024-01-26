@@ -54,7 +54,7 @@ bool UIManager::draw_ui()
 			shouldClose = _recentProjectsBrowser.draw_ui();
 			if (shouldClose && !_recentProjectsBrowser.check_cancel_button_pressed())
 			{
-				_projectInfo.projectPath = _recentProjectsBrowser.get_project_path();
+				_projectInfo = _recentProjectsBrowser.get_chosen_project_info();
 			}
 			break;
 		}

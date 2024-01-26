@@ -72,7 +72,10 @@ bool RecentProjectsBrowser::draw_ui()
 	bool cancelButtonPressed = ImGui::Button("Cancel", ImVec2(90, 30));
 	
 	ImGui::End();
-	_chosenProjectPath = _projectPathInputWidget.get_text();
+	
+	_projectInfo.projectPath = _projectPathInputWidget.get_text();
+	_projectInfo.projectName = _projectNameWidget.get_text();
+	
 	if (cancelButtonPressed || openButtonPressed)
 	{
 		for (auto& pair : _projectPathByItsName)

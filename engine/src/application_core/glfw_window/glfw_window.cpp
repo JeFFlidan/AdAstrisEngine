@@ -1,5 +1,8 @@
 ﻿#include "profiler/logger.h"
 #include "glfw_window.h"
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <glfw/glfw3native.h>
+#include <windows.h>
 
 using namespace ad_astris;
 using namespace acore;
@@ -31,6 +34,9 @@ GlfwWindow::GlfwWindow(WindowCreationContext& creationContext)
 	glfwSetFramebufferSizeCallback(_window, glfw_framebuffer_size_callback);
 
 	glfwSetWindowAttrib(_window, GLFW_RESIZABLE, creationContext.isResizable);
+	HWND hWnd = glfwGetWin32Window(_window);
+	SetWindowLongPtr(hWnd, GWL_STYLE, GetWindowLongPtrA(hWnd, GWL_STYLE) & ~(WS_MAXIMIZEBOX | WS_MINIMIZEBOX));
+
 }
 
 void GlfwWindow::cleanup()

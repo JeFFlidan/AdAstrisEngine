@@ -65,7 +65,7 @@ WinApiWindow::WinApiWindow(WindowCreationContext& creationContext, events::Event
 
 	RegisterClass(&wndClass);
 
-	DWORD style = WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_THICKFRAME | WS_MAXIMIZEBOX;
+	DWORD style = WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MAXIMIZEBOX;
 
 	int32_t width = creationContext.width;
 	int32_t height = creationContext.height;
