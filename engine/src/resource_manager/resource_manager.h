@@ -109,7 +109,7 @@ namespace ad_astris::resource
 				/** TODO have to fix resource name in deserialize. If object is existed, name should be taken
 				 from this existed object and passed to deserialize method*/
 				ResourceData resourceData{};
-				resourceData.metadata.path = aaresPath;
+				resourceData.metadata.path = conversionContext.filePath;
 				resourceData.metadata.objectName = existedObjectName ? existedObjectName : newObjectName;
 				
 				io::File* file = _resourcePool.allocate<ResourceFile>(conversionContext);

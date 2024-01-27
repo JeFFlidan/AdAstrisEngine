@@ -38,7 +38,7 @@ namespace ad_astris::resource
 	
 	enum class ResourceType
 	{
-		UNDEFINED,
+		UNDEFINED = -1,
 		MODEL,
 		TEXTURE,
 		LEVEL,

@@ -13,6 +13,12 @@ void Serializer::init(const ProfilerInstance* profilerInstance, io::FileSystem* 
 	assert(profilerInstance && fileSystem);
 	_profilerInstance = profilerInstance;
 	_fileSystem = fileSystem;
+
+	io::URI framestatsFolderPath = fmt::format("{}/intermediate/profiler_stats", _fileSystem->get_project_root_path().c_str());
+	if (!io::Utils::exists(framestatsFolderPath))
+	{
+		std::filesystem::create_directories(framestatsFolderPath.c_str());
+	}
 }
 
 void Serializer::save_frame_stats_file(FrameStats* frameStats)
@@ -26,7 +32,7 @@ void Serializer::save_frame_stats_file(FrameStats* frameStats)
 			_fileSystem->get_project_root_path().c_str(),
 			frameStats->get_name(),
 			FRAME_STATS_FILE_EXTENSION) };
-	
+
 	io::Utils::write_file(_fileSystem, frameStatsFilePath, serializedMetadata);
 	LOG_INFO("profiler::Serializer::save_frame_stats_file(): Saved frame stats file {}", frameStats->get_name())
 }

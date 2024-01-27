@@ -48,11 +48,10 @@ namespace ad_astris::io
 				return data == uri.data;
 			}
 
-			URI& operator+(const URI& uri)
+			URI operator+(const URI& uri) const
 			{
 				assert(uri.data.size() < MAX_PATH_LENGTH);
-				data += uri.data;
-				return *this;
+				return data + uri.data;
 			}
 
 			URI& operator+=(const URI& uri)
