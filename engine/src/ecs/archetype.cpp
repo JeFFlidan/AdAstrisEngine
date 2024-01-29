@@ -8,14 +8,13 @@ using namespace ad_astris;
 ecs::ArchetypeChunk::ArchetypeChunk(uint32_t chunkSize, ChunkStructure& chunkStructure) : _chunkSize(chunkSize)
 {
 	_chunk = static_cast<uint8_t*>(std::malloc(chunkSize));
-	
+
 	uint32_t prevSubchunkSizes = 0;
 	for (auto& id : chunkStructure.componentIds)
 	{
 		uint16_t structureSize = chunkStructure.componentIdToSize[id];
-		uint32_t subchunkSize = constants::MAX_ENTITIES_IN_CNUNK * structureSize;
+		uint32_t subchunkSize = chunkStructure.numEntitiesPerChunk * structureSize;
 		uint8_t* startPtr = _chunk + prevSubchunkSizes;
-
 		Subchunk subchunk(startPtr, subchunkSize, structureSize);
 		_componentIdToSubchunk[id] = subchunk;
 
@@ -93,7 +92,7 @@ uint8_t* ecs::ArchetypeChunk::get_entity_component(uint32_t column, uint32_t com
 ecs::Archetype::Archetype(ArchetypeCreationContext& context)
 {
 	_sizeOfOneColumn = context._allComponentsSize;
-	_numEntitiesPerChunk = context._entityCount;
+	_chunkStructure.numEntitiesPerChunk = context._entityCount;
 	_chunkStructure.componentIds = std::move(context._componentIDs);
 	_chunkStructure.componentIdToSize = std::move(context._idToSize);
 	_chunkStructure.tagIDs = std::move(context._tagIDs);
@@ -108,7 +107,7 @@ uint32_t ecs::Archetype::add_entity(Entity& entity)
 
 	for (auto& chunk : _chunks)
 	{
-		if (chunk.get_elements_count() < _numEntitiesPerChunk)
+		if (chunk.get_elements_count() < _chunkStructure.numEntitiesPerChunk)
 		{
 			requiredChunk = &chunk;
 			break;
@@ -151,7 +150,7 @@ void ecs::Archetype::destroy_entity(Entity& entity, uint32_t rowIndex)
 
 uint32_t ecs::Archetype::get_chunk_size()
 {
-	return _numEntitiesPerChunk * _sizeOfOneColumn;
+	return _chunkStructure.numEntitiesPerChunk * _sizeOfOneColumn;
 }
 
 uint32_t ecs::Archetype::get_chunks_count()

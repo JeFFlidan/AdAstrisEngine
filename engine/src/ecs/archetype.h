@@ -50,6 +50,8 @@ namespace ad_astris::ecs
 		std::unordered_map<uint32_t, uint16_t> componentIdToSize;	// should be sorted
 		std::vector<uint32_t> tagIDs;
 		std::unordered_set<uint32_t> tagIDsSet;
+		uint32_t numEntitiesPerChunk{ 0 };
+		uint32_t sizeOfOneColumn{ 0 };
 	};
 	
 	class ArchetypeChunk
@@ -172,7 +174,6 @@ namespace ad_astris::ecs
 
 			ChunkStructure _chunkStructure;
 		
-			uint32_t _numEntitiesPerChunk{ 0 };
 			uint32_t _sizeOfOneColumn{ 0 };
 
 			// I use this method for serialization
