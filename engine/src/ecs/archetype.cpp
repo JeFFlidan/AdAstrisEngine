@@ -91,7 +91,7 @@ uint8_t* ecs::ArchetypeChunk::get_entity_component(uint32_t column, uint32_t com
 
 ecs::Archetype::Archetype(ArchetypeCreationContext& context)
 {
-	_sizeOfOneColumn = context._allComponentsSize;
+	_chunkStructure.sizeOfOneColumn = context._allComponentsSize;
 	_chunkStructure.numEntitiesPerChunk = context._entityCount;
 	_chunkStructure.componentIds = std::move(context._componentIDs);
 	_chunkStructure.componentIdToSize = std::move(context._idToSize);
@@ -150,7 +150,7 @@ void ecs::Archetype::destroy_entity(Entity& entity, uint32_t rowIndex)
 
 uint32_t ecs::Archetype::get_chunk_size()
 {
-	return _chunkStructure.numEntitiesPerChunk * _sizeOfOneColumn;
+	return _chunkStructure.numEntitiesPerChunk * _chunkStructure.sizeOfOneColumn;
 }
 
 uint32_t ecs::Archetype::get_chunks_count()

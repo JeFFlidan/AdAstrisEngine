@@ -173,8 +173,6 @@ namespace ad_astris::ecs
 			std::vector<uint32_t> _freeColumns;
 
 			ChunkStructure _chunkStructure;
-		
-			uint32_t _sizeOfOneColumn{ 0 };
 
 			// I use this method for serialization
 			void get_component_by_component_type_id(
