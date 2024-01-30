@@ -1,6 +1,7 @@
 #pragma once
 
 #include "api.h"
+#include "frame_data.h"
 #include "enums.h"
 #include "material_manager.h"
 #include "core/non_copyable_non_movable.h"
@@ -33,15 +34,13 @@ namespace ad_astris::renderer::impl
 			acore::IWindow* _mainWindow{ nullptr };
 
 			std::vector<std::unique_ptr<rcore::IRenderPassExecutor>> _renderPassExecutors;
+			FrameData _frameData;
 		
 			uint32_t _frameIndex{ 0 };
 
 			void init_global_objects(GlobalObjectContext* context);
 			void init_module_objects();
 			void get_current_frame_index();
-			void create_uniform_buffers();
-			void setup_cameras(DrawContext& preDrawContext);
-			void setup_frame_data(DrawContext& preDrawContext);
 			void set_backbuffer(const std::string& textureName);
 	};
 }
