@@ -52,13 +52,13 @@ namespace ad_astris::uicore
 						}
 					});
 				};
-				_widgetDescByComponentID[ecs::TYPE_INFO_TABLE->get_component_id<T>()].callback = func;
+				_widgetDescByComponentID[_typeInfoTable->get_component_id<T>()].callback = func;
 			}
 
 			template<typename T>
 			void set_custom_callback(const std::function<void(void*, ComponentWidgetProperties&)>& customUICallback)
 			{
-				_widgetDescByComponentID[ecs::TYPE_INFO_TABLE->get_component_id<T>()].callback = customUICallback;
+				_widgetDescByComponentID[_typeInfoTable->get_component_id<T>()].callback = customUICallback;
 			}
 
 			void draw_component(uint32_t componentID, void* component)
@@ -70,7 +70,7 @@ namespace ad_astris::uicore
 			template<typename T>
 			void set_component_widget_properties(ComponentWidgetProperties& widgetProperties)
 			{
-				_widgetDescByComponentID[ecs::TYPE_INFO_TABLE->get_component_id<T>()].widgetProperties = widgetProperties;
+				_widgetDescByComponentID[_typeInfoTable->get_component_id<T>()].widgetProperties = widgetProperties;
 			}
 
 			// Must be used in all modules except the engine where the ECSUiManager is initialized

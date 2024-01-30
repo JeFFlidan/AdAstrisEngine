@@ -9,80 +9,12 @@ using namespace ad_astris::app;
 
 bool AdAstrisEngine::init()
 {
-	_eventManager = std::make_unique<events::EventManager>();
-	LOG_INFO("AdAstrisEngine::init(): Initialized event manager")
-	
-	std::string _projectPath = std::filesystem::current_path().string();
-	_projectPath.erase(_projectPath.find("\\bin"), 4);
-	_fileSystem = std::make_unique<io::EngineFileSystem>(_projectPath.c_str());
-	LOG_INFO("AdAstrisEngine::init(): Initialized file system. Engine root path is {}", _fileSystem->get_engine_root_path().c_str())
+	init_global_objects();
+	if (!open_project()) return false;
+	init_main_window();
+	init_engine();
 
-	_moduleManager = std::make_unique<ModuleManager>(_fileSystem.get());
-	LOG_INFO("AdAstrisEngine::init(): Initialized module manager.")
-
-	auto projectLauncherModule = _moduleManager->load_module<devtools::IProjectLauncherModule>("ProjectLauncher");
-	auto projectLauncher = projectLauncherModule->get_project_launcher();
-	projectLauncher->init(_fileSystem.get());
-	LOG_INFO("AdAstrisEngine::init(): Loaded and initialized ProjectLauncher module");
-
-	projectLauncher->draw_window();
-
-	devtools::ProjectInfo projectInfo = projectLauncher->get_project_info();
-	LOG_INFO("AdAstrisEngine::init(): Got project info from project launcher")
-
-	_moduleManager->unload_module("ProjectLauncher");
-	LOG_INFO("AdAstrisEngine::init(): Unload ProjectLauncher module")
-
-	if (projectInfo.projectPath.empty())
-	{
-		LOG_INFO("AdAstrisEngine::init(): No project was chosen. Engine execution finished")
-		return false;
-	}
-
-	std::string& fullProjectPath = projectInfo.projectPath;
-	std::string projectName = fullProjectPath.substr(fullProjectPath.find_last_of("/") + 1, fullProjectPath.find_last_of('.') - (fullProjectPath.find_last_of("/") + 1));
-	std::string projectPathWithNoFile = fullProjectPath.substr(0, fullProjectPath.find_last_of("/"));
-	_fileSystem->set_project_root_path(projectPathWithNoFile.c_str());
-
-	acore::WindowCreationContext windowCreationContext;
-	windowCreationContext.width = 1280;
-	windowCreationContext.height = 720;
-	windowCreationContext.isResizable = true;
-	windowCreationContext.windowTitle = projectName;
-	_mainWindow = std::make_unique<acore::impl::WinApiWindow>(windowCreationContext, _eventManager.get());
-	LOG_INFO("AdAstrisEngine::init(): Initialized WinApi main window. Window title is {}", projectName)
-	
-	engine::EngineInitializationContext engineInitializationContext;
-	engineInitializationContext.eventManager = _eventManager.get();
-	engineInitializationContext.fileSystem = _fileSystem.get();
-	engineInitializationContext.mainWindow = _mainWindow.get();
-	engineInitializationContext.moduleManager = _moduleManager.get();
-	engineInitializationContext.projectInfo = &projectInfo;
-	auto engineModule = _moduleManager->load_module<engine::IEngineModule>("Engine");
-	_engine = engineModule->get_engine();
-	_engine->init(engineInitializationContext);
-	LOG_INFO("AdAstrisEngine::init(): Loaded and initalized Engine module")
-	
-	editor::EditorInitContext editorInitContext;
-	editorInitContext.eventManager = _eventManager.get();
-	editorInitContext.fileSystem = _fileSystem.get();
-	editorInitContext.mainWindow = _mainWindow.get();
-	editorInitContext.callbacks = &engineInitializationContext.uiBackendCallbacks;
-	LOG_INFO("BEFORE GETTING UI MANAGER")
-	editorInitContext.ecsUiManager = _engine->get_ecs_ui_manager();
-	LOG_INFO("AFTER GETTING UI MANAGER")
-	auto editorModule = _moduleManager->load_module<editor::IEditorModule>("Editor");
-	LOG_INFO("BEFORE GET EDITOR")
-	_editor = editorModule->get_editor();
-	LOG_INFO("BEFORE INIT")
-	_editor->init(editorInitContext);
-	LOG_INFO("AFTER INIT")
-	ImGui::SetCurrentContext(engineInitializationContext.uiBackendCallbacks.getContextCallback());
-	rhi::UIWindowBackendCallbacks::ImGuiAllocators imGuiAllocators = engineInitializationContext.uiBackendCallbacks.getImGuiAllocators();
-	ImGui::SetAllocatorFunctions(imGuiAllocators.allocFunc, imGuiAllocators.freeFunc);
-	LOG_INFO("AdAstrisEngine::init(): Initialized editor")
-
-	_eventManager->dispatch_events();
+	EVENT_MANAGER()->dispatch_events();
 
 	return true;
 }
@@ -97,7 +29,7 @@ void AdAstrisEngine::execute()
 		if (running)
 			_editor->draw();
 		_engine->execute();
-		_eventManager->dispatch_events();
+		EVENT_MANAGER()->dispatch_events();
 	}
 	_mainWindow->close();
 }
@@ -106,4 +38,85 @@ void AdAstrisEngine::save_and_cleanup()
 {
 	_editor->cleanup();
 	_engine->save_and_cleanup(true);
+}
+
+void AdAstrisEngine::init_global_objects()
+{
+	_globalObjectContext = std::make_unique<GlobalObjectContext>();
+	GlobalObjects::set_global_object_context(_globalObjectContext.get());
+	LOG_INFO("AdAstrisEngine::init(): Initialized GlobalObjectContext.")
+	
+	GlobalObjects::init_event_manager();
+	LOG_INFO("AdAstrisEngine::init(): Initialized EventManager.")
+	
+	GlobalObjects::init_file_system();
+	LOG_INFO("AdAstrisEngine::init(): Initialized FileSystem. Engine root path is {}", FILE_SYSTEM()->get_engine_root_path().c_str())
+	
+	GlobalObjects::init_module_manager();
+	LOG_INFO("AdAstrisEngine::init(): Initialized ModuleManager.")
+}
+
+bool AdAstrisEngine::open_project()
+{
+	auto projectLauncherModule = MODULE_MANAGER()->load_module<devtools::IProjectLauncherModule>("ProjectLauncher");
+	auto projectLauncher = projectLauncherModule->get_project_launcher();
+	projectLauncher->init(FILE_SYSTEM());
+	LOG_INFO("AdAstrisEngine::init(): Loaded and initialized ProjectLauncher module");
+
+	projectLauncher->draw_window();
+
+	_projectInfo = projectLauncher->get_project_info();
+	LOG_INFO("AdAstrisEngine::init(): Got project info from project launcher")
+
+	MODULE_MANAGER()->unload_module("ProjectLauncher");
+	LOG_INFO("AdAstrisEngine::init(): Unload ProjectLauncher module")
+
+	if (_projectInfo.projectPath.empty())
+	{
+		LOG_INFO("AdAstrisEngine::init(): No project was chosen. Engine execution finished")
+		return false;
+	}
+
+	std::string& fullProjectPath = _projectInfo.projectPath;
+	std::string projectPathWithNoFile = fullProjectPath.substr(0, fullProjectPath.find_last_of("/"));
+	FILE_SYSTEM()->set_project_root_path(projectPathWithNoFile.c_str());
+
+	return true;
+}
+
+void AdAstrisEngine::init_main_window()
+{
+	acore::WindowCreationContext windowCreationContext;
+	windowCreationContext.width = 1280;
+	windowCreationContext.height = 720;
+	windowCreationContext.isResizable = true;
+	windowCreationContext.windowTitle = _projectInfo.projectName;
+	_mainWindow = std::make_unique<acore::impl::WinApiWindow>(windowCreationContext, EVENT_MANAGER());
+	LOG_INFO("AdAstrisEngine::init(): Initialized WinApi main window. Window title is {}", _projectInfo.projectName)
+}
+
+void AdAstrisEngine::init_engine()
+{
+	engine::EngineInitializationContext engineInitializationContext;
+	engineInitializationContext.mainWindow = _mainWindow.get();
+	engineInitializationContext.projectInfo = &_projectInfo;
+	engineInitializationContext.globalObjectContext = _globalObjectContext.get();
+	auto engineModule = MODULE_MANAGER()->load_module<engine::IEngineModule>("Engine");
+	_engine = engineModule->get_engine();
+	_engine->init(engineInitializationContext);
+	LOG_INFO("AdAstrisEngine::init(): Loaded and initalized Engine module")
+	
+	editor::EditorInitContext editorInitContext;
+	editorInitContext.globalObjectContext = _globalObjectContext.get();
+	editorInitContext.mainWindow = _mainWindow.get();
+	editorInitContext.callbacks = &engineInitializationContext.uiBackendCallbacks;
+	editorInitContext.ecsUiManager = ECS_UI_MANAGER();
+	auto editorModule = MODULE_MANAGER()->load_module<editor::IEditorModule>("Editor");
+	_editor = editorModule->get_editor();
+	_editor->init(editorInitContext);
+	
+	ImGui::SetCurrentContext(engineInitializationContext.uiBackendCallbacks.getContextCallback());
+	rhi::UIWindowBackendCallbacks::ImGuiAllocators imGuiAllocators = engineInitializationContext.uiBackendCallbacks.getImGuiAllocators();
+	ImGui::SetAllocatorFunctions(imGuiAllocators.allocFunc, imGuiAllocators.freeFunc);
+	LOG_INFO("AdAstrisEngine::init(): Initialized editor")
 }

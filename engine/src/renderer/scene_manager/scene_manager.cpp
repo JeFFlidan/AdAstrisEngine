@@ -1,25 +1,16 @@
 #include "scene_manager.h"
 #include "engine_core/basic_events.h"
+#include "core/global_objects.h"
 
 using namespace ad_astris::renderer::impl;
 
-SceneManager::SceneManager(SceneManagerInitializationContext& initContext)
-	: _rhi(initContext.rhi), _eventManager(initContext.eventManager), _taskComposer(initContext.taskComposer),
-	_rendererResourceManager(initContext.rendererResourceManager), _resourceManager(initContext.resourceManager)
+SceneManager::SceneManager()
 {
-	SceneSubmanagerInitializationContext submanagerInitContext;
-	submanagerInitContext.rhi = initContext.rhi;
-	submanagerInitContext.eventManager = initContext.eventManager;
-	submanagerInitContext.taskComposer = initContext.taskComposer;
-	submanagerInitContext.rendererResourceManager = initContext.rendererResourceManager;
-	submanagerInitContext.resourceManager = initContext.resourceManager;
-	submanagerInitContext.world = initContext.world;
-
 	subscribe_to_events();
 
-	_materialSubmanager = std::make_unique<MaterialSubmanager>(submanagerInitContext);
-	_modelSubmanager = std::make_unique<ModelSubmanager>(submanagerInitContext, _materialSubmanager.get());
-	_entitySubmanager = std::make_unique<EntitySubmanager>(submanagerInitContext);
+	_materialSubmanager = std::make_unique<MaterialSubmanager>();
+	_modelSubmanager = std::make_unique<ModelSubmanager>(_materialSubmanager.get());
+	_entitySubmanager = std::make_unique<EntitySubmanager>();
 }
 
 SceneManager::~SceneManager()
@@ -30,7 +21,7 @@ SceneManager::~SceneManager()
 void SceneManager::setup_global_buffers()
 {
 	rhi::CommandBuffer transferCmdBuffer;
-	_rhi->begin_command_buffer(&transferCmdBuffer, rhi::QueueType::TRANSFER);
+	RHI()->begin_command_buffer(&transferCmdBuffer, rhi::QueueType::TRANSFER);
 
 	// ORDER IS IMPORTANT!!!
 	_materialSubmanager->update(transferCmdBuffer);
@@ -41,8 +32,8 @@ void SceneManager::setup_global_buffers()
 	_modelSubmanager->cleanup_after_update();
 	_entitySubmanager->cleanup_after_update();
 	
-	_rhi->submit(rhi::QueueType::TRANSFER, true);
-	_rendererResourceManager->cleanup_staging_buffers();
+	RHI()->submit(rhi::QueueType::TRANSFER, true);
+	RENDERER_RESOURCE_MANAGER()->cleanup_staging_buffers();
 }
 
 void SceneManager::subscribe_to_events()
@@ -57,7 +48,7 @@ void SceneManager::subscribe_to_events()
 			auto modelComponent = entityManager->get_component_const<ecore::ModelComponent>(entity);
 			if (entityManager->does_entity_have_tag<ecore::StaticObjectTag>(entity))
 			{
-				auto handle = _resourceManager->get_resource<ecore::StaticModel>(modelComponent->modelUUID);
+				auto handle = RESOURCE_MANAGER()->get_resource<ecore::StaticModel>(modelComponent->modelUUID);
 				_modelSubmanager->add_static_model(handle, entity);
 			}
 
@@ -76,5 +67,5 @@ void SceneManager::subscribe_to_events()
 			_entitySubmanager->add_light_entity(entity);
 		// TODO lights and textures
 	};
-	_eventManager->subscribe(delegate1);
+	EVENT_MANAGER()->subscribe(delegate1);
 }

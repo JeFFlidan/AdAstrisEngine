@@ -100,7 +100,7 @@ namespace ad_astris::ecore
 	{
 		float zNear = 0.1f;
 		float zFar = 10000.0f;
-		float fov = 70.0f;
+		float fov = 50.0f;
 		bool isActive{ false };
 		float movementSpeed{ 10.0f };
 		float mouseSensitivity{ 0.1f };

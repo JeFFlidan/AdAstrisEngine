@@ -4,13 +4,14 @@
 #include "common.h"
 #include "shader_interop_renderer.h"
 #include "engine_core/basic_components.h"
+#include "renderer/module_objects.h"
 
 namespace ad_astris::renderer::impl
 {
 	class EntitySubmanager : public SceneSubmanagerBase
 	{
 		public:
-			EntitySubmanager(SceneSubmanagerInitializationContext& initContext);
+			EntitySubmanager();
 
 			virtual void update(rhi::CommandBuffer& cmdBuffer) override;
 			virtual void cleanup_after_update() override;
@@ -18,7 +19,7 @@ namespace ad_astris::renderer::impl
 
 			rhi::Buffer* get_entity_buffer()
 			{
-				return _rendererResourceManager->get_buffer(RENDERER_ENTITY_BUFFER_NAME);
+				return RENDERER_RESOURCE_MANAGER()->get_buffer(RENDERER_ENTITY_BUFFER_NAME);
 			}
 
 			void add_light_entity(ecs::Entity entity)

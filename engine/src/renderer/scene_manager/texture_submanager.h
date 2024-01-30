@@ -8,7 +8,7 @@ namespace ad_astris::renderer::impl
 	class TextureSubmanager : public SceneSubmanagerBase
 	{
 		public:
-			TextureSubmanager(SceneSubmanagerInitializationContext& initContext);
+			TextureSubmanager();
 
 		private:
 			void generate_new_mipmaps(ecore::Texture2DHandle texture2DHandle);

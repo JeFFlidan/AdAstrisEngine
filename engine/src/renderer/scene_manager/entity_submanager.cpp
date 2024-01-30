@@ -1,6 +1,6 @@
 ﻿#include "entity_submanager.h"
 #include "engine_core/engine_object_events.h"
-#include "core/timer.h"
+#include "core/global_objects.h"
 
 using namespace ad_astris::renderer::impl;
 
@@ -25,11 +25,11 @@ constexpr XMFLOAT3 POINT_LIGHT_UP_VECTORS[6] = {
 constexpr uint32_t DISPATCH_GROUP_SIZE = 64u;
 constexpr uint32_t RENDERER_ENTITIES_INIT_NUMBER = 512;
 
-EntitySubmanager::EntitySubmanager(SceneSubmanagerInitializationContext& initContext) : SceneSubmanagerBase(initContext)
+EntitySubmanager::EntitySubmanager()
 {
 	subscribe_to_events();
 	LightSubmanagerUpdatedEvent event;
-	_eventManager->trigger_event(event);
+	EVENT_MANAGER()->trigger_event(event);
 	_engineEntities.reserve(512);
 	_rendererEntities.reserve(512);
 }
@@ -65,11 +65,11 @@ void EntitySubmanager::allocate_gpu_buffers()
 	
 	if (loadedEntitiesSize > initSize)
 	{
-		_rendererResourceManager->allocate_storage_buffer(RENDERER_ENTITY_BUFFER_NAME, loadedEntitiesSize);
+		RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(RENDERER_ENTITY_BUFFER_NAME, loadedEntitiesSize);
 	}
 	else
 	{
-		_rendererResourceManager->allocate_storage_buffer(RENDERER_ENTITY_BUFFER_NAME, initSize);
+		RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(RENDERER_ENTITY_BUFFER_NAME, initSize);
 	}
 	
 	_areGPUBuffersAllocated = true;
@@ -77,25 +77,25 @@ void EntitySubmanager::allocate_gpu_buffers()
 
 void EntitySubmanager::update_cpu_arrays()
 {
-	ecs::EntityManager* entityManager = _world->get_entity_manager();
+	ecs::EntityManager* entityManager = WORLD()->get_entity_manager();
 	_pointLightCount.store(0);
 	_spotLightCount.store(0);
 	_directionalLightCount.store(0);
 
 	tasks::TaskGroup taskGroup;
-	_taskComposer->dispatch(taskGroup, _engineEntities.size(), DISPATCH_GROUP_SIZE, [&](tasks::TaskExecutionInfo execInfo)
+	TASK_COMPOSER()->dispatch(taskGroup, _engineEntities.size(), DISPATCH_GROUP_SIZE, [&](tasks::TaskExecutionInfo execInfo)
 	{
 		ecs::Entity entity = _engineEntities[execInfo.globalTaskIndex];
 		setup_light(entity);
 	});
-	_taskComposer->wait(taskGroup);
+	TASK_COMPOSER()->wait(taskGroup);
 }
 
 void EntitySubmanager::update_gpu_buffer(rhi::CommandBuffer& cmd)
 {
 	if (!_rendererEntities.empty())
 	{
-		_rendererResourceManager->update_buffer(
+		RENDERER_RESOURCE_MANAGER()->update_buffer(
 		   &cmd,
 		   RENDERER_ENTITY_BUFFER_NAME,
 		   sizeof(RendererEntity),
@@ -111,7 +111,7 @@ void EntitySubmanager::setup_light(ecs::Entity entity)
 	RendererEntity& rendererEntity = _rendererEntities.emplace_back();
 	_rendererEntitiesMutex.unlock();
 
-	ecs::EntityManager* entityManager = _world->get_entity_manager();
+	ecs::EntityManager* entityManager = WORLD()->get_entity_manager();
 	auto color = entityManager->get_component_const<ecore::ColorComponent>(entity)->color;
 	auto intensity = entityManager->get_component_const<ecore::IntensityComponent>(entity)->intensity;
 	rendererEntity.set_color(XMFLOAT4(color.x * intensity, color.y * intensity, color.z * intensity, color.w));

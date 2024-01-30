@@ -1,19 +1,15 @@
 #pragma once
 
 #include "api.h"
+#include "project.h"
 #include "engine_objects_creator.h"
-#include "ecs/system_manager.h"
+#include "resource_loader.h"
 #include "engine/engine_module.h"
 #include "application_core/window.h"
-#include "engine_core/project_settings/project_settings.h"
-#include "engine_core/world.h"
 #include "events/event_manager.h"
 #include "engine/renderer_module.h"
-#include "resource_manager/resource_manager.h"
-#include "multithreading/task_composer.h"
 #include "file_system/file_system.h"
 #include "engine_core/basic_events.h"
-#include <memory>
 
 namespace ad_astris::engine::impl
 {
@@ -24,38 +20,23 @@ namespace ad_astris::engine::impl
 			virtual void execute() override;
 			virtual void save_and_cleanup(bool needToSave) override;
 
-			virtual uicore::ECSUiManager* get_ecs_ui_manager() override { return _ecsUIManager.get(); }
-
 		private:
-			io::FileSystem* _fileSystem{ nullptr };
-			ModuleManager* _moduleManager{ nullptr };
-			events::EventManager* _eventManager{ nullptr };
 			acore::IWindow* _mainWindow{ nullptr };
-			std::unique_ptr<resource::ResourceManager> _resourceManager{ nullptr };
-			std::unique_ptr<ecs::SystemManager> _systemManager{ nullptr };
-			std::unique_ptr<uicore::ECSUiManager> _ecsUIManager{ nullptr };
-			std::unique_ptr<tasks::TaskComposer> _taskComposer{ nullptr };
 			renderer::IRenderer* _renderer{ nullptr };
-			std::unique_ptr<ecore::World> _world{ nullptr };
-			std::unique_ptr<ecore::ProjectSettings> _projectSettings{ nullptr };
+			std::unique_ptr<Project> _project{ nullptr };
 			std::unique_ptr<EngineObjectsCreator> _engineObjectsCreator{ nullptr };
+			std::unique_ptr<ResourceLoader> _resourceLoader{ nullptr };
 
 			ecs::Entity _activeCamera;
 			events::EventDelegate<ecore::EntityCreatedEvent> _activeCameraDelegate;
 
-			std::vector<std::pair<io::URI, io::URI>> _resourcePaths;
-			std::vector<resource::FirstCreationContext<ecore::OpaquePBRMaterial>> _materialsToCreate;
-			std::vector<ecore::EditorObjectCreationContext> _pointLightsToCreate;
-			std::vector<ecore::EditorObjectCreationContext> _staticModelsToCreate;
-
-			void create_new_blank_project();
-			void load_existing_project();
+			void init_global_objects(GlobalObjectContext* context);
+			void init_module_objects();
+			void init_local_objects();
+			void init_renderer(EngineInitializationContext& engineInitContext);
 			void register_ecs_objects();
 			void pre_update();
 			void set_active_camera_delegate();
-			void create_default_material();
-			UUID get_default_material_uuid();
 			void subscribe_to_events();
-			void create_new_resources();
 	};
 }

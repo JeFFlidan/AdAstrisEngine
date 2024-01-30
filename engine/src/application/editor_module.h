@@ -1,20 +1,17 @@
 ﻿#pragma once
 
+#include "core/global_objects.h"
 #include "core/module.h"
-#include "events/event_manager.h"
 #include "application_core/window.h"
-#include "file_system/file_system.h"
 #include "rhi/ui_window_backend.h"
 #include "ui_core/ecs_ui_manager.h"
-#include <functional>
 
 namespace ad_astris::editor
 {
 	struct EditorInitContext
 	{
+		GlobalObjectContext* globalObjectContext{ nullptr };
 		acore::IWindow* mainWindow{ nullptr };
-		io::FileSystem* fileSystem{ nullptr };
-		events::EventManager* eventManager{ nullptr };
 		uicore::ECSUiManager* ecsUiManager{ nullptr };
 		rhi::UIWindowBackendCallbacks* callbacks{ nullptr };
 	};

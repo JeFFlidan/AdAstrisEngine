@@ -8,11 +8,8 @@ namespace ad_astris::renderer::impl
 	class SwapChainPass : public rcore::IRenderPassExecutor, public RenderingBase
 	{
 		public:
-			SwapChainPass(RenderingInitContext& initContext, rhi::UIWindowBackend* uiWindowBackend);
-			virtual void prepare_render_pass(rcore::IRenderGraph* renderGraph, rcore::IRendererResourceManager* rendererResourceManager) override;
+			SwapChainPass(RenderingInitContext& initContext);
+			virtual void prepare_render_pass() override;
 			virtual void execute(rhi::CommandBuffer* cmd) override;
-
-		private:
-			rhi::UIWindowBackend* _uiWindowBackend{ nullptr };
 	};
 }

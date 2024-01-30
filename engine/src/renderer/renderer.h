@@ -3,6 +3,7 @@
 #include "api.h"
 #include "enums.h"
 #include "material_manager.h"
+#include "core/non_copyable_non_movable.h"
 #include "scene_manager/scene_manager.h"
 #include "engine/renderer_module.h"
 #include "resource_manager/resource_manager.h"
@@ -12,44 +13,31 @@
 
 namespace ad_astris::renderer::impl
 {
-	class RENDERER_API Renderer final : public IRenderer
+	class RENDERER_API Renderer final : public IRenderer, public NonCopyableNonMovable
 	{
 		public:
 			Renderer() = default;
 			virtual ~Renderer() override { }
-			Renderer(const Renderer& renderer) = delete;
-			Renderer(const Renderer&& renderer) = delete;
-			Renderer& operator=(const Renderer& renderer) = delete;
-			Renderer& operator=(const Renderer&& renderer) = delete;
 
 			virtual void init(RendererInitializationContext& rendererInitContext) override;
 			virtual void cleanup() override;
-
-			virtual void set_new_world(ecore::World* world) override { _world = world; }
+		
+			virtual rhi::IEngineRHI* get_rhi() override { return RHI(); }
 
 			virtual void bake() override;
 			virtual void draw(DrawContext& drawContext) override;
 		
 		private:
 			//std::unique_ptr<MaterialManager> _materialManager{ nullptr };
-			std::unique_ptr<SceneManager> _sceneManager{ nullptr };
 			ecore::RendererSubsettings* _rendererSubsettings{ nullptr };
-			rhi::IEngineRHI* _rhi{ nullptr };
-			rhi::UIWindowBackend* _uiWindowBackend{ nullptr };
-			rcore::IRenderGraph* _renderGraph{ nullptr };
-			rcore::IShaderManager* _shaderManager{ nullptr };
-			resource::ResourceManager* _resourceManager{ nullptr };
-			rcore::IRendererResourceManager* _rendererResourceManager{ nullptr };
-			rcore::IPipelineManager* _pipelineManager{ nullptr };
-			events::EventManager* _eventManager{ nullptr };
-			tasks::TaskComposer* _taskComposer{ nullptr };
 			acore::IWindow* _mainWindow{ nullptr };
-			ecore::World* _world{ nullptr };
 
 			std::vector<std::unique_ptr<rcore::IRenderPassExecutor>> _renderPassExecutors;
 		
 			uint32_t _frameIndex{ 0 };
 
+			void init_global_objects(GlobalObjectContext* context);
+			void init_module_objects();
 			void get_current_frame_index();
 			void create_uniform_buffers();
 			void setup_cameras(DrawContext& preDrawContext);

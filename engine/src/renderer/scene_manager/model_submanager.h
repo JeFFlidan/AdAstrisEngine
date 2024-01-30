@@ -62,7 +62,7 @@ namespace ad_astris::renderer::impl
 	class ModelSubmanager final : public SceneSubmanagerBase
 	{
 		public:
-			ModelSubmanager(SceneSubmanagerInitializationContext& initContext, MaterialSubmanager* materialSubmanager);
+			ModelSubmanager(MaterialSubmanager* materialSubmanager);
 
 			virtual void update(rhi::CommandBuffer& cmdBuffer) override;
 			virtual void cleanup_after_update() override;
@@ -70,29 +70,27 @@ namespace ad_astris::renderer::impl
 
 			rhi::Buffer* get_vertex_buffer_f32pntc()
 			{
-				return _rendererResourceManager->get_buffer(VERTEX_BUFFER_F32PNTC_NAME);
+				return RENDERER_RESOURCE_MANAGER()->get_buffer(VERTEX_BUFFER_F32PNTC_NAME);
 			}
 
 			rhi::Buffer* get_index_buffer_f32pntc()
 			{
-				return _rendererResourceManager->get_buffer(INDEX_BUFFER_F32PNTC_NAME);
+				return RENDERER_RESOURCE_MANAGER()->get_buffer(INDEX_BUFFER_F32PNTC_NAME);
 			}
 
 			rhi::Buffer* get_output_plane_vertex_buffer()
 			{
-				return _rendererResourceManager->get_buffer(OUTPUT_PLANE_VERTEX_BUFFER_NAME);
+				return RENDERER_RESOURCE_MANAGER()->get_buffer(OUTPUT_PLANE_VERTEX_BUFFER_NAME);
 			}
 
 			rhi::Buffer* get_model_instance_buffer()
 			{
-				return _rendererResourceManager->get_buffer(MODEL_INSTANCE_BUFFER_NAME);
+				return RENDERER_RESOURCE_MANAGER()->get_buffer(MODEL_INSTANCE_BUFFER_NAME);
 			}
 		
 			IndirectBufferDesc* get_indirect_buffer_desc() { return _indirectBufferDesc.get(); }
 
 			void add_static_model(ecore::StaticModelHandle handle, ecs::Entity& entity);
-
-			rcore::IRendererResourceManager* get_renderer_resource_manager() { return _rendererResourceManager; }
 
 		private:
 			const std::string VERTEX_BUFFER_F32PNTC_NAME = "vertex_buffer_f32pntc";

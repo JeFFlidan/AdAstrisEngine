@@ -9,28 +9,9 @@
 
 namespace ad_astris::renderer::impl
 {
-	struct SceneManagerInitializationContext
-	{
-		rhi::IEngineRHI* rhi;
-		events::EventManager* eventManager;
-		tasks::TaskComposer* taskComposer;
-		resource::ResourceManager* resourceManager;
-		rcore::IRendererResourceManager* rendererResourceManager;
-		ecore::World* world;
-	};
-	
-	struct SceneSubmanagerInitializationContext : SceneManagerInitializationContext
-	{
-		
-	};
-	
 	class SceneSubmanagerBase
 	{
 		public:
-			SceneSubmanagerBase(SceneSubmanagerInitializationContext& initContext)
-				: _rhi(initContext.rhi), _taskComposer(initContext.taskComposer), _eventManager(initContext.eventManager),
-					_resourceManager(initContext.resourceManager), _rendererResourceManager(initContext.rendererResourceManager),
-					_world(initContext.world) { }
 			virtual ~SceneSubmanagerBase() { }
 		
 			virtual void update(rhi::CommandBuffer& cmdBuffer) = 0;
@@ -38,13 +19,6 @@ namespace ad_astris::renderer::impl
 			virtual bool need_update() = 0;
 
 		protected:
-			rhi::IEngineRHI* _rhi{ nullptr };
-			tasks::TaskComposer* _taskComposer{ nullptr };
-			events::EventManager* _eventManager{ nullptr };
-			resource::ResourceManager* _resourceManager{ nullptr };
-			rcore::IRendererResourceManager* _rendererResourceManager{ nullptr };
-			ecore::World* _world;
-		
 			virtual void subscribe_to_events() = 0;
 	};
 

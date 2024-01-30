@@ -35,7 +35,7 @@ namespace ad_astris::rcore
 		public:
 			virtual ~IRenderPassExecutor() { }
 			// Must only be called before baking the render graph
-			virtual void prepare_render_pass(IRenderGraph* renderGraph, IRendererResourceManager* rendererResourceManager) = 0;
+			virtual void prepare_render_pass() = 0;
 			virtual void execute(rhi::CommandBuffer* cmd) = 0;
 	};
 

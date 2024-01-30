@@ -2,13 +2,14 @@
 #include "engine_core/model/default_models.h"
 #include "engine_core/engine_object_events.h"
 #include "engine_core/basic_events.h"
+#include "core/global_objects.h"
 
 using namespace ad_astris::renderer::impl;
 
 constexpr uint32_t MODEL_INSTANCES_INIT_NUMBER = 512;
 
-ModelSubmanager::ModelSubmanager(SceneSubmanagerInitializationContext& initContext, MaterialSubmanager* materialSubmanager)
-	: SceneSubmanagerBase(initContext), _materialSubmanager(materialSubmanager)
+ModelSubmanager::ModelSubmanager(MaterialSubmanager* materialSubmanager)
+	: _materialSubmanager(materialSubmanager)
 {
 	subscribe_to_events();
 	_modelInstances.reserve(MODEL_INSTANCES_INIT_NUMBER);
@@ -49,7 +50,7 @@ void ModelSubmanager::update_gpu_buffers(rhi::CommandBuffer& cmd)
 
 	if (!_modelInstances.empty())
 	{
-		_rendererResourceManager->update_buffer(
+		RENDERER_RESOURCE_MANAGER()->update_buffer(
 			&cmd,
 			MODEL_INSTANCE_BUFFER_NAME,
 			sizeof(RendererModelInstance),
@@ -60,14 +61,14 @@ void ModelSubmanager::update_gpu_buffers(rhi::CommandBuffer& cmd)
 	
 	if (_loadedModelsIndexArraySize_F32PNTC && _loadedModelsVertexArraySize_F32PNTC)
 	{
-		_rendererResourceManager->update_buffer(
+		RENDERER_RESOURCE_MANAGER()->update_buffer(
 			&cmd,
 			VERTEX_BUFFER_F32PNTC_NAME,
 			sizeof(uint8_t),
 			_vertexArray_F32PNTC.data(),
 			_vertexArray_F32PNTC.size(),
 			_loadedModelsVertexArraySize_F32PNTC);
-		_rendererResourceManager->update_buffer(
+		RENDERER_RESOURCE_MANAGER()->update_buffer(
 			&cmd,
 			INDEX_BUFFER_F32PNTC_NAME,
 			sizeof(uint8_t),
@@ -81,14 +82,14 @@ void ModelSubmanager::update_gpu_buffers(rhi::CommandBuffer& cmd)
 
 void ModelSubmanager::allocate_gpu_buffers(rhi::CommandBuffer& cmd)
 {
-	_rendererResourceManager->allocate_vertex_buffer(VERTEX_BUFFER_F32PNTC_NAME, DEFAULT_GPU_BUFFER_SIZE);
-	_rendererResourceManager->allocate_index_buffer(INDEX_BUFFER_F32PNTC_NAME, DEFAULT_GPU_BUFFER_SIZE);
-	_rendererResourceManager->allocate_storage_buffer(MODEL_INSTANCE_BUFFER_NAME, MODEL_INSTANCES_INIT_NUMBER * sizeof(RendererModelInstance));
+	RENDERER_RESOURCE_MANAGER()->allocate_vertex_buffer(VERTEX_BUFFER_F32PNTC_NAME, DEFAULT_GPU_BUFFER_SIZE);
+	RENDERER_RESOURCE_MANAGER()->allocate_index_buffer(INDEX_BUFFER_F32PNTC_NAME, DEFAULT_GPU_BUFFER_SIZE);
+	RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(MODEL_INSTANCE_BUFFER_NAME, MODEL_INSTANCES_INIT_NUMBER * sizeof(RendererModelInstance));
 
 	ecore::Plane plane;
 	uint64_t size = plane.vertices.size() * sizeof(ecore::model::VertexF32PC);
-	rhi::Buffer* buffer = _rendererResourceManager->allocate_vertex_buffer(OUTPUT_PLANE_VERTEX_BUFFER_NAME, size);
-	_rendererResourceManager->update_buffer(
+	rhi::Buffer* buffer = RENDERER_RESOURCE_MANAGER()->allocate_vertex_buffer(OUTPUT_PLANE_VERTEX_BUFFER_NAME, size);
+	RENDERER_RESOURCE_MANAGER()->update_buffer(
 		&cmd,
 		OUTPUT_PLANE_VERTEX_BUFFER_NAME,
 		sizeof(ecore::model::VertexF32PC),
@@ -135,14 +136,14 @@ void ModelSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 		}
 	}
 
-	ecs::EntityManager* entityManager = _world->get_entity_manager();
+	ecs::EntityManager* entityManager = WORLD()->get_entity_manager();
 	uint32_t instanceCounter = 0;
 	for (auto uuid : _indirectBufferDesc->get_uuids())
 	{
 		for (auto& entity : _entitiesByModelUUID[uuid])
 		{
 			auto modelComponent = entityManager->get_component_const<ecore::ModelComponent>(entity);
-			ecore::StaticModelHandle modelHandle = _resourceManager->get_resource<ecore::StaticModel>(modelComponent->modelUUID);
+			ecore::StaticModelHandle modelHandle = RESOURCE_MANAGER()->get_resource<ecore::StaticModel>(modelComponent->modelUUID);
 			ecore::StaticModel* staticModel = modelHandle.get_resource();
 
 			uint32_t modelInstanceIndex = _modelInstances.size();
@@ -233,7 +234,7 @@ void IndirectBufferDesc::update_gpu_buffers(rhi::CommandBuffer& cmd)
 {
 	if (!_indirectCommands.empty() && !_modelInstanceIDs.empty())
 	{
-		_modelSubmanager->get_renderer_resource_manager()->update_buffer(
+		RENDERER_RESOURCE_MANAGER()->update_buffer(
 			&cmd,
 			get_name_with_index("indirect_buffer"),
 			sizeof(DrawIndexedIndirectCommand),
@@ -249,7 +250,7 @@ void IndirectBufferDesc::update_gpu_buffers(rhi::CommandBuffer& cmd)
 		// 	_cullingInstanceIndices.size(),
 		// 	_cullingInstanceIndices.size());
 
-		_modelSubmanager->get_renderer_resource_manager()->update_buffer(
+		RENDERER_RESOURCE_MANAGER()->update_buffer(
 			&cmd,
 			get_name_with_index("model_instance_id_buffer"),
 			sizeof(RendererModelInstanceID),
@@ -261,13 +262,13 @@ void IndirectBufferDesc::update_gpu_buffers(rhi::CommandBuffer& cmd)
 
 void IndirectBufferDesc::allocate_gpu_buffers()
 {
-	_indirectBuffer = _modelSubmanager->get_renderer_resource_manager()->allocate_indirect_buffer(
+	_indirectBuffer = RENDERER_RESOURCE_MANAGER()->allocate_indirect_buffer(
 		get_name_with_index("indirect_buffer"),
 		sizeof(DrawIndexedIndirectCommand) * MODEL_INSTANCES_INIT_NUMBER);
 	// _modelSubmanager->get_renderer_resource_manager()->allocate_storage_buffer(
 	// 	get_name_with_index("culling_indices_buffer"),
 	// 	sizeof(CullingInstanceIndices) * MODEL_INSTANCES_INIT_NUMBER);
-	_modelInstanceIDBuffer = _modelSubmanager->get_renderer_resource_manager()->allocate_storage_buffer(
+	_modelInstanceIDBuffer = RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(
 		get_name_with_index("model_instance_id_buffer"),
 		sizeof(RendererModelInstanceID) * MODEL_INSTANCES_INIT_NUMBER);
 }

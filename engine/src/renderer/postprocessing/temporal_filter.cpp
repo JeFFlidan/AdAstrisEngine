@@ -4,12 +4,12 @@ using namespace ad_astris;
 using namespace renderer;
 using namespace impl;
 
-void TemporalFilter::prepare_render_pass(rcore::IRenderGraph* renderGraph, rcore::IRendererResourceManager* rendererResourceManager)
+void TemporalFilter::prepare_render_pass()
 {
-	rendererResourceManager->allocate_color_attachment("TAAOutput", _mainWindow->get_width(), _mainWindow->get_height());
-	rendererResourceManager->allocate_texture_view("TAAOutput", "TAAOutput");
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("TAAOutput", _mainWindow->get_width(), _mainWindow->get_height());
+	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("TAAOutput", "TAAOutput");
 
-	rcore::IRenderPass* renderPass = renderGraph->add_new_pass("TAA", rcore::RenderGraphQueue::GRAPHICS);
+	rcore::IRenderPass* renderPass = RENDER_GRAPH()->add_new_pass("TAA", rcore::RenderGraphQueue::GRAPHICS);
 	renderPass->add_color_input("OITColor");
 	renderPass->add_color_input("OITVelocity");
 	renderPass->add_color_input("DeferredLightingOutput");

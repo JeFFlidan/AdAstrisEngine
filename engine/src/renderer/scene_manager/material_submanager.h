@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "scene_submanager_base.h"
+#include "renderer/module_objects.h"
 #include "shader_interop_renderer.h"
 
 namespace ad_astris::renderer::impl
@@ -8,7 +9,7 @@ namespace ad_astris::renderer::impl
 	class MaterialSubmanager : public SceneSubmanagerBase
 	{
 		public:
-			MaterialSubmanager(SceneSubmanagerInitializationContext& initContext);
+			MaterialSubmanager();
 
 			virtual void update(rhi::CommandBuffer& cmdBuffer) override;
 			virtual void cleanup_after_update() override;
@@ -17,7 +18,7 @@ namespace ad_astris::renderer::impl
 			void add_cpu_opaque_material_uuid(UUID uuid) { _gpuOpaqueMaterialIndexByCPUMaterialUUID.insert({ uuid, 0 }); }
 			uint32_t get_gpu_material_index(rhi::CommandBuffer& cmd, UUID cpuMaterialUUID);
 
-			rhi::Buffer* get_material_buffer() { return _rendererResourceManager->get_buffer(MATERIAL_BUFFER_NAME); }
+			rhi::Buffer* get_material_buffer() { return RENDERER_RESOURCE_MANAGER()->get_buffer(MATERIAL_BUFFER_NAME); }
 			rhi::Sampler get_sampler(SamplerType type) { return _samplers[type]; }
 
 		private:

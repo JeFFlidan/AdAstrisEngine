@@ -3,6 +3,7 @@
 #include "tuple.h"
 #include <vector>
 #include <ctime>
+#include <typeinfo>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -102,6 +103,12 @@ namespace ad_astris
 
 				LOG_ERROR("CoreUtils::get_current_date_time(): Failed to format date and time using strftime. {} will be returned.", UNDEFINED_TIME)
 				return UNDEFINED_TIME;
+			}
+
+			template<typename Enum>
+			static constexpr typename std::underlying_type<Enum>::type to_underlying(Enum e)
+			{
+				return static_cast<typename std::underlying_type<Enum>::type>(e);
 			}
 	};
 }

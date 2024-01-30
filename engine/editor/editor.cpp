@@ -17,14 +17,14 @@ using namespace impl;
 
 void Editor::init(EditorInitContext& initContext)
 {
-	assert(initContext.eventManager != nullptr);
-	assert(initContext.fileSystem != nullptr);
+	assert(initContext.globalObjectContext != nullptr);
 	assert(initContext.mainWindow != nullptr);
 	assert(initContext.callbacks != nullptr);
 	assert(initContext.ecsUiManager != nullptr);
-	
-	_fileSystem = initContext.fileSystem;
-	_eventManager = initContext.eventManager;
+
+	GlobalObjects::set_global_object_context(initContext.globalObjectContext);
+	_fileSystem = FILE_SYSTEM();
+	_eventManager = EVENT_MANAGER();
 	_ecsUiManager = initContext.ecsUiManager;
 	_ecsUiManager->set_global_variables();
 	subscribe_to_events();

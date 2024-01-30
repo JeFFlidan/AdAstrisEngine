@@ -18,13 +18,9 @@ namespace ad_astris::renderer::impl
 	class RenderingBase
 	{
 		public:
-			RenderingBase(RenderingInitContext& initContext) : _rhi(initContext.rhi),
-				_sceneManager(initContext.sceneManager), _mainWindow(initContext.mainWindow), _pipelineManager(initContext.pipelineManager) { }
+			RenderingBase(RenderingInitContext& initContext) : _mainWindow(initContext.mainWindow) { }
 
 		protected:
-			rhi::IEngineRHI* _rhi{ nullptr};
-			SceneManager* _sceneManager{ nullptr };
 			acore::IWindow* _mainWindow{ nullptr };
-			rcore::IPipelineManager* _pipelineManager{ nullptr };
 	};
 }

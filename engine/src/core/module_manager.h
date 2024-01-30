@@ -32,9 +32,9 @@ namespace ad_astris
 			IModule* load_module(const std::string& moduleName);
 
 			template<typename T>
-			T* load_module(const std::string& fileName)
+			T* load_module(const std::string& moduleName)
 			{
-				return reinterpret_cast<T*>(load_module(fileName));
+				return reinterpret_cast<T*>(load_module(moduleName));
 			}
 
 			void unload_module(const std::string& moduleName);

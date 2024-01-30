@@ -14,7 +14,7 @@ namespace ad_astris::renderer::impl
 	class SceneManager
 	{
 		public:
-			SceneManager(SceneManagerInitializationContext& initContext);
+			SceneManager();
 			~SceneManager();
 
 			void update_per_frame_cpu_data();
@@ -60,12 +60,6 @@ namespace ad_astris::renderer::impl
 			uint32_t get_light_count() { return _entitySubmanager->get_light_count(); }
 		
 		private:
-			rhi::IEngineRHI* _rhi{ nullptr };
-			events::EventManager* _eventManager{ nullptr };
-			tasks::TaskComposer* _taskComposer{ nullptr };
-			resource::ResourceManager* _resourceManager{ nullptr };
-			rcore::IRendererResourceManager* _rendererResourceManager{ nullptr };
-
 			std::unique_ptr<ModelSubmanager> _modelSubmanager;
 			std::unique_ptr<MaterialSubmanager> _materialSubmanager;
 			std::unique_ptr<EntitySubmanager> _entitySubmanager;
