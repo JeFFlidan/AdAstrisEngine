@@ -3,6 +3,7 @@
 #include "file_system/utils.h"
 #include "resource_manager/resource_visitor.h"
 #include "engine_core/basic_events.h"
+#include "core/constants.h"
 
 using namespace ad_astris;
 using namespace ecore;
@@ -54,14 +55,13 @@ ecs::Entity Level::create_entity(ecs::EntityCreationContext& creationContext)
 void Level::serialize(io::File* file)
 {
 	nlohmann::json levelMainJson;
-
-	std::string levelMetadata = level::Utils::pack_level_info(&_levelInfo);
-	levelMainJson["level_metadata"] = levelMetadata;
+	
+	levelMainJson["level_metadata"] = level::Utils::pack_level_info(&_levelInfo);
 
 	nlohmann::json jsonForEntities;
 	level::Utils::build_json_from_entities(jsonForEntities, this);
-	levelMainJson["entities"] = jsonForEntities.dump();
-	std::string newMetadata = levelMainJson.dump();
+	levelMainJson["entities"] = jsonForEntities;
+	std::string newMetadata = levelMainJson.dump(JSON_INDENT);
 	file->set_metadata(newMetadata);
 }
 
@@ -77,19 +77,19 @@ void Level::deserialize(io::File* file, ObjectName* objectName)
 	_path = file->get_file_path();
 	
 	nlohmann::json levelMainJson = nlohmann::json::parse(file->get_metadata());
-	std::string levelMetadata = levelMainJson["level_metadata"];
+	nlohmann::json levelMetadata = levelMainJson["level_metadata"];
 	
 	_levelInfo = level::Utils::unpack_level_info(levelMetadata);
 	
-	_entitiesJsonStr = levelMainJson["entities"];
+	_entitiesJson = levelMainJson["entities"];
 }
 
 void Level::build_entities()
 {
-	if (!_entitiesJsonStr.empty())
+	if (!_entitiesJson.empty())
 	{
-		level::Utils::build_entities_from_json(_entitiesJsonStr, this);
-		_entitiesJsonStr.clear();
+		level::Utils::build_entities_from_json(_entitiesJson, this);
+		_entitiesJson.clear();
 	}
 }
 

@@ -9,11 +9,11 @@ namespace ad_astris::ecore
 #define REGISTER_MATERIAL_SETTINGS(Type, ...) REFLECT_SERIALIZABLE_FIELDS(Type, __VA_ARGS__)
 
 #define IMPLEMENT_MATERIAL_SETTINGS_METHODS()										\
-	virtual std::string serialize() override										\
+	virtual nlohmann::json serialize() override										\
 	{																				\
 		return serialization::serialize_to_json(*this);								\
 	}																				\
-	virtual void deserialize(const std::string& materialSettingsJsonStr) override	\
+	virtual void deserialize(const nlohmann::json& materialSettingsJsonStr) override\
 	{																				\
 		serialization::deserialize_from_json(materialSettingsJsonStr, *this);		\
 	}																				\
@@ -24,8 +24,8 @@ namespace ad_astris::ecore
 
 	struct IMaterialSettings
 	{
-		virtual std::string serialize() = 0;
-		virtual void deserialize(const std::string& materialSettingsJsonStr) = 0;
+		virtual nlohmann::json serialize() = 0;
+		virtual void deserialize(const nlohmann::json& materialSettingsJsonStr) = 0;
 		virtual uint32_t get_size() = 0;
 	};
 	

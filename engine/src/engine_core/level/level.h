@@ -33,7 +33,7 @@ namespace ad_astris::ecore
 			std::vector<ecs::Entity> _entities;
 			
 			level::LevelInfo _levelInfo;
-			std::string _entitiesJsonStr;
+			nlohmann::json _entitiesJson;
 		
 		public:
 			// ========== Begin Object interface ==========

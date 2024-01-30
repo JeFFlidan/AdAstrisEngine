@@ -27,7 +27,7 @@ namespace ad_astris
 		std::unique_ptr<uicore::ECSUiManager> ecsUIManager{ nullptr };
 	};
 	
-	class GlobalObjects
+	class  GlobalObjects
 	{
 		public:
 			static void init_file_system();
@@ -50,16 +50,16 @@ namespace ad_astris
 				return _globalObjectContext;
 			}
 		
-			FORCE_INLINE static io::FileSystem* get_file_system() { assert(_globalObjectContext->fileSystem.get()); return _globalObjectContext->fileSystem.get(); }
-			FORCE_INLINE static tasks::TaskComposer* get_task_composer() { assert(_globalObjectContext->taskComposer.get()); return _globalObjectContext->taskComposer.get(); }
-			FORCE_INLINE static resource::ResourceManager* get_resource_manager() { assert(_globalObjectContext->resourceManager.get()); return _globalObjectContext->resourceManager.get(); }
-			FORCE_INLINE static events::EventManager* get_event_manager() { assert(_globalObjectContext->eventManager.get()); return _globalObjectContext->eventManager.get(); }
-			FORCE_INLINE static ecore::World* get_world() { assert(_globalObjectContext->world.get()); return _globalObjectContext->world.get(); }
-			FORCE_INLINE static ecs::SystemManager* get_system_manager() { assert(_globalObjectContext->systemManager.get()); return _globalObjectContext->systemManager.get(); }
-			FORCE_INLINE static ecs::TypeInfoTable* get_ecs_type_info_table() { assert(_globalObjectContext->ecsTypeInfoTable.get()); return _globalObjectContext->ecsTypeInfoTable.get(); }
-			FORCE_INLINE static ModuleManager* get_module_manager() { assert(_globalObjectContext->moduleManager.get()); return _globalObjectContext->moduleManager.get(); }
-			FORCE_INLINE static profiler::ProfilerInstance* get_profiler_instance() { assert(_globalObjectContext->profilerInstance.get()); return _globalObjectContext->profilerInstance.get(); }
-			FORCE_INLINE static uicore::ECSUiManager* get_ecs_ui_manager() { assert(_globalObjectContext->ecsUIManager.get()); return _globalObjectContext->ecsUIManager.get(); }
+			FORCE_INLINE static io::FileSystem* get_file_system() { return _globalObjectContext->fileSystem.get(); }
+			FORCE_INLINE static tasks::TaskComposer* get_task_composer() { return _globalObjectContext->taskComposer.get(); }
+			FORCE_INLINE static resource::ResourceManager* get_resource_manager() { return _globalObjectContext->resourceManager.get(); }
+			FORCE_INLINE static events::EventManager* get_event_manager() { return _globalObjectContext->eventManager.get(); }
+			FORCE_INLINE static ecore::World* get_world() { return _globalObjectContext->world.get(); }
+			FORCE_INLINE static ecs::SystemManager* get_system_manager() { return _globalObjectContext->systemManager.get(); }
+			FORCE_INLINE static ecs::TypeInfoTable* get_ecs_type_info_table() { return _globalObjectContext->ecsTypeInfoTable.get(); }
+			FORCE_INLINE static ModuleManager* get_module_manager() { return _globalObjectContext->moduleManager.get(); }
+			FORCE_INLINE static profiler::ProfilerInstance* get_profiler_instance() { return _globalObjectContext->profilerInstance.get(); }
+			FORCE_INLINE static uicore::ECSUiManager* get_ecs_ui_manager() { return _globalObjectContext->ecsUIManager.get(); }
 		
 		private:
 			inline static GlobalObjectContext* _globalObjectContext{ nullptr };

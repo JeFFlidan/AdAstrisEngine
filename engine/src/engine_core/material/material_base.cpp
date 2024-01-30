@@ -1,4 +1,5 @@
 #include "material_base.h"
+#include "core/constants.h"
 
 using namespace ad_astris::ecore;
 
@@ -12,7 +13,7 @@ void MaterialBase::serialize(io::File* file)
 	nlohmann::json metadataJson;
 	metadataJson["material_uuid"] = _materialUUID;
 	metadataJson["material_settings"] = _materialSettings->serialize();
-	std::string metadataStr = metadataJson.dump();
+	std::string metadataStr = metadataJson.dump(JSON_INDENT);
 	file->set_metadata(metadataStr);
 	_isDirty = false;
 }

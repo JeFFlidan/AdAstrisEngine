@@ -148,15 +148,13 @@ Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID u
 	return entity;
 }
 
-Entity EntityManager::build_entity_from_json(UUID& uuid, std::string& json)
+Entity EntityManager::build_entity_from_json(UUID& uuid, nlohmann::json& entityJson)
 {
-	nlohmann::json entityJson = nlohmann::json::parse(json);
-	std::string componentsStr = entityJson["components"];
-	nlohmann::json jsonWithComponents = nlohmann::json::parse(componentsStr);
+	nlohmann::json componentsJson = entityJson["components"];
 	std::vector<std::string> tagNames = entityJson["tags"].get<std::vector<std::string>>();
 	EntityCreationContext creationContext;
 	
-	for (auto& componentInfo : jsonWithComponents.items())
+	for (auto& componentInfo : componentsJson.items())
 	{
 		std::string componentName = componentInfo.key();
 		uint32_t typeId = TYPE_INFO_TABLE->get_component_id(componentName);
@@ -196,7 +194,7 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 	}
 
 	nlohmann::json entityJson;
-	entityJson["components"] = componentsJson.dump();
+	entityJson["components"] = componentsJson;
 
 	std::vector<uint32_t>& tagIDs = archetype._chunkStructure.tagIDs;
 	std::vector<std::string> tagNames;
@@ -208,7 +206,7 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 
 	entityJson["tags"] = tagNames;
 	std::scoped_lock<std::mutex> locker(_entityMutex);
-	levelJson[std::to_string(entity.get_uuid())] = entityJson.dump();
+	levelJson[std::to_string(entity.get_uuid())] = entityJson;
 }
 
 void EntityManager::destroy_entity(Entity& entity)

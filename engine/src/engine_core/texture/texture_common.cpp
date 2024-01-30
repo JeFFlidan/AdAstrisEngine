@@ -1,4 +1,5 @@
 #include "texture_common.h"
+#include "core/constants.h"
 #include <json/json.hpp>
 
 using namespace ad_astris::ecore;
@@ -79,7 +80,7 @@ std::string texture::Utils::pack_texture2D_info(Texture2DInfo* info)
 	textureMetaData["brightness"] = info->brightness;
 	textureMetaData["saturation"] = info->saturation;
 	textureMetaData["uuid"] = (uint64_t)info->uuid;
-	return textureMetaData.dump();
+	return textureMetaData.dump(JSON_INDENT);
 }
 
 texture::Texture2DInfo texture::Utils::unpack_texture2D_info(std::string strMetaData)

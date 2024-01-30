@@ -61,9 +61,9 @@ namespace ad_astris::ecs
 
 			/** Builds one entity with all components and tags based on the info from .aalevel file
 			 * @param uuid must be a valid uuid that was taken from .aalevel file
-			 * @param json fully describes one entity. Must be taken from .aalevel file
+			 * @param entityJson fully describes one entity. Must be taken from .aalevel file
 			 */
-			Entity build_entity_from_json(UUID& uuid, std::string& json);
+			Entity build_entity_from_json(UUID& uuid, nlohmann::json& entityJson);
 
 			/** Serializes all entity components and tags to json.
 			 * @param entity should have a valid UUID
@@ -233,7 +233,7 @@ namespace ad_astris::ecs
 						}
 						void deserialize(													
 							EntityCreationContext& entityCreationContext,					
-							const std::string& componentInfo) override						
+							nlohmann::json& componentInfo) override						
 						{																	
 							Component component;									
 							serialization::deserialize_from_json(componentInfo, component);	

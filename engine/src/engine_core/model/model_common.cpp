@@ -1,5 +1,6 @@
 #include "model_common.h"
 #include "engine_core/object.h"
+#include "core/constants.h"
 #include <json/json.hpp>
 
 using namespace ad_astris::ecore;
@@ -43,7 +44,7 @@ std::string model::Utils::pack_static_model_info(StaticModelInfo* info)
 	modelMetaData["vertex_format"] = get_str_vertex_format(info->vertexFormat);
 	modelMetaData["materials_name"] = info->materialsName;
 
-	return modelMetaData.dump();
+	return modelMetaData.dump(JSON_INDENT);
 }
 
 model::StaticModelInfo model::Utils::unpack_static_model_info(std::string& strMetaData)

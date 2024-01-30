@@ -7,7 +7,7 @@
 namespace ad_astris::serialization
 {
 	template<typename T>
-	std::string serialize_to_json(T& object)
+	nlohmann::json serialize_to_json(T& object)
 	{
 		nlohmann::json objectJson;
 		refl::util::for_each(refl::reflect(object).members, [&](auto member)
@@ -17,13 +17,12 @@ namespace ad_astris::serialization
 				objectJson[refl::descriptor::get_display_name(member)] = member(object);
 			}
 		});
-		return objectJson.dump();																							
+		return objectJson;																							
 	}
 
 	template<typename T>
-	void deserialize_from_json(const std::string& jsonStr, T& object)
+	void deserialize_from_json(const nlohmann::json& json, T& object)
 	{
-		nlohmann::json json = nlohmann::json::parse(jsonStr);
 		refl::util::for_each(refl::reflect(object).members, [&](auto member)
 		{
 			member(object, json[refl::descriptor::get_display_name(member)]);
