@@ -21,6 +21,7 @@ namespace ad_astris::vulkan
 		
 			void submit(VulkanCommandManager& cmdManager, bool useSignalSemaphores);
 			bool present(VulkanSwapChain* swapChain, uint32_t currentImageIndex);
+			void cleanup_present_wait_semaphores() { _presentWaitSemaphores.clear(); }
 
 			VkQueue get_queue() { return _queue; }
 			uint32_t get_family() { return _family; }

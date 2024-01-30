@@ -81,7 +81,7 @@ bool vulkan::VulkanQueue::present(VulkanSwapChain* swapChain, uint32_t currentIm
 	presentInfo.waitSemaphoreCount = _presentWaitSemaphores.size();
 	presentInfo.pImageIndices = &currentImageIndex;
 	VkResult result = vkQueuePresentKHR(_queue, &presentInfo);
-	_presentWaitSemaphores.clear();
+
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 		return false;
 	
