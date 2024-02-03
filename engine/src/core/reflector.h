@@ -59,7 +59,8 @@ constexpr auto setup_attributes(ARGS&&... args)
 	SETUP_ATTRIBUTES(__VA_ARGS__)
 
 #define REFLECTOR_END()														\
-	static constexpr size_t _fieldCount = __COUNTER__ - _fieldIndexOffset;
+	static constexpr size_t _fieldCount = __COUNTER__ - _fieldIndexOffset;	\
+	public:
 
 #define REFLECT_FIELD_BASE(Type, Name, ...)									\
 	using fieldType = Type;													\
@@ -91,22 +92,12 @@ constexpr auto setup_attributes(ARGS&&... args)
 			SETUP_ATTRIBUTES(__VA_ARGS__)									\
 		};
 
-#define FIELD(Type, Name, ...)												\
-	public:																	\
-		Type Name;															\
-	REFLECT_FIELD(Type, Name, __VA_ARGS__)
-
-#define FIELD_DV(Type, Name, Value, ...)									\
+#define FIELD(Type, Name, Value, ...)										\
 	public:																	\
 		Type Name = Type##Value;											\
 	REFLECT_FIELD(Type, Name, __VA_ARGS__)
 
 #define PRIVATE_FIELD(Type, Name, ...)										\
-	private:																\
-		Type Name;															\
-	REFLECT_FIELD(Type, Name, __VA_ARGS__)
-
-#define PRIVATE_FIELD_DV(Type, Name, Value, ...)							\
 	private:																\
 		Type Name = Type##Value;											\
 	REFLECT_FIELD(Type, Name, __VA_ARGS__)
@@ -120,6 +111,12 @@ class Reflector
 			execute_in_order<T, 0>(std::forward<Func>(func));
 		}
 
+		template<typename Func, typename ...ARGS>
+		static constexpr void for_each(std::tuple<ARGS...> args, Func&& func)
+		{
+			parse_tuple<0>(args, std::forward<Func>(func));
+		}
+	
 		template<typename T, typename F>
 		static decltype(auto) get_value(T& target, F& field)
 		{
@@ -156,6 +153,30 @@ class Reflector
 			return T::template get_name();
 		}
 
+		template<typename T>
+		static constexpr decltype(auto) get_attributes()
+		{
+			return T::attributes;
+		}
+
+		template<typename F>
+		static constexpr decltype(auto) get_attributes(F field)
+		{
+			return F::attributes;
+		}
+
+		template<typename A, typename T>
+		static constexpr bool is_same()
+		{
+			return std::is_same_v<A, T>;
+		}
+
+		template<typename A, typename BaseType>
+		static constexpr bool is_derived()
+		{
+			return std::is_base_of_v<BaseType, A>;
+		}
+
 	private:
 		template<typename T, size_t I, typename F>
 		static constexpr void execute(F&& func)
@@ -169,5 +190,19 @@ class Reflector
 			execute<T, I>(func);
 			if constexpr (I + 1 < T::_fieldCount)
 				return execute_in_order<T, I + 1>(std::forward<F>(func));
+		}
+
+		template<size_t I, typename F, typename ...ARGS>
+		static constexpr void execute(std::tuple<ARGS...> args, F&& func)
+		{
+			func(std::get<I>(args));
+		}
+
+		template<size_t I, typename F, typename ...ARGS>
+		static constexpr void parse_tuple(std::tuple<ARGS...> args, F&& func)
+		{
+			execute<I>(args, func);
+			if constexpr (I + 1 < std::tuple_size<decltype(args)>())
+				return parse_tuple<I + 1>(args, std::forward<F>(func));
 		}
 };
