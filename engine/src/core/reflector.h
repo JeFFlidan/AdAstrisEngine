@@ -2,14 +2,37 @@
 
 #include "reflection.h"
 #include <type_traits>
+#include <tuple>
 
-template<typename What, typename ...Args>
-struct Checker
-{
-	static constexpr bool value{ (std::is_base_of_v<What, Args> || ...) };
-};
+template <typename T, typename Tuple>
+struct TupleHasType;
+
+template <typename T, typename... Us>
+struct TupleHasType<T, std::tuple<Us...>> : std::disjunction<std::is_base_of<T, Us>...> {};
 
 class Reflector;
+
+template<typename ...ARGS>
+constexpr auto setup_attributes(ARGS&&... args)
+{
+	return std::make_tuple(std::forward<ARGS>(args)...);
+}
+
+#define SETUP_ATTRIBUTES(...)												\
+	constexpr static auto attributes = setup_attributes(__VA_ARGS__);		\
+	using AttributeTypes = std::remove_const_t<decltype(attributes)>;		\
+																			\
+	template<typename T>													\
+	static constexpr bool has_attribute()									\
+	{																		\
+		return TupleHasType<T, AttributeTypes>::value;						\
+	}																		\
+																			\
+	template<typename T>													\
+	static constexpr T get_attribute()										\
+	{																		\
+		return std::get<T>(attributes);										\
+	}
 
 #define REFLECT_TYPE_BASE(Type, ...)										\
 	friend Reflector;                                                   	\
@@ -26,43 +49,14 @@ class Reflector;
 			return Field<index>{};											\
 		}																	\
 																			\
-		template<typename T>												\
-		static constexpr bool has_attribute()								\
-		{																	\
-			return Checker<T, __VA_ARGS__>::value;							\
-		}																	\
-																			\
 		static constexpr const char* get_name()								\
 		{																	\
 			return #Type;													\
 		}
 
-#define DEFINE_META_METHODS_PLACEHOLDERS()									\
-	template<typename T>													\
-	static constexpr bool has_meta() { return false; }						\
-	static constexpr void* get_meta() { return nullptr; }					\
-
-#define DEFINE_META_METHODS(Meta)											\
-	static constexpr decltype(Meta) meta = Meta;							\
-																			\
-	template<typename M>													\
-	static constexpr bool has_meta()										\
-	{																		\
-		return std::is_same_v<M, decltype(Meta)>;							\
-	}																		\
-																			\
-	static constexpr const decltype(Meta)* get_meta()						\
-	{																		\
-		return &meta;														\
-	}																		\
-
 #define REFLECTOR_START(Type, ...)											\
 	REFLECT_TYPE_BASE(Type, __VA_ARGS__)									\
-	DEFINE_META_METHODS_PLACEHOLDERS()
-
-#define REFLECTOR_START_M(Type, Meta, ...)									\
-	REFLECT_TYPE_BASE(Type, __VA_ARGS__)									\
-	DEFINE_META_METHODS(Meta)												\
+	SETUP_ATTRIBUTES(__VA_ARGS__)
 
 #define REFLECTOR_END()														\
 	static constexpr size_t _fieldCount = __COUNTER__ - _fieldIndexOffset;
@@ -71,15 +65,21 @@ class Reflector;
 	using fieldType = Type;													\
 	static constexpr auto pointer{&type::Name};								\
 																			\
-	template<typename A>													\
-	static constexpr bool has_attribute()									\
-	{																		\
-		return Checker<A, __VA_ARGS__>::value;								\
-	}																		\
-																			\
 	static constexpr const char* get_name()									\
 	{																		\
 		return #Name;														\
+	}																		\
+																			\
+	template<typename T>													\
+	Type operator()(const T& target)										\
+	{																		\
+		return target.*(pointer);											\
+	}																		\
+																			\
+	template<typename T, typename V>										\
+	void operator()(T& target, V&& value)									\
+	{																		\
+		target.*(pointer) = std::forward<V>(value);							\
 	}
 
 #define REFLECT_FIELD(Type, Name, ...)										\
@@ -88,31 +88,27 @@ class Reflector;
 		struct Field<__COUNTER__ - _fieldIndexOffset, __UNUSED>				\
 		{																	\
 			REFLECT_FIELD_BASE(Type, Name, __VA_ARGS__)						\
-			DEFINE_META_METHODS_PLACEHOLDERS()								\
+			SETUP_ATTRIBUTES(__VA_ARGS__)									\
 		};
-
-#define REFLECT_FIELD_M(Type, Name, Meta, ...)								\
-	private:																\
-	template<typename __UNUSED>												\
-	struct Field<__COUNTER__ - _fieldIndexOffset, __UNUSED>					\
-	{																		\
-		REFLECT_FIELD_BASE(Type, Name, __VA_ARGS__)							\
-		DEFINE_META_METHODS(Meta)											\
-	};
 
 #define FIELD(Type, Name, ...)												\
 	public:																	\
 		Type Name;															\
 	REFLECT_FIELD(Type, Name, __VA_ARGS__)
 
-#define FIELD_M(Type, Name, Meta, ...)										\
+#define FIELD_DV(Type, Name, Value, ...)									\
 	public:																	\
-		Type Name;															\
-	REFLECT_FIELD_M(Type, Name, Meta, __VA_ARGS__)
+		Type Name = Type##Value;											\
+	REFLECT_FIELD(Type, Name, __VA_ARGS__)
 
-#define PRIVATE_PROPERTY(Type, Name, ...)									\
+#define PRIVATE_FIELD(Type, Name, ...)										\
 	private:																\
 		Type Name;															\
+	REFLECT_FIELD(Type, Name, __VA_ARGS__)
+
+#define PRIVATE_FIELD_DV(Type, Name, Value, ...)							\
+	private:																\
+		Type Name = Type##Value;											\
 	REFLECT_FIELD(Type, Name, __VA_ARGS__)
 
 class Reflector
@@ -148,28 +144,16 @@ class Reflector
 			return T::template has_attribute<A>();
 		}
 
+		template<typename A, typename T>
+		static constexpr A get_attribute(T target)
+		{
+			return T::template get_attribute<A>();
+		}
+
 		template<typename T>
 		static constexpr const char* get_name(T target)
 		{
 			return T::template get_name();
-		}
-
-		template<typename T, typename M>
-		static constexpr bool has_meta()
-		{
-			return T::template has_meta<M>();
-		}
-
-		template<typename M, typename T>
-		static constexpr bool has_meta(T target)
-		{
-			return T::template has_meta<M>();
-		}
-
-		template<typename T>
-		static constexpr decltype(auto) get_meta(T target = {})
-		{
-			return T::template get_meta();
 		}
 
 	private:
