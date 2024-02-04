@@ -13,7 +13,7 @@ SerializersTable* SerializersTable::get_instance()
 	return _instance;
 }
 
-BaseSerializer* SerializersTable::get_serializer(uint32_t componentTypeID)
+ISerializer* SerializersTable::get_serializer(uint64_t componentTypeID)
 {
 	auto serializerIterator = _serializerByTypeID.find(componentTypeID);
 	if (serializerIterator == _serializerByTypeID.end())

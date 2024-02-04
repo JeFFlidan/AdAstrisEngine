@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "ecs/system_manager.h"
+#include "ecs/attributes.h"
 
 namespace ad_astris::engine::impl
 {

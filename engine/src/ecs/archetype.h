@@ -46,10 +46,10 @@ namespace ad_astris::ecs
 	
 	struct ChunkStructure
 	{
-		std::vector<uint32_t> componentIds;
-		std::unordered_map<uint32_t, uint16_t> componentIdToSize;	// should be sorted
-		std::vector<uint32_t> tagIDs;
-		std::unordered_set<uint32_t> tagIDsSet;
+		std::vector<uint64_t> componentIds;
+		std::unordered_map<uint64_t, uint16_t> componentIdToSize;	// should be sorted
+		std::vector<uint64_t> tagIDs;
+		std::unordered_set<uint64_t> tagIDsSet;
 		uint32_t numEntitiesPerChunk{ 0 };
 		uint32_t sizeOfOneColumn{ 0 };
 	};
@@ -70,12 +70,12 @@ namespace ad_astris::ecs
 			uint8_t* get_chunk();
 		
 			void set_component(uint32_t column, IComponent* component);
-			Subchunk get_subchunk(uint32_t componentTypeId);
-			uint8_t* get_entity_component(uint32_t column, uint32_t componentTypeId);
+			Subchunk get_subchunk(uint64_t componentTypeId);
+			uint8_t* get_entity_component(uint32_t column, uint64_t componentTypeId);
 
 		private:
 			uint8_t* _chunk{ nullptr };
-			std::unordered_map<uint32_t, Subchunk> _componentIdToSubchunk;
+			std::unordered_map<uint64_t, Subchunk> _componentIdToSubchunk;
 			uint32_t _chunkSize{ 0 };
 			uint32_t _elementsCount{ 0 };
 	};
@@ -105,7 +105,7 @@ namespace ad_astris::ecs
 				std::vector<Subchunk> subchunks;
 				for (auto& chunk : _chunks)
 				{
-					((subchunks.push_back(chunk.get_subchunk(TYPE_INFO_TABLE->get_component_id<TYPES>()))), ...);
+					((subchunks.push_back(chunk.get_subchunk(TypeInfoTable::get_component_id<TYPES>()))), ...);
 				}
 
 				return subchunks;
@@ -117,7 +117,7 @@ namespace ad_astris::ecs
 				std::vector<Subchunk> subchunks;
 				for (auto& chunk : _chunks)
 				{
-					subchunks.push_back(chunk.get_subchunk(TYPE_INFO_TABLE->get_component_id<T>()));
+					subchunks.push_back(chunk.get_subchunk(TypeInfoTable::get_component_id<T>()));
 				}
 
 				return subchunks;
@@ -127,7 +127,7 @@ namespace ad_astris::ecs
 			T* get_entity_component(Entity& entity, uint32_t columnIndex)
 			{
 				ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
-				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, TYPE_INFO_TABLE->get_component_id<T>()));
+				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, TypeInfoTable::get_component_id<T>()));
 			}
 
 			template<typename ...ARGS>
@@ -150,20 +150,20 @@ namespace ad_astris::ecs
 			uint32_t get_entities_count_per_chunk(uint32_t chunkIndex);
 
 			bool check_requirements_match(
-				std::vector<uint32_t>& requiredComponentIDs,
-				std::vector<uint32_t>& requiredTagIDs);
+				std::vector<uint64_t>& requiredComponentIDs,
+				std::vector<uint64_t>& requiredTagIDs);
 
 			template<typename T>
 			bool has_component()
 			{
-				auto it = _chunkStructure.componentIdToSize.find(TYPE_INFO_TABLE->get_component_id<T>());
+				auto it = _chunkStructure.componentIdToSize.find(TypeInfoTable::get_component_id<T>());
 				return it == _chunkStructure.componentIdToSize.end() ? false : true;
 			}
 
 			template<typename T>
 			bool has_tag()
 			{
-				auto it = _chunkStructure.tagIDsSet.find(TYPE_INFO_TABLE->get_tag_id<T>());
+				auto it = _chunkStructure.tagIDsSet.find(TypeInfoTable::get_tag_id<T>());
 				return it == _chunkStructure.tagIDsSet.end() ? false : true;
 			}
 		
@@ -178,15 +178,15 @@ namespace ad_astris::ecs
 			void get_component_by_component_type_id(
 				Entity& entity,
 				uint32_t columnIndex,
-				uint32_t typeId,
+				uint64_t typeId,
 				uint8_t* tempComponentsArray);
 
-			void* get_component_by_component_type_id(Entity& entity, uint32_t columnIndex, uint32_t typeID);
+			void* get_component_by_component_type_id(Entity& entity, uint32_t columnIndex, uint64_t typeID);
 		
 			template<typename T>
-			T* get_converted_component(ArchetypeChunk& chunk, uint32_t columnIndex)
+			T* get_converted_component(ArchetypeChunk& chunk, uint64_t columnIndex)
 			{
-				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, TYPE_INFO_TABLE->get_component_id<T>()));
+				return reinterpret_cast<T*>(chunk.get_entity_component(columnIndex, TypeInfoTable::get_component_id<T>()));
 			}
 	};
 }

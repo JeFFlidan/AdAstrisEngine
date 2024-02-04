@@ -2,6 +2,7 @@
 
 #include "ecs/type_info_table.h"
 #include "ecs/entity_manager.h"
+#include "core/attributes.h"
 #include "core/math_base.h"
 #include "core/reflection.h"
 #include "engine_core/uuid.h"
@@ -35,7 +36,7 @@ namespace ad_astris::uicore
 	{
 		public:
 			// Need point to the TypeInfoTable to set up it in the editor module.
-			ECSUiManager(ecs::EntityManager* entityManager, ecs::TypeInfoTable* globalTypeInfoTable);
+			ECSUiManager(ecs::EntityManager* entityManager);
 			void set_imgui_context(ImGuiContext* context);
 		
 			template<typename T>
@@ -44,24 +45,24 @@ namespace ad_astris::uicore
 				std::function<void(void*, ComponentWidgetProperties&)> func = [&](void* ptr, ComponentWidgetProperties& widgetProperties)
 				{
 					T& component = *static_cast<T*>(ptr);
-					refl::util::for_each(refl::reflect(component).members, [&](auto member)
+					Reflector::for_each<T>([&](auto field)
 					{
-						if constexpr (refl::descriptor::is_readable(member) && refl::descriptor::has_attribute<UIField>(member))
+						if constexpr (Reflector::has_attribute<EditAnywhere>(field))
 						{
-							member(component, draw_element(_imGuiContext, refl::descriptor::get_display_name(member), member(component), widgetProperties));
+							field(component, draw_element(_imGuiContext, Reflector::get_name(field), field(component), widgetProperties));
 						}
 					});
 				};
-				_widgetDescByComponentID[_typeInfoTable->get_component_id<T>()].callback = func;
+				_widgetDescByComponentID[ecs::TypeInfoTable::get_component_id<T>()].callback = func;
 			}
 
 			template<typename T>
 			void set_custom_callback(const std::function<void(void*, ComponentWidgetProperties&)>& customUICallback)
 			{
-				_widgetDescByComponentID[_typeInfoTable->get_component_id<T>()].callback = customUICallback;
+				_widgetDescByComponentID[ecs::TypeInfoTable::get_component_id<T>()].callback = customUICallback;
 			}
 
-			void draw_component(uint32_t componentID, void* component)
+			void draw_component(uint64_t componentID, void* component)
 			{
 				auto it = _widgetDescByComponentID.find(componentID);
 				it->second.callback(component, it->second.widgetProperties);
@@ -70,7 +71,7 @@ namespace ad_astris::uicore
 			template<typename T>
 			void set_component_widget_properties(ComponentWidgetProperties& widgetProperties)
 			{
-				_widgetDescByComponentID[_typeInfoTable->get_component_id<T>()].widgetProperties = widgetProperties;
+				_widgetDescByComponentID[ecs::TypeInfoTable::get_component_id<T>()].widgetProperties = widgetProperties;
 			}
 
 			// Must be used in all modules except the engine where the ECSUiManager is initialized
@@ -109,8 +110,7 @@ namespace ad_astris::uicore
 				std::function<void(void*, ComponentWidgetProperties&)> callback;
 			};
 		
-			std::unordered_map<uint32_t, WidgetDesc> _widgetDescByComponentID;
-			ecs::TypeInfoTable* _typeInfoTable;
+			std::unordered_map<uint64_t, WidgetDesc> _widgetDescByComponentID;
 			ecs::EntityManager* _entityManager;
 			ImGuiContext* _imGuiContext;
 	};

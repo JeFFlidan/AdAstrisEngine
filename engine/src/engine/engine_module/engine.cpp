@@ -81,6 +81,7 @@ void Engine::init_global_objects(GlobalObjectContext* context)
 	LOG_INFO("Engine::init(): Initialized SystemManager")
 
 	register_ecs_objects();
+	LOG_INFO("Engine::init(): Registered ECS objects")
 	SYSTEM_MANAGER()->generate_execution_order();
 	SYSTEM_MANAGER()->add_entity_manager(WORLD()->get_entity_manager());
 

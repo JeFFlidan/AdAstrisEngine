@@ -9,6 +9,7 @@
 #include "core/serialization.h"
 #include "core/reflection.h"
 #include "ui_core/ecs_ui_manager.h"
+#include "attributes.h"
 
 #define REFLECT_COMPONENT(Type, ...)	\
 	REFLECT_SERIALIZABLE_FIELDS(Type, __VA_ARGS__)

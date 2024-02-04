@@ -1,8 +1,9 @@
 ﻿#pragma once
 
 #include "custom_objects_to_json.h"
-#include "profiler/logger.h"
 #include "reflection.h"
+#include "attributes.h"
+#include "profiler/logger.h"
 
 namespace ad_astris::serialization
 {
@@ -10,12 +11,10 @@ namespace ad_astris::serialization
 	nlohmann::json serialize_to_json(T& object)
 	{
 		nlohmann::json objectJson;
-		refl::util::for_each(refl::reflect(object).members, [&](auto member)
+		Reflector::for_each<T>([&](auto field)
 		{
-			if constexpr (refl::descriptor::is_readable(member) && refl::descriptor::has_attribute<SerializableFields>(member))
-			{
-				objectJson[refl::descriptor::get_display_name(member)] = member(object);
-			}
+			if constexpr (Reflector::has_attribute<Serializable>(field))
+				objectJson[Reflector::get_name(field)] = field(object);
 		});
 		return objectJson;																							
 	}
@@ -23,9 +22,10 @@ namespace ad_astris::serialization
 	template<typename T>
 	void deserialize_from_json(const nlohmann::json& json, T& object)
 	{
-		refl::util::for_each(refl::reflect(object).members, [&](auto member)
+		Reflector::for_each<T>([&](auto field)
 		{
-			member(object, json[refl::descriptor::get_display_name(member)]);
+			if constexpr (Reflector::has_attribute<Serializable>(field))
+				field(object, json[Reflector::get_name(field)]);
 		});
 	}
 }

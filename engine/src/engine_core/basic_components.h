@@ -2,108 +2,147 @@
 
 #include "ecs/ecs.h"
 #include "core/math_base.h"
+#include "core/reflection.h"
+#include "core/attributes.h"
 
 namespace ad_astris::ecore
 {
 	struct TransformComponent
 	{
-		XMFLOAT3 location{ 0.0f, 0.0f, 0.0f };
-		XMFLOAT4 rotation{ 0.0f, 0.0f, 0.0f, 1.0f };
-		XMFLOAT3 rotationEuler{ 0.0f, 0.0f, 0.0f };
-		XMFLOAT3 scale{ 1.0f, 1.0f, 1.0f };
+		COMPONENT_REFLECTOR_START(TransformComponent)
+		FIELD(XMFLOAT3, location, (0.0f, 0.0f, 0.0f), Serializable(), EditAnywhere())
+		FIELD(XMFLOAT4, rotation, (0.0f, 0.0f, 0.0f, 1.0f), Serializable(), EditAnywhere())
+		FIELD(XMFLOAT3, rotationEuler, (0.0f, 0.0f, 0.0f), Serializable(), EditAnywhere())
+		FIELD(XMFLOAT3, scale, (1.0f, 1.0f, 1.0f))
+		REFLECTOR_END()
+		
 		XMFLOAT4X4 world = math::IDENTITY_MATRIX;
 	};
 	
 	struct ModelComponent
 	{
-		UUID modelUUID;
+		COMPONENT_REFLECTOR_START(ModelComponent)
+		FIELD(UUID, modelUUID, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct TextureComponent
 	{
-		UUID textureUUID;
+		COMPONENT_REFLECTOR_START(TextureComponent)
+		FIELD(UUID, textureUUID, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct OpaquePBRMaterialComponent
 	{
-		UUID materialUUID;
+		COMPONENT_REFLECTOR_START(OpaquePBRMaterialComponent)
+		FIELD(UUID, materialUUID, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct TransparentMaterialComponent
 	{
-		UUID materialUUID;
+		COMPONENT_REFLECTOR_START(TransparentMaterialComponent)
+		FIELD(UUID, materialUUID, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct LuminanceIntensityComponent
 	{
-		float intensity;
+		COMPONENT_REFLECTOR_START(LuminanceIntensityComponent)
+		FIELD(float, intensity, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct CandelaIntensityComponent
 	{
-		float intensity;
+		COMPONENT_REFLECTOR_START(CandelaIntensityComponent)
+		FIELD(float, intensity, (), Serializable(), EditAnywhere());
+		REFLECTOR_END()
 	};
 
 	struct IntensityComponent
 	{
-		float intensity;		// For point and spot lights in candela, for directional lights in lux 
+		COMPONENT_REFLECTOR_START(IntensityComponent)
+		FIELD(float, intensity, (), Serializable(), EditAnywhere())		// For point and spot lights in candela, for directional lights in lux
+		REFLECTOR_END()
 	};
 
 	struct ColorComponent
 	{
-		XMFLOAT4 color;
+		COMPONENT_REFLECTOR_START(ColorComponent)
+		FIELD(XMFLOAT4, color, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct AttenuationRadiusComponent
 	{
-		float attenuationRadius;
+		COMPONENT_REFLECTOR_START(AttenuationRadiusComponent)
+		FIELD(float, attenuationRadius, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct InnerConeAngleComponent
 	{
-		float innerConeAngle;
+		COMPONENT_REFLECTOR_START(InnerConeAngleComponent)
+		FIELD(float, innerConeAngle, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 	
 	struct OuterConeAngleComponent
 	{
-		float outerConeAngle;
+		COMPONENT_REFLECTOR_START(OuterConeAngleComponent)
+		FIELD(float, outerConeAngle, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct LightTemperatureComponent
 	{
-		bool isTemperatureUsed;
-		float temperature;
+		COMPONENT_REFLECTOR_START(LightTemperatureComponent)
+		FIELD(bool, isTemperatureUsed, (), Serializable(), EditAnywhere())
+		FIELD(float, temperature, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct CastShadowComponent
 	{
-		bool castShadows;
+		COMPONENT_REFLECTOR_START(CastShadowComponent)
+		FIELD(bool, castShadows, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct AffectWorldComponent
 	{
-		bool isWorldAffected;
+		COMPONENT_REFLECTOR_START(AffectWorldComponent)
+		FIELD(bool, isWorldAffected, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct VisibleComponent
 	{
-		bool isVisible;
+		COMPONENT_REFLECTOR_START(VisibleComponent)
+		FIELD(bool, isVisible, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct ExtentComponent
 	{
-		uint32_t width;
-		uint32_t height;
+		COMPONENT_REFLECTOR_START(ExtentComponent)
+		FIELD(uint32_t, width, (), Serializable(), EditAnywhere())
+		FIELD(uint32_t, height, (), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct CameraComponent
 	{
-		float zNear = 0.1f;
-		float zFar = 10000.0f;
-		float fov = 50.0f;
-		bool isActive{ false };
-		float movementSpeed{ 10.0f };
-		float mouseSensitivity{ 0.1f };
+		COMPONENT_REFLECTOR_START(CameraComponent)
+		FIELD(float, zNear, (0.1f), Serializable(), EditAnywhere())
+		FIELD(float, zFar, (10000.0f), Serializable(), EditAnywhere())
+		FIELD(float, fov, (50.0f), Serializable(), EditAnywhere())
+		FIELD(bool, isActive, (false), Serializable(), EditAnywhere())
+		FIELD(float, movementSpeed, (10.0f), Serializable(), EditAnywhere())
+		FIELD(float, mouseSensitivity, (0.1f), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 
 		XMFLOAT3 eye = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		XMFLOAT3 at = XMFLOAT3(0.0f, 0.0f, 1.0f);
@@ -116,11 +155,11 @@ namespace ad_astris::ecore
 		XMFLOAT4X4 inverseViewProjection;
 	};
 	
-	struct StaticObjectTag { };
-	struct MovableObjectTag { };
-	struct PointLightTag { };
-	struct DirectionalLightTag { };
-	struct SpotLightTag { };
+	struct StaticObjectTag { TAG_REFLECTOR(StaticObjectTag) };
+	struct MovableObjectTag { TAG_REFLECTOR(MovableObjectTag) };
+	struct PointLightTag { TAG_REFLECTOR(PointLightTag) };
+	struct DirectionalLightTag { TAG_REFLECTOR(DirectionalLightTag) };
+	struct SpotLightTag { TAG_REFLECTOR(SpotLightTag) };
 
 	inline void register_basic_components(ecs::EntityManager* entityManager, uicore::ECSUiManager* ecsUIManager)
 	{
@@ -149,22 +188,3 @@ namespace ad_astris::ecore
 		entityManager->register_tag<SpotLightTag>();
 	}
 }
-
-REFLECT_COMPONENT(ad_astris::ecore::TransformComponent, location, rotation, rotationEuler, scale)
-REFLECT_COMPONENT(ad_astris::ecore::ModelComponent, modelUUID)
-REFLECT_COMPONENT(ad_astris::ecore::TextureComponent, textureUUID)
-REFLECT_COMPONENT(ad_astris::ecore::OpaquePBRMaterialComponent, materialUUID)
-REFLECT_COMPONENT(ad_astris::ecore::TransparentMaterialComponent, materialUUID)
-REFLECT_COMPONENT(ad_astris::ecore::LuminanceIntensityComponent, intensity)
-REFLECT_COMPONENT(ad_astris::ecore::CandelaIntensityComponent, intensity)
-REFLECT_COMPONENT(ad_astris::ecore::ColorComponent, color)
-REFLECT_COMPONENT(ad_astris::ecore::AttenuationRadiusComponent, attenuationRadius)
-REFLECT_COMPONENT(ad_astris::ecore::InnerConeAngleComponent, innerConeAngle)
-REFLECT_COMPONENT(ad_astris::ecore::OuterConeAngleComponent, outerConeAngle)
-REFLECT_COMPONENT(ad_astris::ecore::LightTemperatureComponent, isTemperatureUsed, temperature)
-REFLECT_COMPONENT(ad_astris::ecore::CastShadowComponent, castShadows)
-REFLECT_COMPONENT(ad_astris::ecore::AffectWorldComponent, isWorldAffected)
-REFLECT_COMPONENT(ad_astris::ecore::VisibleComponent, isVisible)
-REFLECT_COMPONENT(ad_astris::ecore::ExtentComponent, width, height)
-REFLECT_COMPONENT(ad_astris::ecore::CameraComponent, zNear, zFar, fov, isActive, movementSpeed, mouseSensitivity)
-REFLECT_COMPONENT(ad_astris::ecore::IntensityComponent, intensity)

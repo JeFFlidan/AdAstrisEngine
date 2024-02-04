@@ -38,7 +38,7 @@ void GlobalObjects::init_world()
 	worldCreationContext.eventManager = EVENT_MANAGER();
 	worldCreationContext.taskComposer = TASK_COMPOSER();
 	_globalObjectContext->world = std::make_unique<ecore::World>(worldCreationContext);
-	_globalObjectContext->ecsUIManager = std::make_unique<uicore::ECSUiManager>(WORLD()->get_entity_manager(), ECS_TYPE_INFO_TABLE());
+	_globalObjectContext->ecsUIManager = std::make_unique<uicore::ECSUiManager>(WORLD()->get_entity_manager());
 }
 
 void GlobalObjects::init_system_manager()

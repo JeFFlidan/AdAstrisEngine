@@ -4,8 +4,8 @@
 using namespace ad_astris;
 using namespace uicore;
 
-ECSUiManager::ECSUiManager(ecs::EntityManager* entityManager, ecs::TypeInfoTable* globalTypeInfoTable)
-	: _typeInfoTable(globalTypeInfoTable), _entityManager(entityManager)
+ECSUiManager::ECSUiManager(ecs::EntityManager* entityManager)
+	: _entityManager(entityManager)
 {
 	
 }
@@ -17,12 +17,12 @@ void ECSUiManager::set_imgui_context(ImGuiContext* context)
 
 void ECSUiManager::set_global_variables()
 {
-	ecs::TYPE_INFO_TABLE = _typeInfoTable;
+	
 }
 
 void ECSUiManager::draw_component_widgets(ecs::Entity entity)
 {
-	std::vector<uint32_t> componentIDs;
+	std::vector<uint64_t> componentIDs;
 	_entityManager->get_entity_all_component_ids(entity, componentIDs);
 
 	for (auto& id : componentIDs)

@@ -42,13 +42,13 @@ ArchetypeHandle EntityManager::create_archetype(ArchetypeExtensionContext& conte
 	Archetype& oldArchetype = _archetypes[context._srcArchetype.get_id()];
 	ChunkStructure& oldArchetypeChunkStructure = oldArchetype._chunkStructure;
 	
-	std::vector<uint32_t> newComponentTypeIDs;
+	std::vector<uint64_t> newComponentTypeIDs;
 	size_t componentsHash = merge_type_ids_vectors(
 		newComponentTypeIDs,
 		oldArchetypeChunkStructure.componentIds,
 		context._componentIDs);
 
-	std::vector<uint32_t> newTagTypeIDs;
+	std::vector<uint64_t> newTagTypeIDs;
 	size_t tagsHash = merge_type_ids_vectors(
 		newTagTypeIDs,
 		oldArchetypeChunkStructure.tagIDs,
@@ -118,10 +118,10 @@ Entity EntityManager::create_entity(ArchetypeHandle& archetypeHandle)
 
 Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID uuid)
 {
-	std::vector<uint32_t> componentIdsToMove;
+	std::vector<uint64_t> componentIdsToMove;
 	copy_vector(entityContext._componentIDs, componentIdsToMove);
 
-	std::vector<uint32_t> tagIDsToMove;
+	std::vector<uint64_t> tagIDsToMove;
 	copy_vector(entityContext._tagIDs, tagIDsToMove);
 	
 	ArchetypeCreationContext archetypeContext;
@@ -151,21 +151,17 @@ Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID u
 Entity EntityManager::build_entity_from_json(UUID& uuid, nlohmann::json& entityJson)
 {
 	nlohmann::json componentsJson = entityJson["components"];
-	std::vector<std::string> tagNames = entityJson["tags"].get<std::vector<std::string>>();
 	EntityCreationContext creationContext;
 	
 	for (auto& componentInfo : componentsJson.items())
 	{
 		std::string componentName = componentInfo.key();
-		uint32_t typeId = TYPE_INFO_TABLE->get_component_id(componentName);
-		serializers::BaseSerializer* serializer = serializers::get_table()->get_serializer(typeId);
+		uint64_t typeId = TYPE_INFO_TABLE->get_component_id(componentName);
+		serializers::ISerializer* serializer = serializers::get_table()->get_serializer(typeId);
 		serializer->deserialize(creationContext, componentInfo.value());
 	}
 
-	for (auto& tagName : tagNames)
-	{
-		creationContext._tagIDs.push_back(TYPE_INFO_TABLE->get_tag_id(tagName));
-	}
+	creationContext._tagIDs = entityJson["tag_ids"].get<std::vector<uint64_t>>();
 
 	Entity entity = create_entity(creationContext, uuid);
 	return entity;
@@ -184,11 +180,11 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 	for (int i = 0; i != componentsNumberInArchetype; ++i)
 	{
 		//componentsArray += i * constants::MAX_COMPONENT_SIZE;
-		uint32_t typeId = archetype._chunkStructure.componentIds[i];
+		uint64_t typeId = archetype._chunkStructure.componentIds[i];
 		archetype.get_component_by_component_type_id(entity, column, typeId, componentPtr);
 		if (serializers::get_table()->has_serializer(typeId))
 		{
-			serializers::BaseSerializer* serializer = serializers::get_table()->get_serializer(typeId);
+			serializers::ISerializer* serializer = serializers::get_table()->get_serializer(typeId);
 			serializer->serialize(componentPtr, componentsJson);
 		}
 	}
@@ -196,7 +192,7 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 	nlohmann::json entityJson;
 	entityJson["components"] = componentsJson;
 
-	std::vector<uint32_t>& tagIDs = archetype._chunkStructure.tagIDs;
+	std::vector<uint64_t>& tagIDs = archetype._chunkStructure.tagIDs;
 	std::vector<std::string> tagNames;
 	tagNames.reserve(tagIDs.size());
 	for (auto& tagID : tagIDs)
@@ -205,6 +201,7 @@ void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::
 	}
 
 	entityJson["tags"] = tagNames;
+	entityJson["tag_ids"] = tagIDs;
 	std::scoped_lock<std::mutex> locker(_entityMutex);
 	levelJson[std::to_string(entity.get_uuid())] = entityJson;
 }
@@ -222,9 +219,9 @@ void EntityManager::destroy_entity(Entity& entity)
 }
 
 size_t EntityManager::merge_type_ids_vectors(
-	std::vector<uint32_t>& dstTypeIDs,
-	std::vector<uint32_t>& srcTypeIDs,
-	std::vector<uint32_t>& contextTypeIDs)
+	std::vector<uint64_t>& dstTypeIDs,
+	std::vector<uint64_t>& srcTypeIDs,
+	std::vector<uint64_t>& contextTypeIDs)
 {
 	dstTypeIDs.resize(srcTypeIDs.size() + contextTypeIDs.size());
 	std::merge(contextTypeIDs.begin(), contextTypeIDs.end(), srcTypeIDs.begin(), srcTypeIDs.end(), dstTypeIDs.begin());
@@ -234,22 +231,22 @@ size_t EntityManager::merge_type_ids_vectors(
 }
 
 void EntityManager::copy_vector(
-	std::vector<uint32_t>& srcTypeIDs,
-	std::vector<uint32_t>& dstTypeIDs)
+	std::vector<uint64_t>& srcTypeIDs,
+	std::vector<uint64_t>& dstTypeIDs)
 {
 	if (!std::is_sorted(srcTypeIDs.begin(), srcTypeIDs.end()))
 		std::sort(srcTypeIDs.begin(), srcTypeIDs.end());
 	dstTypeIDs.resize(srcTypeIDs.size());
-	memcpy(dstTypeIDs.data(), srcTypeIDs.data(), srcTypeIDs.size() * sizeof(uint32_t));
+	memcpy(dstTypeIDs.data(), srcTypeIDs.data(), srcTypeIDs.size() * sizeof(uint64_t));
 }
 
-void EntityManager::get_entity_all_component_ids(Entity entity, std::vector<uint32_t>& ids)
+void EntityManager::get_entity_all_component_ids(Entity entity, std::vector<uint64_t>& ids)
 {
 	Archetype& archetype = _archetypes[_entityToItsInfoInArchetype[entity].archetypeId];
 	ids = archetype._chunkStructure.componentIds;
 }
 
-void* EntityManager::get_entity_component_by_id(Entity entity, uint32_t id)
+void* EntityManager::get_entity_component_by_id(Entity entity, uint64_t id)
 {
 	Archetype& archetype = _archetypes[_entityToItsInfoInArchetype[entity].archetypeId];
 	return archetype.get_component_by_component_type_id(entity, _entityToItsInfoInArchetype[entity].column, id);

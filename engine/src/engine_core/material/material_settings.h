@@ -32,43 +32,32 @@ namespace ad_astris::ecore
 	struct OpaquePBRMaterialSettings : IMaterialSettings
 	{
 		IMPLEMENT_MATERIAL_SETTINGS_METHODS()
-		UUID baseColorTextureUUID;
-		UUID roughnessTextureUUID;
-		UUID metallicTextureUUID;
-		UUID ambientOcclusionTextureUUID;
-		UUID normalTextureUUID;
-		XMFLOAT4 tintColor;
-		float roughnessValue;
-		float metallicValue;
-		bool useTintColor{ false };
-		bool useRoughnessValue{ false };
-		bool useMetallicValue{ false };
+		REFLECTOR_START(OpaquePBRMaterialSettings)
+		FIELD(UUID, baseColorTextureUUID, (), Serializable(), EditAnywhere())
+		FIELD(UUID, roughnessTextureUUID, (), Serializable(), EditAnywhere())
+		FIELD(UUID, metallicTextureUUID, (), Serializable(), EditAnywhere())
+		FIELD(UUID, ambientOcclusionTextureUUID, (), Serializable(), EditAnywhere())
+		FIELD(UUID, normalTextureUUID, (), Serializable(), EditAnywhere())
+		FIELD(XMFLOAT4, tintColor, (), Serializable(), EditAnywhere())
+		FIELD(float, roughnessValue, (), Serializable(), EditAnywhere())
+		FIELD(float, metallicValue, (), Serializable(), EditAnywhere())
+		FIELD(bool, useTintColor, (false), Serializable(), EditAnywhere())
+		FIELD(bool, useRoughnessValue, (false), Serializable(), EditAnywhere())
+		FIELD(bool, useMetallicValue, (false), Serializable(), EditAnywhere())
+		REFLECTOR_END()
 	};
 
 	struct TransparentMaterialSettings : IMaterialSettings
 	{
 		IMPLEMENT_MATERIAL_SETTINGS_METHODS()
+		REFLECTOR_START(TransparentMaterialSettings)
 		UUID baseColorTextureUUID;
 		UUID opacityTextureUUID;
 		UUID ambientOcclusionTextureUUID;
-		XMFLOAT4 tintColor;
+		FIELD(XMFLOAT4, tintColor, (), Serializable(), EditAnywhere())
 		float opacityValue;
 		bool useTintColor{ false };
 		bool useOpacityValue{ false };
+		REFLECTOR_END()
 	};
 }
-
-REGISTER_MATERIAL_SETTINGS(
-	ad_astris::ecore::OpaquePBRMaterialSettings,
-	baseColorTextureUUID,
-	roughnessTextureUUID,
-	metallicTextureUUID,
-	ambientOcclusionTextureUUID,
-	normalTextureUUID,
-	tintColor, 
-	roughnessValue,
-	metallicValue,
-	useTintColor,
-	useRoughnessValue,
-	useMetallicValue)
-REGISTER_MATERIAL_SETTINGS(ad_astris::ecore::TransparentMaterialSettings, tintColor)

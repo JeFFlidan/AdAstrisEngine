@@ -220,9 +220,9 @@ namespace ad_astris::ecs
 			template<typename Component>
 			void register_component(bool serializable)
 			{
-				TYPE_INFO_TABLE->add_component_info<Component>();
+				TYPE_INFO_TABLE->add_component<Component>();
 
-				class TypedSerializer : public serializers::BaseSerializer									
+				class TypedSerializer : public serializers::ISerializer									
 				{																							
 					public:																					
 						void serialize(void* component, nlohmann::json& jsonForComponents) override			
@@ -263,8 +263,8 @@ namespace ad_astris::ecs
 				return false;
 			}
 
-			void get_entity_all_component_ids(Entity entity, std::vector<uint32_t>& ids);
-			void* get_entity_component_by_id(Entity entity, uint32_t id);
+			void get_entity_all_component_ids(Entity entity, std::vector<uint64_t>& ids);
+			void* get_entity_component_by_id(Entity entity, uint64_t id);
 		
 		private:
 			struct EntityInArchetypeInfo
@@ -284,7 +284,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			void set_up_component_common(Entity& entity, T* componentValue)
 			{
-				UntypedComponent component(componentValue, TYPE_INFO_TABLE->get_component_size<T>(), TYPE_INFO_TABLE->get_component_id<T>());
+				UntypedComponent component(componentValue, sizeof(T), TypeInfoTable::get_component_id<T>());
 				EntityInArchetypeInfo& entityInArchetype = _entityToItsInfoInArchetype[entity];
 				Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
 				std::scoped_lock<std::mutex> locker(_componentMutex);
@@ -293,12 +293,12 @@ namespace ad_astris::ecs
 
 			// Returns new vector hash
 			size_t merge_type_ids_vectors(
-				std::vector<uint32_t>& dstTypeIDs,
-				std::vector<uint32_t>& srcTypeIDs,
-				std::vector<uint32_t>& contextTypeIDs);
+				std::vector<uint64_t>& dstTypeIDs,
+				std::vector<uint64_t>& srcTypeIDs,
+				std::vector<uint64_t>& contextTypeIDs);
 
 			void copy_vector(
-				std::vector<uint32_t>& srcTypeIDs,
-				std::vector<uint32_t>& dstTypeIDs);
+				std::vector<uint64_t>& srcTypeIDs,
+				std::vector<uint64_t>& dstTypeIDs);
 	};
 }

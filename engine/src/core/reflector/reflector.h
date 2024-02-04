@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "reflection.h"
 #include <type_traits>
 #include <tuple>
 
@@ -139,6 +138,12 @@ class Reflector
 		static constexpr bool has_attribute(T target)
 		{
 			return T::template has_attribute<A>();
+		}
+
+		template<typename T, typename A>
+		static constexpr A get_attribute()
+		{
+			return T::template get_attribute<A>();
 		}
 
 		template<typename A, typename T>

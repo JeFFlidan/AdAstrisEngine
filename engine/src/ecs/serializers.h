@@ -12,9 +12,10 @@ namespace ad_astris::ecs
 {
 	namespace serializers
 	{
-		class BaseSerializer
+		class ISerializer
 		{
 			public:
+				virtual ~ISerializer() = default;
 				virtual void serialize(void* component, nlohmann::json& jsonForComponents) = 0;
 				virtual void deserialize(EntityCreationContext& entityCreationContext, nlohmann::json& componentInfo) = 0;
 		};
@@ -25,16 +26,16 @@ namespace ad_astris::ecs
 				static SerializersTable* get_instance();
 				
 				template<typename COMPONENT_TYPE>
-				void add_serializer(BaseSerializer* serializer)
+				void add_serializer(ISerializer* serializer)
 				{
-					uint32_t id = TYPE_INFO_TABLE->get_component_id<COMPONENT_TYPE>();
+					uint64_t id = TypeInfoTable::get_component_id<COMPONENT_TYPE>();
 					std::lock_guard<std::mutex> lock(_mutex);
 					_serializerByTypeID[id] = serializer;
 				}
 				
-				BaseSerializer* get_serializer(uint32_t componentTypeID);
+				ISerializer* get_serializer(uint64_t componentTypeID);
 			
-				bool has_serializer(uint32_t componentTypeID)
+				bool has_serializer(uint64_t componentTypeID)
 				{
 					return _serializerByTypeID.find(componentTypeID) == _serializerByTypeID.end() ? false : true;
 				}
@@ -45,7 +46,7 @@ namespace ad_astris::ecs
 				
 				static SerializersTable* _instance;
 				static std::mutex _mutex;
-				std::unordered_map<uint32_t, BaseSerializer*> _serializerByTypeID;
+				std::unordered_map<uint64_t, ISerializer*> _serializerByTypeID;
 		};
 		
 		inline SerializersTable* get_table()

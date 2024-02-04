@@ -42,7 +42,7 @@ namespace ad_astris::ecs
 			template<typename T>
 			T* get_system()
 			{
-				return reinterpret_cast<T*>(_systemByID[TYPE_INFO_TABLE->get_system_id<T>()]);
+				return reinterpret_cast<T*>(_systemByID[TypeInfoTable::get_system_id<T>()]);
 			}
 
 			/** Main purpose is changing default engine system to custom one. 

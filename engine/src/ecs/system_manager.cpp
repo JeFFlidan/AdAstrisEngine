@@ -78,25 +78,18 @@ void SystemManager::generate_execution_order()
 			continue;
 		}
 
-		for (auto& executeBeforeName : systemExecutionOrder._executeBefore)
+		for (auto& executeBeforeID : systemExecutionOrder._executeBefore)
 		{
-			uint32_t executeBeforeID = TYPE_INFO_TABLE->get_system_id(executeBeforeName);
 			executionDAG->add_edge(systemID, executeBeforeID);
 		}
 
-		for (auto& executeAfterName : systemExecutionOrder._executeAfter)
+		for (auto& executeAfterID : systemExecutionOrder._executeAfter)
 		{
-			uint32_t executeAfterID = TYPE_INFO_TABLE->get_system_id(executeAfterName);
 			executionDAG->add_edge(executeAfterID, systemID);
 		}
 	}
 	
 	executionDAG->topological_sort(_executionOrder);
-	
-	for (auto& id : _executionOrder)
-	{
-		LOG_INFO("SYSTEM: {}", TYPE_INFO_TABLE->get_system_name(id))
-	}
 }
 
 void SystemManager::update_queries(std::vector<EntityManager*>& managersForUpdate, System* system)

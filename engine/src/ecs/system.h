@@ -20,18 +20,18 @@ namespace ad_astris::ecs
 			template<typename T>
 			void add_to_execute_before()
 			{
-				_executeBefore.push_back(get_type_name<T>());
+				_executeBefore.push_back(TYPE_INFO_TABLE->get_system_id<T>());
 			}
 
 			template<typename T>
 			void add_to_execute_after()
 			{
-				_executeAfter.push_back(get_type_name<T>());
+				_executeAfter.push_back(TYPE_INFO_TABLE->get_system_id<T>());
 			}
 
 		private:
-			std::vector<std::string> _executeBefore;
-			std::vector<std::string> _executeAfter;
+			std::vector<uint32_t> _executeBefore;
+			std::vector<uint32_t> _executeAfter;
 	};
 
 	struct SystemRequirements

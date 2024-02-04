@@ -2,7 +2,7 @@
 
 using namespace ad_astris::ecs;
 
-ExecutionContext::ExecutionContext(Archetype* archetype, std::unordered_map<uint32_t, ComponentAccess>& accessByComponentID)
+ExecutionContext::ExecutionContext(Archetype* archetype, std::unordered_map<uint64_t, ComponentAccess>& accessByComponentID)
 	: _accessByComponentID(accessByComponentID), _archetype(archetype)
 {
 
