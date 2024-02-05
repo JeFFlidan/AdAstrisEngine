@@ -13,7 +13,7 @@ namespace ad_astris::ecore
 		FIELD(XMFLOAT3, location, (0.0f, 0.0f, 0.0f), Serializable(), EditAnywhere())
 		FIELD(XMFLOAT4, rotation, (0.0f, 0.0f, 0.0f, 1.0f), Serializable(), EditAnywhere())
 		FIELD(XMFLOAT3, rotationEuler, (0.0f, 0.0f, 0.0f), Serializable(), EditAnywhere())
-		FIELD(XMFLOAT3, scale, (1.0f, 1.0f, 1.0f))
+		FIELD(XMFLOAT3, scale, (1.0f, 1.0f, 1.0f), Serializable(), EditAnywhere())
 		REFLECTOR_END()
 		
 		XMFLOAT4X4 world = math::IDENTITY_MATRIX;
