@@ -15,10 +15,10 @@ namespace ad_astris::ecs
 			virtual ~IEntityFilter() = default;
 			virtual bool validate(Entity entity) const = 0;
 			virtual bool is_equal(const IEntityFilter& filter) const = 0;
-			const std::vector<uint64_t>& get_requirement_ids() const { return _ids; }
+			size_t get_requirements_hash() const { return _hash; }
 
 		protected:
-			std::vector<uint64_t> _ids;
+			size_t _hash;
 	};
 	
 	template<typename ...Requirements>
@@ -28,9 +28,10 @@ namespace ad_astris::ecs
 			EntityFilter()
 			{
 				size_t index = 0;
-				_ids.resize(CoreUtils::count_args<Requirements...>());
-				(fill_ids_array<Requirements>(index), ...);
-				std::sort(_ids.begin(), _ids.end());
+				std::vector<uint64_t> ids(CoreUtils::count_args<Requirements...>());
+				(fill_ids_array<Requirements>(ids, index), ...);
+				std::sort(ids.begin(), ids.end());
+				_hash = CoreUtils::hash_numeric_vector(ids);
 			}
 		
 			bool validate(Entity entity) const override
@@ -42,7 +43,7 @@ namespace ad_astris::ecs
 
 			bool is_equal(const IEntityFilter& filter) const override
 			{
-				return _ids == filter.get_requirement_ids();
+				return _hash == filter.get_requirements_hash();
 			}
 
 		private:
@@ -66,15 +67,15 @@ namespace ad_astris::ecs
 			}
 
 			template<typename T>
-			void fill_ids_array(size_t& index)
+			void fill_ids_array(std::vector<uint64_t>& ids, size_t& index)
 			{
 				if constexpr (Reflector::has_attribute<T, EcsComponent>())
 				{
-					_ids[index++] = TypeInfoTable::get_component_id<T>();
+					ids[index++] = TypeInfoTable::get_component_id<T>();
 				}
 				if constexpr (Reflector::has_attribute<T, EcsTag>())
 				{
-					_ids[index++] = TypeInfoTable::get_tag_id<T>();
+					ids[index++] = TypeInfoTable::get_tag_id<T>();
 				}
 			}
 	};
