@@ -1,4 +1,5 @@
 #include "entity_types.h"
+#include "core/global_objects.h"
 
 using namespace ad_astris::ecs;
 using namespace ad_astris;
@@ -37,3 +38,24 @@ Entity::operator uint64_t() const
 {
 	return _uuid;
 }
+
+bool Entity::has_component_internal(uint64_t componentID) const
+{
+	return ENTITY_MANAGER()->does_entity_have_component(*this, componentID);
+}
+
+bool Entity::has_tag_internal(uint64_t tagID) const
+{
+	return ENTITY_MANAGER()->does_entity_have_tag(*this, tagID);
+}
+
+void* Entity::get_component_by_id(uint64_t componentID) const
+{
+	return ENTITY_MANAGER()->get_entity_component_by_id(*this, componentID);
+}
+
+bool Entity::is_valid() const
+{
+	return ENTITY_MANAGER()->is_entity_valid(*this);
+}
+

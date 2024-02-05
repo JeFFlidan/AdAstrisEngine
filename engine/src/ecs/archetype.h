@@ -166,6 +166,16 @@ namespace ad_astris::ecs
 				auto it = _chunkStructure.tagIDsSet.find(TypeInfoTable::get_tag_id<T>());
 				return it == _chunkStructure.tagIDsSet.end() ? false : true;
 			}
+
+			FORCE_INLINE bool has_component(uint64_t componentID)
+			{
+				return _chunkStructure.componentIdToSize.find(componentID) != _chunkStructure.componentIdToSize.end();
+			}
+
+			FORCE_INLINE bool has_tag(uint64_t tagID)
+			{
+				return _chunkStructure.tagIDsSet.find(tagID) != _chunkStructure.tagIDsSet.end();
+			}
 		
 		private:
 			std::unordered_map<Entity, uint16_t> _entityToChunk;

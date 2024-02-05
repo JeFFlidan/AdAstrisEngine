@@ -203,18 +203,26 @@ namespace ad_astris::ecs
 			bool does_entity_have_component(Entity& entity)
 			{
 				std::scoped_lock<std::mutex> locker(_entityMutex);
-				auto it = _entityToItsInfoInArchetype.find(entity);
-				Archetype& archetype = _archetypes[it->second.archetypeId];
-				return archetype.has_component<ComponentType>();
+				return get_archetype(entity).has_component<ComponentType>();
 			}
 
 			template<typename TagType>
 			bool does_entity_have_tag(Entity& entity)
 			{
 				std::scoped_lock<std::mutex> locker(_entityMutex);
-				auto it = _entityToItsInfoInArchetype.find(entity);
-				Archetype& archetype = _archetypes[it->second.archetypeId];
-				return archetype.has_tag<TagType>();
+				return get_archetype(entity).has_tag<TagType>();
+			}
+
+			bool does_entity_have_component(Entity entity, uint64_t componentID)
+			{
+				std::scoped_lock<std::mutex> locker(_entityMutex);
+				return get_archetype(entity).has_component(componentID);
+			}
+
+			bool does_entity_have_tag(Entity entity, uint64_t tagID)
+			{
+				std::scoped_lock<std::mutex> locker(_entityMutex);
+				return get_archetype(entity).has_tag(tagID);
 			}
 
 			template<typename Component>
@@ -254,7 +262,7 @@ namespace ad_astris::ecs
 				TYPE_INFO_TABLE->add_tag<T>();
 			}
 
-			bool is_entity_valid(Entity& entity)
+			bool is_entity_valid(const Entity& entity)
 			{
 				std::scoped_lock<std::mutex> locker(_entityMutex);
 				auto it = _entityToItsInfoInArchetype.find(entity);
@@ -300,5 +308,10 @@ namespace ad_astris::ecs
 			void copy_vector(
 				std::vector<uint64_t>& srcTypeIDs,
 				std::vector<uint64_t>& dstTypeIDs);
+
+			FORCE_INLINE Archetype& get_archetype(Entity entity)
+			{
+				return _archetypes[_entityToItsInfoInArchetype.find(entity)->second.archetypeId];
+			}
 	};
 }

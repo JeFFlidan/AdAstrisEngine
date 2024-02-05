@@ -34,9 +34,39 @@ namespace ad_astris::ecs
 			bool operator==(const Entity& other);
 			bool operator!=(const Entity& other);
 			operator uint64_t() const;
+
+			template<typename Component>
+			FORCE_INLINE bool has_component() const
+			{
+				return has_component_internal(TypeInfoTable::get_component_id<Component>());
+			}
+
+			template<typename Tag>
+			FORCE_INLINE bool has_tag() const
+			{
+				return has_tag_internal(TypeInfoTable::get_tag_id<Tag>());
+			}
+
+			template<typename Component>
+			FORCE_INLINE Component* get_component() const
+			{
+				return static_cast<Component*>(get_component_by_id(TypeInfoTable::get_component_id<Component>()));
+			}
+
+			template<typename Component>
+			FORCE_INLINE const Component* cget_component() const
+			{
+				return static_cast<const Component*>(get_component_by_id(TypeInfoTable::get_component_id<Component>()));
+			}
+
+			FORCE_INLINE bool is_valid() const;
 		
 		private:
 			UUID _uuid;
+
+			bool has_component_internal(uint64_t componentID) const;
+			bool has_tag_internal(uint64_t tagID) const;
+			void* get_component_by_id(uint64_t componentID) const;
 	};
 
 	class IComponent

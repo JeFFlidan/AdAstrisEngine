@@ -52,14 +52,14 @@ namespace ad_astris::ecs
 			{
 				if constexpr (Reflector::has_attribute<T, EcsComponent>())
 				{
-					if (!WORLD()->get_entity_manager()->does_entity_have_component<T>(entity))
+					if (!entity.has_component<T>())
 					{
 						result = false;
 					}
 				}
 				if constexpr (Reflector::has_attribute<T, EcsTag>())
 				{
-					if (!WORLD()->get_entity_manager()->does_entity_have_tag<T>(entity))
+					if (!entity.has_tag<T>())
 					{
 						result = false;
 					}
