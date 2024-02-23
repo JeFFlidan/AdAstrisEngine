@@ -600,7 +600,7 @@ void vulkan::VulkanRHI::end_render_pass(rhi::CommandBuffer* cmd)
 void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingBeginInfo* beginInfo)
 {
 	assert(cmd->handle && beginInfo);
-	
+
 	VkRenderingInfo renderingInfo{};
 	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
 
@@ -621,9 +621,16 @@ void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingB
 	
 	renderingInfo.renderArea.offset.x = 0;
 	renderingInfo.renderArea.offset.y = 0;
-	VulkanTexture* vulkanTexture = get_vk_obj(beginInfo->renderTargets[0].target->texture);
-	VkExtent3D extent3D = vulkanTexture->get_extent();
-	renderingInfo.renderArea.extent = { extent3D.width, extent3D.height };
+	if (!beginInfo->renderTargets.empty())
+	{
+		VulkanTexture* vulkanTexture = get_vk_obj(beginInfo->renderTargets[0].target->texture);
+		VkExtent3D extent3D = vulkanTexture->get_extent();
+		renderingInfo.renderArea.extent = { extent3D.width, extent3D.height };
+	}
+	else
+	{
+		renderingInfo.renderArea.extent = { _mainWindow->get_width(), _mainWindow->get_height() };
+	}
 	renderingInfo.colorAttachmentCount = 0;
 	renderingInfo.pColorAttachments = nullptr;
 	renderingInfo.pDepthAttachment = nullptr;
@@ -684,9 +691,12 @@ void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingB
 			}
 		}
 	}
-
-	renderingInfo.colorAttachmentCount = colorAttachments.size();
-	renderingInfo.pColorAttachments = colorAttachments.data();
+	
+	if (!colorAttachments.empty())
+	{
+		renderingInfo.colorAttachmentCount = colorAttachments.size();
+		renderingInfo.pColorAttachments = colorAttachments.data();
+	}
 	vkCmdBeginRendering(get_vk_obj(cmd)->get_handle(), &renderingInfo);
 }
 
@@ -806,6 +816,17 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vect
 			{
 				VkBufferMemoryBarrier bufferBarrier{};
 				bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+				rhi::Buffer* buffer = barrier.bufferBarrier.buffer;
+				bufferBarrier.buffer = *get_vk_obj(buffer)->get_handle();
+				bufferBarrier.offset = 0;
+				if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::STORAGE_BUFFER))
+				{
+					bufferBarrier.size = VK_WHOLE_SIZE;
+				}
+				else
+				{
+					bufferBarrier.size = buffer->bufferInfo.size;
+				}
 				bufferBarrier.srcAccessMask = get_access(barrier.bufferBarrier.srcLayout);
 				bufferBarrier.dstAccessMask = get_access(barrier.bufferBarrier.dstLayout);
 				bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;

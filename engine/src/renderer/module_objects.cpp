@@ -6,9 +6,9 @@
 using namespace ad_astris;
 using namespace renderer::impl;
 
-void ModuleObjects::init_rhi_module(ecore::RendererSubsettings* rendererSubsettings, acore::IWindow* mainWindow)
+void ModuleObjects::init_rhi_module(acore::IWindow* mainWindow)
 {
-	switch (rendererSubsettings->get_graphics_api())
+	switch (_rendererSubsettings->get_graphics_api())
 	{
 		case ecore::GraphicsAPI::VULKAN:
 		{
@@ -33,17 +33,17 @@ void ModuleObjects::init_rhi_module(ecore::RendererSubsettings* rendererSubsetti
 	rhiInitContext.window = mainWindow;
 	rhiInitContext.fileSystem = FILE_SYSTEM();
 	rhi::SwapChainInfo swapChainInfo;
-	swapChainInfo.width = rendererSubsettings->get_render_area_width();
-	swapChainInfo.height = rendererSubsettings->get_render_area_height();
-	swapChainInfo.sync = rendererSubsettings->is_vsync_used();
-	bool useTripleBuffering = rendererSubsettings->is_triple_buffering_used();
+	swapChainInfo.width = _rendererSubsettings->get_render_area_width();
+	swapChainInfo.height = _rendererSubsettings->get_render_area_height();
+	swapChainInfo.sync = _rendererSubsettings->is_vsync_used();
+	bool useTripleBuffering = _rendererSubsettings->is_triple_buffering_used();
 	swapChainInfo.buffersCount = useTripleBuffering ? 3 : 2;
 	rhiInitContext.swapChainInfo = &swapChainInfo;
 	
 	_rhi->init(rhiInitContext);
 }
 
-void ModuleObjects::init_render_core_module(ecore::RendererSubsettings* rendererSubsettings)
+void ModuleObjects::init_render_core_module()
 {
 	auto rcoreModule = MODULE_MANAGER()->load_module<rcore::IRenderCoreModule>("RenderCore");
 	_renderGraph = rcoreModule->get_render_graph();
@@ -54,7 +54,7 @@ void ModuleObjects::init_render_core_module(ecore::RendererSubsettings* renderer
 
 	rcore::ShaderManagerInitContext shaderManagerInitContext;
 	shaderManagerInitContext.rhi = _rhi;
-	switch (rendererSubsettings->get_graphics_api())
+	switch (_rendererSubsettings->get_graphics_api())
 	{
 		case ecore::GraphicsAPI::VULKAN:
 			shaderManagerInitContext.cacheType = rcore::ShaderCacheType::SPIRV;

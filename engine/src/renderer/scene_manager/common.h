@@ -14,6 +14,8 @@ namespace ad_astris::renderer::impl
 	constexpr uint64_t POINT_LIGHT_DEFAULT_COUNT = 32;
 	constexpr uint64_t SPOT_LIGHT_DEFAULT_COUNT = 32;
 	constexpr uint64_t DIRECTIONAL_LIGHT_DEFAULT_COUNT = 8;
+	constexpr uint32_t MODEL_INSTANCES_INIT_NUMBER = 512;
+	constexpr uint32_t INDIRECT_BATCH_INIT_NUMBER = 128;
 
 #define IMPLEMENT_SUBMANAGER_EVENT(EventName)															\
 	class EventName##UpdatedEvent : public events::IEvent												\

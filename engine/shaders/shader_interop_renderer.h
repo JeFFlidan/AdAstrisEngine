@@ -444,13 +444,13 @@ struct DrawIndexedIndirectCommand
 	uint indexCount;
 	uint instanceCount;
 	uint firstIndex;
-	int vertexOffset;
+	uint vertexOffset;
 	uint firstInstance;
 };
 
 struct CullingInstanceIndices
 {
-	uint instanceID;
+	uint objectID;
 	uint batchID;
 };
 
@@ -458,6 +458,35 @@ struct IndirectBufferIndices
 {
 	uint cullingInstanceIndicesBufferIndex;
 	uint indirectCommandsBufferIndex;
+	uint rendererModelInstanceIdBufferIndex;
+	uint cullingParamsBufferIndex;
+	uint cullingParamsIndex;
+	float2 empty1;
 };
+
+struct CullingParams
+{
+	float4x4 view;
+	float P00, P11, zNear, zFar;
+	float frustum[4];
+	float lodBase, lodStep;
+	float pyramidWidth, pyramidHeight;
+
+	uint drawCount;
+
+	int isFrustumCullingEnabled;
+	int isOcclusionCullingEnabled;
+	int isAABBCheckEnabled;
+	int isLodEnabled;
+	uint cullingDistance;
+	float aabbmin_x;
+	float aabbmin_y;
+	float aabbmin_z;
+	float aabbmax_x;
+	float aabbmax_y;
+	float aabbmax_z;
+};
+
+static const uint CULLING_GROUP_SIZE = 256;
 
 #endif // SHADER_INTEROP_RENDERER

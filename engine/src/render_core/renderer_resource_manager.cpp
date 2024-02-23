@@ -28,6 +28,13 @@ void RendererResourceManager::cleanup_staging_buffers()
 	_isDeviceWaiting.store(false);
 }
 
+rhi::Buffer* RendererResourceManager::allocate_buffer(rhi::BufferInfo& bufferInfo)
+{
+	rhi::Buffer* buffer = _bufferPool.allocate();
+	_rhi->create_buffer(buffer, &bufferInfo);
+	return buffer;
+}
+
 rhi::Buffer* RendererResourceManager::allocate_buffer(const std::string& bufferName, rhi::BufferInfo& bufferInfo)
 {
 	rhi::Buffer* buffer = check_buffer(bufferName);
@@ -48,12 +55,7 @@ rhi::Buffer* RendererResourceManager::allocate_gpu_buffer(const std::string& buf
 	if (buffer)
 		return buffer;
 	
-	rhi::BufferInfo bufferInfo;
-	bufferInfo.size = size;
-	bufferInfo.bufferUsage = bufferUsage;
-	bufferInfo.memoryUsage = rhi::MemoryUsage::GPU;
-	buffer = _bufferPool.allocate();
-	_rhi->create_buffer(buffer, &bufferInfo);
+	buffer = allocate_gpu_buffer(size, bufferUsage);
 
 	std::scoped_lock<std::mutex> locker(_gpuBufferMutex);
 	_bufferByItsName[bufferName] = buffer;
@@ -70,14 +72,53 @@ rhi::Buffer* RendererResourceManager::allocate_index_buffer(const std::string& b
 	return allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::INDEX_BUFFER | rhi::ResourceUsage::TRANSFER_DST);
 }
 
+rhi::Buffer* RendererResourceManager::allocate_indirect_buffer(uint64_t size)
+{
+	return allocate_gpu_buffer(size, rhi::ResourceUsage::INDIRECT_BUFFER | rhi::ResourceUsage::TRANSFER_DST | rhi::ResourceUsage::STORAGE_BUFFER);
+}
+
 rhi::Buffer* RendererResourceManager::allocate_indirect_buffer(const std::string& bufferName, uint64_t size)
 {
 	return allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::INDIRECT_BUFFER | rhi::ResourceUsage::TRANSFER_DST | rhi::ResourceUsage::STORAGE_BUFFER);
 }
 
+rhi::Buffer* RendererResourceManager::allocate_storage_buffer(uint64_t size)
+{
+	return allocate_gpu_buffer(size, rhi::ResourceUsage::STORAGE_BUFFER | rhi::ResourceUsage::TRANSFER_DST);
+}
+
 rhi::Buffer* RendererResourceManager::allocate_storage_buffer(const std::string& bufferName, uint64_t size)
 {
 	return allocate_gpu_buffer(bufferName, size, rhi::ResourceUsage::STORAGE_BUFFER | rhi::ResourceUsage::TRANSFER_DST);
+}
+
+void RendererResourceManager::reallocate_buffer(rhi::Buffer* buffer, uint64_t newSize)
+{
+	rhi::BufferInfo& bufferInfo = buffer->bufferInfo;
+	switch (bufferInfo.memoryUsage)
+	{
+		case rhi::MemoryUsage::CPU:
+		{
+			std::vector<uint8_t> tempData(bufferInfo.size);
+			memcpy(tempData.data(), buffer->mappedData, bufferInfo.size);
+			_rhi->destroy_buffer(buffer);
+			bufferInfo.size = newSize;
+			_rhi->create_buffer(buffer);
+			memcpy(buffer->mappedData, tempData.data(), tempData.size());
+			break;
+		}
+		case rhi::MemoryUsage::UNDEFINED:
+		case rhi::MemoryUsage::CPU_TO_GPU:
+		case rhi::MemoryUsage::GPU:
+			LOG_ERROR("RendererResourceManager::reallocate_buffer(): You can only reallocate buffers that have memoryUsage = CPU")
+	}
+}
+
+rhi::Buffer* RendererResourceManager::reallocate_buffer(const std::string& bufferName, uint64_t newSize)
+{
+	rhi::Buffer* buffer = get_buffer(bufferName);
+	reallocate_buffer(buffer, newSize);
+	return buffer;
 }
 
 bool RendererResourceManager::update_buffer(
@@ -115,6 +156,48 @@ bool RendererResourceManager::update_buffer(
 	return false;
 }
 
+bool RendererResourceManager::update_buffer(
+	rhi::CommandBuffer* cmd,
+	const std::string& srcBufferName, 
+	const std::string& dstBufferName,
+	uint64_t objectSizeInBytes,
+	uint64_t allObjectCount,
+	uint64_t newObjectCount)
+{
+	rhi::Buffer* srcBuffer = get_buffer(srcBufferName);
+	rhi::Buffer* dstBuffer = get_buffer(dstBufferName);
+	return update_buffer(cmd, srcBuffer, dstBuffer, objectSizeInBytes, allObjectCount, newObjectCount);
+}
+
+bool RendererResourceManager::update_buffer(
+	rhi::CommandBuffer* cmd,
+	rhi::Buffer* srcBuffer,
+	rhi::Buffer* dstBuffer,
+	uint64_t objectSizeInBytes,
+	uint64_t allObjectCount,
+	uint64_t newObjectCount)
+{
+	uint64_t offsetInBytes = (allObjectCount - newObjectCount) * objectSizeInBytes;
+	uint64_t newObjectsSizeInBytes = newObjectCount * objectSizeInBytes;
+	
+	if (offsetInBytes + newObjectsSizeInBytes <= dstBuffer->bufferInfo.size)
+	{
+		_rhi->copy_buffer(cmd, srcBuffer, dstBuffer, newObjectsSizeInBytes, 0, offsetInBytes);
+		return true;
+	}
+
+	if (!_isDeviceWaiting.load())
+	{
+		_rhi->wait_for_gpu();
+		_isDeviceWaiting.store(true);
+	}
+	_rhi->destroy_buffer(dstBuffer);
+	dstBuffer->bufferInfo.size *= 2;
+	_rhi->create_buffer(dstBuffer);
+	_rhi->copy_buffer(cmd, srcBuffer, dstBuffer);
+	return false;
+}
+
 rhi::Buffer* RendererResourceManager::get_buffer(const std::string& bufferName)
 {
 	std::scoped_lock<std::mutex> locker(_gpuBufferMutex);
@@ -127,7 +210,12 @@ rhi::Buffer* RendererResourceManager::get_buffer(const std::string& bufferName)
 
 void RendererResourceManager::add_buffer(const std::string& bufferName, rhi::Buffer& buffer)
 {
-	
+	// TODO
+}
+
+void RendererResourceManager::bind_buffer_to_name(const std::string& bufferName, rhi::Buffer* buffer)
+{
+	_bufferByItsName[bufferName] = buffer;
 }
 
 rhi::Texture* RendererResourceManager::allocate_texture(const std::string& textureName, rhi::TextureInfo& textureInfo)
@@ -342,6 +430,17 @@ void RendererResourceManager::add_texture(const std::string& textureName, rhi::T
 void RendererResourceManager::add_texture_view(const std::string& textureViewName, rhi::TextureView& textureView)
 {
 	// TODO
+}
+
+rhi::Buffer* RendererResourceManager::allocate_gpu_buffer(uint64_t size, rhi::ResourceUsage bufferUsage)
+{
+	rhi::BufferInfo bufferInfo;
+	bufferInfo.size = size;
+	bufferInfo.bufferUsage = bufferUsage;
+	bufferInfo.memoryUsage = rhi::MemoryUsage::GPU;
+	rhi::Buffer* buffer = _bufferPool.allocate();
+	_rhi->create_buffer(buffer, &bufferInfo);
+	return buffer;
 }
 
 void RendererResourceManager::allocate_staging_buffer(rhi::Buffer& buffer, void* allObjects, uint64_t offset, uint64_t newObjectsSize)

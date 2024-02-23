@@ -13,6 +13,20 @@ namespace ad_astris::ecore
 		D3D12
 	};
 
+	struct SceneCullingSettings
+	{
+		uint64_t drawDistance;
+		bool isFrustumCullingEnabled;
+		bool isOcclusionCullingEnabled;
+		float lodBase;
+		float lodStep;
+	};
+
+	struct ShadowsCullingSettings : public SceneCullingSettings
+	{
+		bool isAabbCheckEnabled;
+	};
+
 	class RendererSubsettings : public ISubsettings
 	{
 		public:
@@ -64,9 +78,21 @@ namespace ad_astris::ecore
 			{
 				return _defaultMaterialUUID;
 			}
+
+			const SceneCullingSettings& get_scene_culling_settings()
+			{
+				return _sceneCullingSettings;
+			}
+
+			const ShadowsCullingSettings& get_shadow_maps_culling()
+			{
+				return _shadowsCulllingSettings;
+			}
 		
 		private:
 			GraphicsAPI _graphicsAPI{ GraphicsAPI::UNDEFINED };
+			SceneCullingSettings _sceneCullingSettings;
+			ShadowsCullingSettings _shadowsCulllingSettings;
 
 			struct
 			{
@@ -82,5 +108,9 @@ namespace ad_astris::ecore
 			void deserialize_graphics_api(Section& section);
 			void serialize_swap_chain_desc(Section& section);
 			void deserialize_swap_chain_desc(Section& section);
+			void serialize_scene_culling_settings(Section& section);
+			void deserialize_scene_culling_settings(Section& section);
+			void serialize_shadows_culling_settings(Section& section);
+			void deserialize_shadows_culling_settings(Section& section);
 	};
 }

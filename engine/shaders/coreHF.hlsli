@@ -216,7 +216,8 @@ float4 main(PixelInput input) : SV_Target
         }
     }
 
-    float3 ambient = float3(0.01, 0.01, 0.01) * surface.albedo.xyz * surface.ao;
+    //float3 ambient = float3(0.01, 0.01, 0.01) * surface.albedo.xyz * surface.ao;
+    float3 ambient = float3(0.0f, 0.0f, 0.0f);
     float3 finalColor = dirLightsL0 + spotLightsL0 + pointLightsL0 + ambient;
     return float4(finalColor.x, finalColor.y, finalColor.z, 1.0f);
 #endif

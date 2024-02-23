@@ -1,7 +1,8 @@
 #include "renderer.h"
+#include "common.h"
 #include "application/editor_module.h"
 #include "lighting/deferred_lighting.h"
-#include "compute/occlusion_culling.h"
+#include "compute/culling.h"
 #include "transparency/oit.h"
 #include "postprocessing/temporal_filter.h"
 #include "swap_chain_pass.h"
@@ -13,11 +14,12 @@ using namespace impl;
 
 void Renderer::init(RendererInitializationContext& rendererInitContext)
 {
-	_rendererSubsettings = rendererInitContext.projectSettings->get_subsettings<ecore::RendererSubsettings>();
+	ModuleObjects::set_renderer_subsettings(rendererInitContext.projectSettings->get_subsettings<ecore::RendererSubsettings>());
 	_mainWindow = rendererInitContext.mainWindow;
 	
 	init_global_objects(rendererInitContext.globalObjectContext);
 	init_module_objects();
+	EVENT_MANAGER()->dispatch_events();
 	
 	UI_WINDOW_BACKEND()->get_callbacks(rendererInitContext.uiBackendCallbacks); // I must remove this bullshit
 	LOG_INFO("Renderer::init(): Initialized UIBackendCallbacks")
@@ -39,13 +41,11 @@ void Renderer::bake()
 	LOG_INFO("Renderer::bake(): Start baking")
 
 	RenderingInitContext renderingInitContext;
-	renderingInitContext.rhi = RHI();
 	renderingInitContext.mainWindow = _mainWindow;
-	renderingInitContext.sceneManager = SCENE_MANAGER();
-	renderingInitContext.pipelineManager = PIPELINE_MANAGER();
 	
 	_renderPassExecutors.emplace_back(new GBuffer(renderingInitContext));
 	_renderPassExecutors.emplace_back(new DeferredLighting(renderingInitContext));
+	_renderPassExecutors.emplace_back(new Culling(renderingInitContext));
 	
 	for (auto& executor : _renderPassExecutors)
 		executor->prepare_render_pass();
@@ -71,7 +71,7 @@ void Renderer::bake()
 void Renderer::draw(DrawContext& drawContext)
 {
 	uint32_t acquiredImageIndex;
-	if (!RHI()->acquire_next_image(acquiredImageIndex, _frameIndex))
+	if (!RHI()->acquire_next_image(acquiredImageIndex, FRAME_INDEX))
 	{
 		set_backbuffer("DeferredLightingOutput");
 		return;
@@ -79,7 +79,7 @@ void Renderer::draw(DrawContext& drawContext)
 	profiler::Profiler::begin_gpu_frame();
 	
 	SCENE_MANAGER()->setup_global_buffers();
-	_frameData.update_uniform_buffers(drawContext, _frameIndex);
+	_frameData.update_uniform_buffers(drawContext);
 
 	tasks::TaskGroup taskGroup;
 	RENDER_GRAPH()->draw(&taskGroup);
@@ -90,7 +90,7 @@ void Renderer::draw(DrawContext& drawContext)
 	if (!RHI()->present())
 	{
 		set_backbuffer("DeferredLightingOutput");
-		_frameIndex = 0;
+		FRAME_INDEX = 0;
 	}
 	else
 	{
@@ -108,10 +108,10 @@ void Renderer::init_global_objects(GlobalObjectContext* context)
 
 void Renderer::init_module_objects()
 {
-	ModuleObjects::init_rhi_module(_rendererSubsettings, _mainWindow);
+	ModuleObjects::init_rhi_module(_mainWindow);
 	LOG_INFO("Renderer::init(): Loaded and initialized RHI module")
 	
-	ModuleObjects::init_render_core_module(_rendererSubsettings);
+	ModuleObjects::init_render_core_module();
 	LOG_INFO("Renderer::init(): Loaded and initialized RenderCore module")
 	
 	ModuleObjects::init_scene_manager();
@@ -123,8 +123,8 @@ void Renderer::init_module_objects()
 
 void Renderer::get_current_frame_index()
 {
-	if (++_frameIndex > RHI()->get_buffer_count() - 1)
-		_frameIndex = 0;
+	if (++FRAME_INDEX > RHI()->get_buffer_count() - 1)
+		FRAME_INDEX = 0;
 }
 
 void Renderer::set_backbuffer(const std::string& textureName)

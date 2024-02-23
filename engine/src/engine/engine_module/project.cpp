@@ -1,4 +1,5 @@
 ﻿#include "project.h"
+#include "engine_core/basic_events.h"
 #include "engine_core/default_object_creators.h"
 #include "engine_core/basic_components.h"
 #include "core/global_objects.h"
@@ -97,6 +98,8 @@ void Project::create_new_blank_project()
 	ecs::Entity activeCamera = ecore::CameraCreator::create(creationContext);
 	auto cameraComponent = WORLD()->get_entity_manager()->get_component<ecore::CameraComponent>(activeCamera);
 	cameraComponent->isActive = true;
+	ecore::CameraSetEvent cameraSetEvent(activeCamera, ecore::MAIN_CAMERA);
+	EVENT_MANAGER()->enqueue_event(cameraSetEvent);
 	
 	ecore::StaticDirectionalLightCreator::create(creationContext);
 	creationContext.location = XMFLOAT3(12.0f, 100.0f, 25.0f);

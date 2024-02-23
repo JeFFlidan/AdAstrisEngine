@@ -112,6 +112,7 @@ void DXInternalCompiler::set_shader_format_flags(ShaderInputDesc& inputDesc, std
 			compileArgs.push_back(L"-spirv");
 			compileArgs.push_back(L"-fspv-target-env=vulkan1.3");
 			compileArgs.push_back(L"-fvk-use-dx-layout");
+			compileArgs.push_back(L"-fvk-allow-rwstructuredbuffer-arrays");
 				
 			compileArgs.push_back(L"-fvk-t-shift");
 			compileArgs.push_back(L"1000");

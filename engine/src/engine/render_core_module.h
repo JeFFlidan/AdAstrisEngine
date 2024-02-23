@@ -207,12 +207,19 @@ namespace ad_astris::rcore
 		
 			virtual void cleanup_staging_buffers() = 0;
 
+			virtual rhi::Buffer* allocate_buffer(rhi::BufferInfo& bufferInfo) = 0;
 			virtual rhi::Buffer* allocate_buffer(const std::string& bufferName, rhi::BufferInfo& bufferInfo) = 0;
 			virtual rhi::Buffer* allocate_gpu_buffer(const std::string& bufferName, uint64_t size, rhi::ResourceUsage bufferUsage) = 0;
 			virtual rhi::Buffer* allocate_vertex_buffer(const std::string& bufferName, uint64_t size) = 0;
 			virtual rhi::Buffer* allocate_index_buffer(const std::string& bufferName, uint64_t size) = 0;
+			virtual rhi::Buffer* allocate_indirect_buffer(uint64_t size) = 0;
 			virtual rhi::Buffer* allocate_indirect_buffer(const std::string& bufferName, uint64_t size) = 0;
+			virtual rhi::Buffer* allocate_storage_buffer(uint64_t size) = 0;
 			virtual rhi::Buffer* allocate_storage_buffer(const std::string& bufferName, uint64_t size) = 0;
+			// Implemented only for buffers with rhi::MemoryUsage::CPU
+			virtual void reallocate_buffer(rhi::Buffer* buffer, uint64_t newSize) = 0;
+			// Implemented only for buffers with rhi::MemoryUsage::CPU
+			virtual rhi::Buffer* reallocate_buffer(const std::string& bufferName, uint64_t newSize) = 0;
 			virtual bool update_buffer(
 				rhi::CommandBuffer* cmd,
 				const std::string& bufferName,
@@ -220,9 +227,24 @@ namespace ad_astris::rcore
 				void* allObjects,
 				uint64_t allObjectCount,
 				uint64_t newObjectCount) = 0;
-		
+			virtual bool update_buffer(
+				rhi::CommandBuffer* cmd,
+				const std::string& srcBufferName,
+				const std::string& dstBufferName,
+				uint64_t objectSizeInBytes,
+				uint64_t allObjectCount,
+				uint64_t newObjectCount) = 0;
+			virtual bool update_buffer(
+				rhi::CommandBuffer* cmd,
+				rhi::Buffer* srcBuffer,
+				rhi::Buffer* dstBuffer,
+				uint64_t objectSizeInBytes,
+				uint64_t allObjectCount,
+				uint64_t newObjectCount) = 0;
+
 			virtual rhi::Buffer* get_buffer(const std::string& bufferName) = 0;
 			virtual void add_buffer(const std::string& bufferName, rhi::Buffer& buffer) = 0;
+			virtual void bind_buffer_to_name(const std::string& bufferName, rhi::Buffer* buffer) = 0;
 
 			virtual rhi::Texture* allocate_texture(const std::string& textureName, rhi::TextureInfo& textureInfo) = 0;
 			virtual rhi::Texture* allocate_gpu_texture(
@@ -288,7 +310,7 @@ namespace ad_astris::rcore
 		DEFERRED_LIGHTING,
 		OIT_GEOMETRY,
 		OIT,
-		OCCLUSION_CULLING,
+		CULLING,
 	};
 
 	struct PipelineManagerInitContext

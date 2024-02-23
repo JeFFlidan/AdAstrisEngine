@@ -2,6 +2,7 @@
 #include "resource_manager/resource_events.h"
 #include "engine_core/material/materials.h"
 #include "engine_core/material/material_settings.h"
+#include "engine_core/basic_components.h"
 #include "core/global_objects.h"
 
 using namespace ad_astris;
@@ -39,6 +40,15 @@ void MaterialSubmanager::cleanup_after_update()
 bool MaterialSubmanager::need_update()
 {
 	return true;
+}
+
+void MaterialSubmanager::add_material(ecs::Entity entity)
+{
+	if (entity.has_component<ecore::OpaquePBRMaterialComponent>())
+	{
+		UUID materialUUID = entity.cget_component<ecore::OpaquePBRMaterialComponent>()->materialUUID;
+		_gpuOpaqueMaterialIndexByCPUMaterialUUID.insert({ materialUUID, 0 });
+	}
 }
 
 uint32_t MaterialSubmanager::get_gpu_material_index(rhi::CommandBuffer& cmd, UUID cpuMaterialUUID)

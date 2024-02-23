@@ -18,13 +18,16 @@ void GBuffer::prepare_render_pass()
 	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("gSurface", "gSurface");
 	//rendererResourceManager->allocate_texture_view("gVelocity", "gVelocity");
 	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("gDepthStencil", "gDepthStencil");
-	
+
+	CullingSubmanager* cullingSubmanager = SCENE_MANAGER()->get_culling_submanager();
 	rcore::IRenderPass* renderPass = RENDER_GRAPH()->add_new_pass("gBuffer", rcore::RenderGraphQueue::GRAPHICS);
 	renderPass->add_color_output("gAlbedo");
 	renderPass->add_color_output("gNormal");
 	renderPass->add_color_output("gSurface");
 	//renderPass->add_color_output("gVelocity");
 	renderPass->set_depth_stencil_output("gDepthStencil");
+	renderPass->add_indirect_buffer_input(cullingSubmanager->get_indirect_buffer_name(STATIC_OPAQUE_FILTER));
+	renderPass->add_storage_buffer_read_only_input(cullingSubmanager->get_model_instance_id_buffer_name(STATIC_OPAQUE_FILTER));
 	renderPass->set_executor(this);
 
 	PIPELINE_MANAGER()->bind_render_pass_to_pipeline(renderPass, rcore::BuiltinPipelineType::GBUFFER);
@@ -51,14 +54,14 @@ void GBuffer::execute(rhi::CommandBuffer* cmd)
 	RHI()->bind_index_buffer(cmd, indexBuffer);
 	//_rhi->draw_indexed(cmd, 27018, 1, 0, 0, 0);
 
-	IndirectBufferDesc* indirectBufferDesc = SCENE_MANAGER()->get_indirect_buffer_desc();
-	rhi::Buffer* indirectBuffer = indirectBufferDesc->get_indirect_buffer();
+	CullingSubmanager* cullingSubmanager = SCENE_MANAGER()->get_culling_submanager();
+	rhi::Buffer* indirectBuffer = cullingSubmanager->get_scene_indirect_buffers(STATIC_OPAQUE_FILTER, ecore::MAIN_CAMERA).indirectBuffer;
 	uint32_t offset = 0;
-	for (uint32_t i = 0; i != indirectBufferDesc->get_indirect_command_count(); ++i)
+	uint32_t indirectCommandCount = cullingSubmanager->get_indirect_command_count(STATIC_OPAQUE_FILTER);
+	for (uint32_t i = 0; i != indirectCommandCount; ++i)
 	{
 		RHI()->draw_indexed_indirect(cmd, indirectBuffer, offset, 1, sizeof(DrawIndexedIndirectCommand));
-		uint32_t batchInstanceCount = indirectBufferDesc->get_batch_instance_count(i);
-		offset += batchInstanceCount * sizeof(DrawIndexedIndirectCommand);
+		offset += i * sizeof(DrawIndexedIndirectCommand);
 	}
 
 	profiler::Profiler::end_gpu_range(rangeID);

@@ -3,6 +3,7 @@ file(GLOB ENGINE_CORE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/application/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/application_core/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/core/*.*
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/*/*
     ${CMAKE_CURRENT_SOURCE_DIR}/engine_core/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/engine_core/components/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/engine_core/editor_settings/*.*

@@ -1,8 +1,6 @@
 #pragma once
 
-#include "engine_core/fwd.h"
-#include "resource_manager/resource_manager.h"
-#include <unordered_map>
+#include <string>
 
 namespace ad_astris::ecore::material
 {

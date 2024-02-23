@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "scene_submanager_base.h"
 #include "common.h"
 #include "shader_interop_renderer.h"
 #include "engine_core/basic_components.h"
@@ -8,14 +7,14 @@
 
 namespace ad_astris::renderer::impl
 {
-	class EntitySubmanager : public SceneSubmanagerBase
+	class EntitySubmanager
 	{
 		public:
 			EntitySubmanager();
 
-			virtual void update(rhi::CommandBuffer& cmdBuffer) override;
-			virtual void cleanup_after_update() override;
-			virtual bool need_update() override;
+			void update(rhi::CommandBuffer& cmdBuffer);
+			void cleanup_after_update();
+			bool need_update();
 
 			rhi::Buffer* get_entity_buffer()
 			{
@@ -42,7 +41,7 @@ namespace ad_astris::renderer::impl
 		
 			bool _areGPUBuffersAllocated{ false };
 		
-			virtual void subscribe_to_events() override;
+			void subscribe_to_events();
 
 			void allocate_gpu_buffers();
 			void update_gpu_buffer(rhi::CommandBuffer& cmd);

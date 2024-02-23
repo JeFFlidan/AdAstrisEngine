@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "material_base.h"
-#include "material_common.h"
 #include "resource_manager/resource_manager.h"
 
 namespace ad_astris::ecore

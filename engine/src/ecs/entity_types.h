@@ -1,5 +1,6 @@
 #pragma once
 
+#include "attributes.h"
 #include "engine_core/uuid.h"
 #include "profiler/logger.h"
 #include "type_info_table.h"
@@ -47,6 +48,21 @@ namespace ad_astris::ecs
 				return has_tag_internal(TypeInfoTable::get_tag_id<Tag>());
 			}
 
+			template<typename Property>
+			FORCE_INLINE bool has_property() const
+			{
+				if constexpr (Reflector::has_attribute<Property, EcsComponent>())
+				{
+					return has_component<Property>();
+				}
+				if constexpr (Reflector::has_attribute<Property, EcsTag>())
+				{
+					return has_tag<Property>();
+				}
+				LOG_ERROR("Entity::has_property(): Entity properties are tags and components. However, {} is neither a tag nor a component.", get_type_name<Property>())
+				return false;
+			}
+
 			template<typename Component>
 			FORCE_INLINE Component* get_component() const
 			{
@@ -59,7 +75,7 @@ namespace ad_astris::ecs
 				return static_cast<const Component*>(get_component_by_id(TypeInfoTable::get_component_id<Component>()));
 			}
 
-			FORCE_INLINE bool is_valid() const;
+			bool is_valid() const;
 		
 		private:
 			UUID _uuid;

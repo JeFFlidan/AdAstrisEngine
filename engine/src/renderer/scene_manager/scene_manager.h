@@ -1,13 +1,9 @@
 #pragma once
 
-#include "scene_submanager_base.h"
+#include "material_submanager.h"
+#include "culling_submanager.h"
 #include "model_submanager.h"
 #include "entity_submanager.h"
-#include "rhi/engine_rhi.h"
-#include "renderer/enums.h"
-#include "events/event_manager.h"
-#include "multithreading/task_composer.h"
-#include "material_submanager.h"
 
 namespace ad_astris::renderer::impl
 {
@@ -16,8 +12,7 @@ namespace ad_astris::renderer::impl
 		public:
 			SceneManager();
 			~SceneManager();
-
-			void update_per_frame_cpu_data();
+		
 			void setup_global_buffers();
 		
 			rhi::Buffer* get_vertex_buffer_f32pntc()
@@ -55,14 +50,14 @@ namespace ad_astris::renderer::impl
 				return _materialSubmanager->get_sampler(samplerType);
 			}
 		
-			IndirectBufferDesc* get_indirect_buffer_desc() { return _modelSubmanager->get_indirect_buffer_desc(); }
-
 			uint32_t get_light_count() { return _entitySubmanager->get_light_count(); }
+			CullingSubmanager* get_culling_submanager() { return _cullingSubmanager.get(); }
 		
 		private:
-			std::unique_ptr<ModelSubmanager> _modelSubmanager;
-			std::unique_ptr<MaterialSubmanager> _materialSubmanager;
-			std::unique_ptr<EntitySubmanager> _entitySubmanager;
+			std::unique_ptr<ModelSubmanager> _modelSubmanager{ nullptr };
+			std::unique_ptr<MaterialSubmanager> _materialSubmanager{ nullptr };
+			std::unique_ptr<EntitySubmanager> _entitySubmanager{ nullptr };
+			std::unique_ptr<CullingSubmanager> _cullingSubmanager{ nullptr };
 
 			void subscribe_to_events();
 	};

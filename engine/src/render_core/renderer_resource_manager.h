@@ -18,12 +18,17 @@ namespace ad_astris::rcore::impl
 		
 			virtual void cleanup_staging_buffers() override;
 
+			virtual rhi::Buffer* allocate_buffer(rhi::BufferInfo& bufferInfo) override;
 			virtual rhi::Buffer* allocate_buffer(const std::string& bufferName, rhi::BufferInfo& bufferInfo) override;
 			virtual rhi::Buffer* allocate_gpu_buffer(const std::string& bufferName, uint64_t size, rhi::ResourceUsage bufferUsage) override;
 			virtual rhi::Buffer* allocate_vertex_buffer(const std::string& bufferName, uint64_t size) override;
 			virtual rhi::Buffer* allocate_index_buffer(const std::string& bufferName, uint64_t size) override;
+			virtual rhi::Buffer* allocate_indirect_buffer(uint64_t size) override;
 			virtual rhi::Buffer* allocate_indirect_buffer(const std::string& bufferName, uint64_t size) override;
+			virtual rhi::Buffer* allocate_storage_buffer(uint64_t size);
 			virtual rhi::Buffer* allocate_storage_buffer(const std::string& bufferName, uint64_t size) override;
+			virtual void reallocate_buffer(rhi::Buffer* buffer, uint64_t newSize) override;
+			virtual rhi::Buffer* reallocate_buffer(const std::string& bufferName, uint64_t newSize) override;
 			virtual bool update_buffer(
 				rhi::CommandBuffer* cmd,
 				const std::string& bufferName,
@@ -31,9 +36,24 @@ namespace ad_astris::rcore::impl
 				void* allObjects,
 				uint64_t allObjectCount,
 				uint64_t newObjectCount) override;
+			virtual bool update_buffer(
+				rhi::CommandBuffer* cmd, 
+				const std::string& srcBufferName,
+				const std::string& dstBufferName,
+				uint64_t objectSizeInBytes,
+				uint64_t allObjectCount,
+				uint64_t newObjectCount) override;
+			virtual bool update_buffer(
+				rhi::CommandBuffer* cmd,
+				rhi::Buffer* srcBuffer,
+				rhi::Buffer* dstBuffer,
+				uint64_t objectSizeInBytes,
+				uint64_t allObjectCount,
+				uint64_t newObjectCount) override;
 
 			virtual rhi::Buffer* get_buffer(const std::string& bufferName) override;
 			virtual void add_buffer(const std::string& bufferName, rhi::Buffer& buffer) override;
+			virtual void bind_buffer_to_name(const std::string& bufferName, rhi::Buffer* buffer) override;
 
 			virtual rhi::Texture* allocate_texture(const std::string& textureName, rhi::TextureInfo& textureInfo) override;
 			virtual rhi::Texture* allocate_gpu_texture(
@@ -112,6 +132,7 @@ namespace ad_astris::rcore::impl
 		
 			std::atomic_bool _isDeviceWaiting;
 		
+			rhi::Buffer* allocate_gpu_buffer(uint64_t size, rhi::ResourceUsage bufferUsage);
 			void allocate_staging_buffer(rhi::Buffer& buffer, void* allObjects, uint64_t offset, uint64_t newObjectsSize);
 			rhi::Buffer& get_new_staging_buffer();
 			rhi::Buffer* check_buffer(const std::string& bufferName);

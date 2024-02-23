@@ -57,11 +57,10 @@ static const uint BINDLESS_DESCRIPTOR_SET_SAMPLER = 6;
 #include "shader_interop_renderer.h"
 
 #if defined(__spirv__)
-[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] StructuredBuffer<RendererModelInstance> bindlessStructuredModelInstances[];
-[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] StructuredBuffer<RendererModelInstanceID> bindlessStructuredModelInstanceIDs[];
-[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] StructuredBuffer<RendererMaterial> bindlessStructuredMaterials[];
-[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] StructuredBuffer<RendererEntity> bindlessStructuredEntities[];
-[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] StructuredBuffer<CullingInstanceIndices> bindlessStructuredCullingInstanceIndices[];
+[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] RWStructuredBuffer<RendererModelInstance> bindlessStructuredModelInstances[];
+[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] RWStructuredBuffer<RendererModelInstanceID> bindlessStructuredModelInstanceIDs[];
+[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] RWStructuredBuffer<RendererMaterial> bindlessStructuredMaterials[];
+[[vk::binding(0, BINDLESS_DESCRIPTOR_SET_STORAGE_BUFFER)]] RWStructuredBuffer<RendererEntity> bindlessStructuredEntities[];
 #endif
 
 inline FrameUB get_frame()

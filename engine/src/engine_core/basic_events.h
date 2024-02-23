@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "enums.h"
 #include "events/event.h"
 #include "ecs/entity_manager.h"
 
@@ -60,5 +61,19 @@ namespace ad_astris::ecore
 		private:
 			ecs::Entity _entity;
 			ecs::EntityManager* _entityManager{ nullptr };
+	};
+
+	class CameraSetEvent : public events::IEvent
+	{
+		public:
+			EVENT_TYPE_DECL(CameraSetEvent)
+			CameraSetEvent(ecs::Entity camera, CameraIndex cameraIndex) : _camera(camera), _cameraIndex(cameraIndex) { }
+
+			ecs::Entity get_camera() const { return _camera; }
+			CameraIndex get_camera_index() const { return _cameraIndex; }
+
+		private:
+			ecs::Entity _camera;
+			CameraIndex _cameraIndex;
 	};
 }

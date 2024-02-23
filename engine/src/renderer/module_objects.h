@@ -13,8 +13,8 @@ namespace ad_astris::renderer::impl
 	class ModuleObjects
 	{
 		public:
-			static void init_rhi_module(ecore::RendererSubsettings* rendererSubsettings, acore::IWindow* mainWindow);
-			static void init_render_core_module(ecore::RendererSubsettings* rendererSubsettings);
+			static void init_rhi_module(acore::IWindow* mainWindow);
+			static void init_render_core_module();
 			static void init_scene_manager();
 			static void init_ui_window_backend(acore::IWindow* mainWindow);
 			static void cleanup();
@@ -26,6 +26,12 @@ namespace ad_astris::renderer::impl
 			FORCE_INLINE static rcore::IPipelineManager* get_pipeline_manager() { return _pipelineManager; }
 			FORCE_INLINE static rcore::IRendererResourceManager* get_renderer_resource_manager() { return _rendererResourceManager; }
 			FORCE_INLINE static SceneManager* get_scene_manager() { return _sceneManager; }
+			FORCE_INLINE static ecore::RendererSubsettings* get_renderer_subsettings() { return _rendererSubsettings; }
+		
+			FORCE_INLINE static void set_renderer_subsettings(ecore::RendererSubsettings* rendererSubsettings)
+			{
+				_rendererSubsettings = rendererSubsettings;
+			}
 		
 		private:
 			inline static rhi::IEngineRHI* _rhi{ nullptr };
@@ -34,7 +40,8 @@ namespace ad_astris::renderer::impl
 			inline static rcore::IShaderManager* _shaderManager{ nullptr };
 			inline static rcore::IPipelineManager* _pipelineManager{ nullptr };
 			inline static rcore::IRendererResourceManager* _rendererResourceManager{ nullptr };
-			inline static SceneManager* _sceneManager{ nullptr };	// Use no unique_ptr and fwd declaration of SceneManager to avoid circular dependency 
+			inline static SceneManager* _sceneManager{ nullptr };	// Use no unique_ptr and fwd declaration of SceneManager to avoid circular dependency
+			inline static ecore::RendererSubsettings* _rendererSubsettings{ nullptr };
 	};
 }
 
@@ -45,3 +52,4 @@ namespace ad_astris::renderer::impl
 #define SHADER_MANAGER() ::ad_astris::renderer::impl::ModuleObjects::get_shader_manager()
 #define RENDER_GRAPH() ::ad_astris::renderer::impl::ModuleObjects::get_render_graph()
 #define SCENE_MANAGER() ::ad_astris::renderer::impl::ModuleObjects::get_scene_manager()
+#define RENDERER_SUBSETTINGS() ::ad_astris::renderer::impl::ModuleObjects::get_renderer_subsettings()

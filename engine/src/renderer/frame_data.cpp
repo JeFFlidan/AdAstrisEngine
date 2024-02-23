@@ -23,9 +23,8 @@ void FrameData::init()
 		RENDERER_RESOURCE_MANAGER()->allocate_buffer(get_buffer_name(FRAME_UB_NAME, i), bufferInfo);
 }
 
-void FrameData::update_uniform_buffers(DrawContext& drawContext, uint32_t frameIndex)
+void FrameData::update_uniform_buffers(DrawContext& drawContext)
 {
-	_frameIndex = frameIndex;
 	setup_cameras(drawContext);
 	setup_frame_data(drawContext);
 }
@@ -54,7 +53,8 @@ void FrameData::setup_frame_data(DrawContext& drawContext)
 	rhi::Buffer* modelInstanceBuffer = SCENE_MANAGER()->get_model_instance_storage_buffer();
 	rhi::Buffer* materialBuffer = SCENE_MANAGER()->get_material_storage_buffer();
 	rhi::Buffer* entityBuffer = SCENE_MANAGER()->get_entity_storage_buffer();
-	rhi::Buffer* modelInstanceIDBuffer = SCENE_MANAGER()->get_indirect_buffer_desc()->get_model_instance_id_buffer();
+	CullingSubmanager* cullingSubmanager = SCENE_MANAGER()->get_culling_submanager();
+	rhi::Buffer* modelInstanceIDBuffer = cullingSubmanager->get_scene_indirect_buffers(STATIC_OPAQUE_FILTER, ecore::MAIN_CAMERA).modelInstanceIDBuffer;
 	_frameData.modelInstanceBufferIndex = RHI()->get_descriptor_index(modelInstanceBuffer);
 	_frameData.materialBufferIndex = RHI()->get_descriptor_index(materialBuffer);
 	_frameData.entityBufferIndex = RHI()->get_descriptor_index(entityBuffer);

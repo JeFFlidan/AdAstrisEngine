@@ -457,24 +457,28 @@ void RenderGraph::build_barriers()
 		// 	// TODO Think how to sync storage buffers
 		// }
 		//
-		// for (auto& storageBufferDesc : logicalPass->get_storage_buffer_outputs())
-		// {
-		// 	// TODO Think how to sync storage buffers
-		// }
+		for (auto& storageBufferDesc : logicalPass->get_storage_buffer_outputs())
+		{
+			rhi::Buffer* buffer = get_physical_buffer(storageBufferDesc->get_name());
+			if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::INDIRECT_BUFFER))
+			{
+				rhi::PipelineBarrier& flushingBarrier = _flushingPipelineBarriersByPassIndex[passIndex].emplace_back();
+				flushingBarrier = rhi::PipelineBarrier::set_buffer_barrier(
+					buffer,
+					rhi::ResourceLayout::SHADER_WRITE,
+					rhi::ResourceLayout::INDIRECT_COMMAND_BUFFER);
+			}
+		}
 		//
 		// for (auto& transferBufferDesc : logicalPass->get_transfer_outputs())
 		// {
 		// 	// TODO Think how to sync transfer buffers
 		// }
 
-		for (auto& indirectBufferDesc : logicalPass->get_indirect_buffer_inputs())
-		{
-			rhi::PipelineBarrier& flushingBarrier = _flushingPipelineBarriersByPassIndex[passIndex].emplace_back();
-			flushingBarrier = rhi::PipelineBarrier::set_buffer_barrier(
-				get_physical_buffer(indirectBufferDesc->get_name()),
-				rhi::ResourceLayout::SHADER_WRITE,
-				rhi::ResourceLayout::INDIRECT_COMMAND_BUFFER);
-		}
+		// for (auto& indirectBufferDesc : logicalPass->get_indirect_buffer_inputs())
+		// {
+		// 	// TODO probably have to remove this loop
+		// }
 	}
 }
 

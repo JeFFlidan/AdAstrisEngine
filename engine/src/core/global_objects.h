@@ -76,3 +76,4 @@ namespace ad_astris
 #define MODULE_MANAGER() ::ad_astris::GlobalObjects::get_module_manager()
 #define PROFILER_INSTANCE() ::ad_astris::GlobalObjects::get_profiler_instance()
 #define ECS_UI_MANAGER() ::ad_astris::GlobalObjects::get_ecs_ui_manager()
+#define ENTITY_MANAGER() WORLD()->get_entity_manager()

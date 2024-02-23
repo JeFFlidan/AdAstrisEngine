@@ -31,12 +31,12 @@ void Engine::init(EngineInitializationContext& engineInitContext)
 
 	_project->postload(*engineInitContext.projectInfo);
 
+	pre_update();
+	EVENT_MANAGER()->dispatch_events();
 	_renderer->bake();
 	LOG_INFO("Engine::init(): Baked renderer")
 
 	LOG_INFO("Engine::init(): Engine initialization completed")
-
-	//_eventManager->unsubscribe(ecore::EntityCreatedEvent::get_type_id_static(), _activeCameraDelegate.target_type().name());
 }
 
 void Engine::execute()
@@ -130,6 +130,8 @@ void Engine::register_ecs_objects()
 
 void Engine::pre_update()
 {
+	ecore::CameraSetEvent cameraSetEvent(_activeCamera, ecore::MAIN_CAMERA);
+	EVENT_MANAGER()->enqueue_event(cameraSetEvent);
 	UpdateActiveCameraEvent event(_activeCamera);
 	EVENT_MANAGER()->trigger_event(event);
 }
@@ -139,9 +141,9 @@ void Engine::set_active_camera_delegate()
 	events::EventDelegate<ecore::EntityCreatedEvent> _activeCameraDelegate = [this](ecore::EntityCreatedEvent& event)
 	{
 		ecs::Entity entity = event.get_entity();
-		if (event.get_entity_manager()->does_entity_have_component<ecore::CameraComponent>(entity))
+		if (entity.has_component<ecore::CameraComponent>())
 		{
-			auto camera = event.get_entity_manager()->get_component<ecore::CameraComponent>(entity);
+			auto camera = entity.get_component<ecore::CameraComponent>();
 			if (camera->isActive)
 				_activeCamera = entity;
 		}
