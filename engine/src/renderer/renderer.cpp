@@ -19,7 +19,6 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	
 	init_global_objects(rendererInitContext.globalObjectContext);
 	init_module_objects();
-	EVENT_MANAGER()->dispatch_events();
 	
 	UI_WINDOW_BACKEND()->get_callbacks(rendererInitContext.uiBackendCallbacks); // I must remove this bullshit
 	LOG_INFO("Renderer::init(): Initialized UIBackendCallbacks")

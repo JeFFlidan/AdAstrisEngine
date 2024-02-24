@@ -32,7 +32,6 @@ void Engine::init(EngineInitializationContext& engineInitContext)
 	_project->postload(*engineInitContext.projectInfo);
 
 	pre_update();
-	EVENT_MANAGER()->dispatch_events();
 	_renderer->bake();
 	LOG_INFO("Engine::init(): Baked renderer")
 
@@ -131,7 +130,7 @@ void Engine::register_ecs_objects()
 void Engine::pre_update()
 {
 	ecore::CameraSetEvent cameraSetEvent(_activeCamera, ecore::MAIN_CAMERA);
-	EVENT_MANAGER()->enqueue_event(cameraSetEvent);
+	EVENT_MANAGER()->trigger_event(cameraSetEvent);
 	UpdateActiveCameraEvent event(_activeCamera);
 	EVENT_MANAGER()->trigger_event(event);
 }
