@@ -43,6 +43,7 @@ void FrameData::setup_cameras(DrawContext& drawContext)
 	_cameras[0].zNear = cameraComponent->zNear;
 	_cameras[0].zFar = cameraComponent->zFar;
 	_cameras[0].up = cameraComponent->up;
+	_cameras[0].create_frustum();
 	rhi::Buffer* cameraUB = RENDERER_RESOURCE_MANAGER()->get_buffer(get_buffer_name(CAMERA_UB_NAME));
 	RHI()->update_buffer_data(cameraUB, sizeof(RendererCamera) * MAX_CAMERA_COUNT, _cameras.data());
 	RHI()->bind_uniform_buffer(cameraUB, UB_CAMERA_SLOT);

@@ -213,7 +213,7 @@ namespace ad_astris::renderer::impl
 				void add_light(ecs::Entity light, uint32_t cullingParamsIndex);
 			};
 
-			ecs::Entity cameras[ecore::CAMERA_COUNT];
+			ecs::Entity _cameras[ecore::CAMERA_COUNT];
 			std::vector<std::unique_ptr<ecs::IEntityFilter>> _sceneEntityFilters;
 			std::unordered_map<size_t, SceneCullingContext> _sceneCullingContextByEntityFilterHash;
 			std::vector<std::unique_ptr<ecs::IEntityFilter>> _shadowsEntityFilters;

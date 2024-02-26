@@ -46,7 +46,7 @@ void MaterialSubmanager::add_material(ecs::Entity entity)
 {
 	if (entity.has_component<ecore::OpaquePBRMaterialComponent>())
 	{
-		UUID materialUUID = entity.cget_component<ecore::OpaquePBRMaterialComponent>()->materialUUID;
+		UUID materialUUID = entity.get_component<ecore::OpaquePBRMaterialComponent>()->materialUUID;
 		_gpuOpaqueMaterialIndexByCPUMaterialUUID.insert({ materialUUID, 0 });
 	}
 }

@@ -64,13 +64,13 @@ namespace ad_astris::ecs
 			}
 
 			template<typename Component>
-			FORCE_INLINE Component* get_component() const
+			FORCE_INLINE Component* get_component()
 			{
 				return static_cast<Component*>(get_component_by_id(TypeInfoTable::get_component_id<Component>()));
 			}
 
 			template<typename Component>
-			FORCE_INLINE const Component* cget_component() const
+			FORCE_INLINE const Component* get_component() const
 			{
 				return static_cast<const Component*>(get_component_by_id(TypeInfoTable::get_component_id<Component>()));
 			}

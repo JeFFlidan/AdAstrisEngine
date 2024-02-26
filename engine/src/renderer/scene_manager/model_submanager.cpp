@@ -142,7 +142,7 @@ void ModelSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 	{
 		for (const auto& entity : pair.second)
 		{
-			auto modelComponent = entity.cget_component<ecore::ModelComponent>();
+			auto modelComponent = entity.get_component<ecore::ModelComponent>();
 			ecore::StaticModelHandle modelHandle = RESOURCE_MANAGER()->get_resource<ecore::StaticModel>(modelComponent->modelUUID);
 			ecore::StaticModel* staticModel = modelHandle.get_resource();
 
@@ -152,10 +152,11 @@ void ModelSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 			RendererModelInstance& modelInstance = _modelInstances.emplace_back();
 			modelInstance.materialIndex = 0;	// TODO change
 			ecore::model::ModelBounds bounds = staticModel->get_model_bounds();
-			modelInstance.sphereBoundsRadius = bounds.radius;
-			modelInstance.sphereBoundsCenter = bounds.origin;
-			auto transform = entity.cget_component<ecore::TransformComponent>();
+			modelInstance.sphereBounds.radius = bounds.radius;
+			modelInstance.sphereBounds.center = bounds.origin;
+			auto transform = entity.get_component<ecore::TransformComponent>();
 			modelInstance.transform.set_transfrom(transform->world);
+			modelInstance.scale = transform->scale;
 
 			XMMATRIX matrix = XMLoadFloat4x4(&transform->world);
 			matrix = XMMatrixInverse(nullptr, XMMatrixTranspose(matrix));
@@ -165,7 +166,7 @@ void ModelSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 
 			if (entity.has_component<ecore::OpaquePBRMaterialComponent>())
 			{
-				auto materialComponent = entity.cget_component<ecore::OpaquePBRMaterialComponent>();
+				auto materialComponent = entity.get_component<ecore::OpaquePBRMaterialComponent>();
 				modelInstance.materialIndex = _materialSubmanager->get_gpu_material_index(cmd, materialComponent->materialUUID);
 			}
 			// TODO transparent materials

@@ -85,11 +85,16 @@ void CullingSubmanager::update_cpu_arrays()
 		SceneCullingContext& cullingContext = pair.second;
 		for (auto& pair2 : cullingContext.indirectBuffersByCameraIndex)
 		{
-			CullingParams* cullingParams = _cullingParamsCpuBuffer->get_data(pair2.second.cullingParamsIndex);
-			cullingParams->drawCount = cullingContext.instanceCount;
+			const ecs::Entity camera = _cameras[pair2.first];
+			const ecore::CameraComponent* cameraComponent = camera.get_component<ecore::CameraComponent>();
+			
 			const ecore::SceneCullingSettings& sceneCullingSettings = RENDERER_SUBSETTINGS()->get_scene_culling_settings();
+			CullingParams* cullingParams = _cullingParamsCpuBuffer->get_data(pair2.second.cullingParamsIndex);
+			cullingParams->cameraIndex = pair2.first;
+ 			cullingParams->drawCount = cullingContext.instanceCount;
 			cullingParams->isFrustumCullingEnabled = sceneCullingSettings.isFrustumCullingEnabled;
 			cullingParams->isOcclusionCullingEnabled = sceneCullingSettings.isOcclusionCullingEnabled;
+			cullingParams->isAABBCheckEnabled = false;
 			// TODO write whole cullingParams configuration
 		}
 	}
@@ -156,7 +161,7 @@ void CullingSubmanager::subscribe_to_events()
 {
 	events::EventDelegate<ecore::CameraSetEvent> delegate1 = [this](ecore::CameraSetEvent& event)
 	{
-		cameras[event.get_camera_index()] = event.get_camera();
+		_cameras[event.get_camera_index()] = event.get_camera();
 	};
 	EVENT_MANAGER()->subscribe(delegate1);
 }

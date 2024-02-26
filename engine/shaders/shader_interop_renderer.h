@@ -199,16 +199,21 @@ struct RendererTransform
 	}
 };
 
+struct RendererSphereBounds
+{
+	float3 center;
+	float radius;
+};
+
 struct RendererModelInstance
 {
 	RendererTransform transform;
 	RendererTransform transformInverseTranspose;
 	
-	float3 sphereBoundsCenter;
-	float sphereBoundsRadius;
+	RendererSphereBounds sphereBounds;
 
 	uint materialIndex;
-	float3 empty;
+	float3 scale;
 };
 
 enum RendererEntityType
@@ -370,6 +375,22 @@ struct FrameUB
 	uint empty3;
 };
 
+struct RendererFrustum
+{
+	float4 planes[6];
+#ifndef __cplusplus
+	bool check(RendererSphereBounds sphereBounds)
+	{
+		bool visible = true;
+		for (int i = 0; i != 6; ++i)
+		{
+			visible = visible && dot(planes[i], float4(sphereBounds.center, 1.0f)) > -sphereBounds.radius;
+		}
+		return visible;
+	}
+#endif
+};
+
 struct RendererCamera
 {
 	float3 location;
@@ -389,6 +410,21 @@ struct RendererCamera
 	float4x4 inverseView;
 	float4x4 inverseProjection;
 	float4x4 inverseViewProjection;
+
+	RendererFrustum frustum;
+
+#ifdef __cplusplus
+	void create_frustum()
+	{
+		XMMATRIX projectionViewT = XMMatrixTranspose(XMLoadFloat4x4(&viewProjection));
+		XMStoreFloat4(&frustum.planes[0], XMPlaneNormalize(projectionViewT.r[3] + projectionViewT.r[0]));
+		XMStoreFloat4(&frustum.planes[1], XMPlaneNormalize(projectionViewT.r[3] - projectionViewT.r[0]));
+		XMStoreFloat4(&frustum.planes[2], XMPlaneNormalize(projectionViewT.r[3] + projectionViewT.r[1]));
+		XMStoreFloat4(&frustum.planes[3], XMPlaneNormalize(projectionViewT.r[3] - projectionViewT.r[1]));
+		XMStoreFloat4(&frustum.planes[4], XMPlaneNormalize(projectionViewT.r[2]));
+		XMStoreFloat4(&frustum.planes[5], XMPlaneNormalize(projectionViewT.r[3] - projectionViewT.r[2]));
+	}
+#endif
 };
 
 static const uint MAX_CAMERA_COUNT = 16;
@@ -466,9 +502,7 @@ struct IndirectBufferIndices
 
 struct CullingParams
 {
-	float4x4 view;
-	float P00, P11, zNear, zFar;
-	float frustum[4];
+	uint cameraIndex;
 	float lodBase, lodStep;
 	float pyramidWidth, pyramidHeight;
 
@@ -478,7 +512,6 @@ struct CullingParams
 	int isOcclusionCullingEnabled;
 	int isAABBCheckEnabled;
 	int isLodEnabled;
-	uint cullingDistance;
 	float aabbmin_x;
 	float aabbmin_y;
 	float aabbmin_z;
