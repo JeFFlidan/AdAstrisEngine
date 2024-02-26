@@ -731,7 +731,9 @@ namespace ad_astris::rhi
 			Texture* texture;
 			ResourceLayout srcLayout;
 			ResourceLayout dstLayout;
+			uint32_t levelCount;
 			uint32_t baseMipLevel;
+			uint32_t layerCount;
 			uint32_t baseLayer;
 		};
 
@@ -770,7 +772,9 @@ namespace ad_astris::rhi
 			ResourceLayout srcLayout,
 			ResourceLayout dstLayout,
 			uint32_t baseMipLevel = 0,
-			uint32_t baseLayer = 0)
+			uint32_t levelCount = 0,
+			uint32_t baseLayer = 0,
+			uint32_t layerCount = 0)
 		{
 			TextureBarrier textureBarrier;
 			textureBarrier.texture = texture;
@@ -778,6 +782,8 @@ namespace ad_astris::rhi
 			textureBarrier.dstLayout = dstLayout;
 			textureBarrier.baseMipLevel = baseMipLevel;
 			textureBarrier.baseLayer = baseLayer;
+			textureBarrier.levelCount = levelCount;
+			textureBarrier.layerCount = layerCount;
 			PipelineBarrier pipelineBarrier;
 			pipelineBarrier.textureBarrier = textureBarrier;
 			pipelineBarrier.type = BarrierType::TEXTURE;

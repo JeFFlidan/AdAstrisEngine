@@ -78,8 +78,8 @@ namespace ad_astris::vulkan
 				rhi::CommandBuffer* cmd,
 				rhi::Texture* srcTexture,
 				rhi::Texture* dstTexture,
-				std::array<int32_t, 3>& srcOffset,
-				std::array<int32_t, 3>& dstOffset,
+				const std::array<int32_t, 3>& srcOffset,
+				const std::array<int32_t, 3>& dstOffset,
 				uint32_t srcMipLevel = 0,
 				uint32_t dstMipLevel = 0,
 				uint32_t srcBaseLayer = 0,
@@ -112,7 +112,7 @@ namespace ad_astris::vulkan
 			virtual void draw_indexed_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) final override;
 			virtual void dispatch(rhi::CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) final override;
 			virtual void fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data) final override;
-			virtual void add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vector<rhi::PipelineBarrier>& barriers) final override;
+			virtual void add_pipeline_barriers(rhi::CommandBuffer* cmd, const std::vector<rhi::PipelineBarrier>& barriers) final override;
 
 			virtual void wait_for_gpu() override;
 

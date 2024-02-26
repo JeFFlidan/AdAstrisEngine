@@ -87,9 +87,22 @@ rhi::TextureView* MaterialSubmanager::allocate_2d_texture(rhi::CommandBuffer& cm
 {
 	auto texture = RESOURCE_MANAGER()->get_resource<ecore::Texture2D>(uuid).get_resource();
 	ecore::Texture2DGPUAllocationContext allocContext = texture->get_allocation_context();
-	rhi::Texture* gpuTexture = RENDERER_RESOURCE_MANAGER()->allocate_custom_texture(texture->get_name()->get_full_name(), allocContext.width, allocContext.height);
-	RENDERER_RESOURCE_MANAGER()->update_2d_texture(&cmd, texture->get_name()->get_full_name(), allocContext.data, allocContext.width, allocContext.height);
-	rhi::TextureView* gpuTextureView = RENDERER_RESOURCE_MANAGER()->allocate_texture_view(texture->get_name()->get_full_name(), texture->get_name()->get_full_name());
+	rhi::Texture* gpuTexture = RENDERER_RESOURCE_MANAGER()->allocate_custom_texture(
+		texture->get_name()->get_full_name(),
+		allocContext.width,
+		allocContext.height,
+		rhi::ResourceFlags::UNDEFINED,
+		math::get_mip_levels(allocContext.width, allocContext.height));
+	RENDERER_RESOURCE_MANAGER()->update_2d_texture(
+		&cmd,
+		texture->get_name()->get_full_name(),
+		allocContext.data,
+		allocContext.width,
+		allocContext.height);
+	RENDERER_RESOURCE_MANAGER()->generate_mipmaps(&cmd, gpuTexture);
+	rhi::TextureView* gpuTextureView = RENDERER_RESOURCE_MANAGER()->allocate_texture_view(
+		texture->get_name()->get_full_name(),
+		texture->get_name()->get_full_name());
 
 	_gpuTextureViewByCPUTextureUUID[texture->get_uuid()] = gpuTextureView;
 	return gpuTextureView;

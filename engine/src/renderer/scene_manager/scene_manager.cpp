@@ -21,8 +21,10 @@ SceneManager::~SceneManager()
 
 void SceneManager::setup_global_buffers()
 {
+	RENDERER_RESOURCE_MANAGER()->cleanup_staging_buffers();
+	
 	rhi::CommandBuffer transferCmdBuffer;
-	RHI()->begin_command_buffer(&transferCmdBuffer, rhi::QueueType::TRANSFER);
+	RHI()->begin_command_buffer(&transferCmdBuffer, rhi::QueueType::GRAPHICS);
 
 	// ORDER IS IMPORTANT!!!
 	_materialSubmanager->update(transferCmdBuffer);
@@ -34,8 +36,6 @@ void SceneManager::setup_global_buffers()
 	_modelSubmanager->cleanup_after_update();
 	_entitySubmanager->cleanup_after_update();
 	_cullingSubmanager->cleanup_after_update();
-	RHI()->submit(rhi::QueueType::TRANSFER, true);
-	RENDERER_RESOURCE_MANAGER()->cleanup_staging_buffers();
 }
 
 void SceneManager::subscribe_to_events()

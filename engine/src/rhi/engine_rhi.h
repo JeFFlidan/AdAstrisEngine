@@ -69,8 +69,8 @@ namespace ad_astris::rhi
 				CommandBuffer* cmd,
 				Texture* srcTexture,
 				Texture* dstTexture,
-				std::array<int32_t, 3>& srcOffset,
-				std::array<int32_t, 3>& dstOffset,
+				const std::array<int32_t, 3>& srcOffset,
+				const std::array<int32_t, 3>& dstOffset,
 				uint32_t srcMipLevel = 0,
 				uint32_t dstMipLevel = 0,
 				uint32_t srcBaseLayer = 0,
@@ -107,7 +107,7 @@ namespace ad_astris::rhi
 			virtual void draw_indexed_indirect(CommandBuffer* cmd, Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) = 0;
 			virtual void dispatch(CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
 			virtual void fill_buffer(CommandBuffer* cmd, Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data) = 0;
-			virtual void add_pipeline_barriers(CommandBuffer* cmd, std::vector<PipelineBarrier>& barriers) = 0;
+			virtual void add_pipeline_barriers(CommandBuffer* cmd, const std::vector<PipelineBarrier>& barriers) = 0;
 
 			virtual void wait_for_gpu() = 0;
 

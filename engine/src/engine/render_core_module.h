@@ -297,6 +297,8 @@ namespace ad_astris::rcore
 				rhi::TextureAspect aspect = rhi::TextureAspect::UNDEFINED) = 0;
 
 			virtual void update_2d_texture(rhi::CommandBuffer* cmd, const std::string& textureName, void* textureData, uint32_t width, uint32_t height) = 0;
+			virtual void generate_mipmaps(rhi::CommandBuffer* cmd, const std::string& textureName) = 0;
+			virtual void generate_mipmaps(rhi::CommandBuffer* cmd, rhi::Texture* texture) = 0;
 
 			virtual rhi::Texture* get_texture(const std::string& textureName) = 0;
 			virtual rhi::TextureView* get_texture_view(const std::string& textureViewName) = 0;

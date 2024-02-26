@@ -19,7 +19,5 @@ namespace ad_astris::vulkan
 
 		private:
 			VkSampler _sampler{ VK_NULL_HANDLE };
-
-			void parse_sampler_info(rhi::SamplerInfo* samplerInfo, VkSamplerCreateInfo& outCreateInfo);
 	};
 }

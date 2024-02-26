@@ -328,7 +328,7 @@ rhi::Texture* RendererResourceManager::allocate_custom_texture(
 		width,
 		height,
 		rhi::Format::R8G8B8A8_UNORM,
-		rhi::ResourceUsage::TRANSFER_DST | rhi::ResourceUsage::SAMPLED_TEXTURE,
+		rhi::ResourceUsage::TRANSFER_DST | rhi::ResourceUsage::SAMPLED_TEXTURE | rhi::ResourceUsage::TRANSFER_SRC,
 		flags,
 		mipLevels,
 		layersCount);
@@ -400,6 +400,60 @@ void RendererResourceManager::update_2d_texture(rhi::CommandBuffer* cmd, const s
 	allocate_staging_buffer(buffer, textureData, 0, width * height * 4);
 
 	_rhi->copy_buffer_to_texture(cmd, &buffer, texture);
+}
+
+void RendererResourceManager::generate_mipmaps(rhi::CommandBuffer* cmd, const std::string& textureName)
+{
+	generate_mipmaps(cmd, get_texture(textureName));
+}
+
+void RendererResourceManager::generate_mipmaps(rhi::CommandBuffer* cmd, rhi::Texture* texture)
+{
+	rhi::PipelineBarrier barrier = rhi::PipelineBarrier::set_texture_barrier(
+		texture,
+		rhi::ResourceLayout::SHADER_READ,
+		rhi::ResourceLayout::TRANSFER_DST,
+		0);
+	_rhi->add_pipeline_barriers(cmd, { barrier });
+	
+	const rhi::TextureInfo& textureInfo = texture->textureInfo;
+	uint32_t width = textureInfo.width;
+	uint32_t height = textureInfo.height;
+	for (uint32_t mipLevel = 0; mipLevel != textureInfo.mipLevels; ++mipLevel)
+	{
+		uint32_t halfWidth = width / 2;
+		uint32_t halfHeight = height / 2;
+
+		barrier = rhi::PipelineBarrier::set_texture_barrier(
+			texture,
+			rhi::ResourceLayout::TRANSFER_DST,
+			rhi::ResourceLayout::TRANSFER_SRC,
+			mipLevel,
+			1);
+		_rhi->add_pipeline_barriers(cmd, { barrier });
+
+		if (mipLevel < textureInfo.mipLevels - 1)
+		{
+			_rhi->blit_texture(
+				cmd,
+				texture,
+				texture,
+				{ (int32_t)width, (int32_t)height, 1 },
+				{ (int32_t)halfWidth, (int32_t)halfHeight, 1},
+				mipLevel,
+				mipLevel + 1);
+		}
+
+		width = halfWidth;
+		height = halfHeight;
+	}
+
+	barrier = rhi::PipelineBarrier::set_texture_barrier(
+		texture,
+		rhi::ResourceLayout::TRANSFER_SRC,
+		rhi::ResourceLayout::SHADER_READ,
+		0);
+	_rhi->add_pipeline_barriers(cmd, { barrier });
 }
 
 rhi::Texture* RendererResourceManager::get_texture(const std::string& textureName)

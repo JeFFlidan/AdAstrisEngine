@@ -11,30 +11,18 @@ VulkanSampler::VulkanSampler(VulkanDevice* device, VkSamplerCreateInfo& info)
 VulkanSampler::VulkanSampler(VulkanDevice* device, rhi::SamplerInfo* samplerInfo)
 {
 	VkSamplerCreateInfo createInfo{};
-	parse_sampler_info(samplerInfo, createInfo);
-	VK_CHECK(vkCreateSampler(device->get_device(), &createInfo, nullptr, &_sampler));
-}
-
-void VulkanSampler::destroy(VulkanDevice* device)
-{
-	if (_sampler != VK_NULL_HANDLE)
-		vkDestroySampler(device->get_device(), _sampler, nullptr);
-	_sampler = VK_NULL_HANDLE;
-}
-
-void VulkanSampler::parse_sampler_info(rhi::SamplerInfo* samplerInfo, VkSamplerCreateInfo& outCreateInfo)
-{
-	outCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	get_filter(samplerInfo->filter, outCreateInfo);
-	outCreateInfo.addressModeU = get_address_mode(samplerInfo->addressMode);
-	outCreateInfo.addressModeV = outCreateInfo.addressModeU;
-	outCreateInfo.addressModeW = outCreateInfo.addressModeU;
-	outCreateInfo.minLod = samplerInfo->minLod;
-	outCreateInfo.maxLod = samplerInfo->maxLod;
-	if (outCreateInfo.anisotropyEnable == VK_TRUE)
-		outCreateInfo.maxAnisotropy = samplerInfo->maxAnisotropy;
+	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	get_filter(samplerInfo->filter, createInfo);
+	createInfo.addressModeU = get_address_mode(samplerInfo->addressMode);
+	createInfo.addressModeV = createInfo.addressModeU;
+	createInfo.addressModeW = createInfo.addressModeU;
+	createInfo.minLod = samplerInfo->minLod;
+	createInfo.maxLod = VK_LOD_CLAMP_NONE;
+	createInfo.mipLodBias = 0.0f;
+	if (createInfo.anisotropyEnable == VK_TRUE)
+		createInfo.maxAnisotropy = samplerInfo->maxAnisotropy;
 	if (samplerInfo->borderColor != rhi::BorderColor::UNDEFINED)
-		outCreateInfo.borderColor = get_border_color(samplerInfo->borderColor);
+		createInfo.borderColor = get_border_color(samplerInfo->borderColor);
 
 	// Using of min max sampler filter
 	VkSamplerReductionModeCreateInfo reductionMode{};
@@ -51,7 +39,7 @@ void VulkanSampler::parse_sampler_info(rhi::SamplerInfo* samplerInfo, VkSamplerC
 		case rhi::Filter::MINIMUM_MIN_MAG_MIP_LINEAR:
 		case rhi::Filter::MINIMUM_ANISOTROPIC:
 			reductionMode.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
-			outCreateInfo.pNext = &reductionMode;
+			createInfo.pNext = &reductionMode;
 			break;
 		case rhi::Filter::MAXIMUM_MIN_MAG_MIP_NEAREST:
 		case rhi::Filter::MAXIMUM_MIN_MAG_NEAREST_MIP_LINEAR:
@@ -63,8 +51,15 @@ void VulkanSampler::parse_sampler_info(rhi::SamplerInfo* samplerInfo, VkSamplerC
 		case rhi::Filter::MAXIMUM_MIN_MAG_MIP_LINEAR:
 		case rhi::Filter::MAXIMUM_ANISOTROPIC:
 			reductionMode.reductionMode = VK_SAMPLER_REDUCTION_MODE_MAX;
-			outCreateInfo.pNext = &reductionMode;
+			createInfo.pNext = &reductionMode;
 			break;
 	}
+	VK_CHECK(vkCreateSampler(device->get_device(), &createInfo, nullptr, &_sampler));
+}
 
+void VulkanSampler::destroy(VulkanDevice* device)
+{
+	if (_sampler != VK_NULL_HANDLE)
+		vkDestroySampler(device->get_device(), _sampler, nullptr);
+	_sampler = VK_NULL_HANDLE;
 }

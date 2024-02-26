@@ -125,6 +125,10 @@ void DXInternalCompiler::set_shader_format_flags(ShaderInputDesc& inputDesc, std
 			compileArgs.push_back(L"-fvk-s-shift");
 			compileArgs.push_back(L"3000"); 
 			compileArgs.push_back(L"0");
+		
+#ifdef DEBUG_SHADER
+			compileArgs.push_back(L"/Zi");
+#endif
 			break;
 	}
 }

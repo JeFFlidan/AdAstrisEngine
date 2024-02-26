@@ -378,7 +378,7 @@ void vulkan::VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuf
 	vkCmdCopyBuffer(vkCmd->get_handle(), *vkSrcBuffer->get_handle(), *vkDstBuffer->get_handle(), 1, &copy);
 }
 
-void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcTexture, rhi::Texture* dstTexture, std::array<int32_t, 3>& srcOffset, std::array<int32_t, 3>& dstOffset, uint32_t srcMipLevel, uint32_t dstMipLevel, uint32_t srcBaseLayer, uint32_t dstBaseLayer)
+void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcTexture, rhi::Texture* dstTexture, const std::array<int32_t, 3>& srcOffset, const std::array<int32_t, 3>& dstOffset, uint32_t srcMipLevel, uint32_t dstMipLevel, uint32_t srcBaseLayer, uint32_t dstBaseLayer)
 {
 	assert(cmd->handle && srcTexture->handle && dstTexture->handle);
 	
@@ -405,7 +405,7 @@ void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcT
 	imageBlit.srcOffsets[1].z = srcOffset[2];
 	imageBlit.dstOffsets[1].x = dstOffset[0];
 	imageBlit.dstOffsets[1].y = dstOffset[1];
-	imageBlit.dstOffsets[1].x = dstOffset[2];
+	imageBlit.dstOffsets[1].z = dstOffset[2];
 	
 	imageBlit.srcSubresource.aspectMask = get_image_aspect(srcInfo.textureUsage);
 	imageBlit.srcSubresource.layerCount = srcInfo.layersCount;
@@ -792,7 +792,7 @@ void vulkan::VulkanRHI::fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer
 	vkCmdFillBuffer(vkCmd->get_handle(), *vkBuffer->get_handle(), dstOffset, size, data);
 }
 
-void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vector<rhi::PipelineBarrier>& barriers)
+void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std::vector<rhi::PipelineBarrier>& barriers)
 {
 	assert(cmd->handle && !barriers.empty());
 	
@@ -837,18 +837,18 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vect
 			case rhi::PipelineBarrier::BarrierType::TEXTURE:
 			{
 				VkImageMemoryBarrier imageBarrier{};
+				const rhi::PipelineBarrier::TextureBarrier& textureBarrier = barrier.textureBarrier;
 				imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 				imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-				imageBarrier.srcAccessMask = get_access(barrier.textureBarrier.srcLayout);
-				imageBarrier.dstAccessMask = get_access(barrier.textureBarrier.dstLayout);
-				imageBarrier.oldLayout = get_image_layout(barrier.textureBarrier.srcLayout);
-				imageBarrier.newLayout = get_image_layout(barrier.textureBarrier.dstLayout);
-				rhi::PipelineBarrier::TextureBarrier texBarrier = barrier.textureBarrier;
-				VulkanTexture* vkTexture = get_vk_obj(texBarrier.texture);
+				imageBarrier.srcAccessMask = get_access(textureBarrier.srcLayout);
+				imageBarrier.dstAccessMask = get_access(textureBarrier.dstLayout);
+				imageBarrier.oldLayout = get_image_layout(textureBarrier.srcLayout);
+				imageBarrier.newLayout = get_image_layout(textureBarrier.dstLayout);
+				VulkanTexture* vkTexture = get_vk_obj(textureBarrier.texture);
 				imageBarrier.image = vkTexture->get_handle();
 				VkImageSubresourceRange range;
-				if (has_flag(texBarrier.texture->textureInfo.textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
+				if (has_flag(textureBarrier.texture->textureInfo.textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
 				{
 					range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 				}
@@ -856,10 +856,10 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, std::vect
 				{
 					range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 				}
-				range.layerCount = VK_REMAINING_ARRAY_LAYERS;
-				range.baseArrayLayer = texBarrier.baseLayer;
-				range.levelCount = VK_REMAINING_MIP_LEVELS;
-				range.baseMipLevel = texBarrier.baseMipLevel;
+				range.layerCount = !textureBarrier.layerCount ? VK_REMAINING_ARRAY_LAYERS : textureBarrier.layerCount;
+				range.baseArrayLayer = textureBarrier.baseLayer;
+				range.levelCount = !textureBarrier.levelCount ? VK_REMAINING_MIP_LEVELS : textureBarrier.levelCount;
+				range.baseMipLevel = textureBarrier.baseMipLevel;
 				imageBarrier.subresourceRange = range;
 				imageBarriers.push_back(imageBarrier);
 				break;

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <algorithm>
 #include <cmath>
 #if defined(_MSC_VER)
 #include <DirectXMath.h>
@@ -150,5 +151,10 @@ namespace ad_astris::math
 		output.z = std::atan2(sinyCosp, cosyCosp);
 
 		return output;
+	}
+
+	inline uint32_t get_mip_levels(uint32_t width, uint32_t height)
+	{
+		return uint32_t(std::floor(std::log2(std::max(width, height)))) + 1;
 	}
 }
