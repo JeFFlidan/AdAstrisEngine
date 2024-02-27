@@ -3,6 +3,7 @@
 #include "vulkan_queue.h"
 #include "vulkan_common.h"
 
+#include "rhi/utils.h"
 #include "profiler/logger.h"
 #include "file_system/utils.h"
 #include <vkbootstrap/VkBootstrap.h>
@@ -15,11 +16,12 @@
 #include <algorithm>
 
 using namespace ad_astris;
+using namespace vulkan;
 
 constexpr uint32_t MAX_VIEWPORT_COUNT = 16;
 constexpr uint32_t MAX_SCISSOR_COUNT = 16;
 
-void vulkan::VulkanRHI::init(rhi::RHIInitContext& initContext)
+void VulkanRHI::init(rhi::RHIInitContext& initContext)
 {
 	assert(initContext.window != nullptr);
 	assert(initContext.fileSystem != nullptr);
@@ -39,8 +41,8 @@ void vulkan::VulkanRHI::init(rhi::RHIInitContext& initContext)
 	_pipelineLayoutCache = std::make_unique<VulkanPipelineLayoutCache>(_device.get(), _descriptorManager.get());
 	_pipelineCache.load_pipeline_cache(_device.get(), _fileSystem);
 
-	auto& properties12 = _device->get_physical_device_vulkan_1_2_properties();
-	auto& properties11 = _device->get_physical_device_vulkan_1_1_properties();
+	const auto& properties12 = _device->get_physical_device_vulkan_1_2_properties();
+	const auto& properties11 = _device->get_physical_device_vulkan_1_1_properties();
 	LOG_INFO("VulkanRHI::init(): Max samplers: {}", properties12.maxDescriptorSetUpdateAfterBindSamplers)
 	LOG_INFO("VulkanRHI::init(): Max sampled images: {}", properties12.maxDescriptorSetUpdateAfterBindSampledImages);
 	LOG_INFO("VulkanRHI::init(): Max storage images: {}", properties12.maxDescriptorSetUpdateAfterBindStorageImages)
@@ -53,7 +55,7 @@ void vulkan::VulkanRHI::init(rhi::RHIInitContext& initContext)
 }
 
 // TODO Must test it
-void vulkan::VulkanRHI::cleanup()
+void VulkanRHI::cleanup()
 {
 	_cmdManager->wait_all_fences();
 	_pipelineCache.save_pipeline_cache(_device.get(), _fileSystem);
@@ -67,7 +69,7 @@ void vulkan::VulkanRHI::cleanup()
 	vkDestroyInstance(_instance, nullptr);
 }
 
-void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info)
+void VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info)
 {
 	assert(swapChain && info);
 	
@@ -77,7 +79,7 @@ void vulkan::VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapCh
 	swapChain->info = *info;
 }
 
-void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
+void VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
 {
 	assert(swapChain);
 
@@ -85,13 +87,13 @@ void vulkan::VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
 	swapChain->handle = nullptr;
 }
 
-void vulkan::VulkanRHI::get_swap_chain_texture_views(std::vector<rhi::TextureView>& textureViews)
+void VulkanRHI::get_swap_chain_texture_views(std::vector<rhi::TextureView>& textureViews)
 {
 	// for (auto& textureView : _swapChain->get_texture_views())
 	// 	textureViews.push_back(textureView);
 }
 
-bool vulkan::VulkanRHI::acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex)
+bool VulkanRHI::acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex)
 {
 	if (!_cmdManager->acquire_next_image(_swapChain.get(), nextImageIndex, currentFrameIndex))
 	{
@@ -102,7 +104,7 @@ bool vulkan::VulkanRHI::acquire_next_image(uint32_t& nextImageIndex, uint32_t cu
 	return true;
 }
 
-void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data)
+void VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data)
 {
 	assert(buffer && bufInfo);
 	
@@ -110,7 +112,7 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufI
 	create_buffer(buffer, data);
 }
 
-void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
+void VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 {
 	assert(buffer);
 	
@@ -135,7 +137,7 @@ void vulkan::VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 	vkBuffer->copy_from(_device.get(), data, buffer->size);
 }
 
-void vulkan::VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
+void VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
 {
 	VulkanBuffer* vulkanBuffer = get_vk_obj(buffer);
 	_vkObjectPool.free(vulkanBuffer, _device.get());
@@ -143,7 +145,7 @@ void vulkan::VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
 	buffer->handle = nullptr;
 }
 
-void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data)
+void VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* data)
 {
 	assert(data && buffer->handle && size);
 	
@@ -154,7 +156,7 @@ void vulkan::VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, v
 	vulkanBuffer->copy_from(_device.get(), data, size);
 }
 
-void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo)
+void VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo)
 {
 	assert(texture && texInfo);
 
@@ -162,7 +164,7 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* 
 	create_texture(texture);
 }
 
-void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
+void VulkanRHI::create_texture(rhi::Texture* texture)
 {
 	assert(texture);
 
@@ -179,7 +181,7 @@ void vulkan::VulkanRHI::create_texture(rhi::Texture* texture)
 	_attachmentManager.add_attachment_texture(vkTexture, createInfo);
 }
 
-void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::TextureViewInfo* viewInfo, rhi::Texture* texture)
+void VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::TextureViewInfo* viewInfo, rhi::Texture* texture)
 {
 	assert(textureView && viewInfo && texture);
 
@@ -187,7 +189,7 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	create_texture_view(textureView, texture);
 }
 
-void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture)
+void VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture)
 {
 	assert(textureView && texture);
 
@@ -218,7 +220,7 @@ void vulkan::VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::
 	_attachmentManager.add_attachment_texture_view(vkTextureView, vkTexture, imgUsage, createInfo);
 }
 
-void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo)
+void VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo)
 {
 	assert(sampler && sampInfo);
 	
@@ -235,7 +237,7 @@ void vulkan::VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* 
 	_descriptorManager->allocate_bindless_descriptor(vkSampler);
 }
 
-void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shaderInfo)
+void VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shaderInfo)
 {
 	assert(shader && shaderInfo);
 
@@ -245,7 +247,7 @@ void vulkan::VulkanRHI::create_shader(rhi::Shader* shader, rhi::ShaderInfo* shad
 	shader->handle = vkShader;
 }
 
-void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info)
+void VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::GraphicsPipelineInfo* info)
 {
 	assert(pipeline && info);
 	
@@ -255,7 +257,7 @@ void vulkan::VulkanRHI::create_graphics_pipeline(rhi::Pipeline* pipeline, rhi::G
 	pipeline->handle = vulkanPipeline;
 }
 
-void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info)
+void VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::ComputePipelineInfo* info)
 {
 	assert(pipeline && info);
 	
@@ -265,7 +267,7 @@ void vulkan::VulkanRHI::create_compute_pipeline(rhi::Pipeline* pipeline, rhi::Co
 	pipeline->handle = vulkanPipeline;
 }
 
-void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
+void VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo)
 {
 	assert(renderPass && passInfo);
 	
@@ -276,22 +278,22 @@ void vulkan::VulkanRHI::create_render_pass(rhi::RenderPass* renderPass, rhi::Ren
 	renderPass->handle = vkRenderPass;
 }
 
-uint32_t vulkan::VulkanRHI::get_descriptor_index(rhi::Buffer* buffer)
+uint32_t VulkanRHI::get_descriptor_index(rhi::Buffer* buffer)
 {
 	return get_vk_obj(buffer)->get_descriptor_index();
 }
 
-uint32_t vulkan::VulkanRHI::get_descriptor_index(rhi::TextureView* textureView)
+uint32_t VulkanRHI::get_descriptor_index(rhi::TextureView* textureView)
 {
 	return get_vk_obj(textureView)->get_descriptor_index();
 }
 
-uint32_t vulkan::VulkanRHI::get_descriptor_index(rhi::Sampler* sampler)
+uint32_t VulkanRHI::get_descriptor_index(rhi::Sampler* sampler)
 {
 	return get_vk_obj(sampler)->get_descriptor_index();
 }
 
-void vulkan::VulkanRHI::bind_uniform_buffer(rhi::Buffer* buffer, uint32_t slot, uint32_t size, uint32_t offset)
+void VulkanRHI::bind_uniform_buffer(rhi::Buffer* buffer, uint32_t slot, uint32_t size, uint32_t offset)
 {
 	assert(buffer);
 	
@@ -305,21 +307,20 @@ void vulkan::VulkanRHI::bind_uniform_buffer(rhi::Buffer* buffer, uint32_t slot, 
 	_descriptorManager->allocate_uniform_buffer(get_vk_obj(buffer), size, offset, slot, _currentImageIndex);
 }
 
-// TODO Queue type for command buffer
-void vulkan::VulkanRHI::begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType)
+void VulkanRHI::begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType)
 {
 	cmd->handle = _cmdManager->get_command_buffer(queueType);
 	cmd->queueType = queueType;
 }
 
-void vulkan::VulkanRHI::wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd)
+void VulkanRHI::wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd)
 {
 	VulkanCommandBuffer* cmd1 = static_cast<VulkanCommandBuffer*>(cmd->handle);
 	VulkanCommandBuffer* cmd2 = static_cast<VulkanCommandBuffer*>(waitForCmd->handle);
 	_cmdManager->wait_for_cmd_buffer(cmd1, cmd2);
 }
 
-void vulkan::VulkanRHI::submit(rhi::QueueType queueType, bool waitAfterSubmitting)
+void VulkanRHI::submit(rhi::QueueType queueType, bool waitAfterSubmitting)
 {
 	if (waitAfterSubmitting)
 	{
@@ -332,7 +333,7 @@ void vulkan::VulkanRHI::submit(rhi::QueueType queueType, bool waitAfterSubmittin
 	}
 }
 
-bool vulkan::VulkanRHI::present()
+bool VulkanRHI::present()
 {
 	if (!_device->get_graphics_queue()->present(_swapChain.get(), _currentImageIndex))
 	{
@@ -342,14 +343,14 @@ bool vulkan::VulkanRHI::present()
 	return true;
 }
 
-void vulkan::VulkanRHI::wait_fences()
+void VulkanRHI::wait_fences()
 {
 	_cmdManager->wait_fences();
 }
 
-void vulkan::VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Buffer* dstBuffer, uint32_t size, uint32_t srcOffset, uint32_t dstOffset)
+void VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Buffer* dstBuffer, uint32_t size, uint32_t srcOffset, uint32_t dstOffset)
 {
-	assert(size && cmd->handle && srcBuffer->handle && dstBuffer->handle);
+	assert(cmd->handle && srcBuffer->handle && dstBuffer->handle);
 	
 	if (!has_flag(srcBuffer->bufferInfo.bufferUsage, rhi::ResourceUsage::TRANSFER_SRC))
 		LOG_FATAL("VulkanRHI::copy_buffer(): Source buffer doesn't have TRANSFER_SRC usage")
@@ -357,41 +358,77 @@ void vulkan::VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuf
 	if (!has_flag(dstBuffer->bufferInfo.bufferUsage, rhi::ResourceUsage::TRANSFER_DST))
 		LOG_FATAL("VulkanRHI::copy_buffer(): Destination buffer doesn't have TRANSFER_DST usage")
 	
-	// TODO Maybe here is a bug with command buffer, I have to test this method
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
-	//VkCommandBuffer vkCmd = *static_cast<VkCommandBuffer*>(cmd->handle);
 	VulkanBuffer* vkSrcBuffer = get_vk_obj(srcBuffer);
 	VulkanBuffer* vkDstBuffer = get_vk_obj(dstBuffer);
 
-	VkBufferCopy copy;
+	VkBufferCopy2 copy{};
+	copy.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2;
 	copy.srcOffset = srcOffset;
 	copy.dstOffset = dstOffset;
-	if (!size)
-	{
-		copy.size = srcBuffer->size;
-	}
-	else
-	{
-		copy.size = size;
-	}
+	copy.size = size ? size : srcBuffer->size;
 
-	vkCmdCopyBuffer(vkCmd->get_handle(), *vkSrcBuffer->get_handle(), *vkDstBuffer->get_handle(), 1, &copy);
+	VkCopyBufferInfo2 vkBufferInfo{};
+	vkBufferInfo.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2;
+	vkBufferInfo.srcBuffer = *vkSrcBuffer->get_handle();
+	vkBufferInfo.dstBuffer = *vkDstBuffer->get_handle();
+	vkBufferInfo.regionCount = 1;
+	vkBufferInfo.pRegions = &copy;
+	vkCmdCopyBuffer2(vkCmd->get_handle(), &vkBufferInfo);
 }
 
-void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcTexture, rhi::Texture* dstTexture, const std::array<int32_t, 3>& srcOffset, const std::array<int32_t, 3>& dstOffset, uint32_t srcMipLevel, uint32_t dstMipLevel, uint32_t srcBaseLayer, uint32_t dstBaseLayer)
+void VulkanRHI::copy_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcTexture, rhi::Texture* dstTexture)
+{
+	assert(cmd->handle && srcTexture->handle && dstTexture->handle);
+
+	if (!has_flag(srcTexture->textureInfo.textureUsage, rhi::ResourceUsage::TRANSFER_SRC))
+		LOG_FATAL("VulkanRHI::copy_texture(): Source texture doesn't have TRANSFER_SRC usage")
+		
+	if (!has_flag(dstTexture->textureInfo.textureUsage, rhi::ResourceUsage::TRANSFER_DST))
+		LOG_FATAL("VulkanRHI::copy_texture(): Destination texture doesn't have TRANSFER_DST usage")
+
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanTexture* vkSrcTexture = get_vk_obj(srcTexture);
+	VulkanTexture* vkDstTexture = get_vk_obj(dstTexture);
+
+	VkImageCopy2 copy{};
+	copy.sType = VK_STRUCTURE_TYPE_IMAGE_COPY_2;
+	copy.extent.width = dstTexture->textureInfo.width;
+	copy.extent.height = dstTexture->textureInfo.height;
+	copy.extent.depth = std::max(1u, dstTexture->textureInfo.depth);
+	copy.srcOffset = { 0, 0, 0 };
+	copy.dstOffset = { 0, 0, 0 };
+
+	copy.srcSubresource.aspectMask = get_image_aspect(srcTexture->textureInfo.textureUsage);
+	copy.srcSubresource.baseArrayLayer = 0;
+	copy.srcSubresource.layerCount = srcTexture->textureInfo.layersCount;
+	copy.srcSubresource.mipLevel = 0;
+
+	copy.dstSubresource.aspectMask = get_image_aspect(dstTexture->textureInfo.textureUsage);
+	copy.dstSubresource.baseArrayLayer = 0;
+	copy.dstSubresource.layerCount = dstTexture->textureInfo.layersCount;
+	copy.dstSubresource.mipLevel = 0;
+
+	VkCopyImageInfo2 copyImageInfo{};
+	copyImageInfo.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2;
+	copyImageInfo.srcImage = vkSrcTexture->get_handle();
+	copyImageInfo.dstImage = vkDstTexture->get_handle();
+	copyImageInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	copyImageInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	copyImageInfo.regionCount = 1;
+	copyImageInfo.pRegions = &copy;
+
+	vkCmdCopyImage2(vkCmd->get_handle(), &copyImageInfo);
+}
+
+void VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcTexture, rhi::Texture* dstTexture, const std::array<int32_t, 3>& srcOffset, const std::array<int32_t, 3>& dstOffset, uint32_t srcMipLevel, uint32_t dstMipLevel, uint32_t srcBaseLayer, uint32_t dstBaseLayer)
 {
 	assert(cmd->handle && srcTexture->handle && dstTexture->handle);
 	
 	if (!has_flag(srcTexture->textureInfo.textureUsage, rhi::ResourceUsage::TRANSFER_SRC))
-	{
-		LOG_INFO("VulkanRHI::blit_texture(): Source buffer doesn't have TRANSFER_SRC usage")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::blit_texture(): Source buffer doesn't have TRANSFER_SRC usage")
 	if (!has_flag(dstTexture->textureInfo.textureUsage, rhi::ResourceUsage::TRANSFER_DST))
-	{
-		LOG_INFO("VulkanRHI::blit_texture(): Destination buffer doesn't have TRANSFER_DST usage")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::blit_texture(): Destination buffer doesn't have TRANSFER_DST usage")
 
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanTexture* vkSrcTexture = get_vk_obj(srcTexture);
@@ -399,7 +436,8 @@ void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcT
 	rhi::TextureInfo& srcInfo = srcTexture->textureInfo;
 	rhi::TextureInfo& dstInfo = dstTexture->textureInfo;
 
-	VkImageBlit imageBlit{};
+	VkImageBlit2 imageBlit{};
+	imageBlit.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
 	imageBlit.srcOffsets[1].x = srcOffset[0];
 	imageBlit.srcOffsets[1].y = srcOffset[1];
 	imageBlit.srcOffsets[1].z = srcOffset[2];
@@ -416,59 +454,58 @@ void vulkan::VulkanRHI::blit_texture(rhi::CommandBuffer* cmd, rhi::Texture* srcT
 	imageBlit.dstSubresource.baseArrayLayer = dstBaseLayer;
 	imageBlit.dstSubresource.mipLevel = dstMipLevel;
 
-	vkCmdBlitImage(
-		vkCmd->get_handle(),
-		vkSrcTexture->get_handle(),
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		vkDstTexture->get_handle(),
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		1,
-		&imageBlit,
-		VK_FILTER_LINEAR);
+	VkBlitImageInfo2 blitImageInfo{};
+	blitImageInfo.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
+	blitImageInfo.srcImage = vkSrcTexture->get_handle();
+	blitImageInfo.dstImage = vkDstTexture->get_handle();
+	blitImageInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	blitImageInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	blitImageInfo.regionCount = 1;
+	blitImageInfo.pRegions = &imageBlit;
+	blitImageInfo.filter = VK_FILTER_LINEAR;
+	
+	vkCmdBlitImage2(vkCmd->get_handle(), &blitImageInfo);
 }
 
-void vulkan::VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Texture* dstTexture)
+void VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi::Texture* dstTexture)
 {
 	assert(cmd->handle && srcBuffer->handle && dstTexture->handle);
 	
 	if (!has_flag(srcBuffer->bufferInfo.bufferUsage, rhi::ResourceUsage::TRANSFER_SRC))
-	{
-		LOG_INFO("VulkanRHI::copy_buffer_to_texture(): Source buffer doesn't have TRANSFER_SRC usage")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::copy_buffer_to_texture(): Source buffer doesn't have TRANSFER_SRC usage")
 	if (!has_flag(dstTexture->textureInfo.textureUsage, rhi::ResourceUsage::TRANSFER_DST))
-	{
-		LOG_INFO("VulkanRHI::copy_buffer_to_texture(): Destination buffer doesn't have TRANSFER_DST usage")
-		return;
-	}
+		LOG_FATAL("VulkanRHI::copy_buffer_to_texture(): Destination buffer doesn't have TRANSFER_DST usage")
 
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanBuffer* vkBuffer = get_vk_obj(srcBuffer);
 	VulkanTexture* vkTexture = get_vk_obj(dstTexture);
 	rhi::TextureInfo& texInfo = dstTexture->textureInfo;
 
-	VkImageMemoryBarrier imageBarrierToTransfer{};
-	imageBarrierToTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	imageBarrierToTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imageBarrierToTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	imageBarrierToTransfer.srcAccessMask = 0;
-	imageBarrierToTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	imageBarrierToTransfer.image = vkTexture->get_handle();
-	imageBarrierToTransfer.subresourceRange = {
+	VkImageMemoryBarrier2 imageBarrier{};
+	imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+	imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+	imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imageBarrier.srcAccessMask = 0;
+	imageBarrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+	imageBarrier.image = vkTexture->get_handle();
+	imageBarrier.subresourceRange = {
 		get_image_aspect(texInfo.textureUsage),
 		0,
 		texInfo.mipLevels,
 		0,
 		texInfo.layersCount };
 
-	vkCmdPipelineBarrier(
-		vkCmd->get_handle(),
-		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		0, 0, nullptr, 0, nullptr,
-		1, &imageBarrierToTransfer);
+	VkDependencyInfo dependencyInfo{};
+	dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	dependencyInfo.imageMemoryBarrierCount = 1;
+	dependencyInfo.pImageMemoryBarriers = &imageBarrier;
+
+	vkCmdPipelineBarrier2(vkCmd->get_handle(), &dependencyInfo);
 	
-	VkBufferImageCopy copyRegion{};
+	VkBufferImageCopy2 copyRegion{};
+	copyRegion.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
 	copyRegion.bufferOffset = 0;
 	copyRegion.bufferRowLength = 0;
 	copyRegion.bufferImageHeight = 0;
@@ -477,23 +514,72 @@ void vulkan::VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buf
 	copyRegion.imageSubresource.mipLevel = 0;
 	copyRegion.imageSubresource.baseArrayLayer = 0;
 	copyRegion.imageSubresource.layerCount = texInfo.layersCount;
-	vkCmdCopyBufferToImage(vkCmd->get_handle(), *vkBuffer->get_handle(), vkTexture->get_handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-	VkImageMemoryBarrier imageBarrierToReadable = imageBarrierToTransfer;
-	imageBarrierToReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	imageBarrierToReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageBarrierToReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	imageBarrierToTransfer.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	VkCopyBufferToImageInfo2 copyBufferToImageInfo{};
+	copyBufferToImageInfo.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2;
+	copyBufferToImageInfo.regionCount = 1;
+	copyBufferToImageInfo.pRegions = &copyRegion;
+	copyBufferToImageInfo.srcBuffer = *vkBuffer->get_handle();
+	copyBufferToImageInfo.dstImage = vkTexture->get_handle();
+	copyBufferToImageInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	
+	vkCmdCopyBufferToImage2(vkCmd->get_handle(), &copyBufferToImageInfo);
+	
+	imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+	imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+	imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imageBarrier.newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+	imageBarrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+	imageBarrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
 
-	vkCmdPipelineBarrier(
-		vkCmd->get_handle(),
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		0, 0, nullptr, 0, nullptr,
-		1, &imageBarrierToReadable);
+	vkCmdPipelineBarrier2(vkCmd->get_handle(), &dependencyInfo);
 }
 
-void vulkan::VulkanRHI::set_viewports(rhi::CommandBuffer* cmd, std::vector<rhi::Viewport>& viewports)
+void VulkanRHI::copy_texture_to_buffer(rhi::CommandBuffer* cmd, rhi::Texture* srcTexture, rhi::Buffer* dstBuffer)
+{
+	assert(cmd->handle && srcTexture->handle && dstBuffer->handle);
+	
+	if (!has_flag(srcTexture->textureInfo.textureUsage, rhi::ResourceUsage::TRANSFER_SRC))
+		LOG_FATAL("VulkanRHI::copy_texture_to_buffer(): Source texture doesn't have TRANSFER_SRC usage")
+	if (!has_flag(dstBuffer->bufferInfo.bufferUsage, rhi::ResourceUsage::TRANSFER_DST))
+		LOG_FATAL("VulkanRHI::copy_texture_to_buffer(): Destination buffer doesn't have TRANSFER_DST usage")
+
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	VulkanTexture* vkTexture = get_vk_obj(srcTexture);
+	VulkanBuffer* vkBuffer = get_vk_obj(dstBuffer);
+	
+	VkCopyImageToBufferInfo2 copyImageToBufferInfo{};
+	copyImageToBufferInfo.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2;
+	copyImageToBufferInfo.srcImage = vkTexture->get_handle();
+	copyImageToBufferInfo.dstBuffer = *vkBuffer->get_handle();
+	copyImageToBufferInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	copyImageToBufferInfo.regionCount = 1;
+
+	VkBufferImageCopy2 copy{};
+	copy.sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
+	copy.imageSubresource.aspectMask = get_image_aspect(srcTexture->textureInfo.textureUsage);
+	copy.imageSubresource.baseArrayLayer = 0;
+	copy.imageSubresource.layerCount = srcTexture->textureInfo.layersCount;
+	const uint32_t dataStride = rhi::Utils::get_format_stride(srcTexture->textureInfo.format);
+	uint32_t mipWidth = srcTexture->textureInfo.width;
+	uint32_t mipHeight = srcTexture->textureInfo.height;
+	uint32_t mipDepth = std::max(1u, srcTexture->textureInfo.depth);
+	for (uint32_t mipLevel = 0; mipLevel < srcTexture->textureInfo.mipLevels; ++mipLevel)
+	{
+		copy.imageExtent = { mipWidth, mipHeight, mipDepth };
+		copy.imageSubresource.mipLevel = mipLevel;
+		
+		copyImageToBufferInfo.pRegions = &copy;
+		vkCmdCopyImageToBuffer2(vkCmd->get_handle(), &copyImageToBufferInfo);
+
+		copy.bufferOffset += mipWidth * mipHeight * mipDepth * dataStride;
+		mipWidth = std::max(1u, mipWidth / 2);
+		mipHeight = std::max(1u, mipHeight / 2);
+		mipDepth = std::max(1u, mipDepth / 2);
+	}
+}
+
+void VulkanRHI::set_viewports(rhi::CommandBuffer* cmd, std::vector<rhi::Viewport>& viewports)
 {
 	assert(cmd && cmd->handle);
 	
@@ -516,7 +602,7 @@ void vulkan::VulkanRHI::set_viewports(rhi::CommandBuffer* cmd, std::vector<rhi::
 	vkCmdSetViewport(vulkanCmd->get_handle(), 0, viewports.size(), vulkanViewports);
 }
 
-void vulkan::VulkanRHI::set_scissors(rhi::CommandBuffer* cmd, std::vector<rhi::Scissor>& scissors)
+void VulkanRHI::set_scissors(rhi::CommandBuffer* cmd, std::vector<rhi::Scissor>& scissors)
 {
 	VkRect2D vulkanScissors[MAX_SCISSOR_COUNT];
 	if (scissors.size() > MAX_SCISSOR_COUNT)
@@ -535,13 +621,13 @@ void vulkan::VulkanRHI::set_scissors(rhi::CommandBuffer* cmd, std::vector<rhi::S
 	vkCmdSetScissor(vulkanCmd->get_handle(), 0, scissors.size(), vulkanScissors);
 }
 
-void vulkan::VulkanRHI::push_constants(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline, void* data)
+void VulkanRHI::push_constants(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline, void* data)
 {
 	VulkanPipeline* vkPipeline = get_vk_obj(pipeline);
 	vkPipeline->push_constants(get_vk_obj(cmd)->get_handle(), data);
 }
 
-void vulkan::VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
+void VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
 {
 	assert(cmd->handle && buffer->handle);
 	
@@ -555,7 +641,7 @@ void vulkan::VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer*
 	vkCmdBindVertexBuffers(vkCmd->get_handle(), 0, 1, vkBuffer->get_handle(), &offset);
 }
 
-void vulkan::VulkanRHI::bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
+void VulkanRHI::bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
 {
 	assert(cmd->handle && buffer->handle);
 	
@@ -569,7 +655,7 @@ void vulkan::VulkanRHI::bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* 
 	vkCmdBindIndexBuffer(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, VK_INDEX_TYPE_UINT32);
 }
 
-void vulkan::VulkanRHI::bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline)
+void VulkanRHI::bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline)
 {
 	assert(cmd->handle && pipeline->handle);
 	
@@ -578,7 +664,7 @@ void vulkan::VulkanRHI::bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pi
 	vkPipeline->bind(vkCmd->get_handle(), _currentImageIndex);
 }
 
-void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass, rhi::ClearValues& clearValues)
+void VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass, rhi::ClearValues& clearValues)
 {
 	assert(cmd->handle && renderPass->handle);
 
@@ -590,14 +676,14 @@ void vulkan::VulkanRHI::begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPa
 	vkCmdBeginRenderPass(vkCmd->get_handle(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void vulkan::VulkanRHI::end_render_pass(rhi::CommandBuffer* cmd)
+void VulkanRHI::end_render_pass(rhi::CommandBuffer* cmd)
 {
 	assert(cmd->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	vkCmdEndRenderPass(vkCmd->get_handle());
 }
 
-void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingBeginInfo* beginInfo)
+void VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingBeginInfo* beginInfo)
 {
 	assert(cmd->handle && beginInfo);
 
@@ -700,13 +786,13 @@ void vulkan::VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingB
 	vkCmdBeginRendering(get_vk_obj(cmd)->get_handle(), &renderingInfo);
 }
 
-void vulkan::VulkanRHI::end_rendering(rhi::CommandBuffer* cmd)
+void VulkanRHI::end_rendering(rhi::CommandBuffer* cmd)
 {
 	assert(cmd->handle);
 	vkCmdEndRendering(get_vk_obj(cmd)->get_handle());
 }
 
-void vulkan::VulkanRHI::begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi::ClearValues* clearValues)
+void VulkanRHI::begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi::ClearValues* clearValues)
 {
 	assert(cmd->handle && clearValues);
 		
@@ -734,21 +820,21 @@ void vulkan::VulkanRHI::begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi:
 	vkCmdBeginRendering(get_vk_obj(cmd)->get_handle(), &renderingInfo);
 }
 
-void vulkan::VulkanRHI::end_rendering_swap_chain(rhi::CommandBuffer* cmd)
+void VulkanRHI::end_rendering_swap_chain(rhi::CommandBuffer* cmd)
 {
 	assert(cmd->handle);
 	vkCmdEndRendering(get_vk_obj(cmd)->get_handle());
 	set_swap_chain_image_barrier(cmd, true);
 }
 
-void vulkan::VulkanRHI::draw(rhi::CommandBuffer* cmd, uint64_t vertexCount)
+void VulkanRHI::draw(rhi::CommandBuffer* cmd, uint64_t vertexCount)
 {
 	assert(cmd->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	vkCmdDraw(vkCmd->get_handle(), vertexCount, 1, 0, 0);
 }
 
-void vulkan::VulkanRHI::draw_indexed(
+void VulkanRHI::draw_indexed(
 	rhi::CommandBuffer* cmd,
 	uint32_t indexCount,
 	uint32_t instanceCount,
@@ -761,7 +847,7 @@ void vulkan::VulkanRHI::draw_indexed(
 	vkCmdDrawIndexed(vkCmd->get_handle(), indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void vulkan::VulkanRHI::draw_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+void VulkanRHI::draw_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
 {
 	assert(cmd->handle && buffer->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
@@ -769,7 +855,7 @@ void vulkan::VulkanRHI::draw_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buff
 	vkCmdDrawIndirect(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, drawCount, stride);
 }
 
-void vulkan::VulkanRHI::draw_indexed_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+void VulkanRHI::draw_indexed_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
 {
 	assert(cmd->handle && buffer->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
@@ -777,14 +863,14 @@ void vulkan::VulkanRHI::draw_indexed_indirect(rhi::CommandBuffer* cmd, rhi::Buff
 	vkCmdDrawIndexedIndirect(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, drawCount, stride);
 }
 
-void vulkan::VulkanRHI::dispatch(rhi::CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+void VulkanRHI::dispatch(rhi::CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
 	assert(cmd->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	vkCmdDispatch(vkCmd->get_handle(), groupCountX, groupCountY, groupCountZ);
 }
 
-void vulkan::VulkanRHI::fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data)
+void VulkanRHI::fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t dstOffset, uint32_t size, uint32_t data)
 {
 	assert(cmd->handle && buffer->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
@@ -792,21 +878,23 @@ void vulkan::VulkanRHI::fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer
 	vkCmdFillBuffer(vkCmd->get_handle(), *vkBuffer->get_handle(), dstOffset, size, data);
 }
 
-void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std::vector<rhi::PipelineBarrier>& barriers)
+void VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std::vector<rhi::PipelineBarrier>& barriers)
 {
 	assert(cmd->handle && !barriers.empty());
 	
-	std::vector<VkMemoryBarrier> memoryBarriers;
-	std::vector<VkBufferMemoryBarrier> bufferBarriers;
-	std::vector<VkImageMemoryBarrier> imageBarriers;
+	std::vector<VkMemoryBarrier2> memoryBarriers;
+	std::vector<VkBufferMemoryBarrier2> bufferBarriers;
+	std::vector<VkImageMemoryBarrier2> imageBarriers;
 	for (auto& barrier : barriers)
 	{
 		switch (barrier.type)
 		{
 			case rhi::PipelineBarrier::BarrierType::MEMORY:
 			{
-				VkMemoryBarrier memoryBarrier{};
-				memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+				VkMemoryBarrier2 memoryBarrier{};
+				memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
+				memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+				memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 				memoryBarrier.srcAccessMask = get_access(barrier.memoryBarrier.srcLayout);
 				memoryBarrier.dstAccessMask = get_access(barrier.memoryBarrier.dstLayout);
 				memoryBarriers.push_back(memoryBarrier);
@@ -814,8 +902,8 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std
 			}
 			case rhi::PipelineBarrier::BarrierType::BUFFER:
 			{
-				VkBufferMemoryBarrier bufferBarrier{};
-				bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+				VkBufferMemoryBarrier2 bufferBarrier{};
+				bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
 				rhi::Buffer* buffer = barrier.bufferBarrier.buffer;
 				bufferBarrier.buffer = *get_vk_obj(buffer)->get_handle();
 				bufferBarrier.offset = 0;
@@ -827,6 +915,8 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std
 				{
 					bufferBarrier.size = buffer->bufferInfo.size;
 				}
+				bufferBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+				bufferBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 				bufferBarrier.srcAccessMask = get_access(barrier.bufferBarrier.srcLayout);
 				bufferBarrier.dstAccessMask = get_access(barrier.bufferBarrier.dstLayout);
 				bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -836,9 +926,11 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std
 			}
 			case rhi::PipelineBarrier::BarrierType::TEXTURE:
 			{
-				VkImageMemoryBarrier imageBarrier{};
+				VkImageMemoryBarrier2 imageBarrier{};
 				const rhi::PipelineBarrier::TextureBarrier& textureBarrier = barrier.textureBarrier;
-				imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+				imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+				imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+				imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 				imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				imageBarrier.srcAccessMask = get_access(textureBarrier.srcLayout);
@@ -868,25 +960,23 @@ void vulkan::VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std
 	}
 
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
-	vkCmdPipelineBarrier(
-		vkCmd->get_handle(),
-		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-		0,
-		memoryBarriers.size(),
-		memoryBarriers.data(),
-		bufferBarriers.size(),
-		bufferBarriers.data(),
-		imageBarriers.size(),
-		imageBarriers.data());
+	VkDependencyInfo dependencyInfo{};
+	dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	dependencyInfo.memoryBarrierCount = memoryBarriers.size();
+	dependencyInfo.pMemoryBarriers = memoryBarriers.data();
+	dependencyInfo.bufferMemoryBarrierCount = bufferBarriers.size();
+	dependencyInfo.pBufferMemoryBarriers = bufferBarriers.data();
+	dependencyInfo.imageMemoryBarrierCount = imageBarriers.size();
+	dependencyInfo.pImageMemoryBarriers = imageBarriers.data();
+	vkCmdPipelineBarrier2(vkCmd->get_handle(), &dependencyInfo);
 }
 
-void vulkan::VulkanRHI::wait_for_gpu()
+void VulkanRHI::wait_for_gpu()
 {
 	VK_CHECK(vkDeviceWaitIdle(_device->get_device()));
 }
 
-void vulkan::VulkanRHI::create_query_pool(rhi::QueryPool* queryPool, rhi::QueryPoolInfo* queryPoolInfo)
+void VulkanRHI::create_query_pool(rhi::QueryPool* queryPool, rhi::QueryPoolInfo* queryPoolInfo)
 {
 	assert(queryPool && queryPoolInfo);
 
@@ -894,7 +984,7 @@ void vulkan::VulkanRHI::create_query_pool(rhi::QueryPool* queryPool, rhi::QueryP
 	create_query_pool(queryPool);
 }
 
-void vulkan::VulkanRHI::create_query_pool(rhi::QueryPool* queryPool)
+void VulkanRHI::create_query_pool(rhi::QueryPool* queryPool)
 {
 	assert(queryPool);
 	
@@ -906,7 +996,7 @@ void vulkan::VulkanRHI::create_query_pool(rhi::QueryPool* queryPool)
 	queryPool->handle = _vkObjectPool.allocate<VulkanQueryPool>(_device.get(), &queryPool->info);
 }
 
-void vulkan::VulkanRHI::begin_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex)
+void VulkanRHI::begin_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex)
 {
 	assert(cmd->handle && queryPool->handle);
 
@@ -927,7 +1017,7 @@ void vulkan::VulkanRHI::begin_query(const rhi::CommandBuffer* cmd, const rhi::Qu
 	}
 }
 
-void vulkan::VulkanRHI::end_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex)
+void VulkanRHI::end_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex)
 {
 	assert(cmd->handle && queryPool->handle);
 
@@ -947,7 +1037,7 @@ void vulkan::VulkanRHI::end_query(const rhi::CommandBuffer* cmd, const rhi::Quer
 	}
 }
 
-void vulkan::VulkanRHI::get_query_pool_result(
+void VulkanRHI::get_query_pool_result(
 	const rhi::QueryPool* queryPool,
 	std::vector<uint64_t>& outputData,
 	uint32_t queryIndex,
@@ -969,7 +1059,7 @@ void vulkan::VulkanRHI::get_query_pool_result(
 		VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT));
 }
 
-void vulkan::VulkanRHI::reset_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount)
+void VulkanRHI::reset_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount)
 {
 	assert(cmd->handle && queryPool->handle);
 
@@ -979,7 +1069,7 @@ void vulkan::VulkanRHI::reset_query(const rhi::CommandBuffer* cmd, const rhi::Qu
 	vkCmdResetQueryPool(vkCmd->get_handle(), vkQueryPool->get_handle(), queryIndex, queryCount);
 }
 
-void vulkan::VulkanRHI::copy_query_pool_results(
+void VulkanRHI::copy_query_pool_results(
 	const rhi::CommandBuffer* cmd,
 	const rhi::QueryPool* queryPool,
 	uint32_t firstQuery,
@@ -1008,7 +1098,7 @@ void vulkan::VulkanRHI::copy_query_pool_results(
 		VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 }
 
-rhi::GPUMemoryUsage vulkan::VulkanRHI::get_memory_usage()
+rhi::GPUMemoryUsage VulkanRHI::get_memory_usage()
 {
 	rhi::GPUMemoryUsage memoryUsage;
 	VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
@@ -1026,7 +1116,7 @@ rhi::GPUMemoryUsage vulkan::VulkanRHI::get_memory_usage()
 }
 
 // private methods
-vkb::Instance vulkan::VulkanRHI::create_instance()
+vkb::Instance VulkanRHI::create_instance()
 {
 	LOG_INFO("Start creating Vulkan instance")
 	vkb::InstanceBuilder builder;
@@ -1043,14 +1133,14 @@ vkb::Instance vulkan::VulkanRHI::create_instance()
 	return builder.build().value();
 }
 
-void vulkan::VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier)
+void VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier)
 {
 	VkImageMemoryBarrier2 imageBarrier{};
 	imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
 	imageBarrier.image = _swapChain->get_image_handle(_currentImageIndex);
 	if (useAfterDrawingImageBarrier)
 	{
-		imageBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		imageBarrier.oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
 		imageBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 		imageBarrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
 		imageBarrier.dstAccessMask = VK_ACCESS_2_NONE;
@@ -1058,7 +1148,7 @@ void vulkan::VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bo
 	else
 	{
 		imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imageBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		imageBarrier.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
 		imageBarrier.srcAccessMask = VK_ACCESS_2_NONE;
 		imageBarrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
 	}
@@ -1084,7 +1174,7 @@ void vulkan::VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bo
 	vkCmdPipelineBarrier2(get_vk_obj(cmd)->get_handle(), &dependencyInfo);
 }
 
-void vulkan::VulkanRHI::recreate_swap_chain()
+void VulkanRHI::recreate_swap_chain()
 {
 	vkDeviceWaitIdle(_device->get_device());
 	uint32_t width = _mainWindow->get_width();

@@ -54,7 +54,7 @@ namespace ad_astris::vulkan
 	VkAttachmentLoadOp get_attach_load_op(rhi::LoadOp loadOp);
 	VkAttachmentStoreOp get_attach_store_op(rhi::StoreOp storeOp);
 	VkImageLayout get_image_layout(rhi::ResourceLayout resourceLayout);
-	VkAccessFlags get_access(rhi::ResourceLayout resourceLayout);
+	VkAccessFlags2 get_access(rhi::ResourceLayout resourceLayout);
 	VkPipelineBindPoint get_pipeline_bind_point(rhi::PipelineType pipelineType);
 	VkImageAspectFlags get_image_aspect(rhi::ResourceUsage usage);
 	VkImageAspectFlags get_image_aspect(rhi::TextureAspect textureAspect);

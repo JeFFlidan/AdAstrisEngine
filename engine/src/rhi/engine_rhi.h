@@ -64,6 +64,8 @@ namespace ad_astris::rhi
 				uint32_t size = 0,
 				uint32_t srcOffset = 0,
 				uint32_t dstOffset = 0) = 0;
+			// srcTexture must have ResourceLayout TRANSFER_SRC, dstTexture must have ResourceLayout TRANSFER_DST
+			virtual void copy_texture(CommandBuffer* cmd, Texture* srcTexture, Texture* dstTexture) = 0;
 			// srcTexture should have ResourceLayout TRANSFER_SRC, dstTexture should have ResourceLayout TRANSFER_DST
 			virtual void blit_texture(
 				CommandBuffer* cmd,
@@ -79,6 +81,7 @@ namespace ad_astris::rhi
 				CommandBuffer* cmd,
 				Buffer* srcBuffer,
 				Texture* dstTexture) = 0;
+			virtual void copy_texture_to_buffer(CommandBuffer* cmd, Texture* srcTexture, Buffer* dstBuffer) = 0;
 			virtual void set_viewports(CommandBuffer* cmd, std::vector<Viewport>& viewports) = 0;
 			virtual void set_scissors(CommandBuffer* cmd, std::vector<Scissor>& scissors) = 0 ;
 			virtual void push_constants(CommandBuffer* cmd, Pipeline* pipeline, void* data) = 0;

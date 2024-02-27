@@ -722,64 +722,64 @@ VkImageLayout vulkan::get_image_layout(rhi::ResourceLayout resourceLayout)
 	}
 }
 
-VkAccessFlags vulkan::get_access(rhi::ResourceLayout resourceLayout)
+VkAccessFlags2 vulkan::get_access(rhi::ResourceLayout resourceLayout)
 {
 	VkAccessFlags accessFlags = 0;
 	if (has_flag(resourceLayout, rhi::ResourceLayout::INDIRECT_COMMAND_BUFFER))
 	{
-		accessFlags |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+		accessFlags |= VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::INDEX_BUFFER))
 	{
-		accessFlags |= VK_ACCESS_INDEX_READ_BIT;
+		accessFlags |= VK_ACCESS_2_INDEX_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::VERTEX_BUFFER))
 	{
-		accessFlags |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+		accessFlags |= VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::UNIFORM_BUFFER))
 	{
-		accessFlags |= VK_ACCESS_UNIFORM_READ_BIT;
+		accessFlags |= VK_ACCESS_2_UNIFORM_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::SHADER_READ))
 	{
-		accessFlags |= VK_ACCESS_SHADER_READ_BIT;
+		accessFlags |= VK_ACCESS_2_SHADER_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::SHADER_WRITE))
 	{
-		accessFlags |= VK_ACCESS_SHADER_WRITE_BIT;
+		accessFlags |= VK_ACCESS_2_SHADER_WRITE_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::COLOR_ATTACHMENT))
 	{
-		accessFlags |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		accessFlags |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::DEPTH_STENCIL))
 	{
-		accessFlags |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		accessFlags |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::DEPTH_STENCIL_READ_ONLY))
 	{
-		accessFlags |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+		accessFlags |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::TRANSFER_SRC))
 	{
-		accessFlags |= VK_ACCESS_TRANSFER_READ_BIT;
+		accessFlags |= VK_ACCESS_2_TRANSFER_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::TRANSFER_DST))
 	{
-		accessFlags |= VK_ACCESS_TRANSFER_WRITE_BIT;
+		accessFlags |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::MEMORY_READ))
 	{
-		accessFlags |= VK_ACCESS_MEMORY_READ_BIT;
+		accessFlags |= VK_ACCESS_2_MEMORY_READ_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::MEMORY_WRITE))
 	{
-		accessFlags |= VK_ACCESS_MEMORY_WRITE_BIT;
+		accessFlags |= VK_ACCESS_2_MEMORY_WRITE_BIT;
 	}
 	if (has_flag(resourceLayout, rhi::ResourceLayout::GENERAL))
 	{
-		accessFlags |= VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
+		accessFlags |= VK_ACCESS_2_SHADER_WRITE_BIT | VK_ACCESS_2_SHADER_READ_BIT;
 	}
 	return accessFlags;
 }

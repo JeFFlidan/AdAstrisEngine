@@ -33,36 +33,55 @@ void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager, bool useSigna
 		}
 	}
 
-	std::vector<VkSubmitInfo> submitInfos;
+	std::vector<VkSubmitInfo2> submitInfos;
+	std::vector<std::vector<VkCommandBufferSubmitInfo>> allCmdSubmitInfos;
+	std::vector<std::vector<VkSemaphoreSubmitInfo>> allSemaphoreSubmitInfos;
 	for (auto& pool : *cmdPools)
 	{
 		VulkanCommandBuffer* cmdBuffer = pool->_usedCmdBuffers[0].get();
 		vkEndCommandBuffer(cmdBuffer->get_handle());
-		VkSubmitInfo info{};
-		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		info.commandBufferCount = 1;
-		info.pCommandBuffers = &cmdBuffer->_cmdBuffer;
+
+		std::vector<VkCommandBufferSubmitInfo>& cmdSubmitInfos = allCmdSubmitInfos.emplace_back();
+		VkCommandBufferSubmitInfo& cmdSubmitInfo = cmdSubmitInfos.emplace_back();
+		cmdSubmitInfo.commandBuffer = cmdBuffer->get_handle();
+		cmdSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+		cmdSubmitInfo.deviceMask = 0;
+
+		std::vector<VkSemaphoreSubmitInfo>& waitSemaphoresSubmitInfos = allSemaphoreSubmitInfos.emplace_back();
+		for (size_t i = 0; i != cmdBuffer->_waitSemaphores.size(); ++i)
+		{
+			VkSemaphoreSubmitInfo& info = waitSemaphoresSubmitInfos.emplace_back();
+			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+			info.semaphore = cmdBuffer->_waitSemaphores[i];
+			info.stageMask = cmdBuffer->_waitFlags[i];
+			info.deviceIndex = 0;
+		}
+		
+		VkSubmitInfo2& submitInfo = submitInfos.emplace_back();
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+		submitInfo.commandBufferInfoCount = cmdSubmitInfos.size();
+		submitInfo.pCommandBufferInfos = cmdSubmitInfos.data();
+		submitInfo.waitSemaphoreInfoCount = waitSemaphoresSubmitInfos.size();
+		submitInfo.pWaitSemaphoreInfos = waitSemaphoresSubmitInfos.data();
+
 		if (useSignalSemaphores)
 		{
-			info.signalSemaphoreCount = 1;
-			info.pSignalSemaphores = &cmdBuffer->_signalSemaphore;
+			std::vector<VkSemaphoreSubmitInfo>& signalSemaphoresSubmitInfos = allSemaphoreSubmitInfos.emplace_back();
+			VkSemaphoreSubmitInfo& semaphoreSubmitInfo = signalSemaphoresSubmitInfos.emplace_back();
+			semaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+			semaphoreSubmitInfo.semaphore = cmdBuffer->_signalSemaphore;
+			semaphoreSubmitInfo.stageMask = cmdBuffer->_stageFlag;
+			semaphoreSubmitInfo.deviceIndex = 0;
+			submitInfo.signalSemaphoreInfoCount = signalSemaphoresSubmitInfos.size();
+			submitInfo.pSignalSemaphoreInfos = signalSemaphoresSubmitInfos.data();
 		}
-		else
-		{
-			info.signalSemaphoreCount = 0;
-			info.pSignalSemaphores = nullptr;
-		}
-		info.waitSemaphoreCount = cmdBuffer->_waitSemaphores.size();
-		info.pWaitSemaphores = cmdBuffer->_waitSemaphores.data();
-		info.pWaitDstStageMask = cmdBuffer->_waitFlags.data();
-		submitInfos.push_back(info);
 		
 		if (_queueType == rhi::QueueType::GRAPHICS)
 			_presentWaitSemaphores.push_back(cmdBuffer->_signalSemaphore);
 	}
 
 	// TODO need to use the correct fence
-	VK_CHECK(vkQueueSubmit(_queue, submitInfos.size(), submitInfos.data(), cmdManager.get_free_fence()));
+	VK_CHECK(vkQueueSubmit2(_queue, submitInfos.size(), submitInfos.data(), cmdManager.get_free_fence()));
 }
 
 bool vulkan::VulkanQueue::present(VulkanSwapChain* swapChain, uint32_t currentImageIndex)

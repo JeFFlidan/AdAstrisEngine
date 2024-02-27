@@ -25,7 +25,7 @@ namespace ad_astris::vulkan
 		friend VulkanQueue;
 		
 		public:
-			VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, VkPipelineStageFlags waitFlag);
+			VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, VkPipelineStageFlags2 waitFlag);
 			~VulkanCommandBuffer();
 
 			VkCommandBuffer get_handle() const { return _cmdBuffer; }
@@ -34,9 +34,9 @@ namespace ad_astris::vulkan
 			VulkanDevice* _device;
 			VkCommandBuffer _cmdBuffer{ VK_NULL_HANDLE };
 			VkSemaphore _signalSemaphore;
-			VkPipelineStageFlags _stageFlag;
+			VkPipelineStageFlags2 _stageFlag;
 			std::vector<VkSemaphore> _waitSemaphores;
-			std::vector<VkPipelineStageFlags> _waitFlags;
+			std::vector<VkPipelineStageFlags2> _waitFlags;
 			// Need to solve problem with fences
 			// VkFence _cmdFence;
 	};

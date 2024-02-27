@@ -130,6 +130,11 @@ vkb::PhysicalDevice vulkan::VulkanDevice::pick_physical_device(vkb::Instance& in
 	features1_2.descriptorBindingUniformTexelBufferUpdateAfterBind = VK_TRUE;
 	features1_2.samplerFilterMinmax = VK_TRUE;
 	features1_2.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+
+	VkPhysicalDeviceVulkan13Features features1_3{};
+	features1_3.synchronization2 = VK_TRUE;
+	features1_3.dynamicRendering = VK_TRUE;
+	features1_3.maintenance4 = VK_TRUE;
 	
 	VkPhysicalDeviceFeatures enabledFeatures{};
 	set_feature(supportedFeatures.samplerAnisotropy, enabledFeatures.samplerAnisotropy, "samplerAnisotropy");
@@ -138,6 +143,7 @@ vkb::PhysicalDevice vulkan::VulkanDevice::pick_physical_device(vkb::Instance& in
 	
 	physSelector.set_required_features(enabledFeatures);
 	physSelector.set_required_features_12(features1_2);
+	physSelector.set_required_features_13(features1_3);
 
 	_requieredExtensions.clear();
 	_optionalExtensions.clear();
@@ -173,21 +179,6 @@ vkb::Device vulkan::VulkanDevice::pick_device(vkb::PhysicalDevice& physicalDevic
 	multiViewFeatures.multiview = VK_TRUE;
 
 	deviceBuilder.add_pNext(&multiViewFeatures);
-	
-	VkPhysicalDeviceMaintenance4Features maintenance4Features{};
-	maintenance4Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES;
-	maintenance4Features.maintenance4 = VK_TRUE;
-	deviceBuilder.add_pNext(&maintenance4Features);
-	
-	VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{};
-	dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES;
-	dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
-	deviceBuilder.add_pNext(&dynamicRenderingFeatures);
-
-	VkPhysicalDeviceSynchronization2Features synchronization2Features{};
-	synchronization2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
-	synchronization2Features.synchronization2 = VK_TRUE;
-	deviceBuilder.add_pNext(&synchronization2Features);
 	
 	LOG_INFO("Finish picking logical device")
 	return deviceBuilder.build().value();

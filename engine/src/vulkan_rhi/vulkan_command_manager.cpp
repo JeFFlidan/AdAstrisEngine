@@ -8,7 +8,7 @@ using namespace ad_astris;
 vulkan::VulkanCommandBuffer::VulkanCommandBuffer(
 	VulkanDevice* device,
 	VkCommandPool pool,
-	VkPipelineStageFlags waitFlag) : _device(device), _stageFlag(waitFlag)
+	VkPipelineStageFlags2 waitFlag) : _device(device), _stageFlag(waitFlag)
 {
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -38,17 +38,17 @@ vulkan::VulkanCommandPool::VulkanCommandPool(VulkanDevice* device, VulkanQueue* 
 	{
 		case rhi::QueueType::GRAPHICS:
 		{
-			_waitFlag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			_waitFlag = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 			break;
 		}
 		case rhi::QueueType::COMPUTE:
 		{
-			_waitFlag = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+			_waitFlag = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
 			break;
 		}
 		case rhi::QueueType::TRANSFER:
 		{
-			_waitFlag = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			_waitFlag = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
 			break;
 		}
 	}
@@ -194,7 +194,7 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 			cmdBuffer = _freeGraphicsCmdPools[_imageIndex].back()->get_cmd_buffer();
 			_lockedGraphicsCmdPools[_imageIndex].push_back(std::move(_freeGraphicsCmdPools[_imageIndex].back()));
 			_freeGraphicsCmdPools[_imageIndex].pop_back();
-			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 			break;
 		}
 		case rhi::QueueType::COMPUTE:
@@ -208,7 +208,7 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 			cmdBuffer = _freeComputeCmdPools[_imageIndex].back()->get_cmd_buffer();
 			_lockedComputeCmdPools[_imageIndex].push_back(std::move(_freeComputeCmdPools[_imageIndex].back()));
 			_freeComputeCmdPools[_imageIndex].pop_back();
-			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT);
 			break;
 		}
 		case rhi::QueueType::TRANSFER:
@@ -221,7 +221,7 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 			cmdBuffer = _freeTransferCmdPools[_imageIndex].back()->get_cmd_buffer();
 			_lockedTransferCmdPools[_imageIndex].push_back(std::move(_freeTransferCmdPools[_imageIndex].back()));
 			_freeTransferCmdPools[_imageIndex].pop_back();
-			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_TRANSFER_BIT);
+			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_2_TRANSFER_BIT);
 			break;
 		}
 	}
