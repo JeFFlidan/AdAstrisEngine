@@ -247,8 +247,14 @@ IMGUI_VULKAN_FUNC_MAP(IMGUI_VULKAN_FUNC_DEF)
 
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_dynamic_rendering)
 #define IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
+#if defined(VK_KHR_dynamic_rendering) && !defined(VK_VERSION_1_3)
 static PFN_vkCmdBeginRenderingKHR   ImGuiImplVulkanFuncs_vkCmdBeginRenderingKHR;
 static PFN_vkCmdEndRenderingKHR     ImGuiImplVulkanFuncs_vkCmdEndRenderingKHR;
+#endif
+#if defined(VK_VERSION_1_3)
+static PFN_vkCmdBeginRendering      ImGuiImplVulkanFuncs_vkCmdBeginRendering;
+static PFN_vkCmdEndRendering        ImGuiImplVulkanFuncs_vkCmdEndRendering;
+#endif
 #endif
 
 //-----------------------------------------------------------------------------
@@ -1014,8 +1020,14 @@ bool    ImGui_ImplVulkan_LoadFunctions(PFN_vkVoidFunction(*loader_func)(const ch
 
 #ifdef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
     // Manually load those two (see #5446)
+#if defined(VK_VERSION_1_3)
+    ImGuiImplVulkanFuncs_vkCmdBeginRendering = reinterpret_cast<PFN_vkCmdBeginRendering>(loader_func("vkCmdBeginRendering", user_data));
+    ImGuiImplVulkanFuncs_vkCmdEndRendering = reinterpret_cast<PFN_vkCmdEndRendering>(loader_func("vkCmdEndRendering", user_data));
+#endif
+#if defined(VK_KHR_dynamic_rendering) && !defined(VK_VERSION_1_3)
     ImGuiImplVulkanFuncs_vkCmdBeginRenderingKHR = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(loader_func("vkCmdBeginRenderingKHR", user_data));
     ImGuiImplVulkanFuncs_vkCmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(loader_func("vkCmdEndRenderingKHR", user_data));
+#endif
 #endif
 #else
     IM_UNUSED(loader_func);
@@ -1034,11 +1046,23 @@ bool    ImGui_ImplVulkan_Init(ImGui_ImplVulkan_InitInfo* info, VkRenderPass rend
     {
 #ifdef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
 #ifndef VK_NO_PROTOTYPES
+#if defined(VK_VERSION_1_3)
+        ImGuiImplVulkanFuncs_vkCmdBeginRendering = reinterpret_cast<PFN_vkCmdBeginRendering>(vkGetInstanceProcAddr(info->Instance, "vkCmdBeginRendering"));
+        ImGuiImplVulkanFuncs_vkCmdEndRendering = reinterpret_cast<PFN_vkCmdEndRendering>(vkGetInstanceProcAddr(info->Instance, "vkCmdEndRendering"));
+#endif
+#if defined(VK_KHR_dynamic_rendering) && !defined(VK_VERSION_1_3)
         ImGuiImplVulkanFuncs_vkCmdBeginRenderingKHR = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetInstanceProcAddr(info->Instance, "vkCmdBeginRenderingKHR"));
         ImGuiImplVulkanFuncs_vkCmdEndRenderingKHR = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetInstanceProcAddr(info->Instance, "vkCmdEndRenderingKHR"));
 #endif
+#endif
+#if defined(VK_VERSION_1_3)
+        IM_ASSERT(ImGuiImplVulkanFuncs_vkCmdBeginRendering != nullptr);
+        IM_ASSERT(ImGuiImplVulkanFuncs_vkCmdEndRendering != nullptr);
+#endif
+#if defined(VK_KHR_dynamic_rendering) && !defined(VK_VERSION_1_3)
         IM_ASSERT(ImGuiImplVulkanFuncs_vkCmdBeginRenderingKHR != nullptr);
         IM_ASSERT(ImGuiImplVulkanFuncs_vkCmdEndRenderingKHR != nullptr);
+#endif
 #else
         IM_ASSERT(0 && "Can't use dynamic rendering when neither VK_VERSION_1_3 or VK_KHR_dynamic_rendering is defined.");
 #endif
@@ -1726,7 +1750,12 @@ static void ImGui_ImplVulkan_RenderWindow(ImGuiViewport* viewport, void*)
             renderingInfo.viewMask = 0;
             renderingInfo.colorAttachmentCount = 1;
             renderingInfo.pColorAttachments = &attachmentInfo;
-            ImGuiImplVulkanFuncs_vkCmdBeginRenderingKHR(fd->CommandBuffer, &renderingInfo);
+#if defined(VK_VERSION_1_3)
+            ImGuiImplVulkanFuncs_vkCmdBeginRendering(fd->CommandBuffer, &renderingInfo);
+#endif
+#if defined(VK_KHR_dynamic_rendering) && !defined(VK_VERSION_1_3)
+            ImGuiImplVulkanFuncs_vkCmdBeginRenderingKHR(fd->CommandBuffer, &renderingInfo);    
+#endif
         }
         else
 #endif
@@ -1749,8 +1778,13 @@ static void ImGui_ImplVulkan_RenderWindow(ImGuiViewport* viewport, void*)
 #ifdef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
         if (v->UseDynamicRendering)
         {
-            ImGuiImplVulkanFuncs_vkCmdEndRenderingKHR(fd->CommandBuffer);
-
+#if defined(VK_VERSION_1_3)
+            ImGuiImplVulkanFuncs_vkCmdEndRendering(fd->CommandBuffer);
+#endif
+#if defined(VK_KHR_dynamic_rendering) && !defined(VK_VERSION_1_3)
+            ImGuiImplVulkanFuncs_vkCmdEndRenderingKHR(fd->CommandBuffer); 
+#endif
+            
             // Transition image to a layout suitable for presentation
             VkImageMemoryBarrier barrier = {};
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

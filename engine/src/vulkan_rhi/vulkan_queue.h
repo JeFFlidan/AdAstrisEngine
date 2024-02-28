@@ -19,9 +19,9 @@ namespace ad_astris::vulkan
 			bool present(VulkanSwapChain* swapChain, uint32_t currentImageIndex);
 			void cleanup_present_wait_semaphores() { _presentWaitSemaphores.clear(); }
 
-			VkQueue get_queue() const { return _queue; }
+			VkQueue get_handle() const { return _queue; }
 			uint32_t get_family() const { return _family; }
-			rhi::QueueType get_queue_type() const { return _queueType; }
+			rhi::QueueType get_type() const { return _queueType; }
 			uint32_t get_submission_counter() const { return _submissionCounter; }
 		
 		private:

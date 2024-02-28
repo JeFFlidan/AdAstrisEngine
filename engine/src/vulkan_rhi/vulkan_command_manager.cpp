@@ -34,7 +34,7 @@ vulkan::VulkanCommandPool::VulkanCommandPool(VulkanDevice* device, VulkanQueue* 
 	VK_CHECK(vkCreateCommandPool(_device->get_device(), &info, nullptr, &_cmdPool));
 
 	// Need to think about flags
-	switch (queue->get_queue_type())
+	switch (queue->get_type())
 	{
 		case rhi::QueueType::GRAPHICS:
 		{
