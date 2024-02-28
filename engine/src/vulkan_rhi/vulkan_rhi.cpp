@@ -1,17 +1,20 @@
-﻿#define NOMINMAX
-#include "vulkan_rhi.h"
+﻿#include "vulkan_rhi.h"
 #include "vulkan_queue.h"
 #include "vulkan_common.h"
 
 #include "rhi/utils.h"
 #include "profiler/logger.h"
 #include "file_system/utils.h"
-#include <vkbootstrap/VkBootstrap.h>
 
 #ifndef VMA_IMPLEMENTATION
 	#define VMA_IMPLEMENTATION
 #endif
 #include <vma/vk_mem_alloc.h>
+
+#ifndef VOLK_IMPLEMENTATION
+	#define VOLK_IMPLEMENTATION
+#endif
+#include <volk/volk.h>
 
 #include <algorithm>
 
@@ -29,12 +32,12 @@ void VulkanRHI::init(rhi::RHIInitContext& initContext)
 	
 	_fileSystem = initContext.fileSystem;
 	_mainWindow = initContext.window;
-	vkb::Instance vkbInstance = create_instance();
-	_instance = vkbInstance.instance;
-	_debugMessenger = vkbInstance.debug_messenger;
-	_device = std::make_unique<VulkanDevice>(vkbInstance, initContext.window);
+
+	_instance = std::make_unique<VulkanInstance>(initContext.validationMode);
+	_device = std::make_unique<VulkanDevice>(_instance.get(), initContext.gpuPreference);
+	_surface = std::make_unique<VulkanSurface>(_instance.get(), _device.get(), _mainWindow);
 	
-	_swapChain = std::make_unique<VulkanSwapChain>(initContext.swapChainInfo, _device.get());
+	_swapChain = std::make_unique<VulkanSwapChain>(_device.get(), _surface.get(), initContext.swapChainInfo);
 	_cmdManager = std::make_unique<VulkanCommandManager>(_device.get(), _swapChain.get());
 	
 	_descriptorManager = std::make_unique<VulkanDescriptorManager>(_device.get(), _swapChain->get_buffers_count());
@@ -49,7 +52,9 @@ void VulkanRHI::init(rhi::RHIInitContext& initContext)
 	LOG_INFO("VulkanRHI::init(): Max storage buffers: {}", properties12.maxDescriptorSetUpdateAfterBindStorageBuffers)
 
 	auto& physicalProperties = _device->get_physical_device_properties();
-	_timestampFrequency = uint64_t(1.0 / (double)physicalProperties.properties.limits.timestampPeriod * 1000 * 1000 * 1000);
+	_gpuProperties.timestampFrequency = uint64_t(1.0 / (double)physicalProperties.properties.limits.timestampPeriod * 1000 * 1000 * 1000);
+	_gpuProperties.bufferCount = _swapChain->get_buffers_count();
+	_device->fill_gpu_properties(_gpuProperties);
 	
 	//LOG_INFO("TEST: {}", properties11.subgroupSize);
 }
@@ -65,15 +70,15 @@ void VulkanRHI::cleanup()
 	_descriptorManager->cleanup();
 	_cmdManager->cleanup();
 	_device->cleanup();
-	vkb::destroy_debug_utils_messenger(_instance, _debugMessenger, nullptr);
-	vkDestroyInstance(_instance, nullptr);
+	_surface->cleanup(_instance.get());
+	_instance->cleanup();
 }
 
 void VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info)
 {
 	assert(swapChain && info);
 	
-	_swapChain = std::make_unique<VulkanSwapChain>(info, _device.get());
+	_swapChain = std::make_unique<VulkanSwapChain>(_device.get(), _surface.get(), info);
 	_cmdManager = std::make_unique<VulkanCommandManager>(_device.get(), _swapChain.get());
 	swapChain->handle = _swapChain.get();
 	swapChain->info = *info;
@@ -1113,24 +1118,6 @@ rhi::GPUMemoryUsage VulkanRHI::get_memory_usage()
 		}
 	}
 	return memoryUsage;
-}
-
-// private methods
-vkb::Instance VulkanRHI::create_instance()
-{
-	LOG_INFO("Start creating Vulkan instance")
-	vkb::InstanceBuilder builder;
-	builder.set_app_name("AdAstris Engine");
-	builder.require_api_version(1, 3, 0);
-#ifndef VK_RELEASE
-	builder.use_default_debug_messenger();
-	builder.request_validation_layers(true);
-#else
-	builder.request_validation_layers(false);
-#endif
-	//builder.request_validation_layers(false);
-	LOG_INFO("Finish creating Vulkan instance")
-	return builder.build().value();
 }
 
 void VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier)

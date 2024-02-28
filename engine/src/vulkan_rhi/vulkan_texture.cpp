@@ -1,6 +1,4 @@
 ﻿#include "vulkan_texture.h"
-
-#include "vk_mem_alloc.h"
 #include "vulkan_device.h"
 #include "vulkan_common.h"
 #include "profiler/logger.h"

@@ -40,7 +40,7 @@ namespace ad_astris::rhi
 
 	struct UIWindowBackendInitContext
 	{
-		IEngineRHI* rhi;
+		RHI* rhi;
 		acore::IWindow* window;
 		io::FileSystem* fileSystem;
 		Sampler sampler;

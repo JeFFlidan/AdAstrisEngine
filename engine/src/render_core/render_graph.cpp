@@ -13,7 +13,7 @@ RenderGraph::RenderGraph(IRendererResourceManager* rendererResourceManager) : _r
 	
 }
 
-void RenderGraph::init(rhi::IEngineRHI* engineRHI)
+void RenderGraph::init(rhi::RHI* engineRHI)
 {
 	_rhi = engineRHI;
 }

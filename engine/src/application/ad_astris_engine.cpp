@@ -21,13 +21,11 @@ bool AdAstrisEngine::init()
 
 void AdAstrisEngine::execute()
 {
-	bool running = true;
-
-	while (running)
+	while (true)
 	{
-		running = _mainWindow->process_messages();
-		if (running)
-			_editor->draw();
+		if (!_mainWindow->process_messages())
+			break;
+		_editor->draw();
 		_engine->execute();
 		EVENT_MANAGER()->dispatch_events();
 	}

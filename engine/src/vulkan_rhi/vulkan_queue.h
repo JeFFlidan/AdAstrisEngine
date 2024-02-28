@@ -1,40 +1,37 @@
 #pragma once
 
-#include "vulkan_command_manager.h"
 #include "rhi/resources.h"
 #include "engine/vulkan_rhi_module.h"
-#include <vulkan/vulkan.h>
+#include "vulkan_api.h"
 
 namespace ad_astris::vulkan
 {
-	struct QueueData
-	{
-		VkQueue queue;
-		uint32_t queueFamily;
-		rhi::QueueType queueType;
-	};
+	class VulkanCommandManager;
+	class VulkanSwapChain;
+	class VulkanDevice;
 
 	class VulkanQueue
 	{
 		public:
-			VulkanQueue(QueueData queueData);
+			VulkanQueue(VulkanDevice* device, uint32_t queueFamily, rhi::QueueType queueType, bool isSparseBindingSupported);
 		
 			void submit(VulkanCommandManager& cmdManager, bool useSignalSemaphores);
 			bool present(VulkanSwapChain* swapChain, uint32_t currentImageIndex);
 			void cleanup_present_wait_semaphores() { _presentWaitSemaphores.clear(); }
 
-			VkQueue get_queue() { return _queue; }
-			uint32_t get_family() { return _family; }
-			rhi::QueueType get_queue_type() { return _queueType; }
-			uint32_t get_submission_counter() { return _submissionCounter; }
+			VkQueue get_queue() const { return _queue; }
+			uint32_t get_family() const { return _family; }
+			rhi::QueueType get_queue_type() const { return _queueType; }
+			uint32_t get_submission_counter() const { return _submissionCounter; }
 		
 		private:
-			VkQueue _queue;
+			VkQueue _queue{ VK_NULL_HANDLE };
 			uint32_t _family;
 			rhi::QueueType _queueType;
+			bool _isSparseBindingSupported;
 			std::vector<VkSemaphore> _presentWaitSemaphores;
 
 			// See in UE5 code, maybe I'll remove it
-			uint32_t _submissionCounter;
+			uint32_t _submissionCounter{ 0 };
 	};
 }

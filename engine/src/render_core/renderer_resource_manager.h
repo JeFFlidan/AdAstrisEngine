@@ -116,7 +116,7 @@ namespace ad_astris::rcore::impl
 
 
 		private:
-			rhi::IEngineRHI* _rhi{ nullptr };
+			rhi::RHI* _rhi{ nullptr };
 
 			ThreadSafePoolAllocator<rhi::Buffer> _bufferPool;
 			std::unordered_map<std::string, rhi::Buffer*> _bufferByItsName;

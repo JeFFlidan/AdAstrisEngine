@@ -4,7 +4,7 @@
 #include "rhi/resources.h"
 #include "vulkan_device.h"
 #include "vulkan_swap_chain.h"
-#include <vulkan/vulkan.h>
+#include "vulkan_api.h"
 #include <vector>
 #include <memory>
 #include <atomic>

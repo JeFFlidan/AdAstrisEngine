@@ -25,6 +25,9 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	
 	_frameData.init();
 	LOG_INFO("Renderer::init(): Initialized FrameData")
+
+	LOG_INFO("Renderer::init(): GPU name: {}", RHI()->get_gpu_name())
+	LOG_INFO("Renderer::init(): Driver description: {}", RHI()->get_driver_description())
 }
 
 void Renderer::cleanup()

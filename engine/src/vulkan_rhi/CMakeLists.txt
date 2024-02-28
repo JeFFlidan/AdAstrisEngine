@@ -14,7 +14,7 @@ include_directories(${DIR_THIRD_PARTY})
 include_directories(${DIR_ENGINE_SRC})
 
 target_link_libraries(${LIBRARY_NAME}
-	vkbootstrap 
+	volk
 	spirv_reflect 
 	engine_core)
 

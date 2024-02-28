@@ -14,12 +14,14 @@ namespace ad_astris::rhi
 		acore::IWindow* window{ nullptr };
 		io::FileSystem* fileSystem{ nullptr };
 		SwapChainInfo* swapChainInfo{ nullptr };
+		GpuPreference gpuPreference{ GpuPreference::DISCRETE };
+		ValidationMode validationMode{ ValidationMode::DISABLED };
 	};
 	
-	class IEngineRHI
+	class RHI
 	{
 		public:
-			virtual ~IEngineRHI() = default;
+			virtual ~RHI() = default;
 		
 			virtual void init(RHIInitContext& initContext) = 0;
 			virtual void cleanup() = 0;
@@ -134,8 +136,21 @@ namespace ad_astris::rhi
 				uint32_t dstOffset = 0) = 0;
 			virtual void reset_query(const CommandBuffer* cmd, const QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount) = 0;
 		
-			virtual uint32_t get_buffer_count() = 0;
-			virtual uint64_t get_timestamp_frequency() = 0;
+			uint32_t get_buffer_count() const { return _gpuProperties.bufferCount; }
+			GpuCapabilities get_gpu_capabilities() const { return _gpuProperties.capabilities; }
+			uint64_t get_shader_identifier_size() const { return _gpuProperties.shaderIdentifierSize; }
+			uint64_t get_acceleration_structure_instance_size() const { return _gpuProperties.accelerationStructureInstanceSize; }
+			uint64_t get_timestamp_frequency() const { return _gpuProperties.timestampFrequency; }
+			uint32_t get_vendor_id() const { return _gpuProperties.vendorID; }
+			uint32_t get_device_id() const { return _gpuProperties.deviceID; }
+			const std::string& get_gpu_name() const { return _gpuProperties.gpuName; }
+			const std::string& get_driver_description() const { return _gpuProperties.driverDescription; }
+			
+			bool is_validation_enabled() const { return _gpuProperties.validationMode != ValidationMode::DISABLED; }
+			
 			virtual GPUMemoryUsage get_memory_usage() = 0;
+
+		protected:
+			GpuProperties _gpuProperties;
 	};
 }

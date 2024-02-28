@@ -3,7 +3,6 @@
 #include "api.h"
 #include "vulkan_rhi.h"
 #include "rhi/ui_window_backend.h"
-#include <vulkan/vulkan.h>
 #include <imgui/imgui.h>
 
 namespace ad_astris::vulkan

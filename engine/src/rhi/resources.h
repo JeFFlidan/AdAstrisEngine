@@ -3,9 +3,49 @@
 #include <cstdint>
 #include <vector>
 #include <array>
+#include <string>
 
 namespace ad_astris::rhi
 {
+	enum class GpuCapabilities
+	{
+		UNDEFINED = 0,
+		TESSELLATION = 1 << 0,
+		SAMPLER_MINMAX = 1 << 1,
+		VARIABLE_RATE_SHADING = 1 << 2,
+		VARIABLE_RATE_SHADING_TIER2 = 1 << 3,
+		MESH_SHADER = 1 << 4,
+		RAY_TRACING = 1 << 5,
+		SPARSE_BUFFER = 1 << 6,
+		SPARSE_TEXTURE2D = 1 << 7,
+		SPARSE_TEXTURE3D = 1 << 8,
+		SPARSE_NULL_MAPPING = 1 << 9,
+		SPARSE_TILE_POOL = 1 << 10,
+		FRAGMENT_SHADER_INTERLOCK = 1 << 11,
+	};
+
+	enum class GpuPreference
+	{
+		INTEGRATED,
+		DISCRETE
+	};
+
+	enum class GpuType
+	{
+		OTHER,
+		INTEGRATED,
+		DISCRETE,
+		VIRTUAL
+	};
+	
+	enum class ValidationMode
+	{
+		DISABLED,
+		ENABLED,
+		GPU,
+		VERBOSE
+	};
+	
 	enum class ResourceFlags
 	{
 		UNDEFINED = 0,
@@ -296,6 +336,13 @@ namespace ad_astris::rhi
 		SM_6_7
 	};
 
+	enum class ColorSpace
+	{
+		SRGB,
+		HDR10_ST2084,
+		HDR_LINEAR
+	};
+
 	struct ObjectHandle
 	{
 		void* handle{ nullptr };
@@ -367,10 +414,13 @@ namespace ad_astris::rhi
 
 	struct SwapChainInfo
 	{
-		bool sync;
-		uint8_t buffersCount;
+		bool vSync;
+		uint32_t buffersCount;
 		uint32_t width;
 		uint32_t height;
+		Format format{ Format::B8G8R8A8_UNORM };
+		ColorSpace colorSpace{ ColorSpace::SRGB };
+		bool useHDR{ false };
 	};
 
 	struct SwapChain : public ObjectHandle
@@ -847,7 +897,28 @@ namespace ad_astris::rhi
 		uint64_t total{ 0 };
 		uint64_t usage{ 0 };
 	};
+
+	struct GpuProperties
+	{
+		uint32_t bufferCount = 0;
+		ValidationMode validationMode{ ValidationMode::DISABLED };
+		GpuCapabilities capabilities{ GpuCapabilities::UNDEFINED };
+		GpuType gpuType{ GpuType::DISCRETE };
+		uint64_t shaderIdentifierSize = 0;
+		uint64_t accelerationStructureInstanceSize = 0;
+		uint64_t timestampFrequency = 0;
+		uint32_t vendorID = 0;
+		uint32_t deviceID = 0;
+		std::string gpuName;
+		std::string driverDescription;
+	};
 }
+
+template<>
+struct EnableBitMaskOperator<ad_astris::rhi::GpuCapabilities>
+{
+	static const bool enable = true;
+};
 
 template<>
 struct EnableBitMaskOperator<ad_astris::rhi::ResourceUsage>

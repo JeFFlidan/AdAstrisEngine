@@ -16,7 +16,7 @@ constexpr uint32_t MAX_ZERO_SETS = 64;
 VulkanDescriptorManager::VulkanDescriptorManager(VulkanDevice* device, uint32_t buffersCount)
 	: _device(device), _buffersCount(buffersCount)
 {
-	VkPhysicalDeviceVulkan12Properties& properties = _device->get_physical_device_vulkan_1_2_properties();
+	const VkPhysicalDeviceVulkan12Properties& properties = _device->get_physical_device_vulkan_1_2_properties();
 	_imageBindlessPool.init(_device, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, std::min(MAX_BINDLESS_DESCRIPTORS, properties.maxDescriptorSetUpdateAfterBindSampledImages / 4));
 	_storageImageBindlessPool.init(_device, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, std::min(MAX_BINDLESS_DESCRIPTORS, properties.maxDescriptorSetUpdateAfterBindStorageImages / 4));
 	_storageBufferBindlessPool.init(_device, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, std::min(MAX_BINDLESS_DESCRIPTORS, properties.maxDescriptorSetUpdateAfterBindStorageBuffers / 4));

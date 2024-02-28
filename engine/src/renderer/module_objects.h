@@ -19,7 +19,7 @@ namespace ad_astris::renderer::impl
 			static void init_ui_window_backend(acore::IWindow* mainWindow);
 			static void cleanup();
 
-			FORCE_INLINE static rhi::IEngineRHI* get_rhi() { return _rhi; }
+			FORCE_INLINE static rhi::RHI* get_rhi() { return _rhi; }
 			FORCE_INLINE static rhi::UIWindowBackend* get_ui_window_backend() { return _uiWindowBackend; }
 			FORCE_INLINE static rcore::IRenderGraph* get_render_graph() { return _renderGraph; }
 			FORCE_INLINE static rcore::IShaderManager* get_shader_manager() { return _shaderManager; }
@@ -34,7 +34,7 @@ namespace ad_astris::renderer::impl
 			}
 		
 		private:
-			inline static rhi::IEngineRHI* _rhi{ nullptr };
+			inline static rhi::RHI* _rhi{ nullptr };
 			inline static rhi::UIWindowBackend* _uiWindowBackend{ nullptr };
 			inline static rcore::IRenderGraph* _renderGraph{ nullptr };
 			inline static rcore::IShaderManager* _shaderManager{ nullptr };

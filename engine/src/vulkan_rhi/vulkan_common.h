@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "rhi/resources.h"
+#include "vulkan_api.h"
 #include "vulkan_command_manager.h"
 #include "vulkan_render_pass.h"
 #include "vulkan_pipeline.h"
@@ -10,9 +10,7 @@
 #include "vulkan_sampler.h"
 #include "vulkan_shader.h"
 #include "vulkan_query_pool.h"
-
-#include <vulkan/vulkan.h>
-#include <vma/vk_mem_alloc.h>
+#include "rhi/resources.h"
 
 #include <iostream>
 

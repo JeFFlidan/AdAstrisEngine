@@ -3,7 +3,6 @@
 #include "vulkan_object.h"
 #include "vulkan_device.h"
 #include "rhi/resources.h"
-#include <vulkan/vulkan.h>
 
 namespace ad_astris::vulkan
 {

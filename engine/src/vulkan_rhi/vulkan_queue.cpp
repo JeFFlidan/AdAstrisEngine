@@ -1,14 +1,18 @@
 #include "vulkan_queue.h"
 #include "vulkan_common.h"
+#include "vulkan_command_manager.h"
+#include "vulkan_swap_chain.h"
 
 using namespace ad_astris;
 
-vulkan::VulkanQueue::VulkanQueue(QueueData queueData)
+vulkan::VulkanQueue::VulkanQueue(VulkanDevice* device, uint32_t queueFamily, rhi::QueueType queueType, bool isSparseBindingSupported)
+	: _family(queueFamily), _queueType(queueType), _isSparseBindingSupported(isSparseBindingSupported)
 {
-	_queue = queueData.queue;
-	_family = queueData.queueFamily;
-	_queueType = queueData.queueType;
-	_submissionCounter = 0;
+	VkDeviceQueueInfo2 queueInfo{};
+	queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2;
+	queueInfo.queueIndex = 0;
+	queueInfo.queueFamilyIndex = queueFamily;
+	vkGetDeviceQueue2(device->get_device(), &queueInfo, &_queue);
 }
 
 void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager, bool useSignalSemaphores)
@@ -93,7 +97,7 @@ bool vulkan::VulkanQueue::present(VulkanSwapChain* swapChain, uint32_t currentIm
 	}
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	VkSwapchainKHR swapchain = swapChain->get_swap_chain();
+	VkSwapchainKHR swapchain = swapChain->get_handle();
 	presentInfo.pSwapchains = &swapchain;
 	presentInfo.swapchainCount = 1;
 	presentInfo.pWaitSemaphores = _presentWaitSemaphores.data();

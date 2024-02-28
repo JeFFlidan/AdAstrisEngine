@@ -47,5 +47,3 @@ target_compile_options(engine_core PRIVATE "/Zc:preprocessor")
 add_executable(AdAstrisEngine main.cpp)
 target_include_directories(AdAstrisEngine PUBLIC ${DIR_ENGINE_SRC})
 target_link_libraries(AdAstrisEngine engine_core)
-
-    

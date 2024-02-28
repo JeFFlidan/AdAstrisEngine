@@ -35,7 +35,7 @@ void ModuleObjects::init_rhi_module(acore::IWindow* mainWindow)
 	rhi::SwapChainInfo swapChainInfo;
 	swapChainInfo.width = _rendererSubsettings->get_render_area_width();
 	swapChainInfo.height = _rendererSubsettings->get_render_area_height();
-	swapChainInfo.sync = _rendererSubsettings->is_vsync_used();
+	swapChainInfo.vSync = _rendererSubsettings->is_vsync_used();
 	bool useTripleBuffering = _rendererSubsettings->is_triple_buffering_used();
 	swapChainInfo.buffersCount = useTripleBuffering ? 3 : 2;
 	rhiInitContext.swapChainInfo = &swapChainInfo;

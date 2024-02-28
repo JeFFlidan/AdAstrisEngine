@@ -4,7 +4,6 @@
 #include "vulkan_object.h"
 #include "vulkan_pipeline_layout_cache.h"
 #include "rhi/resources.h"
-#include <vulkan/vulkan.h>
 
 namespace ad_astris::vulkan
 {

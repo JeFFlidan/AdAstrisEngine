@@ -2,9 +2,8 @@
 
 #include "vulkan_descriptor.h"
 #include "vulkan_object.h"
+#include "vulkan_api.h"
 #include "rhi/resources.h"
-#include <vulkan/vulkan.h>
-#include <vma/vk_mem_alloc.h>
 
 namespace ad_astris::vulkan
 {

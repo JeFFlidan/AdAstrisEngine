@@ -27,8 +27,18 @@
 #include <windowsx.h> // GET_X_LPARAM(), GET_Y_LPARAM()
 #include <tchar.h>
 #include <dwmapi.h>
+#if defined(IMGUI_IMPL_VULKAN_NO_PROTOTYPES) && !defined(VK_NO_PROTOTYPES)
+#define VK_NO_PROTOTYPES
+#endif
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_win32.h>
+
+#if defined(VK_NO_PROTOTYPES)
+static PFN_vkCreateWin32SurfaceKHR ImGuiImplWin32_vkCreateWin32SurfaceKHR;
+static bool g_FunctionsLoaded = false;
+#else
+static bool g_FunctionsLoaded = true;
+#endif
 
 // Configuration flags to add in your imconfig.h file:
 //#define IMGUI_IMPL_WIN32_DISABLE_GAMEPAD              // Disable gamepad support. This was meaningful before <1.81 but we now load XInput dynamically so the option is now less relevant.
@@ -205,6 +215,16 @@ static bool ImGui_ImplWin32_InitEx(void* hwnd, bool platform_has_own_dc, Win32Cl
         }
 #endif // IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
 
+    return true;
+}
+
+IMGUI_IMPL_API bool     ImGui_ImplWin32_LoadFunctions(PFN_vkVoidFunction(*loader_func)(const char* function_name, void* user_data), void* user_data)
+{
+#if defined(VK_NO_PROTOTYPES)
+    ImGuiImplWin32_vkCreateWin32SurfaceKHR = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(loader_func("vkCreateWin32SurfaceKHR", user_data));
+#endif
+
+    g_FunctionsLoaded = true;
     return true;
 }
 
@@ -1272,7 +1292,7 @@ static int ImGui_ImplWin32_CreateVkSurface(ImGuiViewport* viewport, ImU64 vk_ins
     create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     create_info.hwnd = vd->Hwnd;
     create_info.hinstance = GetModuleHandle(nullptr);
-    VkResult result = vkCreateWin32SurfaceKHR((VkInstance)vk_instance, &create_info, (VkAllocationCallbacks*)vk_allocator, (VkSurfaceKHR*)out_vk_surface);
+    VkResult result = ImGuiImplWin32_vkCreateWin32SurfaceKHR((VkInstance)vk_instance, &create_info, (VkAllocationCallbacks*)vk_allocator, (VkSurfaceKHR*)out_vk_surface);
     return result;
 }
 

@@ -1,8 +1,8 @@
 #pragma once
 
+#include "vulkan_api.h"
 #include "vulkan_object.h"
 #include "rhi/resources.h"
-#include <vulkan/vulkan.h>
 
 namespace ad_astris::vulkan
 {

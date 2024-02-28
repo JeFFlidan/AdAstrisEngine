@@ -113,7 +113,7 @@ namespace ad_astris::rcore
 		public:
 			virtual ~IRenderGraph() { }
 		
-			virtual void init(rhi::IEngineRHI* engineRHI) = 0;
+			virtual void init(rhi::RHI* engineRHI) = 0;
 			virtual void cleanup() = 0;
 		
 			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue) = 0;
@@ -173,7 +173,7 @@ namespace ad_astris::rcore
 		ModuleManager* moduleManager;
 		io::FileSystem* fileSystem;
 		ShaderCacheType cacheType;
-		rhi::IEngineRHI* rhi;
+		rhi::RHI* rhi;
 	};
 
 	class IShaderManager
@@ -194,7 +194,7 @@ namespace ad_astris::rcore
 
 	struct RendererResourceManagerInitContext
 	{
-		rhi::IEngineRHI* rhi{ nullptr };
+		rhi::RHI* rhi{ nullptr };
 	};
 
 	class IRendererResourceManager
@@ -317,7 +317,7 @@ namespace ad_astris::rcore
 
 	struct PipelineManagerInitContext
 	{
-		rhi::IEngineRHI* rhi{ nullptr };
+		rhi::RHI* rhi{ nullptr };
 		IShaderManager* shaderManager{ nullptr };
 		tasks::TaskComposer* taskComposer{ nullptr };
 	};

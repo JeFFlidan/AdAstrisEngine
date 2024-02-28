@@ -1726,7 +1726,7 @@ static void ImGui_ImplVulkan_RenderWindow(ImGuiViewport* viewport, void*)
             renderingInfo.viewMask = 0;
             renderingInfo.colorAttachmentCount = 1;
             renderingInfo.pColorAttachments = &attachmentInfo;
-            vkCmdBeginRendering(fd->CommandBuffer, &renderingInfo);
+            ImGuiImplVulkanFuncs_vkCmdBeginRenderingKHR(fd->CommandBuffer, &renderingInfo);
         }
         else
 #endif
@@ -1749,7 +1749,7 @@ static void ImGui_ImplVulkan_RenderWindow(ImGuiViewport* viewport, void*)
 #ifdef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
         if (v->UseDynamicRendering)
         {
-            vkCmdEndRendering(fd->CommandBuffer);
+            ImGuiImplVulkanFuncs_vkCmdEndRenderingKHR(fd->CommandBuffer);
 
             // Transition image to a layout suitable for presentation
             VkImageMemoryBarrier barrier = {};

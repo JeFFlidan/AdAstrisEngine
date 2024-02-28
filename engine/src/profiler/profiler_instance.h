@@ -36,11 +36,11 @@ namespace ad_astris::profiler
 		
 			[[nodiscard]] bool is_enabled() const { return _isEnabled; }
 			[[nodiscard]] FrameStatsManager& get_frame_stats_manager() const { return *_frameStatsManager; }
-			void set_rhi(rhi::IEngineRHI* rhi) { _rhi = rhi; }
+			void set_rhi(rhi::RHI* rhi) { _rhi = rhi; }
 			void set_enable(bool isEnabled) { _isEnabled = isEnabled; }
 		
 		private:
-			rhi::IEngineRHI* _rhi{ nullptr };
+			rhi::RHI* _rhi{ nullptr };
 			rhi::CommandBuffer _profilerCmd;
 			std::vector<rhi::Buffer> _queryResultBuffers;
 			rhi::QueryPool _timestampQueryPool;

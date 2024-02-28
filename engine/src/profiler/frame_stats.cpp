@@ -54,7 +54,7 @@ void FrameStats::add_range(GPURange* gpuRange)
 	_gpuRangeTimingByRangeName[gpuRange->name] = gpuRange->time;
 }
 
-void FrameStats::calculate_memory_usage(rhi::IEngineRHI* rhi)
+void FrameStats::calculate_memory_usage(rhi::RHI* rhi)
 {
 	_gpuMemoryUsage = rhi->get_memory_usage();
 

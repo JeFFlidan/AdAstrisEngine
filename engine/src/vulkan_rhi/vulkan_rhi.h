@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include "rhi/engine_rhi.h"
-#include "rhi/resources.h"
+#include "vulkan_instance.h"
+#include "vulkan_surface.h"
 #include "vulkan_device.h"
 #include "vulkan_command_manager.h"
 #include "vulkan_object_pool.h"
@@ -10,16 +10,15 @@
 #include "vulkan_descriptor_manager.h"
 #include "vulkan_pipeline_layout_cache.h"
 #include "vulkan_pipeline_cache.h"
-
-#include <vulkan/vulkan.h>
-#include <vkbootstrap/VkBootstrap.h>
+#include "rhi/engine_rhi.h"
+#include "rhi/resources.h"
 
 #include <vector>
 #include <memory>
 
 namespace ad_astris::vulkan
 {
-	class VK_RHI_API VulkanRHI final : public rhi::IEngineRHI
+	class VK_RHI_API VulkanRHI final : public rhi::RHI
 	{
 		public:
 			virtual void init(rhi::RHIInitContext& initContext) override;
@@ -128,20 +127,18 @@ namespace ad_astris::vulkan
 				uint32_t dstOffset = 0) override;
 			virtual void reset_query(const rhi::CommandBuffer* cmd, const rhi::QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount) override;
 		
-			virtual uint32_t get_buffer_count() override { return _swapChain->get_buffers_count(); }
-			virtual uint64_t get_timestamp_frequency() override { return _timestampFrequency; }
 			virtual rhi::GPUMemoryUsage get_memory_usage() override;
 
 			VulkanDevice* get_device() const { return _device.get(); }
-			VkInstance get_instance() const { return _instance; }
+			VulkanInstance* get_instance() const { return _instance.get(); }
 			VulkanSwapChain* get_swap_chain() const { return _swapChain.get(); }
 			uint32_t get_current_image_index() const { return _currentImageIndex; }
 		
 		private:
 			io::FileSystem* _fileSystem{ nullptr };
 			acore::IWindow* _mainWindow{ nullptr };
-			VkInstance _instance{ VK_NULL_HANDLE };
-			VkDebugUtilsMessengerEXT _debugMessenger{ VK_NULL_HANDLE };
+			std::unique_ptr<VulkanInstance> _instance{ nullptr };
+			std::unique_ptr<VulkanSurface> _surface{ nullptr };
 			std::unique_ptr<VulkanDevice> _device{ nullptr };
 			std::unique_ptr<VulkanCommandManager> _cmdManager{ nullptr };
 			std::unique_ptr<VulkanSwapChain> _swapChain{ nullptr };
@@ -152,9 +149,6 @@ namespace ad_astris::vulkan
 			VulkanAttachmentManager _attachmentManager;
 
 			uint32_t _currentImageIndex{ 0 };
-			uint64_t _timestampFrequency{ 0 };
-
-			vkb::Instance create_instance();
 
 			void set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier);
 			void recreate_swap_chain();

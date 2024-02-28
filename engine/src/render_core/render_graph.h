@@ -25,7 +25,7 @@ namespace ad_astris::rcore::impl
 			RenderGraph& operator=(const RenderGraph&) = delete;
 			RenderGraph& operator=(const RenderGraph&&) = delete;
 		
-			virtual void init(rhi::IEngineRHI* engineRHI) override;
+			virtual void init(rhi::RHI* engineRHI) override;
 			virtual void cleanup() override;
 
 			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue) override;
@@ -50,7 +50,7 @@ namespace ad_astris::rcore::impl
 			virtual void draw(tasks::TaskGroup* taskGroup) override;
 
 		private:
-			rhi::IEngineRHI* _rhi{ nullptr };
+			rhi::RHI* _rhi{ nullptr };
 			IRendererResourceManager* _rendererResourceManager{ nullptr };
 
 			std::vector<std::unique_ptr<RenderPass>> _logicalPasses;

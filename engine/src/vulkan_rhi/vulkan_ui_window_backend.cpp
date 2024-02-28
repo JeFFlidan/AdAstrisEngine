@@ -9,6 +9,11 @@
 using namespace ad_astris;
 using namespace vulkan;
 
+PFN_vkVoidFunction load_function(const char* functionName, void* userData)
+{
+	return vkGetInstanceProcAddr(static_cast<VulkanInstance*>(userData)->get_handle(), functionName);
+}
+
 void VulkanUIWindowBackend::init(rhi::UIWindowBackendInitContext& initContext, rhi::Sampler sampler)
 {
 	_rhi = static_cast<VulkanRHI*>(initContext.rhi);
@@ -46,11 +51,12 @@ void VulkanUIWindowBackend::init(rhi::UIWindowBackendInitContext& initContext, r
 	io.IniFilename = nullptr;
 
 #ifdef _WIN32
+	ImGui_ImplWin32_LoadFunctions(load_function, _rhi->get_instance());
 	ImGui_ImplWin32_InitForVulkan(_mainWindow->get_hWnd());
 #endif
-
+	
 	ImGui_ImplVulkan_InitInfo vulkanInitInfo{};
-	vulkanInitInfo.Instance = _rhi->get_instance();
+	vulkanInitInfo.Instance = _rhi->get_instance()->get_handle();
 	vulkanInitInfo.PhysicalDevice = _rhi->get_device()->get_physical_device();
 	vulkanInitInfo.Device = _rhi->get_device()->get_device();
 	vulkanInitInfo.Queue = _rhi->get_device()->get_graphics_queue()->get_queue();
@@ -60,7 +66,8 @@ void VulkanUIWindowBackend::init(rhi::UIWindowBackendInitContext& initContext, r
 	vulkanInitInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 	vulkanInitInfo.UseDynamicRendering = true;
 	vulkanInitInfo.ColorAttachmentFormat = _rhi->get_swap_chain()->get_format();
-	
+
+	ImGui_ImplVulkan_LoadFunctions(load_function, _rhi->get_instance());
 	ImGui_ImplVulkan_Init(&vulkanInitInfo, VK_NULL_HANDLE);
 	rhi::CommandBuffer cmdBuffer;
 

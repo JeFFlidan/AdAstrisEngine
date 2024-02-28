@@ -9,7 +9,7 @@ namespace ad_astris::vulkan
 	{
 		public:
 			virtual void startup_module(ModuleManager* moduleManager) override;
-			virtual rhi::IEngineRHI* create_vulkan_rhi() override;
+			virtual rhi::RHI* create_vulkan_rhi() override;
 			virtual rhi::UIWindowBackend* get_ui_window_backend() override;
 
 		private:
@@ -23,7 +23,7 @@ namespace ad_astris::vulkan
 		_backend = std::make_unique<VulkanUIWindowBackend>();
 	}
 
-	rhi::IEngineRHI* VulkanRHIModule::create_vulkan_rhi()
+	rhi::RHI* VulkanRHIModule::create_vulkan_rhi()
 	{
 		return _vulkanRHI.get();
 	}

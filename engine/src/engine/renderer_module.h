@@ -29,7 +29,7 @@ namespace ad_astris::renderer
 			virtual void init(RendererInitializationContext& initializationContext) = 0;
 			virtual void cleanup() = 0;
 		
-			virtual rhi::IEngineRHI* get_rhi() = 0;
+			virtual rhi::RHI* get_rhi() = 0;
 
 			virtual void bake() = 0;
 			virtual void draw(DrawContext& drawContext) = 0;

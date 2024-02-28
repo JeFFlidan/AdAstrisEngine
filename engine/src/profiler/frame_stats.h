@@ -14,7 +14,7 @@ namespace ad_astris::profiler
 
 			void add_range(CPURange* cpuRange);
 			void add_range(GPURange* gpuRange);
-			void calculate_memory_usage(rhi::IEngineRHI* rhi);
+			void calculate_memory_usage(rhi::RHI* rhi);
 
 			void serialize(std::string& outputMetadata);
 			void deserialize(std::string& inputMetadata);

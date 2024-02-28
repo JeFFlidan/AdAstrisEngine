@@ -16,7 +16,7 @@ namespace ad_astris::rcore::impl
 
 		private:
 			IRendererResourceManager* _rendererResourceManager{ nullptr };
-			rhi::IEngineRHI* _rhi{ nullptr };
+			rhi::RHI* _rhi{ nullptr };
 			tasks::TaskComposer* _taskComposer{ nullptr };
 			IShaderManager* _shaderManager{ nullptr };
 

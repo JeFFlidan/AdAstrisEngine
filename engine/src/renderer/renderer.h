@@ -22,7 +22,7 @@ namespace ad_astris::renderer::impl
 			virtual void init(RendererInitializationContext& rendererInitContext) override;
 			virtual void cleanup() override;
 		
-			virtual rhi::IEngineRHI* get_rhi() override { return RHI(); }
+			virtual rhi::RHI* get_rhi() override { return RHI(); }
 
 			virtual void bake() override;
 			virtual void draw(DrawContext& drawContext) override;

@@ -156,9 +156,10 @@ void vulkan::VulkanRenderPass::create_render_pass(rhi::RenderPassInfo* passInfo)
 			LOG_ERROR("VulkanRHI::create_render_pass(): If multiview is used, view count can't be 0")
 			return;
 		}
-		if (multiviewInfo.viewCount > _device->get_max_multiview_view_count())
+		auto& multiviewProperties = _device->get_multiview_properties();
+		if (multiviewInfo.viewCount > multiviewProperties.maxMultiviewViewCount)
 		{
-			LOG_ERROR("VulkanRHI::create_render_pass(): View count can't be greater than {}", _device->get_max_multiview_view_count())
+			LOG_ERROR("VulkanRHI::create_render_pass(): View count can't be greater than {}", multiviewProperties.maxMultiviewViewCount)
 			return;
 		}
 

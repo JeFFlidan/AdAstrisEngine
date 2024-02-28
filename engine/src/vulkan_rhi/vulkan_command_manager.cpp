@@ -289,7 +289,7 @@ bool vulkan::VulkanCommandManager::acquire_next_image(VulkanSwapChain* swapChain
 	_device->get_graphics_queue()->cleanup_present_wait_semaphores();
 	
 	VkSemaphore acquireSemaphore = _syncManager.get_acquire_semaphore(currentFrameIndex);
-	VkResult res = vkAcquireNextImageKHR(_device->get_device(), swapChain->get_swap_chain(), 1000000000, acquireSemaphore, VK_NULL_HANDLE, &nextImageIndex);
+	VkResult res = vkAcquireNextImageKHR(_device->get_device(), swapChain->get_handle(), 1000000000, acquireSemaphore, VK_NULL_HANDLE, &nextImageIndex);
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 		return false;
 
