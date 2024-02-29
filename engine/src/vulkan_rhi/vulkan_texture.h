@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "vulkan_api.h"
-#include "vulkan_descriptor.h"
 #include "vulkan_object.h"
 #include "rhi/resources.h"
 
@@ -13,26 +12,20 @@ namespace ad_astris::vulkan
 	{
 		public:
 			VulkanTexture() = default;
-			VulkanTexture(VulkanDevice* device, VkImageCreateInfo& info, VmaMemoryUsage memoryUsage);
 			VulkanTexture(VulkanDevice* device, rhi::TextureInfo* textureInfo, VkImageCreateInfo& outCreateInfo);
 		
-			void create_texture(VulkanDevice* device, VkImageCreateInfo& info, VmaMemoryUsage memoryUsage);
 			void create_texture(VulkanDevice* device, rhi::TextureInfo* textureInfo, VkImageCreateInfo& outCreateInfo);
+			void create_texture(VulkanDevice* device, const VkImageCreateInfo& imageCreateInfo);
 			void destroy(VulkanDevice* device) override;
 
 			VkImage get_handle() const { return _image; }
-			void set_handle(VkImage image) { _image = image; }
 			VkExtent3D get_extent() const { return _extent; }
-			void* get_mapped_data() const { return _mappedData; }
+			VmaAllocation get_allocation() const { return _allocation; }
 		
 		private:
 			VkImage _image = VK_NULL_HANDLE;
 			VmaAllocation _allocation;
-			VkExtent3D _extent;
-			uint32_t _mipLevels;
-			void* _mappedData;
-
-			void parse_texture_info(rhi::TextureInfo* inTextureInfo, VkImageCreateInfo& outImageInfo, VmaAllocationCreateInfo& outAllocInfo);
-			void allocate_texture(VulkanDevice* device, VkImageCreateInfo& imageCreateInfo, VmaAllocationCreateInfo& allocCreateInfo);
+			VkExtent3D _extent{ 1, 1, 1};
+			uint32_t _mipLevels{ 0 };
 	};
 }

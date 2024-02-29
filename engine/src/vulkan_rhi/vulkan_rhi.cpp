@@ -127,19 +127,19 @@ void VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 		LOG_FATAL("VulkanRHI::create_buffer(): Failed to allocate buffer")
 	
 	buffer->handle = vkBuffer;
-	buffer->mappedData = vkBuffer->get_mapped_data();
-	buffer->size = buffer->bufferInfo.size;
+	buffer->mappedData = vkBuffer->get_allocation()->GetMappedData();
+	buffer->mappedDataSize = vkBuffer->get_allocation()->GetSize();
 	buffer->type = rhi::Resource::ResourceType::BUFFER;
 
 	if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::STORAGE_BUFFER))
-		_descriptorManager->allocate_bindless_descriptor(vkBuffer, buffer->size, 0);
+		_descriptorManager->allocate_bindless_descriptor(vkBuffer, buffer->bufferInfo.size, 0);
 	
 	if (data == nullptr)
 		return;
-	if (data != nullptr && buffer->bufferInfo.memoryUsage == rhi::MemoryUsage::GPU)
+	if (buffer->bufferInfo.memoryUsage == rhi::MemoryUsage::GPU)
 		LOG_FATAL("VulkanRHI::create_buffer(): Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
-	
-	vkBuffer->copy_from(_device.get(), data, buffer->size);
+
+	memcpy(buffer->mappedData, data, buffer->bufferInfo.size);
 }
 
 void VulkanRHI::destroy_buffer(rhi::Buffer* buffer)
@@ -158,7 +158,7 @@ void VulkanRHI::update_buffer_data(rhi::Buffer* buffer, uint64_t size, void* dat
 		LOG_FATAL("VulkanRHI::update_buffer_data(): Can't copy data from CPU to buffer if memory usage is VMA_MEMORY_USAGE_GPU_ONLY")
 
 	VulkanBuffer* vulkanBuffer = static_cast<VulkanBuffer*>(buffer->handle);
-	vulkanBuffer->copy_from(_device.get(), data, size);
+	memcpy(buffer->mappedData, data, size);
 }
 
 void VulkanRHI::create_texture(rhi::Texture* texture, rhi::TextureInfo* texInfo)
@@ -176,11 +176,9 @@ void VulkanRHI::create_texture(rhi::Texture* texture)
 	VkImageCreateInfo createInfo{};
 	auto vkTexture = _vkObjectPool.allocate<VulkanTexture>(_device.get(), &texture->textureInfo, createInfo);
 	
-	if (vkTexture->get_handle() == VK_NULL_HANDLE)
-		LOG_FATAL("VulkanRHI::create_texture(): Failed to allocate VkImage")
-	
 	texture->handle = vkTexture;
-	texture->mappedData = vkTexture->get_mapped_data();
+	texture->mappedData = vkTexture->get_allocation()->GetMappedData();
+	texture->mappedDataSize = vkTexture->get_allocation()->GetSize();
 	texture->type = rhi::Resource::ResourceType::TEXTURE;
 
 	_attachmentManager.add_attachment_texture(vkTexture, createInfo);
@@ -371,12 +369,12 @@ void VulkanRHI::copy_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* srcBuffer, rhi
 	copy.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2;
 	copy.srcOffset = srcOffset;
 	copy.dstOffset = dstOffset;
-	copy.size = size ? size : srcBuffer->size;
+	copy.size = size ? size : srcBuffer->bufferInfo.size;
 
 	VkCopyBufferInfo2 vkBufferInfo{};
 	vkBufferInfo.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2;
-	vkBufferInfo.srcBuffer = *vkSrcBuffer->get_handle();
-	vkBufferInfo.dstBuffer = *vkDstBuffer->get_handle();
+	vkBufferInfo.srcBuffer = vkSrcBuffer->get_handle();
+	vkBufferInfo.dstBuffer = vkDstBuffer->get_handle();
 	vkBufferInfo.regionCount = 1;
 	vkBufferInfo.pRegions = &copy;
 	vkCmdCopyBuffer2(vkCmd->get_handle(), &vkBufferInfo);
@@ -524,7 +522,7 @@ void VulkanRHI::copy_buffer_to_texture(rhi::CommandBuffer* cmd, rhi::Buffer* src
 	copyBufferToImageInfo.sType = VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2;
 	copyBufferToImageInfo.regionCount = 1;
 	copyBufferToImageInfo.pRegions = &copyRegion;
-	copyBufferToImageInfo.srcBuffer = *vkBuffer->get_handle();
+	copyBufferToImageInfo.srcBuffer = vkBuffer->get_handle();
 	copyBufferToImageInfo.dstImage = vkTexture->get_handle();
 	copyBufferToImageInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	
@@ -556,7 +554,7 @@ void VulkanRHI::copy_texture_to_buffer(rhi::CommandBuffer* cmd, rhi::Texture* sr
 	VkCopyImageToBufferInfo2 copyImageToBufferInfo{};
 	copyImageToBufferInfo.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2;
 	copyImageToBufferInfo.srcImage = vkTexture->get_handle();
-	copyImageToBufferInfo.dstBuffer = *vkBuffer->get_handle();
+	copyImageToBufferInfo.dstBuffer = vkBuffer->get_handle();
 	copyImageToBufferInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	copyImageToBufferInfo.regionCount = 1;
 
@@ -643,7 +641,8 @@ void VulkanRHI::bind_vertex_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
 
 	VkDeviceSize offset = 0;
-	vkCmdBindVertexBuffers(vkCmd->get_handle(), 0, 1, vkBuffer->get_handle(), &offset);
+	VkBuffer vkBufferHandle = vkBuffer->get_handle();
+	vkCmdBindVertexBuffers(vkCmd->get_handle(), 0, 1, &vkBufferHandle, &offset);
 }
 
 void VulkanRHI::bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
@@ -657,7 +656,7 @@ void VulkanRHI::bind_index_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer)
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
 
 	VkDeviceSize offset = 0;
-	vkCmdBindIndexBuffer(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(vkCmd->get_handle(), vkBuffer->get_handle(), offset, VK_INDEX_TYPE_UINT32);
 }
 
 void VulkanRHI::bind_pipeline(rhi::CommandBuffer* cmd, rhi::Pipeline* pipeline)
@@ -857,7 +856,7 @@ void VulkanRHI::draw_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint
 	assert(cmd->handle && buffer->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
-	vkCmdDrawIndirect(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, drawCount, stride);
+	vkCmdDrawIndirect(vkCmd->get_handle(), vkBuffer->get_handle(), offset, drawCount, stride);
 }
 
 void VulkanRHI::draw_indexed_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
@@ -865,7 +864,7 @@ void VulkanRHI::draw_indexed_indirect(rhi::CommandBuffer* cmd, rhi::Buffer* buff
 	assert(cmd->handle && buffer->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
-	vkCmdDrawIndexedIndirect(vkCmd->get_handle(), *vkBuffer->get_handle(), offset, drawCount, stride);
+	vkCmdDrawIndexedIndirect(vkCmd->get_handle(), vkBuffer->get_handle(), offset, drawCount, stride);
 }
 
 void VulkanRHI::dispatch(rhi::CommandBuffer* cmd, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
@@ -880,7 +879,7 @@ void VulkanRHI::fill_buffer(rhi::CommandBuffer* cmd, rhi::Buffer* buffer, uint32
 	assert(cmd->handle && buffer->handle);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 	VulkanBuffer* vkBuffer = get_vk_obj(buffer);
-	vkCmdFillBuffer(vkCmd->get_handle(), *vkBuffer->get_handle(), dstOffset, size, data);
+	vkCmdFillBuffer(vkCmd->get_handle(), vkBuffer->get_handle(), dstOffset, size, data);
 }
 
 void VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std::vector<rhi::PipelineBarrier>& barriers)
@@ -910,7 +909,7 @@ void VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std::vector
 				VkBufferMemoryBarrier2 bufferBarrier{};
 				bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
 				rhi::Buffer* buffer = barrier.bufferBarrier.buffer;
-				bufferBarrier.buffer = *get_vk_obj(buffer)->get_handle();
+				bufferBarrier.buffer = get_vk_obj(buffer)->get_handle();
 				bufferBarrier.offset = 0;
 				if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::STORAGE_BUFFER))
 				{
@@ -1097,7 +1096,7 @@ void VulkanRHI::copy_query_pool_results(
 		vkQueryPool->get_handle(),
 		firstQuery,
 		queryCount,
-		*vkBuffer->get_handle(),
+		vkBuffer->get_handle(),
 		dstOffset,
 		sizeof(uint64_t),
 		VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);

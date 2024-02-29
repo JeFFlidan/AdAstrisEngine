@@ -52,7 +52,7 @@ void VulkanAttachmentManager::recreate_attachments(
 		texture->destroy(device);
 		VkImageCreateInfo& imageCreateInfo = pair.second->imageCreateInfo;
 		imageCreateInfo.extent = { width, height, 1 };
-		texture->create_texture(device, imageCreateInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+		texture->create_texture(device, imageCreateInfo);
 
 		for (auto& imageViewDesc : pair.second->viewDescriptions)
 		{

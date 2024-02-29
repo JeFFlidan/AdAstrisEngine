@@ -137,7 +137,7 @@ namespace ad_astris::rhi
 			virtual void reset_query(const CommandBuffer* cmd, const QueryPool* queryPool, uint32_t queryIndex, uint32_t queryCount) = 0;
 		
 			uint32_t get_buffer_count() const { return _gpuProperties.bufferCount; }
-			GpuCapabilities get_gpu_capabilities() const { return _gpuProperties.capabilities; }
+			GpuCapability get_gpu_capabilities() const { return _gpuProperties.capabilities; }
 			uint64_t get_shader_identifier_size() const { return _gpuProperties.shaderIdentifierSize; }
 			uint64_t get_acceleration_structure_instance_size() const { return _gpuProperties.accelerationStructureInstanceSize; }
 			uint64_t get_timestamp_frequency() const { return _gpuProperties.timestampFrequency; }
@@ -147,6 +147,7 @@ namespace ad_astris::rhi
 			const std::string& get_driver_description() const { return _gpuProperties.driverDescription; }
 			
 			bool is_validation_enabled() const { return _gpuProperties.validationMode != ValidationMode::DISABLED; }
+			bool has_capability(GpuCapability capability) const { return has_flag(_gpuProperties.capabilities, capability); }
 			
 			virtual GPUMemoryUsage get_memory_usage() = 0;
 

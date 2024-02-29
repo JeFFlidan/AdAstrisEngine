@@ -68,7 +68,7 @@ void VulkanDevice::fill_gpu_properties(rhi::GpuProperties& gpuProperties)
 	if (_features2.features.tessellationShader == VK_TRUE)
 	{
 		LOG_INFO("Vulkan: GPU has tessellation shader capability")
-		gpuProperties.capabilities |= rhi::GpuCapabilities::TESSELLATION;
+		gpuProperties.capabilities |= rhi::GpuCapability::TESSELLATION;
 	}
 	if (
 		_rayTracingPipelineFeatures.rayTracingPipeline == VK_TRUE &&
@@ -77,54 +77,63 @@ void VulkanDevice::fill_gpu_properties(rhi::GpuProperties& gpuProperties)
 		_features1_2.bufferDeviceAddress == VK_TRUE)
 	{
 		LOG_INFO("Vulkan: GPU has ray tracing capability")
-		gpuProperties.capabilities |= rhi::GpuCapabilities::RAY_TRACING;
+		gpuProperties.capabilities |= rhi::GpuCapability::RAY_TRACING;
 		gpuProperties.shaderIdentifierSize = _rayTracingPipelineProperties.shaderGroupHandleSize;
 		gpuProperties.accelerationStructureInstanceSize = sizeof(VkAccelerationStructureInstanceKHR);
 	}
 	if (_meshShaderFeatures.meshShader == VK_TRUE && _meshShaderFeatures.taskShader == VK_TRUE)
 	{
 		LOG_INFO("Vulkan: GPU has task shader and mesh shader capabilities")
-		gpuProperties.capabilities |= rhi::GpuCapabilities::MESH_SHADER;
+		gpuProperties.capabilities |= rhi::GpuCapability::MESH_SHADER;
 	}
 	if (_fragmentShadingRateFeatures.pipelineFragmentShadingRate == VK_TRUE)
 	{
 		LOG_INFO("Vulkan: GPU has variable rate shading capability")
-		gpuProperties.capabilities |= rhi::GpuCapabilities::VARIABLE_RATE_SHADING;
+		gpuProperties.capabilities |= rhi::GpuCapability::VARIABLE_RATE_SHADING;
 	}
 	if (_fragmentShadingRateFeatures.attachmentFragmentShadingRate == VK_TRUE)
 	{
 		LOG_INFO("Vulkan: GPU has varialbe rate shading tier 2 capability")
-		gpuProperties.capabilities |= rhi::GpuCapabilities::VARIABLE_RATE_SHADING_TIER2;
+		gpuProperties.capabilities |= rhi::GpuCapability::VARIABLE_RATE_SHADING_TIER2;
 	}
 	if (_fragmentShadingRateProperties.fragmentShadingRateWithFragmentShaderInterlock == VK_TRUE)
 	{
 		LOG_INFO("Vulkan: GPU has fragment shader intelock capability")
-		gpuProperties.capabilities |= rhi::GpuCapabilities::FRAGMENT_SHADER_INTERLOCK;
+		gpuProperties.capabilities |= rhi::GpuCapability::FRAGMENT_SHADER_INTERLOCK;
 	}
 	if (_features2.features.sparseBinding == VK_TRUE && _features2.features.sparseResidencyAliased == VK_TRUE)
 	{
 		if (_properties2.properties.sparseProperties.residencyNonResidentStrict == VK_TRUE)
 		{
 			LOG_INFO("Vulkan: GPU has sparse null mapping capability")
-			gpuProperties.capabilities |= rhi::GpuCapabilities::SPARSE_NULL_MAPPING;
+			gpuProperties.capabilities |= rhi::GpuCapability::SPARSE_NULL_MAPPING;
 		}
 		if (_features2.features.sparseResidencyBuffer == VK_TRUE)
 		{
 			LOG_INFO("Vulkan: GPU has sparse buffer capability")
-			gpuProperties.capabilities |= rhi::GpuCapabilities::SPARSE_BUFFER;
+			gpuProperties.capabilities |= rhi::GpuCapability::SPARSE_BUFFER;
 		}
 		if (_features2.features.sparseResidencyImage2D == VK_TRUE)
 		{
 			LOG_INFO("Vulkan: GPU has sparse texture2D capability")
-			gpuProperties.capabilities |= rhi::GpuCapabilities::SPARSE_TEXTURE2D;
+			gpuProperties.capabilities |= rhi::GpuCapability::SPARSE_TEXTURE2D;
 		}
 		if (_features2.features.sparseResidencyImage3D == VK_TRUE)
 		{
 			LOG_INFO("Vulkan: GPU has sparse texture3D capability")
-			gpuProperties.capabilities |= rhi::GpuCapabilities::SPARSE_TEXTURE3D;
+			gpuProperties.capabilities |= rhi::GpuCapability::SPARSE_TEXTURE3D;
 		}
 		LOG_INFO("Vulkan: GPU has sparse tile pool capability")
-		gpuProperties.capabilities |= rhi::GpuCapabilities::SPARSE_TILE_POOL;
+		gpuProperties.capabilities |= rhi::GpuCapability::SPARSE_TILE_POOL;
+	}
+	for (uint32_t i = 0; i != _memoryProperties2.memoryProperties.memoryHeapCount; ++i)
+	{
+		if (_memoryProperties2.memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+		{
+			LOG_INFO("Vulkan: GPU has cache coherent UMA capability")
+			gpuProperties.capabilities |= rhi::GpuCapability::CACHE_COHERENT_UMA;
+			break;
+		}
 	}
 }
 

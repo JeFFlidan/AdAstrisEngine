@@ -26,8 +26,7 @@ namespace ad_astris::vulkan
 				VkImageViewCreateInfo& outCreateInfo);
 			void destroy(VulkanDevice* device) override;
 				
-			VkImageView get_handle() { return _imageView; }
-			void set_handle(VkImageView imageView) { _imageView = imageView; }
+			VkImageView get_handle() const { return _imageView; }
 		
 		private:
 			VkImageView _imageView{ VK_NULL_HANDLE };

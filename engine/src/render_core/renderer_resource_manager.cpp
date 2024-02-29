@@ -107,7 +107,7 @@ void RendererResourceManager::reallocate_buffer(rhi::Buffer* buffer, uint64_t ne
 			memcpy(buffer->mappedData, tempData.data(), tempData.size());
 			break;
 		}
-		case rhi::MemoryUsage::UNDEFINED:
+		case rhi::MemoryUsage::AUTO:
 		case rhi::MemoryUsage::CPU_TO_GPU:
 		case rhi::MemoryUsage::GPU:
 			LOG_ERROR("RendererResourceManager::reallocate_buffer(): You can only reallocate buffers that have memoryUsage = CPU")
@@ -133,7 +133,7 @@ bool RendererResourceManager::update_buffer(
 	uint64_t offsetInBytes = (allObjectCount - newObjectCount) * objectSizeInBytes;
 	uint64_t newObjectsSizeInBytes = newObjectCount * objectSizeInBytes;
 
-	if (offsetInBytes + newObjectsSizeInBytes <= gpuBuffer->size)
+	if (offsetInBytes + newObjectsSizeInBytes <= gpuBuffer->bufferInfo.size)
 	{
 		rhi::Buffer& stagingBuffer = get_new_staging_buffer();
 		allocate_staging_buffer(stagingBuffer, allObjects, offsetInBytes, newObjectsSizeInBytes);

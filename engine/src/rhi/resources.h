@@ -7,7 +7,7 @@
 
 namespace ad_astris::rhi
 {
-	enum class GpuCapabilities
+	enum class GpuCapability
 	{
 		UNDEFINED = 0,
 		TESSELLATION = 1 << 0,
@@ -22,6 +22,7 @@ namespace ad_astris::rhi
 		SPARSE_NULL_MAPPING = 1 << 9,
 		SPARSE_TILE_POOL = 1 << 10,
 		FRAGMENT_SHADER_INTERLOCK = 1 << 11,
+		CACHE_COHERENT_UMA = 1 << 12
 	};
 
 	enum class GpuPreference
@@ -118,10 +119,11 @@ namespace ad_astris::rhi
 
 	enum class MemoryUsage
 	{
-		UNDEFINED,
+		AUTO,
 		CPU,
 		GPU,
-		CPU_TO_GPU
+		CPU_TO_GPU,
+		GPU_TO_CPU
 	};
 	
 	enum class Format
@@ -359,7 +361,7 @@ namespace ad_astris::rhi
 		uint32_t layersCount{ 1 };
 		Format format{ Format::UNDEFINED };
 		ResourceUsage textureUsage{ ResourceUsage::UNDEFINED };
-		MemoryUsage memoryUsage{ MemoryUsage::UNDEFINED };
+		MemoryUsage memoryUsage{ MemoryUsage::AUTO };
 		SampleCount samplesCount{ SampleCount::UNDEFINED };
 		TextureDimension textureDimension{ TextureDimension::UNDEFINED };
 		ResourceFlags resourceFlags{ ResourceFlags::UNDEFINED};	// not necessary
@@ -370,7 +372,7 @@ namespace ad_astris::rhi
 	{
 		uint64_t size{ 0 };
 		ResourceUsage bufferUsage{ ResourceUsage::UNDEFINED };
-		MemoryUsage memoryUsage{ MemoryUsage::UNDEFINED };
+		MemoryUsage memoryUsage{ MemoryUsage::AUTO };
 	};
 	
 	struct Resource : public ObjectHandle
@@ -383,12 +385,12 @@ namespace ad_astris::rhi
 		} type = ResourceType::UNDEFINED_TYPE;
 
 		void* mappedData{ nullptr };		// Pointer to Vulkan or D3D12 buffer 
-		uint64_t size{ 0 };		// Size in bytes
+		uint64_t mappedDataSize{ 0 };		// Size in bytes
 
 		bool is_buffer() { return type == ResourceType::BUFFER; }
 		bool is_texture() { return type == ResourceType::TEXTURE; }
 		bool is_undefined() { return type == ResourceType::UNDEFINED_TYPE; }
-		bool is_mapped_data_valid() { return mappedData && size; }
+		bool is_mapped_data_valid() { return mappedData && mappedDataSize; }
 	};
 
 	struct SubresourceRange
@@ -902,7 +904,7 @@ namespace ad_astris::rhi
 	{
 		uint32_t bufferCount = 0;
 		ValidationMode validationMode{ ValidationMode::DISABLED };
-		GpuCapabilities capabilities{ GpuCapabilities::UNDEFINED };
+		GpuCapability capabilities{ GpuCapability::UNDEFINED };
 		GpuType gpuType{ GpuType::DISCRETE };
 		uint64_t shaderIdentifierSize = 0;
 		uint64_t accelerationStructureInstanceSize = 0;
@@ -915,7 +917,7 @@ namespace ad_astris::rhi
 }
 
 template<>
-struct EnableBitMaskOperator<ad_astris::rhi::GpuCapabilities>
+struct EnableBitMaskOperator<ad_astris::rhi::GpuCapability>
 {
 	static const bool enable = true;
 };

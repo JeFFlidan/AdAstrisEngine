@@ -5,11 +5,6 @@
 
 using namespace ad_astris::vulkan;
 
-VulkanTexture::VulkanTexture(VulkanDevice* device, VkImageCreateInfo& info, VmaMemoryUsage memoryUsage)
-{
-	create_texture(device, info, memoryUsage);
-}
-
 VulkanTexture::VulkanTexture(VulkanDevice* device, rhi::TextureInfo* textureInfo, VkImageCreateInfo& outCreateInfo)
 {
 	create_texture(device, textureInfo, outCreateInfo);
@@ -19,77 +14,82 @@ void VulkanTexture::destroy(VulkanDevice* device)
 {
 	if (_image != VK_NULL_HANDLE)
 	{
-		if (_mappedData)
-			vmaUnmapMemory(device->get_allocator(), _allocation);
-		
 		vmaDestroyImage(device->get_allocator(), _image, _allocation);
 		_image = VK_NULL_HANDLE;
 	}
 }
 
-void VulkanTexture::create_texture(VulkanDevice* device, VkImageCreateInfo& info, VmaMemoryUsage memoryUsage)
-{
-	VmaAllocationCreateInfo allocInfo{};
-	allocInfo.usage = memoryUsage;
-	allocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	allocate_texture(device, info, allocInfo);
-}
-
 void VulkanTexture::create_texture(VulkanDevice* device, rhi::TextureInfo* textureInfo, VkImageCreateInfo& outCreateInfo)
 {
-	VmaAllocationCreateInfo allocInfo{};
-	parse_texture_info(textureInfo, outCreateInfo, allocInfo);
-	allocate_texture(device, outCreateInfo, allocInfo);
-}
-
-void VulkanTexture::parse_texture_info(rhi::TextureInfo* inTextureInfo, VkImageCreateInfo& outImageInfo, VmaAllocationCreateInfo& outAllocInfo)
-{
-	if (inTextureInfo->format == rhi::Format::UNDEFINED)
+	if (textureInfo->format == rhi::Format::UNDEFINED)
 		LOG_FATAL("VulkanTexture::parse_texture_info(): Undefined format")
 	
-	if (inTextureInfo->textureUsage == rhi::ResourceUsage::UNDEFINED)
+	if (textureInfo->textureUsage == rhi::ResourceUsage::UNDEFINED)
 		LOG_FATAL("VulkanTexture::parse_texture_info(): Undefined texture usage.")
 	
-	if (inTextureInfo->memoryUsage == rhi::MemoryUsage::UNDEFINED)
-		LOG_FATAL("VulkanTexture::parse_texture_info(): Undefined memory usage.")
-	
-	if (inTextureInfo->samplesCount == rhi::SampleCount::UNDEFINED)
+	if (textureInfo->samplesCount == rhi::SampleCount::UNDEFINED)
 		LOG_FATAL("VulkanTexture::parse_texture_info(): Undefined sample count.")
 	
-	if (inTextureInfo->textureDimension == rhi::TextureDimension::UNDEFINED)
+	if (textureInfo->textureDimension == rhi::TextureDimension::UNDEFINED)
 		LOG_FATAL("VulkanTexture::parse_texture_info(): Undefined texture dimension.")
 
-	outImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	outImageInfo.pNext = nullptr;
-	outImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	outImageInfo.format = get_format(inTextureInfo->format);
-	outImageInfo.arrayLayers = inTextureInfo->layersCount;
-	outImageInfo.mipLevels = inTextureInfo->mipLevels;
-	outImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	outImageInfo.extent = VkExtent3D{ inTextureInfo->width, inTextureInfo->height, 1 };
-	outImageInfo.samples = get_sample_count(inTextureInfo->samplesCount);
+	outCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	outCreateInfo.pNext = nullptr;
+	outCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	outCreateInfo.format = get_format(textureInfo->format);
+	outCreateInfo.arrayLayers = textureInfo->layersCount;
+	outCreateInfo.mipLevels = textureInfo->mipLevels;
+	outCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	const uint32_t depth = std::max(1u, textureInfo->depth);
+	outCreateInfo.extent = VkExtent3D{ textureInfo->width, textureInfo->height, depth };
+	outCreateInfo.samples = get_sample_count(textureInfo->samplesCount);
 	
-	if (has_flag(inTextureInfo->resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
+	if (has_flag(textureInfo->resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
 	{
-		outImageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+		outCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 	}
 
-	VkImageUsageFlags imgUsage = get_image_usage(inTextureInfo->textureUsage);
-	outImageInfo.usage = imgUsage;
-	outImageInfo.imageType = get_image_type(inTextureInfo->textureDimension);
+	VkImageUsageFlags imgUsage = get_image_usage(textureInfo->textureUsage);
+	outCreateInfo.usage = imgUsage;
+	outCreateInfo.imageType = get_image_type(textureInfo->textureDimension);
 
-	outAllocInfo.usage = get_memory_usage(inTextureInfo->memoryUsage);
-	outAllocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VmaAllocationCreateInfo allocCreateInfo{};
+	allocCreateInfo.usage = get_memory_usage(textureInfo->memoryUsage);
+	
+		switch (textureInfo->memoryUsage)
+    	{
+    		case rhi::MemoryUsage::CPU:
+    		case rhi::MemoryUsage::CPU_TO_GPU:
+    			allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+    			break;
+    		case rhi::MemoryUsage::GPU_TO_CPU:
+    			allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+    			break;
+    		default:
+    			allocCreateInfo.flags = 0;
+    			break;
+    	}
+
+	if (_image == VK_NULL_HANDLE)
+		destroy(device);
+	
+	_extent = outCreateInfo.extent;
+	_mipLevels = outCreateInfo.mipLevels;
+	
+	VK_CHECK(vmaCreateImage(device->get_allocator(), &outCreateInfo, &allocCreateInfo, &_image, &_allocation, nullptr));
 }
 
-void VulkanTexture::allocate_texture(VulkanDevice* device, VkImageCreateInfo& imageCreateInfo, VmaAllocationCreateInfo& allocInfo)
+void VulkanTexture::create_texture(VulkanDevice* device, const VkImageCreateInfo& imageCreateInfo)
 {
 	if (_image == VK_NULL_HANDLE)
 		destroy(device);
 	
+	VmaAllocationCreateInfo allocCreateInfo{};
+	allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+	
 	_extent = imageCreateInfo.extent;
 	_mipLevels = imageCreateInfo.mipLevels;
-	VK_CHECK(vmaCreateImage(device->get_allocator(), &imageCreateInfo, &allocInfo, &_image, &_allocation, nullptr));
-	if (allocInfo.usage == VMA_MEMORY_USAGE_CPU_ONLY || allocInfo.usage == VMA_MEMORY_USAGE_CPU_TO_GPU)
-		VK_CHECK(vmaMapMemory(device->get_allocator(), _allocation, &_mappedData));
+	
+	VK_CHECK(vmaCreateImage(device->get_allocator(), &imageCreateInfo, &allocCreateInfo, &_image, &_allocation, nullptr));
+
 }

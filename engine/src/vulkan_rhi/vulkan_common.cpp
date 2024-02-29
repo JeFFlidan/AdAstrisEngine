@@ -193,15 +193,15 @@ VmaMemoryUsage vulkan::get_memory_usage(rhi::MemoryUsage memoryUsage)
 {
 	switch (memoryUsage)
 	{
-		case rhi::MemoryUsage::UNDEFINED:
-			LOG_ERROR("Undefined memory usage")
-			return VMA_MEMORY_USAGE_UNKNOWN;
-		case rhi::MemoryUsage::CPU:
-			return VMA_MEMORY_USAGE_CPU_ONLY;
-		case rhi::MemoryUsage::GPU:
-			return VMA_MEMORY_USAGE_GPU_ONLY;
+		default:
+		case rhi::MemoryUsage::AUTO:
 		case rhi::MemoryUsage::CPU_TO_GPU:
-			return VMA_MEMORY_USAGE_CPU_TO_GPU;
+		case rhi::MemoryUsage::GPU_TO_CPU:
+			return VMA_MEMORY_USAGE_AUTO;
+		case rhi::MemoryUsage::CPU:
+			return VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+		case rhi::MemoryUsage::GPU:
+			return VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
 	}
 }
 

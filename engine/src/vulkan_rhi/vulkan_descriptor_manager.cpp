@@ -49,7 +49,7 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanBuffer* buffer,
 	buffer->set_descriptor_index(bufferDescriptorIndex);
 	
 	VkDescriptorBufferInfo bufferInfo;
-	bufferInfo.buffer = *buffer->get_handle();
+	bufferInfo.buffer = buffer->get_handle();
 	bufferInfo.offset = offset;
 	bufferInfo.range = VK_WHOLE_SIZE;
 
@@ -236,7 +236,7 @@ void VulkanDescriptorManager::create_zero_descriptor_set(
 void VulkanDescriptorManager::allocate_uniform_buffer(VulkanBuffer* buffer, uint32_t size, uint32_t offset, uint32_t slot, uint32_t frameIndex)
 {
 	VkDescriptorBufferInfo bufferInfo;
-	bufferInfo.buffer = *buffer->get_handle();
+	bufferInfo.buffer = buffer->get_handle();
 	bufferInfo.offset = offset;
 	bufferInfo.range = size;
 
