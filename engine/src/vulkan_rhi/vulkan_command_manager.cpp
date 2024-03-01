@@ -179,6 +179,14 @@ void vulkan::VulkanCommandManager::cleanup()
 	}
 }
 
+void vulkan::VulkanCommandManager::reset_cmd_buffers(uint32_t frameIndex)
+{
+	_frameIndex = frameIndex;
+	_syncManager.wait_fences(_device, _frameIndex);
+	flush_cmd_buffers();
+	_device->get_graphics_queue()->cleanup_present_wait_semaphores();
+}
+
 vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rhi::QueueType queueType)
 {
 	VulkanCommandBuffer* cmdBuffer;
@@ -186,54 +194,45 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 	{
 		case rhi::QueueType::GRAPHICS:
 		{
-			if (_freeGraphicsCmdPools[_imageIndex].empty())
+			if (_freeGraphicsCmdPools[_frameIndex].empty())
 			{
 				LOG_FATAL("VulkanCommandManage::get_command_buffer(): Can't dedicate more than 4 threads")
 			}
 
-			cmdBuffer = _freeGraphicsCmdPools[_imageIndex].back()->get_cmd_buffer();
-			_lockedGraphicsCmdPools[_imageIndex].push_back(std::move(_freeGraphicsCmdPools[_imageIndex].back()));
-			_freeGraphicsCmdPools[_imageIndex].pop_back();
+			cmdBuffer = _freeGraphicsCmdPools[_frameIndex].back()->get_cmd_buffer();
+			_lockedGraphicsCmdPools[_frameIndex].push_back(std::move(_freeGraphicsCmdPools[_frameIndex].back()));
+			_freeGraphicsCmdPools[_frameIndex].pop_back();
 			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 			break;
 		}
 		case rhi::QueueType::COMPUTE:
 		{
 			// TODO Think about adding acquire semaphore and pipeline flags
-			if (_freeComputeCmdPools[_imageIndex].empty())
+			if (_freeComputeCmdPools[_frameIndex].empty())
 			{
 				LOG_FATAL("VulkanCommandManage::get_command_buffer(): Can't dedicate more than 4 threads")
 			}
 
-			cmdBuffer = _freeComputeCmdPools[_imageIndex].back()->get_cmd_buffer();
-			_lockedComputeCmdPools[_imageIndex].push_back(std::move(_freeComputeCmdPools[_imageIndex].back()));
-			_freeComputeCmdPools[_imageIndex].pop_back();
+			cmdBuffer = _freeComputeCmdPools[_frameIndex].back()->get_cmd_buffer();
+			_lockedComputeCmdPools[_frameIndex].push_back(std::move(_freeComputeCmdPools[_frameIndex].back()));
+			_freeComputeCmdPools[_frameIndex].pop_back();
 			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT);
 			break;
 		}
 		case rhi::QueueType::TRANSFER:
 		{
-			if (_freeTransferCmdPools[_imageIndex].empty())
+			if (_freeTransferCmdPools[_frameIndex].empty())
 			{
 				LOG_FATAL("VulkanCommandManage::get_command_buffer(): Can't dedicate more than 4 threads")
 			}
 			
-			cmdBuffer = _freeTransferCmdPools[_imageIndex].back()->get_cmd_buffer();
-			_lockedTransferCmdPools[_imageIndex].push_back(std::move(_freeTransferCmdPools[_imageIndex].back()));
-			_freeTransferCmdPools[_imageIndex].pop_back();
+			cmdBuffer = _freeTransferCmdPools[_frameIndex].back()->get_cmd_buffer();
+			_lockedTransferCmdPools[_frameIndex].push_back(std::move(_freeTransferCmdPools[_frameIndex].back()));
+			_freeTransferCmdPools[_frameIndex].pop_back();
 			cmdBuffer->_waitFlags.push_back(VK_PIPELINE_STAGE_2_TRANSFER_BIT);
 			break;
 		}
 	}
-
-	// TODO VkPipelineStageFlags. Maybe I have to remove it because the same flag is set up in get_cmd_buffer method of VulkanCommandPool
-	if (_firstCmdBuffer.load())
-	{
-		cmdBuffer->_waitSemaphores.push_back(_syncManager.get_acquire_semaphore(_imageIndex));
-		_firstCmdBuffer.store(false);
-	}
-	// VkPipelineStageFlags flag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	// cmdBuffer->_waitFlags.push_back(flag);
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -243,12 +242,6 @@ vulkan::VulkanCommandBuffer* vulkan::VulkanCommandManager::get_command_buffer(rh
 	return cmdBuffer;
 }
 
-void vulkan::VulkanCommandManager::wait_for_cmd_buffer(VulkanCommandBuffer* cmd, VulkanCommandBuffer* waitForCmd)
-{
-	cmd->_waitSemaphores.push_back(waitForCmd->_signalSemaphore);
-	cmd->_waitFlags.push_back(waitForCmd->_stageFlag);
-}
-
 void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType, bool useSignalSemaphores)
 {
 	switch (queueType)
@@ -256,57 +249,38 @@ void vulkan::VulkanCommandManager::submit(rhi::QueueType queueType, bool useSign
 		case rhi::QueueType::GRAPHICS:
 		{
 			_device->get_graphics_queue()->submit(*this, useSignalSemaphores);
-			auto& lockedPools = _lockedGraphicsCmdPools[_imageIndex];
-			auto& freePools = _freeGraphicsCmdPools[_imageIndex];
+			auto& lockedPools = _lockedGraphicsCmdPools[_frameIndex];
+			auto& freePools = _freeGraphicsCmdPools[_frameIndex];
 			clear_after_submission(freePools, lockedPools);
 			break;
 		}
 		case rhi::QueueType::COMPUTE:
 		{
 			_device->get_compute_queue()->submit(*this, useSignalSemaphores);
-			auto& lockedPools = _lockedComputeCmdPools[_imageIndex];
-			auto& freePools = _freeComputeCmdPools[_imageIndex];
+			auto& lockedPools = _lockedComputeCmdPools[_frameIndex];
+			auto& freePools = _freeComputeCmdPools[_frameIndex];
 			clear_after_submission(freePools, lockedPools);
 			break;
 		}
 		case rhi::QueueType::TRANSFER:
 		{
 			_device->get_transfer_queue()->submit(*this, useSignalSemaphores);
-			auto& lockedPools = _lockedTransferCmdPools[_imageIndex];
-			auto& freePools = _freeTransferCmdPools[_imageIndex];
+			auto& lockedPools = _lockedTransferCmdPools[_frameIndex];
+			auto& freePools = _freeTransferCmdPools[_frameIndex];
 			clear_after_submission(freePools, lockedPools);
 			break;
 		}
 	}
 }
 
-bool vulkan::VulkanCommandManager::acquire_next_image(VulkanSwapChain* swapChain, uint32_t& nextImageIndex, uint32_t currentFrameIndex)
-{
-	_syncManager.wait_fences(_device, currentFrameIndex);
-	
-	_imageIndex = currentFrameIndex;
-	flush_cmd_buffers();
-	_device->get_graphics_queue()->cleanup_present_wait_semaphores();
-	
-	VkSemaphore acquireSemaphore = _syncManager.get_acquire_semaphore(currentFrameIndex);
-	VkResult res = vkAcquireNextImageKHR(_device->get_device(), swapChain->get_handle(), 1000000000, acquireSemaphore, VK_NULL_HANDLE, &nextImageIndex);
-	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
-		return false;
-
-	_firstCmdBuffer.store(true);
-	_imageIndex = nextImageIndex;
-	
-	return true;
-}
-
 VkFence vulkan::VulkanCommandManager::get_free_fence()
 {
-	return _syncManager.get_free_fence(_device, _imageIndex);
+	return _syncManager.get_free_fence(_device, _frameIndex);
 }
 
 void vulkan::VulkanCommandManager::wait_fences()
 {
-	_syncManager.wait_fences(_device, _imageIndex);
+	_syncManager.wait_fences(_device, _frameIndex);
 }
 
 void vulkan::VulkanCommandManager::wait_all_fences()
@@ -319,9 +293,9 @@ void vulkan::VulkanCommandManager::wait_all_fences()
 
 void vulkan::VulkanCommandManager::flush_cmd_buffers()
 {
-	auto& graphicsPools = _freeGraphicsCmdPools[_imageIndex];
-	auto& transferPools = _freeTransferCmdPools[_imageIndex];
-	auto& computePools = _freeComputeCmdPools[_imageIndex];
+	auto& graphicsPools = _freeGraphicsCmdPools[_frameIndex];
+	auto& transferPools = _freeTransferCmdPools[_frameIndex];
+	auto& computePools = _freeComputeCmdPools[_frameIndex];
 
 	for (int i = 0; i != RENDER_THREAD_COUNT; ++i)
 	{
@@ -340,15 +314,11 @@ void vulkan::VulkanCommandManager::SynchronizationManager::init(VulkanDevice* de
 	{
 		VkSemaphore semaphore;
 		create_semaphore(device->get_device(), &semaphore);
-		_acquireSemaphores.push_back(semaphore);
 	}
 }
 
 void vulkan::VulkanCommandManager::SynchronizationManager::cleanup(VulkanDevice* device, uint32_t bufferCount)
 {
-	for (auto& semaphore : _acquireSemaphores)
-		vkDestroySemaphore(device->get_device(), semaphore, nullptr);
-
 	for (uint32_t i = 0; i != bufferCount; ++i)
 	{
 		auto& fences = _freeFences[i];
@@ -379,11 +349,6 @@ VkFence vulkan::VulkanCommandManager::SynchronizationManager::get_free_fence(Vul
 	_lockedFences[bufferIndex].push_back(fence);
 	_freeFences[bufferIndex].pop_back();
 	return fence;
-}
-
-VkSemaphore vulkan::VulkanCommandManager::SynchronizationManager::get_acquire_semaphore(uint32_t bufferIndex)
-{
-	return _acquireSemaphores.at(bufferIndex);
 }
 
 void vulkan::clear_after_submission(

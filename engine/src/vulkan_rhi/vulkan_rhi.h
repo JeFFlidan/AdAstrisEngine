@@ -23,12 +23,12 @@ namespace ad_astris::vulkan
 		public:
 			virtual void init(rhi::RHIInitContext& initContext) override;
 			virtual void cleanup() override;
-
-			virtual void create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info) override;
+		
+			virtual void create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info, acore::IWindow* window) override;
 			virtual void destroy_swap_chain(rhi::SwapChain* swapChain) override;
 			virtual void get_swap_chain_texture_views(std::vector<rhi::TextureView>& textureViews) override;
 
-			virtual bool acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex) override;
+			virtual void reset_cmd_buffers(uint32_t currentFrameIndex) override;
 		
 			virtual void create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data = nullptr) override;
 			virtual void create_buffer(rhi::Buffer* buffer, void* data = nullptr) override;
@@ -56,7 +56,7 @@ namespace ad_astris::vulkan
 			virtual void begin_command_buffer(rhi::CommandBuffer* cmd, rhi::QueueType queueType = rhi::QueueType::GRAPHICS) override;
 			virtual void wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer* waitForCmd) override;
 			virtual void submit(rhi::QueueType queueType = rhi::QueueType::GRAPHICS, bool waitAfterSubmitting = false) override;
-			virtual bool present() override;
+			virtual void present() override;
 			virtual void wait_fences() override;
 
 			virtual void copy_buffer(
@@ -88,9 +88,9 @@ namespace ad_astris::vulkan
 			virtual void begin_render_pass(rhi::CommandBuffer* cmd, rhi::RenderPass* renderPass, rhi::ClearValues& clearValues) override;
 			virtual void end_render_pass(rhi::CommandBuffer* cmd) override;
 			virtual void begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingBeginInfo* beginInfo) override;
+			virtual void begin_rendering(rhi::CommandBuffer* cmd, rhi::SwapChain* swapChain, rhi::ClearValues* clearValues) override;
 			virtual void end_rendering(rhi::CommandBuffer* cmd) override;
-			virtual void begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi::ClearValues* clearValues) override;
-			virtual void end_rendering_swap_chain(rhi::CommandBuffer* cmd) override;
+			virtual void end_rendering(rhi::CommandBuffer* cmd, rhi::SwapChain* swapChain) override;
 			virtual void draw(rhi::CommandBuffer* cmd, uint64_t vertexCount) override;
 			virtual void draw_indexed(
 				rhi::CommandBuffer* cmd,
@@ -131,26 +131,25 @@ namespace ad_astris::vulkan
 
 			VulkanDevice* get_device() const { return _device.get(); }
 			VulkanInstance* get_instance() const { return _instance.get(); }
-			VulkanSwapChain* get_swap_chain() const { return _swapChain.get(); }
+			VulkanSwapChain* get_swap_chain() const { return _mainSwapChain.get(); }
 			uint32_t get_current_image_index() const { return _currentImageIndex; }
 		
 		private:
 			io::FileSystem* _fileSystem{ nullptr };
-			acore::IWindow* _mainWindow{ nullptr };
 			std::unique_ptr<VulkanInstance> _instance{ nullptr };
-			std::unique_ptr<VulkanSurface> _surface{ nullptr };
 			std::unique_ptr<VulkanDevice> _device{ nullptr };
 			std::unique_ptr<VulkanCommandManager> _cmdManager{ nullptr };
-			std::unique_ptr<VulkanSwapChain> _swapChain{ nullptr };
+			std::unique_ptr<VulkanSwapChain> _mainSwapChain{ nullptr };
 			std::unique_ptr<VulkanDescriptorManager> _descriptorManager{ nullptr };
 			std::unique_ptr<VulkanPipelineLayoutCache> _pipelineLayoutCache{ nullptr };
 			VulkanPipelineCache _pipelineCache;
 			VulkanObjectPool _vkObjectPool;
 			VulkanAttachmentManager _attachmentManager;
+			std::vector<VulkanSwapChain*> _activeSwapChains;
 
 			uint32_t _currentImageIndex{ 0 };
 
-			void set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier);
+			void print_gpu_info();
 			void recreate_swap_chain();
 	};
 }

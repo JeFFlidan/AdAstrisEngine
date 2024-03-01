@@ -6,6 +6,7 @@ using namespace ad_astris::vulkan;
 
 VulkanObjectPool::VulkanObjectPool()
 {
+	create_pool_for_new_resource<VulkanSwapChain>(4);
 	create_pool_for_new_resource<VulkanPipeline>(1024);
 	create_pool_for_new_resource<VulkanShader>(1024);
 	create_pool_for_new_resource<VulkanBuffer>(512);

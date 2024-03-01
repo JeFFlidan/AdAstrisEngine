@@ -6,7 +6,7 @@ using namespace impl;
 
 void TemporalFilter::prepare_render_pass()
 {
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("TAAOutput", _mainWindow->get_width(), _mainWindow->get_height());
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("TAAOutput", IMAGE_WIDTH, IMAGE_HEIGHT);
 	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("TAAOutput", "TAAOutput");
 
 	rcore::IRenderPass* renderPass = RENDER_GRAPH()->add_new_pass("TAA", rcore::RenderGraphQueue::GRAPHICS);

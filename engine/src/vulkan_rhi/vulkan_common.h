@@ -102,4 +102,9 @@ namespace ad_astris::vulkan
 	{
 		return static_cast<VulkanQueryPool*>(queryPool->handle);
 	}
+
+	inline VulkanSwapChain* get_vk_obj(const rhi::SwapChain* swapChain)
+	{
+		return static_cast<VulkanSwapChain*>(swapChain->handle);
+	}
 }

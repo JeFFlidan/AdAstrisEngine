@@ -8,11 +8,11 @@ using namespace impl;
 
 void GBuffer::prepare_render_pass()
 {
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("gAlbedo", _mainWindow->get_width(), _mainWindow->get_height());
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("gNormal", _mainWindow->get_width(), _mainWindow->get_height());
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("gSurface", _mainWindow->get_width(), _mainWindow->get_height());
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("gAlbedo", IMAGE_WIDTH, IMAGE_HEIGHT);
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("gNormal", IMAGE_WIDTH, IMAGE_HEIGHT);
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("gSurface", IMAGE_WIDTH, IMAGE_HEIGHT);
 	//rendererResourceManager->allocate_color_attachment("gVelocity", _mainWindow->get_width(), _mainWindow->get_height());
-	RENDERER_RESOURCE_MANAGER()->allocate_depth_stencil_attachment("gDepthStencil", _mainWindow->get_width(), _mainWindow->get_height());
+	RENDERER_RESOURCE_MANAGER()->allocate_depth_stencil_attachment("gDepthStencil", IMAGE_WIDTH, IMAGE_HEIGHT);
 	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("gAlbedo", "gAlbedo");
 	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("gNormal", "gNormal");
 	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("gSurface", "gSurface");
@@ -37,14 +37,14 @@ void GBuffer::execute(rhi::CommandBuffer* cmd)
 {
 	auto rangeID = profiler::Profiler::begin_gpu_range("GBuffer", *cmd);
 	rhi::Viewport viewport;
-	viewport.width = _mainWindow->get_width();
-	viewport.height = _mainWindow->get_height();
+	viewport.width = IMAGE_WIDTH;
+	viewport.height = IMAGE_HEIGHT;
 	std::vector<rhi::Viewport> viewports = { viewport };
 	RHI()->set_viewports(cmd, viewports);
 
 	rhi::Scissor scissor;
-	scissor.right = _mainWindow->get_width();
-	scissor.bottom = _mainWindow->get_height();
+	scissor.right = (int32_t)IMAGE_WIDTH;
+	scissor.bottom = (int32_t)IMAGE_HEIGHT;
 	std::vector<rhi::Scissor> scissors = { scissor };
 	RHI()->set_scissors(cmd, scissors);
 	RHI()->bind_pipeline(cmd, PIPELINE_MANAGER()->get_builtin_pipeline(rcore::BuiltinPipelineType::GBUFFER));
@@ -69,7 +69,7 @@ void GBuffer::execute(rhi::CommandBuffer* cmd)
 
 void DeferredLighting::prepare_render_pass()
 {
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("DeferredLightingOutput", _mainWindow->get_width(), _mainWindow->get_height());
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("DeferredLightingOutput", IMAGE_WIDTH, IMAGE_HEIGHT);
 	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("DeferredLightingOutput", "DeferredLightingOutput");
 
 	rcore::IRenderPass* renderPass = RENDER_GRAPH()->add_new_pass("DeferredLighting", rcore::RenderGraphQueue::GRAPHICS);
@@ -92,14 +92,14 @@ void DeferredLighting::execute(rhi::CommandBuffer* cmd)
 {
 	profiler::RangeID rangeID = profiler::Profiler::begin_gpu_range("Deferred lighting", *cmd);
 	rhi::Viewport viewport;
-	viewport.width = _mainWindow->get_width();
-	viewport.height = _mainWindow->get_height();
+	viewport.width = IMAGE_WIDTH;
+	viewport.height = IMAGE_HEIGHT;
 	std::vector<rhi::Viewport> viewports = { viewport };
 	RHI()->set_viewports(cmd, viewports);
 
 	rhi::Scissor scissor;
-	scissor.right = _mainWindow->get_width();
-	scissor.bottom = _mainWindow->get_height();
+	scissor.right = (int32_t)IMAGE_WIDTH;
+	scissor.bottom = (int32_t)IMAGE_HEIGHT;
 	std::vector<rhi::Scissor> scissors = { scissor };
 	RHI()->set_scissors(cmd, scissors);
 

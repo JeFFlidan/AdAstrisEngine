@@ -31,32 +31,23 @@ void VulkanRHI::init(rhi::RHIInitContext& initContext)
 	assert(initContext.swapChainInfo != nullptr);
 	
 	_fileSystem = initContext.fileSystem;
-	_mainWindow = initContext.window;
 
 	_instance = std::make_unique<VulkanInstance>(initContext.validationMode);
 	_device = std::make_unique<VulkanDevice>(_instance.get(), initContext.gpuPreference);
-	_surface = std::make_unique<VulkanSurface>(_instance.get(), _device.get(), _mainWindow);
 	
-	_swapChain = std::make_unique<VulkanSwapChain>(_device.get(), _surface.get(), initContext.swapChainInfo);
-	_cmdManager = std::make_unique<VulkanCommandManager>(_device.get(), _swapChain.get());
+	_mainSwapChain = std::make_unique<VulkanSwapChain>(_device.get(), initContext.swapChainInfo, initContext.window);
+	_cmdManager = std::make_unique<VulkanCommandManager>(_device.get(), _mainSwapChain.get());
 	
-	_descriptorManager = std::make_unique<VulkanDescriptorManager>(_device.get(), _swapChain->get_buffers_count());
+	_descriptorManager = std::make_unique<VulkanDescriptorManager>(_device.get(), _mainSwapChain->get_buffers_count());
 	_pipelineLayoutCache = std::make_unique<VulkanPipelineLayoutCache>(_device.get(), _descriptorManager.get());
 	_pipelineCache.load_pipeline_cache(_device.get(), _fileSystem);
 
-	const auto& properties12 = _device->get_physical_device_vulkan_1_2_properties();
-	const auto& properties11 = _device->get_physical_device_vulkan_1_1_properties();
-	LOG_INFO("VulkanRHI::init(): Max samplers: {}", properties12.maxDescriptorSetUpdateAfterBindSamplers)
-	LOG_INFO("VulkanRHI::init(): Max sampled images: {}", properties12.maxDescriptorSetUpdateAfterBindSampledImages);
-	LOG_INFO("VulkanRHI::init(): Max storage images: {}", properties12.maxDescriptorSetUpdateAfterBindStorageImages)
-	LOG_INFO("VulkanRHI::init(): Max storage buffers: {}", properties12.maxDescriptorSetUpdateAfterBindStorageBuffers)
-
+	print_gpu_info();
+	
 	auto& physicalProperties = _device->get_physical_device_properties();
 	_gpuProperties.timestampFrequency = uint64_t(1.0 / (double)physicalProperties.properties.limits.timestampPeriod * 1000 * 1000 * 1000);
-	_gpuProperties.bufferCount = _swapChain->get_buffers_count();
+	_gpuProperties.bufferCount = _mainSwapChain->get_buffers_count();
 	_device->fill_gpu_properties(_gpuProperties);
-	
-	//LOG_INFO("TEST: {}", properties11.subgroupSize);
 }
 
 // TODO Must test it
@@ -64,31 +55,29 @@ void VulkanRHI::cleanup()
 {
 	_cmdManager->wait_all_fences();
 	_pipelineCache.save_pipeline_cache(_device.get(), _fileSystem);
+	_mainSwapChain->destroy(_device.get());
 	_vkObjectPool.cleanup(_device.get());
 	_pipelineCache.destroy(_device.get());
 	_pipelineLayoutCache->cleanup();
 	_descriptorManager->cleanup();
 	_cmdManager->cleanup();
 	_device->cleanup();
-	_surface->cleanup(_instance.get());
 	_instance->cleanup();
 }
 
-void VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info)
+void VulkanRHI::create_swap_chain(rhi::SwapChain* swapChain, rhi::SwapChainInfo* info, acore::IWindow* window)
 {
 	assert(swapChain && info);
 	
-	_swapChain = std::make_unique<VulkanSwapChain>(_device.get(), _surface.get(), info);
-	_cmdManager = std::make_unique<VulkanCommandManager>(_device.get(), _swapChain.get());
-	swapChain->handle = _swapChain.get();
+	swapChain->handle = _vkObjectPool.allocate<VulkanSwapChain>(_device.get(), info, window);
 	swapChain->info = *info;
 }
 
 void VulkanRHI::destroy_swap_chain(rhi::SwapChain* swapChain)
 {
 	assert(swapChain);
-
-	_swapChain.reset();
+	
+	_vkObjectPool.free(static_cast<VulkanSwapChain*>(swapChain->handle), _device.get());
 	swapChain->handle = nullptr;
 }
 
@@ -98,15 +87,10 @@ void VulkanRHI::get_swap_chain_texture_views(std::vector<rhi::TextureView>& text
 	// 	textureViews.push_back(textureView);
 }
 
-bool VulkanRHI::acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex)
+void VulkanRHI::reset_cmd_buffers(uint32_t currentFrameIndex)
 {
-	if (!_cmdManager->acquire_next_image(_swapChain.get(), nextImageIndex, currentFrameIndex))
-	{
-		recreate_swap_chain();
-		return false;
-	}
-	_currentImageIndex = nextImageIndex;
-	return true;
+	_currentImageIndex = currentFrameIndex;
+	_cmdManager->reset_cmd_buffers(currentFrameIndex);
 }
 
 void VulkanRHI::create_buffer(rhi::Buffer* buffer, rhi::BufferInfo* bufInfo, void* data)
@@ -320,7 +304,7 @@ void VulkanRHI::wait_command_buffer(rhi::CommandBuffer* cmd, rhi::CommandBuffer*
 {
 	VulkanCommandBuffer* cmd1 = static_cast<VulkanCommandBuffer*>(cmd->handle);
 	VulkanCommandBuffer* cmd2 = static_cast<VulkanCommandBuffer*>(waitForCmd->handle);
-	_cmdManager->wait_for_cmd_buffer(cmd1, cmd2);
+	cmd1->wait_for_cmd(cmd2);
 }
 
 void VulkanRHI::submit(rhi::QueueType queueType, bool waitAfterSubmitting)
@@ -336,14 +320,10 @@ void VulkanRHI::submit(rhi::QueueType queueType, bool waitAfterSubmitting)
 	}
 }
 
-bool VulkanRHI::present()
+void VulkanRHI::present()
 {
-	if (!_device->get_graphics_queue()->present(_swapChain.get(), _currentImageIndex))
-	{
-		recreate_swap_chain();
-		return false;
-	}
-	return true;
+	_device->get_graphics_queue()->present(_activeSwapChains);
+	_activeSwapChains.clear();
 }
 
 void VulkanRHI::wait_fences()
@@ -719,7 +699,7 @@ void VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingBeginInfo
 	}
 	else
 	{
-		renderingInfo.renderArea.extent = { _mainWindow->get_width(), _mainWindow->get_height() };
+		renderingInfo.renderArea.extent = { _mainSwapChain->get_width(), _mainSwapChain->get_height() };
 	}
 	renderingInfo.colorAttachmentCount = 0;
 	renderingInfo.pColorAttachments = nullptr;
@@ -790,15 +770,13 @@ void VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::RenderingBeginInfo
 	vkCmdBeginRendering(get_vk_obj(cmd)->get_handle(), &renderingInfo);
 }
 
-void VulkanRHI::end_rendering(rhi::CommandBuffer* cmd)
-{
-	assert(cmd->handle);
-	vkCmdEndRendering(get_vk_obj(cmd)->get_handle());
-}
-
-void VulkanRHI::begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi::ClearValues* clearValues)
+void VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::SwapChain* swapChain, rhi::ClearValues* clearValues)
 {
 	assert(cmd->handle && clearValues);
+	
+	VulkanSwapChain* vkSwapChain = swapChain ? get_vk_obj(swapChain) : _mainSwapChain.get();
+	_activeSwapChains.push_back(vkSwapChain);
+	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
 		
 	VkRenderingInfo renderingInfo{};
 	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
@@ -808,27 +786,34 @@ void VulkanRHI::begin_rendering_swap_chain(rhi::CommandBuffer* cmd, rhi::ClearVa
 	renderingInfo.layerCount = 1;
 	renderingInfo.renderArea.offset.x = 0;
 	renderingInfo.renderArea.offset.y = 0;
-	renderingInfo.renderArea.extent.width = _swapChain->get_width();
-	renderingInfo.renderArea.extent.height = _swapChain->get_height();
+	renderingInfo.renderArea.extent.width = vkSwapChain->get_width();
+	renderingInfo.renderArea.extent.height = vkSwapChain->get_height();
 	
 	VkRenderingAttachmentInfo attachmentInfo{};
 	attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
 	attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	attachmentInfo.imageView = _swapChain->get_image_view_handle(_currentImageIndex);
+	attachmentInfo.imageView = vkSwapChain->get_image_view_handle();
 	attachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachmentInfo.clearValue.color = { { clearValues->color[0], clearValues->color[1], clearValues->color[2], clearValues->color[3] } };
 
 	renderingInfo.pColorAttachments = &attachmentInfo;
-	set_swap_chain_image_barrier(cmd, false);
-	vkCmdBeginRendering(get_vk_obj(cmd)->get_handle(), &renderingInfo);
+	vkSwapChain->prepare_for_drawing(vkCmd);
+	vkCmdBeginRendering(vkCmd->get_handle(), &renderingInfo);
 }
 
-void VulkanRHI::end_rendering_swap_chain(rhi::CommandBuffer* cmd)
+void VulkanRHI::end_rendering(rhi::CommandBuffer* cmd)
 {
 	assert(cmd->handle);
 	vkCmdEndRendering(get_vk_obj(cmd)->get_handle());
-	set_swap_chain_image_barrier(cmd, true);
+}
+
+void VulkanRHI::end_rendering(rhi::CommandBuffer* cmd, rhi::SwapChain* swapChain)
+{
+	assert(cmd->handle && swapChain->handle);
+	vkCmdEndRendering(get_vk_obj(cmd)->get_handle());
+	VulkanSwapChain* vkSwapChain = swapChain ? get_vk_obj(swapChain) : _mainSwapChain.get();
+	vkSwapChain->prepare_for_presenting(get_vk_obj(cmd));
 }
 
 void VulkanRHI::draw(rhi::CommandBuffer* cmd, uint64_t vertexCount)
@@ -1119,52 +1104,31 @@ rhi::GPUMemoryUsage VulkanRHI::get_memory_usage()
 	return memoryUsage;
 }
 
-void VulkanRHI::set_swap_chain_image_barrier(rhi::CommandBuffer* cmd, bool useAfterDrawingImageBarrier)
+void VulkanRHI::print_gpu_info()
 {
-	VkImageMemoryBarrier2 imageBarrier{};
-	imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-	imageBarrier.image = _swapChain->get_image_handle(_currentImageIndex);
-	if (useAfterDrawingImageBarrier)
+	const VkPhysicalDeviceMemoryProperties& memoryProperties = _device->get_memory_properties().memoryProperties;
+	VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+	vmaGetHeapBudgets(_device->get_allocator(), budgets);
+	for (auto i = 0; i != memoryProperties.memoryHeapCount; ++i)
 	{
-		imageBarrier.oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-		imageBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		imageBarrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-		imageBarrier.dstAccessMask = VK_ACCESS_2_NONE;
+		if (memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+		{
+			LOG_INFO("VulkanRHI::init(): GPU heap budget: {}", budgets[i].budget)
+		}
 	}
-	else
-	{
-		imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imageBarrier.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-		imageBarrier.srcAccessMask = VK_ACCESS_2_NONE;
-		imageBarrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
-	}
-	imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-	imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
-	imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	imageBarrier.subresourceRange.baseArrayLayer = 0;
-	imageBarrier.subresourceRange.baseMipLevel = 0;
-	imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	
-	VkDependencyInfo dependencyInfo{};
-	dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-	dependencyInfo.memoryBarrierCount = 0;
-	dependencyInfo.pMemoryBarriers = nullptr;
-	dependencyInfo.pBufferMemoryBarriers = nullptr;
-	dependencyInfo.bufferMemoryBarrierCount = 0;
-	dependencyInfo.imageMemoryBarrierCount = 1;
-	dependencyInfo.pImageMemoryBarriers = &imageBarrier;
 
-	vkCmdPipelineBarrier2(get_vk_obj(cmd)->get_handle(), &dependencyInfo);
+	const auto& properties12 = _device->get_physical_device_vulkan_1_2_properties();
+	const auto& properties11 = _device->get_physical_device_vulkan_1_1_properties();
+	LOG_INFO("VulkanRHI::init(): Max samplers: {}", properties12.maxDescriptorSetUpdateAfterBindSamplers)
+	LOG_INFO("VulkanRHI::init(): Max sampled images: {}", properties12.maxDescriptorSetUpdateAfterBindSampledImages);
+	LOG_INFO("VulkanRHI::init(): Max storage images: {}", properties12.maxDescriptorSetUpdateAfterBindStorageImages)
+	LOG_INFO("VulkanRHI::init(): Max storage buffers: {}", properties12.maxDescriptorSetUpdateAfterBindStorageBuffers)
+	LOG_INFO("VulkanRHI::init(): Max multiview count: {}", properties11.maxMultiviewViewCount)
 }
 
 void VulkanRHI::recreate_swap_chain()
 {
 	vkDeviceWaitIdle(_device->get_device());
-	uint32_t width = _mainWindow->get_width();
-	uint32_t height = _mainWindow->get_height();
-	_attachmentManager.recreate_attachments(_device.get(), _descriptorManager.get(), width, height);
-	_swapChain->recreate(width, height);
+	_mainSwapChain->recreate();
+	//_attachmentManager.recreate_attachments(_device.get(), _descriptorManager.get(), _mainSwapChain->get_width(), _mainSwapChain->get_height());
 }

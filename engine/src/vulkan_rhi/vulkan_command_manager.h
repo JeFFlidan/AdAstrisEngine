@@ -28,6 +28,13 @@ namespace ad_astris::vulkan
 			VulkanCommandBuffer(VulkanDevice* device, VkCommandPool pool, VkPipelineStageFlags2 waitFlag);
 			~VulkanCommandBuffer();
 
+			void wait_for_cmd(VulkanCommandBuffer* cmd)
+			{
+				_waitSemaphores.push_back(cmd->_signalSemaphore);
+				_waitFlags.push_back(cmd->_stageFlag);
+			}
+		
+			void add_wait_semaphore(VkSemaphore semaphore) { _waitSemaphores.push_back(semaphore); }
 			VkCommandBuffer get_handle() const { return _cmdBuffer; }
 		
 		private:
@@ -77,20 +84,16 @@ namespace ad_astris::vulkan
 		public:
 			VulkanCommandManager(VulkanDevice* device, VulkanSwapChain* swapChain);
 			void cleanup();
-		
-			VulkanCommandBuffer* get_command_buffer(rhi::QueueType queueType = rhi::QueueType::GRAPHICS);
-			// cmd waits for waitForCmd
-			void wait_for_cmd_buffer(VulkanCommandBuffer* cmd, VulkanCommandBuffer* waitForCmd);
-			void submit(rhi::QueueType queueType, bool useSignalSemaphores);
 
-			bool acquire_next_image(
-				VulkanSwapChain* swapChain,
-				uint32_t& nextImageIndex,
-				uint32_t currentFrameIndex);
+			void reset_cmd_buffers(uint32_t frameIndex);
+			VulkanCommandBuffer* get_command_buffer(rhi::QueueType queueType = rhi::QueueType::GRAPHICS);
+			void submit(rhi::QueueType queueType, bool useSignalSemaphores);
 
 			VkFence get_free_fence();
 			void wait_fences();
 			void wait_all_fences();
+
+			void set_buffer_index(uint32_t frameIndex) { _frameIndex = frameIndex; }
 		
 		private:
 			VulkanDevice* _device;
@@ -100,8 +103,7 @@ namespace ad_astris::vulkan
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedTransferCmdPools;
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _freeComputeCmdPools;
 			std::vector<std::vector<std::unique_ptr<VulkanCommandPool>>> _lockedComputeCmdPools;
-			uint32_t _imageIndex{ 0 };
-			std::atomic_bool _firstCmdBuffer{ false };
+			uint32_t _frameIndex{ 0 };
 
 			class SynchronizationManager
 			{
@@ -111,12 +113,10 @@ namespace ad_astris::vulkan
 					void wait_fences(VulkanDevice* device, uint32_t bufferIndex);
 					//void wait_all_fences();
 					VkFence get_free_fence(VulkanDevice* device, uint32_t bufferIndex);
-					VkSemaphore get_acquire_semaphore(uint32_t bufferIndex);
 
 				private:
 					std::vector<std::vector<VkFence>> _freeFences;
 					std::vector<std::vector<VkFence>> _lockedFences;
-					std::vector<VkSemaphore> _acquireSemaphores;
 			};
 
 			SynchronizationManager _syncManager;

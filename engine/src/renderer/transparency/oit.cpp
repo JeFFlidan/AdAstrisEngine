@@ -20,10 +20,10 @@ void OITGeometry::execute(rhi::CommandBuffer* cmd)
 
 void OIT::prepare_render_pass()
 {
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("OITColor", _mainWindow->get_width(), _mainWindow->get_height());
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("OITColor", IMAGE_WIDTH, IMAGE_HEIGHT);
 	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("OITColor", "OITColor");
 
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("OITVelocity", _mainWindow->get_width(), _mainWindow->get_height());
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("OITVelocity", IMAGE_WIDTH, IMAGE_HEIGHT);
 	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("OITVelocity", "OITVelocity");
 
 	rcore::IRenderPass* renderPass = RENDER_GRAPH()->add_new_pass("OIT", rcore::RenderGraphQueue::GRAPHICS);

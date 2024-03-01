@@ -37,7 +37,7 @@ namespace ad_astris::renderer::impl
 
 			void init_global_objects(GlobalObjectContext* context);
 			void init_module_objects();
-			void get_current_frame_index();
+			void get_next_frame_index();
 			void set_backbuffer(const std::string& textureName);
 	};
 }

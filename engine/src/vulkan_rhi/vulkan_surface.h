@@ -2,14 +2,13 @@
 
 #include "vulkan_instance.h"
 #include "vulkan_device.h"
-#include "application_core/window.h"
 
 namespace ad_astris::vulkan
 {
 	class VulkanSurface
 	{
 		public:
-			VulkanSurface(VulkanInstance* instance, VulkanDevice* device, acore::IWindow* window);
+			VulkanSurface(VulkanDevice* device, acore::IWindow* window);
 			void cleanup(VulkanInstance* instance);
 
 			VkSurfaceKHR get_handle() const { return _surface; }

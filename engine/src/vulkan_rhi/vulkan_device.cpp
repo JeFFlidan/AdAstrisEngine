@@ -6,13 +6,12 @@
 using namespace ad_astris;
 using namespace vulkan;
 
-VulkanDevice::VulkanDevice(VulkanInstance* instance, rhi::GpuPreference gpuPreference)
+VulkanDevice::VulkanDevice(VulkanInstance* instance, rhi::GpuPreference gpuPreference) : _instance(instance)
 {
-	assert(instance);
 	LOG_INFO("VulkanDevice::VulkanDevice(): Start initing")
 	
-	pick_device(instance->get_handle(), gpuPreference);
-	create_allocator(instance->get_handle());
+	pick_device(gpuPreference);
+	create_allocator();
 
 	LOG_INFO("VulkanDevice::VulkanDevice(): Finish initing")
 }
@@ -126,12 +125,24 @@ void VulkanDevice::fill_gpu_properties(rhi::GpuProperties& gpuProperties)
 		LOG_INFO("Vulkan: GPU has sparse tile pool capability")
 		gpuProperties.capabilities |= rhi::GpuCapability::SPARSE_TILE_POOL;
 	}
-	for (uint32_t i = 0; i != _memoryProperties2.memoryProperties.memoryHeapCount; ++i)
+	const VkPhysicalDeviceMemoryProperties& memoryProperties = _memoryProperties2.memoryProperties;
+	for (uint32_t i = 0; i != memoryProperties.memoryHeapCount; ++i)
 	{
-		if (_memoryProperties2.memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+		if (memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
 		{
-			LOG_INFO("Vulkan: GPU has cache coherent UMA capability")
-			gpuProperties.capabilities |= rhi::GpuCapability::CACHE_COHERENT_UMA;
+			for (uint32_t j = 0; j != memoryProperties.memoryTypeCount; ++j)
+			{
+				if (memoryProperties.memoryTypes[j].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT &&
+					memoryProperties.memoryTypes[j].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+				{
+					LOG_INFO("Vulkan: GPU has cache coherent UMA capability")
+					gpuProperties.capabilities |= rhi::GpuCapability::CACHE_COHERENT_UMA;
+					break;
+				}
+			}
+		}
+		if (has_flag(gpuProperties.capabilities, rhi::GpuCapability::CACHE_COHERENT_UMA))
+		{
 			break;
 		}
 	}
@@ -143,17 +154,17 @@ void VulkanDevice::cleanup()
 	vkDestroyDevice(_device, nullptr);
 }
 
-void VulkanDevice::pick_device(VkInstance instance, rhi::GpuPreference preference)
+void VulkanDevice::pick_device(rhi::GpuPreference preference)
 {
 	uint32_t deviceCount;
-	VK_CHECK(vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr));
+	VK_CHECK(vkEnumeratePhysicalDevices(_instance->get_handle(), &deviceCount, nullptr));
 	if (deviceCount == 0)
 	{
 		LOG_FATAL("VulkanDevice::pick_physical_device(): Device count is 0")
 	}
 
 	std::vector<VkPhysicalDevice> devices(deviceCount);
-	VK_CHECK(vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()));
+	VK_CHECK(vkEnumeratePhysicalDevices(_instance->get_handle(), &deviceCount, devices.data()));
 
 	std::vector<const char*> enabledExtensions;
 	
@@ -424,7 +435,7 @@ bool VulkanDevice::is_extension_supported(const char* requiredExtension, const s
 	return false;
 }
 
-void VulkanDevice::create_allocator(VkInstance instance)
+void VulkanDevice::create_allocator()
 {
 	VmaVulkanFunctions vmaVulkanFunctions{};
 	vmaVulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -452,7 +463,7 @@ void VulkanDevice::create_allocator(VkInstance instance)
 	VmaAllocatorCreateInfo allocatorCreateInfo{};
 	allocatorCreateInfo.physicalDevice = _physicalDevice;
 	allocatorCreateInfo.device = _device;
-	allocatorCreateInfo.instance = instance;
+	allocatorCreateInfo.instance = _instance->get_handle();
 	
 	if (_features1_2.bufferDeviceAddress)
 	{

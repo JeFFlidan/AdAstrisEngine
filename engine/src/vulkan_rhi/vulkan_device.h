@@ -20,6 +20,7 @@ namespace ad_astris::vulkan
 			void fill_gpu_properties(rhi::GpuProperties& gpuProperties);
 			void cleanup();
 		
+			VulkanInstance* get_instance() const { return _instance; }
 			VkPhysicalDevice get_physical_device() const { return _physicalDevice; }
 			VkDevice get_device() const { return _device; }
 			VmaAllocator get_allocator() const { return _allocator; }
@@ -85,6 +86,7 @@ namespace ad_astris::vulkan
 			}
 		
 		private:
+			VulkanInstance* _instance{ nullptr };
 			VkPhysicalDevice _physicalDevice{ VK_NULL_HANDLE };
 			VkDevice _device{ VK_NULL_HANDLE };
 			VmaAllocator _allocator{ VK_NULL_HANDLE };
@@ -120,9 +122,9 @@ namespace ad_astris::vulkan
 			std::unique_ptr<VulkanQueue> _transferQueue{ nullptr };
 			std::unique_ptr<VulkanQueue> _presentQueue{ nullptr };
 		
-			void pick_device(VkInstance instance, rhi::GpuPreference preference);
+			void pick_device(rhi::GpuPreference preference);
 			bool validate_physical_device(VkPhysicalDevice device, std::vector<const char*>& enabledExtensions);
 			bool is_extension_supported(const char* requiredExtension, const std::vector<VkExtensionProperties>& availableExtensions);
-			void create_allocator(VkInstance instance);
+			void create_allocator();
 	};
 }

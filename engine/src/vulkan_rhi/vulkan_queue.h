@@ -16,7 +16,7 @@ namespace ad_astris::vulkan
 			VulkanQueue(VulkanDevice* device, uint32_t queueFamily, rhi::QueueType queueType, bool isSparseBindingSupported);
 		
 			void submit(VulkanCommandManager& cmdManager, bool useSignalSemaphores);
-			bool present(VulkanSwapChain* swapChain, uint32_t currentImageIndex);
+			bool present(const std::vector<VulkanSwapChain*>& swapChains);
 			void cleanup_present_wait_semaphores() { _presentWaitSemaphores.clear(); }
 
 			VkQueue get_handle() const { return _queue; }

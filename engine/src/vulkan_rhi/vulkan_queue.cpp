@@ -22,17 +22,17 @@ void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager, bool useSigna
 	{
 		case rhi::QueueType::GRAPHICS:
 		{
-			cmdPools = &cmdManager._lockedGraphicsCmdPools[cmdManager._imageIndex];
+			cmdPools = &cmdManager._lockedGraphicsCmdPools[cmdManager._frameIndex];
 			break;
 		}
 		case rhi::QueueType::COMPUTE:
 		{
-			cmdPools = &cmdManager._lockedComputeCmdPools[cmdManager._imageIndex];
+			cmdPools = &cmdManager._lockedComputeCmdPools[cmdManager._frameIndex];
 			break;
 		}
 		case rhi::QueueType::TRANSFER:
 		{
-			cmdPools = &cmdManager._lockedTransferCmdPools[cmdManager._imageIndex];
+			cmdPools = &cmdManager._lockedTransferCmdPools[cmdManager._frameIndex];
 			break;
 		}
 	}
@@ -88,25 +88,38 @@ void vulkan::VulkanQueue::submit(VulkanCommandManager& cmdManager, bool useSigna
 	VK_CHECK(vkQueueSubmit2(_queue, submitInfos.size(), submitInfos.data(), cmdManager.get_free_fence()));
 }
 
-bool vulkan::VulkanQueue::present(VulkanSwapChain* swapChain, uint32_t currentImageIndex)
+bool vulkan::VulkanQueue::present(const std::vector<VulkanSwapChain*>& swapChains)
 {
 	if (_queueType != rhi::QueueType::GRAPHICS)
 	{
 		LOG_INFO("VulkanQueue::present(): Can't present non graphics queue")
 		return false;
 	}
+
+	std::vector<VkSwapchainKHR> swapChainHandles(swapChains.size());
+	std::vector<uint32_t> imageIndices(swapChains.size());
+	for (uint32_t i = 0; i != swapChains.size(); ++i)
+	{
+		swapChainHandles[i] = swapChains[i]->get_handle();
+		imageIndices[i] = swapChains[i]->get_frame_index();
+	}
+	
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	VkSwapchainKHR swapchain = swapChain->get_handle();
-	presentInfo.pSwapchains = &swapchain;
-	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChainHandles.data();
+	presentInfo.swapchainCount = swapChains.size();
 	presentInfo.pWaitSemaphores = _presentWaitSemaphores.data();
 	presentInfo.waitSemaphoreCount = _presentWaitSemaphores.size();
-	presentInfo.pImageIndices = &currentImageIndex;
+	presentInfo.pImageIndices = imageIndices.data();
 	VkResult result = vkQueuePresentKHR(_queue, &presentInfo);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-		return false;
+	{
+		for (auto& swapChain : swapChains)
+		{
+			swapChain->recreate();
+		}
+	}
 	
 	return true;
 }

@@ -164,9 +164,9 @@ void RenderGraph::draw(tasks::TaskGroup* taskGroup)
 
 	rhi::ClearValues clearValues;
 	clearValues.color = { 0.0f, 0.0f, 0.0f, 1.0f };
-	_rhi->begin_rendering_swap_chain(&cmd, &clearValues);
+	_rhi->begin_rendering(&cmd, nullptr, &clearValues);
 	_swapChainExecutor->execute(&cmd);
-	_rhi->end_rendering_swap_chain(&cmd);
+	_rhi->end_rendering(&cmd, nullptr);
 }
 
 void RenderGraph::solve_graph(RenderPass* passHandle, uint32_t passesInStackCount)

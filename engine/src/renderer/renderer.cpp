@@ -58,9 +58,7 @@ void Renderer::bake()
 	_renderPassExecutors.push_back(std::move(swapChainPass));
 
 	RENDER_GRAPH()->set_swap_chain_input("DeferredLightingOutput");
-	LOG_INFO("BEFORE BAKE")
 	RENDER_GRAPH()->bake();
-	LOG_INFO("AFTER BAKE")
 
 	PIPELINE_MANAGER()->create_builtin_pipelines();
 
@@ -72,32 +70,21 @@ void Renderer::bake()
 
 void Renderer::draw(DrawContext& drawContext)
 {
-	uint32_t acquiredImageIndex;
-	if (!RHI()->acquire_next_image(acquiredImageIndex, FRAME_INDEX))
-	{
-		set_backbuffer("DeferredLightingOutput");
-		return;
-	}
-	profiler::Profiler::begin_gpu_frame();
+	RHI()->reset_cmd_buffers(FRAME_INDEX);
 	
+	profiler::Profiler::begin_gpu_frame();
+
 	SCENE_MANAGER()->setup_global_buffers();
 	_frameData.update_uniform_buffers(drawContext);
 
 	tasks::TaskGroup taskGroup;
 	RENDER_GRAPH()->draw(&taskGroup);
-	
+
 	profiler::Profiler::end_gpu_frame();
 	
 	RHI()->submit(rhi::QueueType::GRAPHICS);
-	if (!RHI()->present())
-	{
-		set_backbuffer("DeferredLightingOutput");
-		FRAME_INDEX = 0;
-	}
-	else
-	{
-		get_current_frame_index();
-	}
+	RHI()->present();
+	get_next_frame_index();
 }
 
 void Renderer::init_global_objects(GlobalObjectContext* context)
@@ -123,7 +110,7 @@ void Renderer::init_module_objects()
 	LOG_INFO("Renderer::init(): Initialized ui backend")
 }
 
-void Renderer::get_current_frame_index()
+void Renderer::get_next_frame_index()
 {
 	if (++FRAME_INDEX > RHI()->get_buffer_count() - 1)
 		FRAME_INDEX = 0;

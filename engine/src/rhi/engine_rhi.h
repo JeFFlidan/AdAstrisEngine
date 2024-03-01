@@ -6,7 +6,6 @@
 #include <vector>
 #include <array>
 
-
 namespace ad_astris::rhi
 {
 	struct RHIInitContext
@@ -25,12 +24,11 @@ namespace ad_astris::rhi
 		
 			virtual void init(RHIInitContext& initContext) = 0;
 			virtual void cleanup() = 0;
-
-			virtual void create_swap_chain(SwapChain* swapChain, SwapChainInfo* info) = 0;
+		
+			virtual void create_swap_chain(SwapChain* swapChain, SwapChainInfo* info, acore::IWindow* window) = 0;
 			virtual void destroy_swap_chain(SwapChain* swapChain) = 0;
 			virtual void get_swap_chain_texture_views(std::vector<TextureView>& textureViews) = 0;
-
-			virtual bool acquire_next_image(uint32_t& nextImageIndex, uint32_t currentFrameIndex) = 0;
+			virtual void reset_cmd_buffers(uint32_t currentFrameIndex) = 0;
 
 			// Can create an empty buffer or buffer with data
 			virtual void create_buffer(Buffer* buffer, BufferInfo* info, void* data = nullptr) = 0;
@@ -55,7 +53,7 @@ namespace ad_astris::rhi
 			virtual void begin_command_buffer(CommandBuffer* cmd, QueueType queueType = QueueType::GRAPHICS) = 0;
 			virtual void wait_command_buffer(CommandBuffer* cmd, CommandBuffer* waitForCmd) = 0;
 			virtual void submit(QueueType queueType = QueueType::GRAPHICS, bool waitAfterSubmitting = false) = 0;
-			virtual bool present() = 0;
+			virtual void present() = 0;
 			virtual void wait_fences() = 0;
 
 			// If size = 0 (default value), method will copy whole srcBuffer to dstBuffer
@@ -96,9 +94,10 @@ namespace ad_astris::rhi
 			// No render passes
 			virtual void begin_rendering(CommandBuffer* cmd, RenderingBeginInfo* beginInfo) = 0;
 			// No render passes
+			virtual void begin_rendering(CommandBuffer* cmd, SwapChain* swapChain, ClearValues* clearValues) = 0;
+			// No render passes
 			virtual void end_rendering(CommandBuffer* cmd) = 0;
-			virtual void begin_rendering_swap_chain(CommandBuffer* cmd, ClearValues* clearValues) = 0;
-			virtual void end_rendering_swap_chain(CommandBuffer* cmd) = 0;
+			virtual void end_rendering(CommandBuffer* cmd, SwapChain* swapChain) = 0;
 			// One buffer - one object
 			virtual void draw(CommandBuffer* cmd, uint64_t vertexCount) = 0;
 			virtual void draw_indexed(

@@ -6,7 +6,7 @@
 using namespace ad_astris;
 using namespace vulkan;
 
-VulkanSurface::VulkanSurface(VulkanInstance* instance, VulkanDevice* device, acore::IWindow* window)
+VulkanSurface::VulkanSurface(VulkanDevice* device, acore::IWindow* window)
 {
 	LOG_INFO("VulkanDevice::VulkanDevice(): Start creating surface")
 #ifdef _WIN32
@@ -14,7 +14,7 @@ VkWin32SurfaceCreateInfoKHR createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	createInfo.hwnd = window->get_hWnd();
 	createInfo.hinstance = GetModuleHandle(nullptr);
-	if (vkCreateWin32SurfaceKHR(instance->get_handle(), &createInfo, nullptr, &_surface) != VK_SUCCESS)
+	if (vkCreateWin32SurfaceKHR(device->get_instance()->get_handle(), &createInfo, nullptr, &_surface) != VK_SUCCESS)
 		LOG_FATAL("VulkanDevice::VulkanDevice(): Failed to create vulkan surface")
 #endif
 
