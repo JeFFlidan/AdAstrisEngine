@@ -6,7 +6,7 @@
 #include "engine_core/enums.h"
 #include "renderer/common.h"
 #include "renderer/module_objects.h"
-#include "renderer/cpu_buffer.h"
+#include "..\renderer_array.h"
 
 namespace ad_astris::renderer::impl
 {
@@ -170,8 +170,8 @@ namespace ad_astris::renderer::impl
 			struct BaseCullingContext
 			{
 				rhi::Buffer* cullingInstanceIndicesBuffer{ nullptr };
-				std::unique_ptr<CpuBuffer<DrawIndexedIndirectCommand>> indirectCommands;
-				std::unique_ptr<CpuBuffer<CullingInstanceIndices>> cullingInstanceIndices;
+				std::unique_ptr<RendererArray<DrawIndexedIndirectCommand>> indirectCommands;
+				std::unique_ptr<RendererArray<CullingInstanceIndices>> cullingInstanceIndices;
 				std::unordered_map<UUID, size_t> indirectBatchIndexByModelUUID;
 				uint32_t instanceCount{ 0 };
 				std::string entityFilterName;
@@ -188,10 +188,10 @@ namespace ad_astris::renderer::impl
 					IndirectBuffers& indirectBuffers = indirectBuffersByCameraIndex[cameraIndex];
 					indirectBuffers.cullingParamsIndex = cullingParamsIndex;
 	
-					indirectCommands = std::make_unique<CpuBuffer<DrawIndexedIndirectCommand>>(
+					indirectCommands = std::make_unique<RendererArray<DrawIndexedIndirectCommand>>(
 						entityFilterName + CPU_INDIRECT_BUFFER_NAME,
 						sizeof(DrawIndexedIndirectCommand) * INDIRECT_BATCH_INIT_NUMBER);
-					cullingInstanceIndices = std::make_unique<CpuBuffer<CullingInstanceIndices>>(
+					cullingInstanceIndices = std::make_unique<RendererArray<CullingInstanceIndices>>(
 						entityFilterName + CPU_CULLING_INDICES_BUFFER_NAME,
 						sizeof(CullingInstanceIndices) * MODEL_INSTANCES_INIT_NUMBER);
 
@@ -218,7 +218,7 @@ namespace ad_astris::renderer::impl
 			std::unordered_map<size_t, SceneCullingContext> _sceneCullingContextByEntityFilterHash;
 			std::vector<std::unique_ptr<ecs::IEntityFilter>> _shadowsEntityFilters;
 			std::unordered_map<size_t, ShadowsCullingContext> _shadowsCullingContextByEntityFilterHash;
-			std::unique_ptr<CpuBuffer<CullingParams>> _cullingParamsCpuBuffer;
+			std::unique_ptr<RendererArray<CullingParams>> _cullingParamsCpuBuffer;
 			rhi::Buffer* _cullingParamsBuffer;
 
 			SceneCullingContext* get_scene_culling_context(ecs::Entity entity);

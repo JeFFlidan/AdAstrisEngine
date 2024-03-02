@@ -14,27 +14,28 @@ constexpr uint32_t MATERIALS_INIT_NUMBER = 64;
 MaterialSubmanager::MaterialSubmanager()
 {
 	create_samplers();
+	allocate_buffers();
 }
 
 void MaterialSubmanager::update(rhi::CommandBuffer& cmdBuffer)
 {
-	if (!_areGPUBuffersAllocated)
-		allocate_gpu_buffers();
-
 	update_cpu_arrays(cmdBuffer);
 
-	RENDERER_RESOURCE_MANAGER()->update_buffer(
-		&cmdBuffer,
-		MATERIAL_BUFFER_NAME,
-		sizeof(RendererMaterial),
-		_rendererMaterials.data(),
-		_rendererMaterials.size(),
-		_rendererMaterials.size());
+	if (_rendererMaterials->is_gpu_collection())
+	{
+		RENDERER_RESOURCE_MANAGER()->update_buffer(
+			&cmdBuffer,
+			_rendererMaterials->get_mapped_buffer(),
+			_rendererMaterials->get_gpu_buffer(),
+			sizeof(RendererMaterial),
+			_rendererMaterials->get_element_count(),
+			_rendererMaterials->get_element_count());
+	}
 }
 
 void MaterialSubmanager::cleanup_after_update()
 {
-	_rendererMaterials.clear();
+	_rendererMaterials->clear();
 }
 
 bool MaterialSubmanager::need_update()
@@ -69,10 +70,22 @@ void MaterialSubmanager::subscribe_to_events()
 	EVENT_MANAGER()->subscribe(delegate1);
 }
 
-void MaterialSubmanager::allocate_gpu_buffers()
+void MaterialSubmanager::allocate_buffers()
 {
-	RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(MATERIAL_BUFFER_NAME, MATERIALS_INIT_NUMBER * sizeof(RendererMaterial));
-	_areGPUBuffersAllocated = true;
+	if (RHI()->has_capability(rhi::GpuCapability::CACHE_COHERENT_UMA))
+	{
+		_rendererMaterials = std::make_unique<RendererResourceCollection<RendererMaterial>>(
+		   MATERIAL_BUFFER_NAME,
+		   MATERIALS_INIT_NUMBER * sizeof(RendererMaterial));
+	}
+	else
+	{
+		_rendererMaterials = std::make_unique<RendererResourceCollection<RendererMaterial>>(
+			"Cpu" + MATERIAL_BUFFER_NAME,
+			MATERIAL_BUFFER_NAME,
+			rhi::ResourceUsage::STORAGE_BUFFER,
+			MATERIALS_INIT_NUMBER * sizeof(RendererMaterial));
+	}
 }
 
 void MaterialSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
@@ -143,8 +156,9 @@ void MaterialSubmanager::create_gpu_material(rhi::CommandBuffer& cmd, UUID cpuMa
 
 	ecore::OpaquePBRMaterialSettings* materialSettings = material->get_material_settings();
 
-	uint32_t rendererMaterialIndex = _rendererMaterials.size();
-	RendererMaterial& rendererMaterial = _rendererMaterials.emplace_back();
+	uint32_t rendererMaterialIndex = _rendererMaterials->get_element_count();
+	RendererMaterial& rendererMaterial = *_rendererMaterials->push_back();
+	rendererMaterial = RendererMaterial();	// temp solution, must reset RendererMaterial every frame
 	_gpuOpaqueMaterialIndexByCPUMaterialUUID[material->get_uuid()] = rendererMaterialIndex;
 
 	auto it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->baseColorTextureUUID);
@@ -203,5 +217,4 @@ void MaterialSubmanager::create_gpu_material(rhi::CommandBuffer& cmd, UUID cpuMa
 	}
 
 	rendererMaterial.set_sampler_index(RHI()->get_descriptor_index(&_samplers[SAMPLER_LINEAR_REPEAT]));
-
 }

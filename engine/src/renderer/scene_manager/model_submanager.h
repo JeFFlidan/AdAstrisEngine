@@ -34,16 +34,18 @@ namespace ad_astris::renderer::impl
 
 			rhi::Buffer* get_model_instance_buffer()
 			{
-				return RENDERER_RESOURCE_MANAGER()->get_buffer(MODEL_INSTANCE_BUFFER_NAME);
+				if (_modelInstances->is_gpu_collection())
+					return _modelInstances->get_gpu_buffer();
+				return _modelInstances->get_mapped_buffer();
 			}
 
 			void add_model(ecs::Entity entity);
 
 		private:
-			const std::string VERTEX_BUFFER_F32PNTC_NAME = "vertex_buffer_f32pntc";
-			const std::string INDEX_BUFFER_F32PNTC_NAME = "index_buffer_f32pntc";
-			const std::string OUTPUT_PLANE_VERTEX_BUFFER_NAME = "output_plane_buffer";
-			const std::string MODEL_INSTANCE_BUFFER_NAME = "model_instance_buffer";
+			const std::string VERTEX_BUFFER_F32PNTC_NAME = "VertexBufferF32PNTC";
+			const std::string INDEX_BUFFER_F32PNTC_NAME = "IndexBufferF32PNTC";
+			const std::string OUTPUT_PLANE_VERTEX_BUFFER_NAME = "OutputPlaneBuffer";
+			const std::string MODEL_INSTANCE_BUFFER_NAME = "ModelInstanceBuffer";
 
 			MaterialSubmanager* _materialSubmanager;
 		
@@ -59,7 +61,7 @@ namespace ad_astris::renderer::impl
 		
 			std::unordered_set<ecs::Entity> _staticModelEntities;
 			std::unordered_set<ecs::Entity> _skeletalModelEntities;
-			std::vector<RendererModelInstance> _modelInstances;
+			std::unique_ptr<RendererResourceCollection<RendererModelInstance>> _modelInstances{ nullptr };
 
 			CullingSubmanager* _indirectDrawingSubmanager{ nullptr };
 

@@ -31,21 +31,18 @@ EntitySubmanager::EntitySubmanager()
 	LightSubmanagerUpdatedEvent event;
 	EVENT_MANAGER()->trigger_event(event);
 	_engineEntities.reserve(512);
-	_rendererEntities.reserve(512);
+	allocate_buffers();
 }
 
 void EntitySubmanager::update(rhi::CommandBuffer& cmdBuffer)
 {
-	if (!_areGPUBuffersAllocated)
-		allocate_gpu_buffers();
-
 	update_cpu_arrays();
 	update_gpu_buffer(cmdBuffer);
 }
 
 void EntitySubmanager::cleanup_after_update()
 {
-	_rendererEntities.clear();
+	_rendererEntities->clear();
 }
 
 bool EntitySubmanager::need_update()
@@ -58,21 +55,27 @@ void EntitySubmanager::subscribe_to_events()
 	
 }
 
-void EntitySubmanager::allocate_gpu_buffers()
+void EntitySubmanager::allocate_buffers()
 {
 	uint64_t initSize = RENDERER_ENTITIES_INIT_NUMBER * sizeof(RendererEntity);
 	uint64_t loadedEntitiesSize = _engineEntities.size() * sizeof(RendererEntity);
+	uint64_t size = initSize > loadedEntitiesSize ? initSize : loadedEntitiesSize;
 	
-	if (loadedEntitiesSize > initSize)
+	if (RHI()->has_capability(rhi::GpuCapability::CACHE_COHERENT_UMA))
 	{
-		RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(RENDERER_ENTITY_BUFFER_NAME, loadedEntitiesSize);
+		_rendererEntities = std::make_unique<RendererResourceCollection<RendererEntity>>(
+			RENDERER_ENTITY_BUFFER_NAME,
+			size);
 	}
 	else
 	{
 		RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(RENDERER_ENTITY_BUFFER_NAME, initSize);
+		_rendererEntities = std::make_unique<RendererResourceCollection<RendererEntity>>(
+			"Cpu" + RENDERER_ENTITY_BUFFER_NAME,
+			RENDERER_ENTITY_BUFFER_NAME,
+			rhi::ResourceUsage::STORAGE_BUFFER,
+			size);
 	}
-	
-	_areGPUBuffersAllocated = true;
 }
 
 void EntitySubmanager::update_cpu_arrays()
@@ -93,22 +96,23 @@ void EntitySubmanager::update_cpu_arrays()
 
 void EntitySubmanager::update_gpu_buffer(rhi::CommandBuffer& cmd)
 {
-	if (!_rendererEntities.empty())
+	if (_rendererEntities->is_gpu_collection() && !_rendererEntities->empty())
 	{
 		RENDERER_RESOURCE_MANAGER()->update_buffer(
 		   &cmd,
-		   RENDERER_ENTITY_BUFFER_NAME,
+		   _rendererEntities->get_mapped_buffer(),
+		   _rendererEntities->get_gpu_buffer(),
 		   sizeof(RendererEntity),
-		   _rendererEntities.data(),
-		   _rendererEntities.size(),
-		   _rendererEntities.size());
+		   _rendererEntities->get_element_count(),
+		   _rendererEntities->get_element_count());
 	}
 }
 
 void EntitySubmanager::setup_light(ecs::Entity entity)
 {
 	_rendererEntitiesMutex.lock();
-	RendererEntity& rendererEntity = _rendererEntities.emplace_back();
+	RendererEntity& rendererEntity = *_rendererEntities->push_back();
+	rendererEntity = RendererEntity();		// temp solution, need to reset every RendererEntity
 	_rendererEntitiesMutex.unlock();
 
 	ecs::EntityManager* entityManager = WORLD()->get_entity_manager();
@@ -120,10 +124,8 @@ void EntitySubmanager::setup_light(ecs::Entity entity)
 
 	auto isVisible = entityManager->get_component<ecore::VisibleComponent>(entity)->isVisible;
 	auto isWorldAffected = entityManager->get_component<ecore::AffectWorldComponent>(entity)->isWorldAffected;
-	if (!isVisible || !isWorldAffected)
-		return;
 
-	if (entityManager->does_entity_have_tag<ecore::DirectionalLightTag>(entity))
+	if (entity.has_tag<ecore::DirectionalLightTag>() && isVisible && isWorldAffected)
 	{
 		rendererEntity.set_type(DIRECTIONAL_LIGHT);
 		XMMATRIX worldMatrix = XMLoadFloat4x4(&transformComponent->world);
@@ -132,17 +134,15 @@ void EntitySubmanager::setup_light(ecs::Entity entity)
 		XMStoreFloat3(&directionStorage, direction);
 		rendererEntity.set_direction(directionStorage);
 		_directionalLightCount.fetch_add(1);
-		return;
 	}
-	if (entityManager->does_entity_have_tag<ecore::PointLightTag>(entity))
+	else if (entity.has_tag<ecore::PointLightTag>() && isVisible && isWorldAffected)
 	{
 		rendererEntity.set_type(POINT_LIGHT);
 		auto attenuationComponent = entityManager->get_component_const<ecore::AttenuationRadiusComponent>(entity);
 		rendererEntity.set_attenuation_radius(attenuationComponent->attenuationRadius);
 		_pointLightCount.fetch_add(1);
-		return;
 	}
-	if (entityManager->does_entity_have_tag<ecore::SpotLightTag>(entity))
+	else if (entity.has_tag<ecore::SpotLightTag>() && isVisible && isWorldAffected)
 	{
 		rendererEntity.set_type(SPOT_LIGHT);
 		XMMATRIX worldMatrix = XMLoadFloat4x4(&transformComponent->world);

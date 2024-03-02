@@ -4,6 +4,7 @@
 #include "shader_interop_renderer.h"
 #include "engine_core/basic_components.h"
 #include "renderer/module_objects.h"
+#include "renderer/renderer_resource_collection.h"
 
 namespace ad_astris::renderer::impl
 {
@@ -16,9 +17,11 @@ namespace ad_astris::renderer::impl
 			void cleanup_after_update();
 			bool need_update();
 
-			rhi::Buffer* get_entity_buffer()
+			rhi::Buffer* get_entity_buffer() const
 			{
-				return RENDERER_RESOURCE_MANAGER()->get_buffer(RENDERER_ENTITY_BUFFER_NAME);
+				if (_rendererEntities->is_gpu_collection())
+					return _rendererEntities->get_gpu_buffer();
+				return _rendererEntities->get_mapped_buffer();
 			}
 
 			void add_light_entity(ecs::Entity entity)
@@ -29,10 +32,10 @@ namespace ad_astris::renderer::impl
 			uint32_t get_light_count() { return _pointLightCount + _spotLightCount + _directionalLightCount; }
 		
 		private:
-			const std::string RENDERER_ENTITY_BUFFER_NAME = "renderer_entity_buffer";
-			const std::string MATRIX_BUFFER_NAME = "matrix_buffer";
+			const std::string RENDERER_ENTITY_BUFFER_NAME = "RendererEntityBuffer";
+			const std::string MATRIX_BUFFER_NAME = "MatrixBuffer";
 
-			std::vector<RendererEntity> _rendererEntities;
+			std::unique_ptr<RendererResourceCollection<RendererEntity>> _rendererEntities{ nullptr };
 			std::mutex _rendererEntitiesMutex;
 			std::vector<ecs::Entity> _engineEntities;
 			std::atomic_uint32_t _pointLightCount{ 0 };
@@ -43,7 +46,7 @@ namespace ad_astris::renderer::impl
 		
 			void subscribe_to_events();
 
-			void allocate_gpu_buffers();
+			void allocate_buffers();
 			void update_gpu_buffer(rhi::CommandBuffer& cmd);
 			void update_cpu_arrays();
 

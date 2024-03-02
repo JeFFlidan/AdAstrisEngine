@@ -11,7 +11,6 @@ ModelSubmanager::ModelSubmanager(MaterialSubmanager* materialSubmanager, Culling
 	: _materialSubmanager(materialSubmanager), _indirectDrawingSubmanager(indirectDrawingSubmanager)
 {
 	subscribe_to_events();
-	_modelInstances.reserve(MODEL_INSTANCES_INIT_NUMBER);
 	_staticModelEntities.reserve(MODEL_INSTANCES_INIT_NUMBER);
 }
 
@@ -25,7 +24,7 @@ void ModelSubmanager::cleanup_after_update()
 	_loadedModelsVertexArraySize_F32PNTC = 0;
 	_loadedModelsIndexArraySize_F32PNTC = 0;
 	_createdModels.clear();
-	_modelInstances.clear();
+	_modelInstances->clear();
 }
 
 bool ModelSubmanager::need_update()
@@ -45,15 +44,15 @@ void ModelSubmanager::update_gpu_buffers(rhi::CommandBuffer& cmd)
 
 	update_cpu_arrays(cmd);
 
-	if (!_modelInstances.empty())
+	if (_modelInstances->is_gpu_collection() && !_modelInstances->empty())
 	{
 		RENDERER_RESOURCE_MANAGER()->update_buffer(
 			&cmd,
-			MODEL_INSTANCE_BUFFER_NAME,
+			_modelInstances->get_mapped_buffer(),
+			_modelInstances->get_gpu_buffer(),
 			sizeof(RendererModelInstance),
-			_modelInstances.data(),
-			_modelInstances.size(),
-			_modelInstances.size());
+			_modelInstances->get_element_count(),
+			_modelInstances->get_element_count());
 	}
 	
 	if (_loadedModelsIndexArraySize_F32PNTC && _loadedModelsVertexArraySize_F32PNTC)
@@ -79,7 +78,6 @@ void ModelSubmanager::allocate_gpu_buffers(rhi::CommandBuffer& cmd)
 {
 	RENDERER_RESOURCE_MANAGER()->allocate_vertex_buffer(VERTEX_BUFFER_F32PNTC_NAME, DEFAULT_GPU_BUFFER_SIZE);
 	RENDERER_RESOURCE_MANAGER()->allocate_index_buffer(INDEX_BUFFER_F32PNTC_NAME, DEFAULT_GPU_BUFFER_SIZE);
-	RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(MODEL_INSTANCE_BUFFER_NAME, MODEL_INSTANCES_INIT_NUMBER * sizeof(RendererModelInstance));
 
 	ecore::Plane plane;
 	uint64_t size = plane.vertices.size() * sizeof(ecore::model::VertexF32PC);
@@ -92,6 +90,21 @@ void ModelSubmanager::allocate_gpu_buffers(rhi::CommandBuffer& cmd)
 		plane.vertices.size(),
 		plane.vertices.size());
 	_areGPUBuffersAllocated = true;
+
+	if (RHI()->has_capability(rhi::GpuCapability::CACHE_COHERENT_UMA))
+	{
+		_modelInstances = std::make_unique<RendererResourceCollection<RendererModelInstance>>(
+			MODEL_INSTANCE_BUFFER_NAME,
+			MODEL_INSTANCES_INIT_NUMBER * sizeof(RendererModelInstance));
+	}
+	else
+	{
+		_modelInstances = std::make_unique<RendererResourceCollection<RendererModelInstance>>(
+			"Cpu" + MODEL_INSTANCE_BUFFER_NAME,
+			MODEL_INSTANCE_BUFFER_NAME,
+			rhi::ResourceUsage::STORAGE_BUFFER,
+			MODEL_INSTANCES_INIT_NUMBER * sizeof(RendererModelInstance));
+	}
 }
 
 void ModelSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
@@ -146,10 +159,10 @@ void ModelSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 			ecore::StaticModelHandle modelHandle = RESOURCE_MANAGER()->get_resource<ecore::StaticModel>(modelComponent->modelUUID);
 			ecore::StaticModel* staticModel = modelHandle.get_resource();
 
-			uint32_t modelInstanceIndex = _modelInstances.size();
+			uint32_t modelInstanceIndex = _modelInstances->get_element_count();
 			_indirectDrawingSubmanager->add_culling_instance(entity, modelInstanceIndex, staticModel->get_uuid());
 		
-			RendererModelInstance& modelInstance = _modelInstances.emplace_back();
+			RendererModelInstance& modelInstance = *_modelInstances->push_back();
 			modelInstance.materialIndex = 0;	// TODO change
 			ecore::model::ModelBounds bounds = staticModel->get_model_bounds();
 			modelInstance.sphereBounds.radius = bounds.radius;

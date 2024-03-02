@@ -9,7 +9,7 @@ constexpr uint32_t CULLING_PARAMS_COUNT = 128;
 
 CullingSubmanager::CullingSubmanager()
 {
-	_cullingParamsCpuBuffer = std::make_unique<CpuBuffer<CullingParams>>(
+	_cullingParamsCpuBuffer = std::make_unique<RendererArray<CullingParams>>(
 		CPU_CULLING_PARAMS_BUFFER_NAME,
 		sizeof(CullingParams) * CULLING_PARAMS_COUNT);
 	_cullingParamsBuffer = RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(
