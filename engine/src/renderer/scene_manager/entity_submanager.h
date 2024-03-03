@@ -50,7 +50,7 @@ namespace ad_astris::renderer::impl
 			void update_gpu_buffer(rhi::CommandBuffer& cmd);
 			void update_cpu_arrays();
 
-			void setup_light(ecs::Entity entity);
+			void setup_light(const ecs::Entity& entity);
 		
 			void setup_point_lights_matrices(tasks::TaskGroup& taskGroup);
 			void setup_directional_lights_matrices(tasks::TaskGroup& taskGroup);

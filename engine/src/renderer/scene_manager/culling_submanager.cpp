@@ -119,8 +119,8 @@ void CullingSubmanager::update_gpu_buffers(rhi::CommandBuffer& cmd)
 				   cullingContext.indirectCommands->get_element_count());
 				RENDERER_RESOURCE_MANAGER()->update_buffer(
 					&cmd,
-					cullingContext.cullingInstanceIndices->get_buffer(),
-					cullingContext.cullingInstanceIndicesBuffer,
+					cullingContext.cullingInstanceIndices->get_mapped_buffer(),
+					cullingContext.cullingInstanceIndices->get_gpu_buffer(),
 					sizeof(CullingInstanceIndices),
 					cullingContext.cullingInstanceIndices->get_element_count(),
 					cullingContext.cullingInstanceIndices->get_element_count());

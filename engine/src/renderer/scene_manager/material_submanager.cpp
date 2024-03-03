@@ -158,7 +158,6 @@ void MaterialSubmanager::create_gpu_material(rhi::CommandBuffer& cmd, UUID cpuMa
 
 	uint32_t rendererMaterialIndex = _rendererMaterials->get_element_count();
 	RendererMaterial& rendererMaterial = *_rendererMaterials->push_back();
-	rendererMaterial = RendererMaterial();	// temp solution, must reset RendererMaterial every frame
 	_gpuOpaqueMaterialIndexByCPUMaterialUUID[material->get_uuid()] = rendererMaterialIndex;
 
 	auto it = _gpuTextureViewByCPUTextureUUID.find(materialSettings->baseColorTextureUUID);

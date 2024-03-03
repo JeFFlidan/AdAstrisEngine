@@ -1,14 +1,9 @@
 ﻿#include "ecs_ui_manager.h"
+#include "core/global_objects.h"
 #include <imgui/imgui.h>
 
 using namespace ad_astris;
 using namespace uicore;
-
-ECSUiManager::ECSUiManager(ecs::EntityManager* entityManager)
-	: _entityManager(entityManager)
-{
-	
-}
 
 void ECSUiManager::set_imgui_context(ImGuiContext* context)
 {
@@ -23,11 +18,11 @@ void ECSUiManager::set_global_variables()
 void ECSUiManager::draw_component_widgets(ecs::Entity entity)
 {
 	std::vector<uint64_t> componentIDs;
-	_entityManager->get_entity_all_component_ids(entity, componentIDs);
+	ENTITY_MANAGER()->get_entity_all_component_ids(entity, componentIDs);
 
 	for (auto& id : componentIDs)
 	{
-		void* component = _entityManager->get_entity_component_by_id(entity, id);
+		void* component = ENTITY_MANAGER()->get_entity_component_by_id(entity, id);
 		WidgetDesc& widgetDesc = _widgetDescByComponentID[id];
 		widgetDesc.callback(component, widgetDesc.widgetProperties);
 	}

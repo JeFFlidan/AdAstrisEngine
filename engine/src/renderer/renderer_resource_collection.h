@@ -57,6 +57,18 @@ namespace ad_astris::renderer::impl
 				}, _collections);
 			}
 
+			size_t push_back(const T& obj)
+			{
+				return std::visit([&](auto&& arg)->T*
+				{
+					using ArgType = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<ArgType, GpuCollection>)
+						return arg.array.push_back(obj);
+					else
+						return arg[FRAME_INDEX].push_back(obj);
+				}, _collections);
+			}
+
 			T* push_back()
 			{
 				return std::visit([&](auto&& arg)->T*

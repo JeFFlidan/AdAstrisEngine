@@ -17,7 +17,7 @@ void TransformUpdateSystem::subscribe_to_events(ecs::EngineManagers& managers)
 	events::EventDelegate<ecore::LocalTransformUpdateEvent> delegate1 = [&](ecore::LocalTransformUpdateEvent& event)
 	{
 		ecs::Entity entity = event.get_entity();
-		ecore::TransformComponent transform = managers.entityManager->get_entity_component<ecore::TransformComponent>(entity);
+		ecore::TransformComponent& transform = *entity.get_component<ecore::TransformComponent>();
 		if (event.need_location_update())
 		{
 			BasicSystemsUtils::translate(event.get_location(), transform.location);
@@ -32,8 +32,6 @@ void TransformUpdateSystem::subscribe_to_events(ecs::EngineManagers& managers)
 		{
 			BasicSystemsUtils::scale(event.get_scale(), transform.scale);
 		}
-		
-		managers.entityManager->set_entity_component(entity, transform);
 	};
 	managers.eventManager->subscribe(delegate1);
 }
@@ -91,8 +89,8 @@ void CameraUpdateSystem::subscribe_to_events(ecs::EngineManagers& managers)
 		if (!event.is_viewport_hovered())
 			return;
 		
-		auto transform = managers.entityManager->get_component<ecore::TransformComponent>(_activeCamera);
-		auto camera = managers.entityManager->get_component_const<ecore::CameraComponent>(_activeCamera);
+		auto transform = _activeCamera.get_component<ecore::TransformComponent>();
+		const auto camera = _activeCamera.get_component<ecore::CameraComponent>();
 
 		XMFLOAT2 deltaPosition = event.get_delta_position();
 		float xDelta = deltaPosition.x;

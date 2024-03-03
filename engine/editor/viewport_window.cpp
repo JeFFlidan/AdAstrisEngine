@@ -66,11 +66,11 @@ void ViewportWindow::draw_gizmo()
 	float windowHeight = ImGui::GetWindowHeight();
 	ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
 	
-	auto cameraComponent = _ecsUiManager->get_component_const<ecore::CameraComponent>(_activeCamera);
+	auto cameraComponent = _activeCamera.get_component<ecore::CameraComponent>();
 	auto& projection = cameraComponent->projection;
 	auto& view = cameraComponent->view;
 
-	auto entityTransformComponent = _ecsUiManager->get_component<ecore::TransformComponent>(_selectedEntity);
+	auto entityTransformComponent = _selectedEntity.get_component<ecore::TransformComponent>();
 	auto& world = entityTransformComponent->world;
 	
 	ImGuizmo::Manipulate(&view._11, &projection._11, (ImGuizmo::OPERATION)_gizmoType, ImGuizmo::MODE::WORLD, &world._11);

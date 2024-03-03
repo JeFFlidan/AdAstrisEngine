@@ -70,19 +70,19 @@ void OutlinerWindow::generate_entity_name(ecs::Entity entity)
 		}
 	};
 	
-	if (_ecsUiManager->does_entity_have_tag<ecore::DirectionalLightTag>(entity))
+	if (entity.has_tag<ecore::DirectionalLightTag>())
 	{
 		addNameFunc("DirectionalLight");
 	}
-	else if (_ecsUiManager->does_entity_have_tag<ecore::SpotLightTag>(entity))
+	else if (entity.has_tag<ecore::SpotLightTag>())
 	{
 		addNameFunc("SpotLight");
 	}
-	else if (_ecsUiManager->does_entity_have_tag<ecore::PointLightTag>(entity))
+	else if (entity.has_tag<ecore::PointLightTag>())
 	{
 		addNameFunc("PointLight");
 	}
-	else if (_ecsUiManager->does_entity_have_tag<ecore::StaticObjectTag>(entity) && _ecsUiManager->does_entity_have_component<ecore::ModelComponent>(entity))
+	else if (entity.has_tag<ecore::StaticObjectTag>() && entity.has_component<ecore::ModelComponent>())
 	{
 		addNameFunc("StaticModel");
 	}

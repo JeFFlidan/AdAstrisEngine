@@ -108,22 +108,20 @@ void EntitySubmanager::update_gpu_buffer(rhi::CommandBuffer& cmd)
 	}
 }
 
-void EntitySubmanager::setup_light(ecs::Entity entity)
+void EntitySubmanager::setup_light(const ecs::Entity& entity)
 {
 	_rendererEntitiesMutex.lock();
 	RendererEntity& rendererEntity = *_rendererEntities->push_back();
-	rendererEntity = RendererEntity();		// temp solution, need to reset every RendererEntity
 	_rendererEntitiesMutex.unlock();
-
-	ecs::EntityManager* entityManager = WORLD()->get_entity_manager();
-	auto color = entityManager->get_component_const<ecore::ColorComponent>(entity)->color;
-	auto intensity = entityManager->get_component_const<ecore::IntensityComponent>(entity)->intensity;
+	
+	auto& color = entity.get_component<ecore::ColorComponent>()->color;
+	auto intensity = entity.get_component<ecore::IntensityComponent>()->intensity;
 	rendererEntity.set_color(XMFLOAT4(color.x * intensity, color.y * intensity, color.z * intensity, color.w));
-	auto transformComponent = entityManager->get_component_const<ecore::TransformComponent>(entity);
+	auto transformComponent = entity.get_component<ecore::TransformComponent>();
 	rendererEntity.location = transformComponent->location;
 
-	auto isVisible = entityManager->get_component<ecore::VisibleComponent>(entity)->isVisible;
-	auto isWorldAffected = entityManager->get_component<ecore::AffectWorldComponent>(entity)->isWorldAffected;
+	auto isVisible = entity.get_component<ecore::VisibleComponent>()->isVisible;
+	auto isWorldAffected = entity.get_component<ecore::AffectWorldComponent>()->isWorldAffected;
 
 	if (entity.has_tag<ecore::DirectionalLightTag>() && isVisible && isWorldAffected)
 	{
@@ -138,7 +136,7 @@ void EntitySubmanager::setup_light(ecs::Entity entity)
 	else if (entity.has_tag<ecore::PointLightTag>() && isVisible && isWorldAffected)
 	{
 		rendererEntity.set_type(POINT_LIGHT);
-		auto attenuationComponent = entityManager->get_component_const<ecore::AttenuationRadiusComponent>(entity);
+		auto attenuationComponent = entity.get_component<ecore::AttenuationRadiusComponent>();
 		rendererEntity.set_attenuation_radius(attenuationComponent->attenuationRadius);
 		_pointLightCount.fetch_add(1);
 	}
@@ -151,11 +149,11 @@ void EntitySubmanager::setup_light(ecs::Entity entity)
 		XMStoreFloat3(&directionStorage, direction);
 		rendererEntity.set_direction(directionStorage);
 
-		auto attenuationComponent = entityManager->get_component_const<ecore::AttenuationRadiusComponent>(entity);
+		auto attenuationComponent = entity.get_component<ecore::AttenuationRadiusComponent>();
 		rendererEntity.set_attenuation_radius(attenuationComponent->attenuationRadius);
 
-		float outerConeAngle = entityManager->get_component_const<ecore::OuterConeAngleComponent>(entity)->outerConeAngle;
-		float innerConeAngle = entityManager->get_component_const<ecore::InnerConeAngleComponent>(entity)->innerConeAngle;
+		float outerConeAngle = entity.get_component<ecore::OuterConeAngleComponent>()->outerConeAngle;
+		float innerConeAngle = entity.get_component<ecore::InnerConeAngleComponent>()->innerConeAngle;
 
 		outerConeAngle = XMConvertToRadians(outerConeAngle);
 		innerConeAngle = XMConvertToRadians(innerConeAngle);

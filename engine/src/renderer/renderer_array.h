@@ -69,21 +69,16 @@ namespace ad_astris::renderer::impl
 				_elements.emplace_back(oldOffset, newDataSize);
 				return index;
 			}
+		
+			size_t push_back(const T& obj)
+			{
+				return push_back(&obj, 1);
+			}
 
 			T* push_back()
 			{
-				rhi::BufferInfo& bufferInfo = _buffer->bufferInfo;
-				const uint64_t newDataSize = sizeof(T);
-				if (_offset + newDataSize >= bufferInfo.size)
-				{
-					RENDERER_RESOURCE_MANAGER()->reallocate_buffer(_buffer, bufferInfo.size * 2);
-				}
-				
-				const uint64_t oldOffset = _offset;
-				_offset += newDataSize;
-				uint32_t index = _elements.size();
-				_elements.emplace_back(oldOffset, newDataSize);
-				return get_data(index);
+				T obj{};
+				return get_data(push_back(&obj, 1));
 			}
 
 			void remove(const RendererArrayElementDesc& element)

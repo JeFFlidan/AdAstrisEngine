@@ -98,6 +98,7 @@ void RendererResourceManager::reallocate_buffer(rhi::Buffer* buffer, uint64_t ne
 	switch (bufferInfo.memoryUsage)
 	{
 		case rhi::MemoryUsage::CPU:
+		case rhi::MemoryUsage::CPU_TO_GPU:
 		{
 			std::vector<uint8_t> tempData(bufferInfo.size);
 			memcpy(tempData.data(), buffer->mappedData, bufferInfo.size);
@@ -108,9 +109,8 @@ void RendererResourceManager::reallocate_buffer(rhi::Buffer* buffer, uint64_t ne
 			break;
 		}
 		case rhi::MemoryUsage::AUTO:
-		case rhi::MemoryUsage::CPU_TO_GPU:
 		case rhi::MemoryUsage::GPU:
-			LOG_ERROR("RendererResourceManager::reallocate_buffer(): You can only reallocate buffers that have memoryUsage = CPU")
+			LOG_ERROR("RendererResourceManager::reallocate_buffer(): You can only reallocate buffers that have memoryUsage = CPU or memoryUsage = CPU_TO_GPU")
 	}
 }
 

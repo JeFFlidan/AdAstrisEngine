@@ -7,6 +7,7 @@
 #include "renderer/common.h"
 #include "renderer/module_objects.h"
 #include "..\renderer_array.h"
+#include "renderer/renderer_resource_collection.h"
 
 namespace ad_astris::renderer::impl
 {
@@ -101,13 +102,13 @@ namespace ad_astris::renderer::impl
 				auto it = _sceneCullingContextByEntityFilterHash.find(filter.get_requirements_hash());
 				if (it != _sceneCullingContextByEntityFilterHash.end())
 				{
-					return it->second.cullingInstanceIndicesBuffer;
+					return it->second.cullingInstanceIndices->get_gpu_buffer();
 				}
 
 				auto it2 = _shadowsCullingContextByEntityFilterHash.find(filter.get_requirements_hash());
 				if (it2 != _shadowsCullingContextByEntityFilterHash.end())
 				{
-					return it2->second.cullingInstanceIndicesBuffer;
+					return it2->second.cullingInstanceIndices->get_gpu_buffer();
 				}
 				
 				LOG_FATAL("CullingSubmanager::get_culling_indices_buffer(): No filter")
@@ -169,9 +170,8 @@ namespace ad_astris::renderer::impl
 		
 			struct BaseCullingContext
 			{
-				rhi::Buffer* cullingInstanceIndicesBuffer{ nullptr };
-				std::unique_ptr<RendererArray<DrawIndexedIndirectCommand>> indirectCommands;
-				std::unique_ptr<RendererArray<CullingInstanceIndices>> cullingInstanceIndices;
+				std::unique_ptr<RendererArray<DrawIndexedIndirectCommand>> indirectCommands{ nullptr };
+				std::unique_ptr<RendererResourceCollection<CullingInstanceIndices>> cullingInstanceIndices{ nullptr };
 				std::unordered_map<UUID, size_t> indirectBatchIndexByModelUUID;
 				uint32_t instanceCount{ 0 };
 				std::string entityFilterName;
@@ -191,8 +191,10 @@ namespace ad_astris::renderer::impl
 					indirectCommands = std::make_unique<RendererArray<DrawIndexedIndirectCommand>>(
 						entityFilterName + CPU_INDIRECT_BUFFER_NAME,
 						sizeof(DrawIndexedIndirectCommand) * INDIRECT_BATCH_INIT_NUMBER);
-					cullingInstanceIndices = std::make_unique<RendererArray<CullingInstanceIndices>>(
+					cullingInstanceIndices = std::make_unique<RendererResourceCollection<CullingInstanceIndices>>(
 						entityFilterName + CPU_CULLING_INDICES_BUFFER_NAME,
+						entityFilterName + CULLING_INDICES_BUFFER_NAME,
+						rhi::ResourceUsage::STORAGE_BUFFER,
 						sizeof(CullingInstanceIndices) * MODEL_INSTANCES_INIT_NUMBER);
 
 					indirectBuffers.indirectBuffer = RENDERER_RESOURCE_MANAGER()->allocate_indirect_buffer(
@@ -201,9 +203,6 @@ namespace ad_astris::renderer::impl
 					indirectBuffers.modelInstanceIDBuffer = RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(
 						entityFilterName + MODEL_INSTANCE_ID_BUFFER_NAME,
 						sizeof(RendererModelInstanceID) * MODEL_INSTANCES_INIT_NUMBER);
-					cullingInstanceIndicesBuffer = RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(
-						entityFilterName + CULLING_INDICES_BUFFER_NAME,
-						sizeof(CullingInstanceIndices) * MODEL_INSTANCES_INIT_NUMBER);
 				}
 			};
 

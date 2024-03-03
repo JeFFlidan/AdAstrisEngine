@@ -35,8 +35,6 @@ namespace ad_astris::uicore
 	class ECSUiManager
 	{
 		public:
-			// Need point to the TypeInfoTable to set up it in the editor module.
-			ECSUiManager(ecs::EntityManager* entityManager);
 			void set_imgui_context(ImGuiContext* context);
 		
 			template<typename T>
@@ -77,31 +75,7 @@ namespace ad_astris::uicore
 			// Must be used in all modules except the engine where the ECSUiManager is initialized
 			void set_global_variables();
 
-			template<typename T>
-			bool does_entity_have_tag(ecs::Entity entity)
-			{
-				return _entityManager->does_entity_have_tag<T>(entity);
-			}
-
-			template<typename T>
-			bool does_entity_have_component(ecs::Entity entity)
-			{
-				return _entityManager->does_entity_have_component<T>(entity);
-			}
-
 			void draw_component_widgets(ecs::Entity entity);
-
-			template<typename T>
-			const T* get_component_const(ecs::Entity entity)
-			{
-				return _entityManager->get_component_const<T>(entity);
-			}
-
-			template<typename T>
-			T* get_component(ecs::Entity entity)
-			{
-				return _entityManager->get_component<T>(entity);
-			}
 
 		private:
 			struct WidgetDesc
@@ -111,7 +85,6 @@ namespace ad_astris::uicore
 			};
 		
 			std::unordered_map<uint64_t, WidgetDesc> _widgetDescByComponentID;
-			ecs::EntityManager* _entityManager;
 			ImGuiContext* _imGuiContext;
 	};
 }
