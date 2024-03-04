@@ -65,7 +65,10 @@ TextureDesc* RenderPass::add_history_input(const std::string& inputName)
 	return desc;
 }
 
-TextureDesc* RenderPass::add_texture_input(const std::string& inputName, rhi::ShaderType shaderStages)
+TextureDesc* RenderPass::add_texture_input(
+	const std::string& inputName,
+	rhi::TextureInfo* textureInfo,
+	rhi::ShaderType shaderStages)
 {
 	TextureDesc* desc = _renderGraph->get_texture_desc(inputName);
 	
@@ -74,19 +77,9 @@ TextureDesc* RenderPass::add_texture_input(const std::string& inputName, rhi::Sh
 	desc->add_read_in_pass(_logicalIndex);
 	desc->add_queue(_queue);
 	desc->add_texture_usage(rhi::ResourceUsage::SAMPLED_TEXTURE);
-	_customTextures.push_back(desc);
-
-	return desc;
-}
-
-TextureDesc* RenderPass::add_texture_input(
-	const std::string& inputName,
-	rhi::TextureInfo* textureInfo,
-	rhi::ShaderType shaderStages)
-{
-	TextureDesc* desc = add_texture_input(inputName, shaderStages);
 	desc->set_texture_info(textureInfo);
 	_customTextures.push_back(desc);
+	
 	return desc;
 }
 

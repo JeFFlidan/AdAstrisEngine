@@ -102,7 +102,9 @@ namespace ad_astris::rcore::impl
 				const std::string& textureViewName,
 				const std::string& textureName,
 				uint32_t baseMipLevel = 0,
+				uint32_t mipLevels = 0,
 				uint32_t baseLayer = 0,
+				uint32_t layerCount = 0,
 				rhi::TextureAspect aspect = rhi::TextureAspect::UNDEFINED) override;
 
 			virtual void update_2d_texture(rhi::CommandBuffer* cmd, const std::string& textureName, void* textureData, uint32_t width, uint32_t height) override;

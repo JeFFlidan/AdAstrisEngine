@@ -56,8 +56,6 @@ VulkanPipelineLayout::VulkanPipelineLayout(
 
 	for (auto& bindlessBinding : reflectContext.bindlessBindings)
 	{
-		if (!bindlessBinding.isUsed)
-			continue;
 		descriptorLayouts.push_back(descriptorManager->get_bindless_descriptor_set_layout(bindlessBinding.binding.descriptorType));
 		_bindlessDescriptorSets.push_back(descriptorManager->get_bindless_descriptor_set(bindlessBinding.binding.descriptorType));
 	}

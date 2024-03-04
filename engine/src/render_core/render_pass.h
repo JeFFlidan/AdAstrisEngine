@@ -59,10 +59,6 @@ namespace ad_astris::rcore::impl
 
 			virtual TextureDesc* add_texture_input(
 				const std::string& inputName,
-				rhi::ShaderType shaderStages = rhi::ShaderType::UNDEFINED) override;
-
-			virtual TextureDesc* add_texture_input(
-				const std::string& inputName,
 				rhi::TextureInfo* textureInfo = nullptr,
 				rhi::ShaderType shaderStages = rhi::ShaderType::UNDEFINED) override;
 		

@@ -53,7 +53,6 @@ void VulkanRHI::init(rhi::RHIInitContext& initContext)
 // TODO Must test it
 void VulkanRHI::cleanup()
 {
-	_cmdManager->wait_all_fences();
 	_pipelineCache.save_pipeline_cache(_device.get(), _fileSystem);
 	_mainSwapChain->destroy(_device.get());
 	_vkObjectPool.cleanup(_device.get());
@@ -777,6 +776,8 @@ void VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::SwapChain* swapCha
 	VulkanSwapChain* vkSwapChain = swapChain ? get_vk_obj(swapChain) : _mainSwapChain.get();
 	_activeSwapChains.push_back(vkSwapChain);
 	VulkanCommandBuffer* vkCmd = get_vk_obj(cmd);
+	vkCmd->add_wait_semaphore(vkSwapChain->get_acquire_semaphore());
+	vkSwapChain->prepare_for_drawing(vkCmd);
 		
 	VkRenderingInfo renderingInfo{};
 	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
@@ -796,9 +797,8 @@ void VulkanRHI::begin_rendering(rhi::CommandBuffer* cmd, rhi::SwapChain* swapCha
 	attachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachmentInfo.clearValue.color = { { clearValues->color[0], clearValues->color[1], clearValues->color[2], clearValues->color[3] } };
-
+	
 	renderingInfo.pColorAttachments = &attachmentInfo;
-	vkSwapChain->prepare_for_drawing(vkCmd);
 	vkCmdBeginRendering(vkCmd->get_handle(), &renderingInfo);
 }
 

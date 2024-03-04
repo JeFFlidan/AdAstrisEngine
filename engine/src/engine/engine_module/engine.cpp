@@ -17,7 +17,7 @@ using namespace ad_astris::engine::impl;
 void Engine::init(EngineInitializationContext& engineInitContext)
 {
 	_mainWindow = engineInitContext.mainWindow;
-
+	
 	init_global_objects(engineInitContext.globalObjectContext);
 	set_active_camera_delegate();
 	subscribe_to_events();

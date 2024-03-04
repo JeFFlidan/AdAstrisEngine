@@ -25,7 +25,7 @@ namespace ad_astris::vulkan
 			void destroy(VulkanDevice* device) override;
 
 			VkSwapchainKHR get_handle() const { return _swapChain; }
-			VkSemaphore get_acquire_semaphore() const { return _acquireSemaphores[_frameIndex]; }
+			VkSemaphore get_acquire_semaphore() const { return _acquireSemaphore; }
 			uint32_t get_buffers_count() const { return _images.size(); }
 			uint32_t get_width() const { return _swapChainInfo.width; }
 			uint32_t get_height() const { return _swapChainInfo.height; }
@@ -46,7 +46,7 @@ namespace ad_astris::vulkan
 			VulkanDevice* _device{ nullptr };
 			std::unique_ptr<VulkanSurface> _surface{ nullptr };
 			VkSwapchainKHR _swapChain{ VK_NULL_HANDLE };
-			std::vector<VkSemaphore> _acquireSemaphores{ VK_NULL_HANDLE };
+			VkSemaphore _acquireSemaphore{ VK_NULL_HANDLE };
 			VkFormat _format;
 			rhi::SwapChainInfo _swapChainInfo;
 			std::vector<VkImageView> _imageViews;

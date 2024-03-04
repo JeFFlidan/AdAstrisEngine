@@ -447,8 +447,10 @@ namespace ad_astris::rhi
 
 	struct TextureViewInfo
 	{
-		uint8_t baseMipLevel;
-		uint8_t baseLayer;
+		uint32_t baseMipLevel{ 0 };
+		uint32_t baseLayer{ 0 };
+		uint32_t mipLevels{ 1 };
+		uint32_t layerCount{ 1 };
 		// if texture aspect is undefined, rhi will automatically set aspect mask.
 		// however, for stencil view it must be set
 		TextureAspect textureAspect{ TextureAspect::UNDEFINED };

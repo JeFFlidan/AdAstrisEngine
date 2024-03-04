@@ -32,6 +32,7 @@ void ModuleObjects::init_rhi_module(acore::IWindow* mainWindow)
 	rhi::RHIInitContext rhiInitContext;
 	rhiInitContext.window = mainWindow;
 	rhiInitContext.fileSystem = FILE_SYSTEM();
+	rhiInitContext.validationMode = rhi::ValidationMode::ENABLED;
 	rhi::SwapChainInfo swapChainInfo;
 	swapChainInfo.width = _rendererSubsettings->get_render_area_width();
 	swapChainInfo.height = _rendererSubsettings->get_render_area_height();

@@ -32,6 +32,7 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 
 void Renderer::cleanup()
 {
+	RHI()->wait_for_gpu();
 	RENDER_GRAPH()->cleanup();
 	UI_WINDOW_BACKEND()->cleanup();
 	RHI()->cleanup();

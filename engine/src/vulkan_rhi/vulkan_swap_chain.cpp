@@ -15,6 +15,7 @@ VulkanSwapChain::VulkanSwapChain(
 	_swapChainInfo = *swapChainInfo;
 	create_swap_chain_internal();
 	*swapChainInfo = _swapChainInfo;
+	create_semaphore(_device->get_device(), &_acquireSemaphore);
 }
 
 void VulkanSwapChain::recreate(rhi::SwapChainInfo* swapChainInfo)
@@ -26,8 +27,7 @@ void VulkanSwapChain::recreate(rhi::SwapChainInfo* swapChainInfo)
 
 void VulkanSwapChain::prepare_for_drawing(VulkanCommandBuffer* cmd)
 {
-	VkSemaphore acquireSemaphore = _acquireSemaphores[_frameIndex % _swapChainInfo.buffersCount];
-	VkResult res = vkAcquireNextImageKHR(_device->get_device(), _swapChain, 1000000000, acquireSemaphore, VK_NULL_HANDLE, &_frameIndex);
+	VkResult res = vkAcquireNextImageKHR(_device->get_device(), _swapChain, 1000000000, _acquireSemaphore, VK_NULL_HANDLE, &_frameIndex);
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 		recreate();
 
@@ -58,14 +58,14 @@ void VulkanSwapChain::recreate()
 
 void VulkanSwapChain::destroy(VulkanDevice* device)
 {
+	if (_acquireSemaphore != VK_NULL_HANDLE)
+		vkDestroySemaphore(device->get_device(), _acquireSemaphore, nullptr);
+	for (auto& view : _imageViews)
+		vkDestroyImageView(device->get_device(), view, nullptr);
+	if (_swapChain != VK_NULL_HANDLE)
+		vkDestroySwapchainKHR(device->get_device(), _swapChain, nullptr);
 	if (_surface != nullptr)
-	{
 		_surface->cleanup(device->get_instance());
-	}
-	for (auto& semaphore : _acquireSemaphores)
-	{
-		vkDestroySemaphore(device->get_device(), semaphore, nullptr);
-	}
 }
 
 void VulkanSwapChain::create_swap_chain_internal()
@@ -192,11 +192,6 @@ void VulkanSwapChain::create_swap_chain_internal()
 		viewCreateInfo.subresourceRange.layerCount = 1;
 
 		VK_CHECK(vkCreateImageView(_device->get_device(), &viewCreateInfo, nullptr, &_imageViews[i]));
-	}
-
-	for (uint32_t i = 0; i != _swapChainInfo.buffersCount; ++i)
-	{
-		create_semaphore(_device->get_device(), &_acquireSemaphores.emplace_back());
 	}
 }
 

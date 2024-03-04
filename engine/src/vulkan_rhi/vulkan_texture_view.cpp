@@ -115,8 +115,8 @@ void VulkanTextureView::parse_texture_view_info(
 	outCreateInfo.image = vkTexture->get_handle();
 	outCreateInfo.format = format;
 	outCreateInfo.subresourceRange.baseMipLevel = viewInfo->baseMipLevel;
-	outCreateInfo.subresourceRange.levelCount = textureInfo.mipLevels;
+	outCreateInfo.subresourceRange.levelCount = viewInfo->mipLevels;
 	outCreateInfo.subresourceRange.baseArrayLayer = viewInfo->baseLayer;
-	outCreateInfo.subresourceRange.layerCount = textureInfo.layersCount;
+	outCreateInfo.subresourceRange.layerCount = viewInfo->layerCount;
 	outCreateInfo.subresourceRange.aspectMask = aspectFlags;
 }

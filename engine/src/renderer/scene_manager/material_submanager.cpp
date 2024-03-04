@@ -115,7 +115,9 @@ rhi::TextureView* MaterialSubmanager::allocate_2d_texture(rhi::CommandBuffer& cm
 	RENDERER_RESOURCE_MANAGER()->generate_mipmaps(&cmd, gpuTexture);
 	rhi::TextureView* gpuTextureView = RENDERER_RESOURCE_MANAGER()->allocate_texture_view(
 		texture->get_name()->get_full_name(),
-		texture->get_name()->get_full_name());
+		texture->get_name()->get_full_name(),
+		0,
+		math::get_mip_levels(allocContext.width, allocContext.height));
 
 	_gpuTextureViewByCPUTextureUUID[texture->get_uuid()] = gpuTextureView;
 	return gpuTextureView;
@@ -148,6 +150,9 @@ void MaterialSubmanager::create_samplers()
 	samplerInfo.addressMode = rhi::AddressMode::MIRRORED_REPEAT;
 	RHI()->create_sampler(&_samplers[SAMPLER_NEAREST_MIRROR], &samplerInfo);
 
+	samplerInfo.addressMode = rhi::AddressMode::CLAMP_TO_EDGE;
+	samplerInfo.filter = rhi::Filter::MINIMUM_MIN_MAG_MIP_NEAREST;
+	RHI()->create_sampler(&_samplers[SAMPLER_MINIMUM_NEAREST_CLAMP], &samplerInfo);
 }
 
 void MaterialSubmanager::create_gpu_material(rhi::CommandBuffer& cmd, UUID cpuMaterialUUID)

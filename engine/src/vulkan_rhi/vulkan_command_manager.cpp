@@ -309,12 +309,6 @@ void vulkan::VulkanCommandManager::SynchronizationManager::init(VulkanDevice* de
 {
 	_freeFences.resize(bufferCount);
 	_lockedFences.resize(bufferCount);
-
-	for (uint32_t i = 0; i != bufferCount; ++i)
-	{
-		VkSemaphore semaphore;
-		create_semaphore(device->get_device(), &semaphore);
-	}
 }
 
 void vulkan::VulkanCommandManager::SynchronizationManager::cleanup(VulkanDevice* device, uint32_t bufferCount)
@@ -322,6 +316,9 @@ void vulkan::VulkanCommandManager::SynchronizationManager::cleanup(VulkanDevice*
 	for (uint32_t i = 0; i != bufferCount; ++i)
 	{
 		auto& fences = _freeFences[i];
+		for (auto& fence : fences)
+			vkDestroyFence(device->get_device(), fence, nullptr);
+		fences = _lockedFences[i];
 		for (auto& fence : fences)
 			vkDestroyFence(device->get_device(), fence, nullptr);
 	}

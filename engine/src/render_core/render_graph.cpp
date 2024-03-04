@@ -67,7 +67,7 @@ void RenderGraph::bake()
 	}
 	
 	auto tempSortedPasses = _sortedPasses;
-	
+
 	for (auto& passIndex : tempSortedPasses)
 	{
 		RenderPass* pass = _logicalPasses[passIndex].get();
@@ -76,9 +76,9 @@ void RenderGraph::bake()
 
 	std::reverse(_sortedPasses.begin(), _sortedPasses.end());
 	filter_pass_order();
-	
+
 	optimize_pass_order();
-	
+
 	build_physical_resources();
 	build_rendering_begin_info();
 	build_barriers();
@@ -403,16 +403,16 @@ void RenderGraph::build_barriers()
 				LOG_FATAL("RenderGraph::bake(): Pass {} can't have texture {} as storage input because this texture hasn't been written", logicalPass->get_name(), storageTextureDesc->get_name())
 			}
 		}
-
+		
 		for (auto& storageTextureDesc : logicalPass->get_storage_texture_outputs())
 		{
 			auto it = resourcesWithInvalidatingBarrier.find(storageTextureDesc->get_logical_index());
 			if (it != resourcesWithInvalidatingBarrier.end())
 				continue;
-
-			rhi::PipelineBarrier& invalidatingBarrier = _invalidatingPipelineBarriers[passIndex];
+		
+			rhi::PipelineBarrier& invalidatingBarrier = _invalidatingPipelineBarriers.emplace_back();
 			invalidatingBarrier = rhi::PipelineBarrier::set_texture_barrier(
-				_rendererResourceManager->get_texture_view(storageTextureDesc->get_name())->texture,
+				get_physical_texture(storageTextureDesc->get_name()),
 				rhi::ResourceLayout::UNDEFINED,
 				rhi::ResourceLayout::GENERAL);
 			resourcesWithInvalidatingBarrier.insert(storageTextureDesc->get_logical_index());

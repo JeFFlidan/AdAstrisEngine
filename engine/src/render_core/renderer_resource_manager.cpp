@@ -364,7 +364,9 @@ rhi::TextureView* RendererResourceManager::allocate_texture_view(
 	const std::string& textureViewName,
 	const std::string& textureName,
 	uint32_t baseMipLevel,
+	uint32_t mipLevels,
 	uint32_t baseLayer,
+	uint32_t layerCount,
 	rhi::TextureAspect aspect)
 {
 	rhi::TextureView* textureView = check_texture_view(textureViewName);
@@ -384,6 +386,8 @@ rhi::TextureView* RendererResourceManager::allocate_texture_view(
 	textureView->viewInfo.baseLayer = baseLayer;
 	textureView->viewInfo.baseMipLevel = baseMipLevel;
 	textureView->viewInfo.textureAspect = aspect;
+	textureView->viewInfo.mipLevels = mipLevels ? mipLevels : texture->textureInfo.mipLevels;
+	textureView->viewInfo.layerCount = layerCount ? layerCount : texture->textureInfo.layersCount;
 
 	_rhi->create_texture_view(textureView, texture);
 
