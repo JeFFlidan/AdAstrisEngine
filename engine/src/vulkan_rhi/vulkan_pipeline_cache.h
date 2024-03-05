@@ -15,5 +15,7 @@ namespace ad_astris::vulkan
 
 		private:
 			VkPipelineCache _pipelineCache{ VK_NULL_HANDLE };
+
+			bool is_loaded_cache_valid(VulkanDevice* device, uint8_t* cacheData);
 	};
 }

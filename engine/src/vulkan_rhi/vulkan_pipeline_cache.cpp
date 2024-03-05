@@ -10,7 +10,16 @@ void VulkanPipelineCache::load_pipeline_cache(VulkanDevice* device, io::FileSyst
 	void* data = nullptr;
 	
 	if (io::Utils::exists(fileSystem->get_project_root_path(), "intermediate/pipeline_cache.bin"))
+	{
 		data = fileSystem->map_to_read(fileSystem->get_project_root_path() + "/intermediate/pipeline_cache.bin", size);
+		if (!is_loaded_cache_valid(device, static_cast<uint8_t*>(data)))
+		{
+			LOG_WARNING("VulkanPipelineCache::load_pipeline_cache(): Pipeline cache is invalid")
+			fileSystem->unmap_after_reading(data);
+			data = nullptr;
+			size = 0;
+		}
+	}
 
 	VkPipelineCacheCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
@@ -40,4 +49,33 @@ void VulkanPipelineCache::destroy(VulkanDevice* device)
 {
 	if (_pipelineCache != VK_NULL_HANDLE)
 		vkDestroyPipelineCache(device->get_device(), _pipelineCache, nullptr);
+}
+
+bool VulkanPipelineCache::is_loaded_cache_valid(VulkanDevice* device, uint8_t* cacheData)
+{
+	uint32_t headerLength{ 0 };
+	uint32_t cacheHeaderVersion{ 0 };
+	uint32_t vendorID{ 0 };
+	uint32_t deviceID{ 0 };
+	uint8_t pipelineCacheUUID[VK_UUID_SIZE] = {};
+	
+	memcpy(&headerLength, cacheData, 4);
+	memcpy(&cacheHeaderVersion, cacheData + 4, 4);
+	memcpy(&vendorID, cacheData + 8, 4);
+	memcpy(&deviceID, cacheData + 12, 4);
+	memcpy(pipelineCacheUUID, cacheData + 16, VK_UUID_SIZE);
+
+	const VkPhysicalDeviceProperties& properties = device->get_physical_device_properties().properties;
+	
+	if (headerLength <= 0)
+		return false;
+	if (cacheHeaderVersion != VK_PIPELINE_CACHE_HEADER_VERSION_ONE)
+		return false;
+	if (vendorID != properties.vendorID)
+		return false;
+	if (deviceID != properties.deviceID)
+		return false;
+	if ((memcmp(pipelineCacheUUID, properties.pipelineCacheUUID, sizeof(pipelineCacheUUID))) != 0)
+		return false;
+	return true;
 }
