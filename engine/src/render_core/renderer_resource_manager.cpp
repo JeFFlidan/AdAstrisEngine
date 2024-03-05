@@ -413,7 +413,7 @@ void RendererResourceManager::generate_mipmaps(rhi::CommandBuffer* cmd, const st
 
 void RendererResourceManager::generate_mipmaps(rhi::CommandBuffer* cmd, rhi::Texture* texture)
 {
-	rhi::PipelineBarrier barrier = rhi::PipelineBarrier::set_texture_barrier(
+	rhi::PipelineBarrier barrier(
 		texture,
 		rhi::ResourceLayout::SHADER_READ,
 		rhi::ResourceLayout::TRANSFER_DST,
@@ -428,7 +428,7 @@ void RendererResourceManager::generate_mipmaps(rhi::CommandBuffer* cmd, rhi::Tex
 		uint32_t halfWidth = width / 2;
 		uint32_t halfHeight = height / 2;
 
-		barrier = rhi::PipelineBarrier::set_texture_barrier(
+		barrier.set_texture_barrier(
 			texture,
 			rhi::ResourceLayout::TRANSFER_DST,
 			rhi::ResourceLayout::TRANSFER_SRC,
@@ -452,7 +452,7 @@ void RendererResourceManager::generate_mipmaps(rhi::CommandBuffer* cmd, rhi::Tex
 		height = halfHeight;
 	}
 
-	barrier = rhi::PipelineBarrier::set_texture_barrier(
+	barrier.set_texture_barrier(
 		texture,
 		rhi::ResourceLayout::TRANSFER_SRC,
 		rhi::ResourceLayout::SHADER_READ,

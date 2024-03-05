@@ -874,26 +874,28 @@ void VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std::vector
 	std::vector<VkMemoryBarrier2> memoryBarriers;
 	std::vector<VkBufferMemoryBarrier2> bufferBarriers;
 	std::vector<VkImageMemoryBarrier2> imageBarriers;
-	for (auto& barrier : barriers)
+	for (auto& pipelineBarrier : barriers)
 	{
-		switch (barrier.type)
+		switch (pipelineBarrier.get_barrier_type())
 		{
 			case rhi::PipelineBarrier::BarrierType::MEMORY:
 			{
+				const rhi::PipelineBarrier::MemoryBarrier& rhiMemoryBarrier = pipelineBarrier.get_memory_barrier();
 				VkMemoryBarrier2 memoryBarrier{};
 				memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
 				memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 				memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-				memoryBarrier.srcAccessMask = get_access(barrier.memoryBarrier.srcLayout);
-				memoryBarrier.dstAccessMask = get_access(barrier.memoryBarrier.dstLayout);
+				memoryBarrier.srcAccessMask = get_access(rhiMemoryBarrier.srcLayout);
+				memoryBarrier.dstAccessMask = get_access(rhiMemoryBarrier.dstLayout);
 				memoryBarriers.push_back(memoryBarrier);
 				break;
 			}
 			case rhi::PipelineBarrier::BarrierType::BUFFER:
 			{
+				const rhi::PipelineBarrier::BufferBarrier& rhiBufferBarrier = pipelineBarrier.get_buffer_barrier();
 				VkBufferMemoryBarrier2 bufferBarrier{};
 				bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
-				rhi::Buffer* buffer = barrier.bufferBarrier.buffer;
+				const rhi::Buffer* buffer = rhiBufferBarrier.buffer;
 				bufferBarrier.buffer = get_vk_obj(buffer)->get_handle();
 				bufferBarrier.offset = 0;
 				if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::STORAGE_BUFFER))
@@ -906,8 +908,8 @@ void VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std::vector
 				}
 				bufferBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 				bufferBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-				bufferBarrier.srcAccessMask = get_access(barrier.bufferBarrier.srcLayout);
-				bufferBarrier.dstAccessMask = get_access(barrier.bufferBarrier.dstLayout);
+				bufferBarrier.srcAccessMask = get_access(rhiBufferBarrier.srcLayout);
+				bufferBarrier.dstAccessMask = get_access(rhiBufferBarrier.dstLayout);
 				bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				bufferBarriers.push_back(bufferBarrier);
@@ -916,20 +918,20 @@ void VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std::vector
 			case rhi::PipelineBarrier::BarrierType::TEXTURE:
 			{
 				VkImageMemoryBarrier2 imageBarrier{};
-				const rhi::PipelineBarrier::TextureBarrier& textureBarrier = barrier.textureBarrier;
+				const rhi::PipelineBarrier::TextureBarrier& rhiTextureBarrier = pipelineBarrier.get_texture_barrier();
 				imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
 				imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 				imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 				imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-				imageBarrier.srcAccessMask = get_access(textureBarrier.srcLayout);
-				imageBarrier.dstAccessMask = get_access(textureBarrier.dstLayout);
-				imageBarrier.oldLayout = get_image_layout(textureBarrier.srcLayout);
-				imageBarrier.newLayout = get_image_layout(textureBarrier.dstLayout);
-				VulkanTexture* vkTexture = get_vk_obj(textureBarrier.texture);
+				imageBarrier.srcAccessMask = get_access(rhiTextureBarrier.srcLayout);
+				imageBarrier.dstAccessMask = get_access(rhiTextureBarrier.dstLayout);
+				imageBarrier.oldLayout = get_image_layout(rhiTextureBarrier.srcLayout);
+				imageBarrier.newLayout = get_image_layout(rhiTextureBarrier.dstLayout);
+				VulkanTexture* vkTexture = get_vk_obj(rhiTextureBarrier.texture);
 				imageBarrier.image = vkTexture->get_handle();
 				VkImageSubresourceRange range;
-				if (has_flag(textureBarrier.texture->textureInfo.textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
+				if (has_flag(rhiTextureBarrier.texture->textureInfo.textureUsage, rhi::ResourceUsage::DEPTH_STENCIL_ATTACHMENT))
 				{
 					range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 				}
@@ -937,10 +939,10 @@ void VulkanRHI::add_pipeline_barriers(rhi::CommandBuffer* cmd, const std::vector
 				{
 					range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 				}
-				range.layerCount = !textureBarrier.layerCount ? VK_REMAINING_ARRAY_LAYERS : textureBarrier.layerCount;
-				range.baseArrayLayer = textureBarrier.baseLayer;
-				range.levelCount = !textureBarrier.levelCount ? VK_REMAINING_MIP_LEVELS : textureBarrier.levelCount;
-				range.baseMipLevel = textureBarrier.baseMipLevel;
+				range.layerCount = !rhiTextureBarrier.layerCount ? VK_REMAINING_ARRAY_LAYERS : rhiTextureBarrier.layerCount;
+				range.baseArrayLayer = rhiTextureBarrier.baseLayer;
+				range.levelCount = !rhiTextureBarrier.levelCount ? VK_REMAINING_MIP_LEVELS : rhiTextureBarrier.levelCount;
+				range.baseMipLevel = rhiTextureBarrier.baseMipLevel;
 				imageBarrier.subresourceRange = range;
 				imageBarriers.push_back(imageBarrier);
 				break;

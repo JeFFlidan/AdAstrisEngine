@@ -1,9 +1,11 @@
 ﻿#pragma once
 #include "core/flags_operations.h"
+#include "profiler/logger.h"
 #include <cstdint>
 #include <vector>
 #include <array>
 #include <string>
+#include <variant>
 
 namespace ad_astris::rhi
 {
@@ -758,91 +760,134 @@ namespace ad_astris::rhi
 		QueueType queueType;
 	};
 	
-	struct PipelineBarrier
+	class PipelineBarrier
 	{
-		enum class BarrierType
-		{
-			MEMORY,
-			BUFFER,
-			TEXTURE
-		} type;
+		public:
+			enum class BarrierType
+			{
+				MEMORY,
+				BUFFER,
+				TEXTURE
+			};
 
-		struct MemoryBarrier
-		{
-			ResourceLayout srcLayout;
-			ResourceLayout dstLayout;
-		};
+			struct MemoryBarrier
+			{
+				ResourceLayout srcLayout;
+				ResourceLayout dstLayout;
+			};
 
-		struct BufferBarrier
-		{
-			Buffer* buffer;
-			ResourceLayout srcLayout;
-			ResourceLayout dstLayout;
-		};
+			struct BufferBarrier
+			{
+				const Buffer* buffer;
+				ResourceLayout srcLayout;
+				ResourceLayout dstLayout;
+			};
 
-		struct TextureBarrier
-		{
-			Texture* texture;
-			ResourceLayout srcLayout;
-			ResourceLayout dstLayout;
-			uint32_t levelCount;
-			uint32_t baseMipLevel;
-			uint32_t layerCount;
-			uint32_t baseLayer;
-		};
+			struct TextureBarrier
+			{
+				const Texture* texture;
+				ResourceLayout srcLayout;
+				ResourceLayout dstLayout;
+				uint32_t levelCount;
+				uint32_t baseMipLevel;
+				uint32_t layerCount;
+				uint32_t baseLayer;
+			};
 
-		union
-		{
-			MemoryBarrier memoryBarrier;
-			BufferBarrier bufferBarrier;
-			TextureBarrier textureBarrier;
-		};
+			PipelineBarrier() = default;
+			PipelineBarrier(const MemoryBarrier& memoryBarrier) : _pipelineBarrier(memoryBarrier) { }
+			PipelineBarrier(const BufferBarrier& bufferBarrier) : _pipelineBarrier(bufferBarrier) { }
+			PipelineBarrier(const TextureBarrier& textureBarrier) : _pipelineBarrier(textureBarrier) { }
 
-		static PipelineBarrier set_memory_barrier(ResourceLayout srcLayout, ResourceLayout dstLayout)
-		{
-			MemoryBarrier memoryBarrier;
-			memoryBarrier.srcLayout = srcLayout;
-			memoryBarrier.dstLayout = dstLayout;
-			PipelineBarrier pipelineBarrier;
-			pipelineBarrier.type = BarrierType::MEMORY;
-			pipelineBarrier.memoryBarrier = memoryBarrier;
-			return pipelineBarrier;
-		}
+			PipelineBarrier(ResourceLayout srcLayout, ResourceLayout dstLayout)
+				: _pipelineBarrier(MemoryBarrier{ srcLayout, dstLayout }) { }
 
-		static PipelineBarrier set_buffer_barrier(Buffer* buffer, ResourceLayout srcLayout, ResourceLayout dstLayout)
-		{
-			BufferBarrier bufferBarrier;
-			bufferBarrier.buffer = buffer;
-			bufferBarrier.srcLayout = srcLayout;
-			bufferBarrier.dstLayout = dstLayout;
-			PipelineBarrier pipelineBarrier;
-			pipelineBarrier.bufferBarrier = bufferBarrier;
-			pipelineBarrier.type = BarrierType::BUFFER;
-			return pipelineBarrier;
-		}
+			PipelineBarrier(Buffer* buffer, ResourceLayout srcLayout, ResourceLayout dstLayout)
+				: _pipelineBarrier(BufferBarrier{ buffer, srcLayout, dstLayout }) { }
 
-		static PipelineBarrier set_texture_barrier(
-			Texture* texture,
-			ResourceLayout srcLayout,
-			ResourceLayout dstLayout,
-			uint32_t baseMipLevel = 0,
-			uint32_t levelCount = 0,
-			uint32_t baseLayer = 0,
-			uint32_t layerCount = 0)
-		{
-			TextureBarrier textureBarrier;
-			textureBarrier.texture = texture;
-			textureBarrier.srcLayout = srcLayout;
-			textureBarrier.dstLayout = dstLayout;
-			textureBarrier.baseMipLevel = baseMipLevel;
-			textureBarrier.baseLayer = baseLayer;
-			textureBarrier.levelCount = levelCount;
-			textureBarrier.layerCount = layerCount;
-			PipelineBarrier pipelineBarrier;
-			pipelineBarrier.textureBarrier = textureBarrier;
-			pipelineBarrier.type = BarrierType::TEXTURE;
-			return pipelineBarrier;
-		}
+			PipelineBarrier(Texture* texture,
+				ResourceLayout srcLayout,
+				ResourceLayout dstLayout,
+				uint32_t baseMipLevel = 0,
+				uint32_t levelCount = 0,
+				uint32_t baseLayer = 0,
+				uint32_t layerCount = 0)
+					: _pipelineBarrier(TextureBarrier{ texture, srcLayout, dstLayout, levelCount, baseMipLevel, layerCount, baseLayer }) { }
+
+			void set_memory_barrier(ResourceLayout srcLayout, ResourceLayout dstLayout)
+			{
+				_pipelineBarrier = MemoryBarrier{ srcLayout, dstLayout };
+			}
+
+			void set_buffer_barrier(Buffer* buffer, ResourceLayout srcLayout, ResourceLayout dstLayout)
+			{
+				_pipelineBarrier = BufferBarrier{ buffer, srcLayout, dstLayout };
+			}
+
+			void set_texture_barrier(Texture* texture,
+				ResourceLayout srcLayout,
+				ResourceLayout dstLayout,
+				uint32_t baseMipLevel = 0,
+				uint32_t levelCount = 0,
+				uint32_t baseLayer = 0,
+				uint32_t layerCount = 0)
+			{
+				_pipelineBarrier = TextureBarrier{ texture, srcLayout, dstLayout, levelCount, baseMipLevel, layerCount, baseLayer };
+			}
+
+			const MemoryBarrier& get_memory_barrier() const
+			{
+				return std::visit([&](auto& arg)->const MemoryBarrier&
+				{
+					using ArgType = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<ArgType, MemoryBarrier>)
+						return arg;
+					
+					LOG_FATAL("PipelineBarrier::get_memory_barrier(): Pipeline barrier type is not MEMORY")
+				}, _pipelineBarrier);
+			}
+
+			const BufferBarrier& get_buffer_barrier() const
+			{
+				return std::visit([&](auto& arg)->const BufferBarrier&
+				{
+					using ArgType = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<ArgType, BufferBarrier>)
+						return arg;
+					
+					LOG_FATAL("PipelineBarrier::get_buffer_barrier(): Pipeline barrier type is not BUFFER")
+				}, _pipelineBarrier);
+			}
+
+			const TextureBarrier& get_texture_barrier() const
+			{
+				return std::visit([&](auto& arg)->const TextureBarrier&
+				{
+					using ArgType = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<ArgType, TextureBarrier>)
+						return arg;
+					
+					LOG_FATAL("PipelineBarrier::get_texture_barrier(): Pipeline barrier type is not TEXTURE")
+				}, _pipelineBarrier);
+			}
+
+			BarrierType get_barrier_type() const
+			{
+				return std::visit([&](auto&& arg)->BarrierType
+				{
+					using ArgType = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<ArgType, MemoryBarrier>)
+						return BarrierType::MEMORY;
+					if constexpr (std::is_same_v<ArgType, BufferBarrier>)
+						return BarrierType::BUFFER;
+					if constexpr (std::is_same_v<ArgType, TextureBarrier>)
+						return BarrierType::TEXTURE;
+					LOG_FATAL("PipelineBarrier::get_barrier_type(): Failed to retrieve barrier type")
+				}, _pipelineBarrier);
+			}
+
+		private:
+			std::variant<MemoryBarrier, BufferBarrier, TextureBarrier> _pipelineBarrier;
 	};
 
 	struct Viewport

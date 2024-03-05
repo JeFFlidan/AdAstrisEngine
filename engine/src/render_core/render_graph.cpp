@@ -335,13 +335,11 @@ void RenderGraph::build_barriers()
 			TextureDesc* depthTextureDesc = logicalPass->get_depth_stencil_output();
 			if (depthTextureDesc)
 			{
-				rhi::PipelineBarrier& invalidatingBarrier = _invalidatingPipelineBarriers.emplace_back();
-				rhi::PipelineBarrier& flushingBarrier = _flushingPipelineBarriersByPassIndex[passIndex].emplace_back();
-				invalidatingBarrier = rhi::PipelineBarrier::set_texture_barrier(
+				_invalidatingPipelineBarriers.emplace_back(
 					get_physical_texture(depthTextureDesc->get_name()),
 					rhi::ResourceLayout::UNDEFINED,
 					rhi::ResourceLayout::DEPTH_STENCIL);
-				flushingBarrier = rhi::PipelineBarrier::set_texture_barrier(
+				_flushingPipelineBarriersByPassIndex[passIndex].emplace_back(
 					get_physical_texture(depthTextureDesc->get_name()),
 					rhi::ResourceLayout::DEPTH_STENCIL,
 					rhi::ResourceLayout::SHADER_READ);
@@ -372,8 +370,7 @@ void RenderGraph::build_barriers()
 				}
 			}
 
-			rhi::PipelineBarrier& invalidatingBarrier = _invalidatingPipelineBarriers.emplace_back();
-			invalidatingBarrier = rhi::PipelineBarrier::set_texture_barrier(
+			_invalidatingPipelineBarriers.emplace_back(
 				get_physical_texture(colorOutput->get_name()),
 				rhi::ResourceLayout::UNDEFINED,
 				rhi::ResourceLayout::COLOR_ATTACHMENT);
@@ -382,8 +379,7 @@ void RenderGraph::build_barriers()
 			if (isBlitSrc)
 				continue;
 		
-			rhi::PipelineBarrier& flushingBarrier = _flushingPipelineBarriersByPassIndex[passIndex].emplace_back();
-			flushingBarrier = rhi::PipelineBarrier::set_texture_barrier(
+			_flushingPipelineBarriersByPassIndex[passIndex].emplace_back(
 				get_physical_texture(colorOutput->get_name()),
 				rhi::ResourceLayout::COLOR_ATTACHMENT,
 				rhi::ResourceLayout::SHADER_READ);
@@ -410,8 +406,7 @@ void RenderGraph::build_barriers()
 			if (it != resourcesWithInvalidatingBarrier.end())
 				continue;
 		
-			rhi::PipelineBarrier& invalidatingBarrier = _invalidatingPipelineBarriers.emplace_back();
-			invalidatingBarrier = rhi::PipelineBarrier::set_texture_barrier(
+			_invalidatingPipelineBarriers.emplace_back(
 				get_physical_texture(storageTextureDesc->get_name()),
 				rhi::ResourceLayout::UNDEFINED,
 				rhi::ResourceLayout::GENERAL | rhi::ResourceLayout::SHADER_WRITE);
@@ -423,27 +418,19 @@ void RenderGraph::build_barriers()
 			TextureDesc* srcTextureDesc = blitTextures.first;
 			TextureDesc* dstTextureDesc = blitTextures.second;
 		
-			rhi::PipelineBarrier& srcBeforeBarrier = _beforeBlitPipelineBarriersByPassIndex[passIndex].emplace_back();
-			rhi::PipelineBarrier& dstBeforeBarrier = _beforeBlitPipelineBarriersByPassIndex[passIndex].emplace_back();
-			rhi::PipelineBarrier& srcAfterBarrier = _afterBlitPipelineBarriersByPassIndex[passIndex].emplace_back();
-			rhi::PipelineBarrier& dstAfterBarrier = _afterBlitPipelineBarriersByPassIndex[passIndex].emplace_back();
-		
-			srcBeforeBarrier = rhi::PipelineBarrier::set_texture_barrier(
+			_beforeBlitPipelineBarriersByPassIndex[passIndex].emplace_back(
 				get_physical_texture(srcTextureDesc->get_name()),
 				rhi::ResourceLayout::COLOR_ATTACHMENT,
-				rhi::ResourceLayout::TRANSFER_SRC); // TODO
-
-			dstBeforeBarrier = rhi::PipelineBarrier::set_texture_barrier(
+				rhi::ResourceLayout::TRANSFER_SRC);
+			_beforeBlitPipelineBarriersByPassIndex[passIndex].emplace_back(
 				get_physical_texture(dstTextureDesc->get_name()),
 				rhi::ResourceLayout::UNDEFINED,
 				rhi::ResourceLayout::TRANSFER_DST);
-
-			srcAfterBarrier = rhi::PipelineBarrier::set_texture_barrier(
+			_afterBlitPipelineBarriersByPassIndex[passIndex].emplace_back(
 				get_physical_texture(srcTextureDesc->get_name()),
 				rhi::ResourceLayout::TRANSFER_SRC,
 				rhi::ResourceLayout::SHADER_READ);
-
-			dstAfterBarrier = rhi::PipelineBarrier::set_texture_barrier(
+			_afterBlitPipelineBarriersByPassIndex[passIndex].emplace_back(
 				get_physical_texture(dstTextureDesc->get_name()),
 				rhi::ResourceLayout::TRANSFER_DST,
 				rhi::ResourceLayout::SHADER_READ);
@@ -462,8 +449,7 @@ void RenderGraph::build_barriers()
 			rhi::Buffer* buffer = get_physical_buffer(storageBufferDesc->get_name());
 			if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::INDIRECT_BUFFER))
 			{
-				rhi::PipelineBarrier& flushingBarrier = _flushingPipelineBarriersByPassIndex[passIndex].emplace_back();
-				flushingBarrier = rhi::PipelineBarrier::set_buffer_barrier(
+				_flushingPipelineBarriersByPassIndex[passIndex].emplace_back(
 					buffer,
 					rhi::ResourceLayout::SHADER_WRITE,
 					rhi::ResourceLayout::INDIRECT_COMMAND_BUFFER);
