@@ -6,15 +6,57 @@
 #include "engine_core/enums.h"
 #include "renderer/common.h"
 #include "renderer/module_objects.h"
-#include "..\renderer_array.h"
+#include "renderer/renderer_array.h"
 #include "renderer/renderer_resource_collection.h"
+#include "core/non_copyable_non_movable.h"
 
 namespace ad_astris::renderer::impl
 {
-	struct IndirectBuffers
+	class DepthPyramid
+	{
+		public:
+			DepthPyramid(size_t entityFilterHash);
+
+			rhi::Texture* get_texture() const
+			{
+				return RENDERER_RESOURCE_MANAGER()->get_texture(get_str_with_id(DEPTH_PYRAMID_NAME));
+			}
+
+			rhi::TextureView* get_texture_view() const
+			{
+				return RENDERER_RESOURCE_MANAGER()->get_texture_view(get_str_with_id(DEPTH_PYRAMID_NAME));
+			}
+		
+			rhi::TextureView* get_mipmap(size_t index) const
+			{
+				return RENDERER_RESOURCE_MANAGER()->get_texture_view(get_str_with_id(DEPTH_PYRAMID_MIPMAP_NAME) + std::to_string(index));
+			}
+		
+			uint32_t get_width() const { return _width; }
+			uint32_t get_height() const { return _height; }
+			uint32_t get_mip_levels() const { return _mipLevels; }
+			std::string get_depth_pyramid_name() const { return get_str_with_id(DEPTH_PYRAMID_NAME); }
+		
+		private:
+			inline static constexpr const char* DEPTH_PYRAMID_NAME = "DepthPyramid";
+			inline static constexpr const char* DEPTH_PYRAMID_MIPMAP_NAME = "DepthPyramidMipmap";
+		
+			uint32_t _width{ 0 };
+			uint32_t _height{ 0 };
+			uint32_t _mipLevels{ 0 };
+			size_t _entityFilterHash{ 0 };
+				
+			std::string get_str_with_id(const std::string& str) const
+			{
+				return std::to_string(_entityFilterHash) + str;
+			}
+	};
+	
+	struct IndirectBuffers : public NonCopyableNonMovable
 	{
 		rhi::Buffer* indirectBuffer{ nullptr };
 		rhi::Buffer* modelInstanceIDBuffer{ nullptr };
+		std::unique_ptr<DepthPyramid> depthPyramid{ nullptr };
 		uint32_t cullingParamsIndex{ 0 };
 	};
 	
@@ -67,7 +109,7 @@ namespace ad_astris::renderer::impl
 				return _cullingParamsBuffer;
 			}
 		
-			FORCE_INLINE IndirectBuffers get_scene_indirect_buffers(const ecs::IEntityFilter& filter, ecore::CameraIndex cameraIndex)
+			FORCE_INLINE IndirectBuffers& get_scene_indirect_buffers(const ecs::IEntityFilter& filter, ecore::CameraIndex cameraIndex)
 			{
 				auto it = _sceneCullingContextByEntityFilterHash.find(filter.get_requirements_hash());
 				if (it == _sceneCullingContextByEntityFilterHash.end())
@@ -82,16 +124,16 @@ namespace ad_astris::renderer::impl
 				return it2->second;
 			}
 		
-			FORCE_INLINE std::vector<IndirectBuffers> get_light_indirect_buffers(ecs::Entity lightSource)
+			FORCE_INLINE std::vector<IndirectBuffers*> get_light_indirect_buffers(ecs::Entity lightSource)
 			{
-				std::vector<IndirectBuffers> buffers;
+				std::vector<IndirectBuffers*> buffers;
 				for (auto& pair : _shadowsCullingContextByEntityFilterHash)
 				{
 					ShadowsCullingContext& cullingContext = pair.second;
 					auto it = cullingContext.indirectBuffersByLightSource.find(lightSource);
 					if (it != cullingContext.indirectBuffersByLightSource.end())
 					{
-						buffers.push_back(it->second);
+						buffers.push_back(&it->second);
 					}
 				}
 				return buffers;
@@ -145,18 +187,17 @@ namespace ad_astris::renderer::impl
 				}
 				LOG_FATAL("CullingSubmanager::get_main_culling_indices_buffer(): No filter")
 			}
-			// FORCE_INLINE uint32_t get_batch_instance_count(uint32_t batchIndex) { return _indirectCommands[batchIndex].instanceCount; }
 
 			template<typename ...ARGS>
 			FORCE_INLINE std::string get_indirect_buffer_name(const ecs::EntityFilter<ARGS...>& filter)
 			{
-				return filter.get_name() + INDIRECT_BUFFER_NAME;
+				return std::to_string(filter.get_requirements_hash()) + INDIRECT_BUFFER_NAME;
 			}
 
 			template<typename ...ARGS>
 			FORCE_INLINE std::string get_model_instance_id_buffer_name(const ecs::EntityFilter<ARGS...>& filter)
 			{
-				return filter.get_name() + MODEL_INSTANCE_ID_BUFFER_NAME;
+				return std::to_string(filter.get_requirements_hash()) + MODEL_INSTANCE_ID_BUFFER_NAME;
 			}
 		
 		private:
@@ -174,7 +215,7 @@ namespace ad_astris::renderer::impl
 				std::unique_ptr<RendererResourceCollection<CullingInstanceIndices>> cullingInstanceIndices{ nullptr };
 				std::unordered_map<UUID, size_t> indirectBatchIndexByModelUUID;
 				uint32_t instanceCount{ 0 };
-				std::string entityFilterName;
+				size_t entityFilterHash{ 0 };
 			};
 		
 			struct SceneCullingContext : BaseCullingContext
@@ -184,25 +225,28 @@ namespace ad_astris::renderer::impl
 				template<typename ...ARGS>
 				void init(const ecs::EntityFilter<ARGS...>& filter, ecore::CameraIndex cameraIndex, uint32_t cullingParamsIndex)
 				{
-					std::string entityFilterName = filter.get_name();
+					entityFilterHash = filter.get_requirements_hash();
 					IndirectBuffers& indirectBuffers = indirectBuffersByCameraIndex[cameraIndex];
 					indirectBuffers.cullingParamsIndex = cullingParamsIndex;
 	
 					indirectCommands = std::make_unique<RendererArray<DrawIndexedIndirectCommand>>(
-						entityFilterName + CPU_INDIRECT_BUFFER_NAME,
+						std::to_string(entityFilterHash) + CPU_INDIRECT_BUFFER_NAME,
 						sizeof(DrawIndexedIndirectCommand) * INDIRECT_BATCH_INIT_NUMBER);
 					cullingInstanceIndices = std::make_unique<RendererResourceCollection<CullingInstanceIndices>>(
-						entityFilterName + CPU_CULLING_INDICES_BUFFER_NAME,
-						entityFilterName + CULLING_INDICES_BUFFER_NAME,
+						std::to_string(entityFilterHash) + CPU_CULLING_INDICES_BUFFER_NAME,
+						std::to_string(entityFilterHash) + CULLING_INDICES_BUFFER_NAME,
 						rhi::ResourceUsage::STORAGE_BUFFER,
 						sizeof(CullingInstanceIndices) * MODEL_INSTANCES_INIT_NUMBER);
 
 					indirectBuffers.indirectBuffer = RENDERER_RESOURCE_MANAGER()->allocate_indirect_buffer(
-						entityFilterName + INDIRECT_BUFFER_NAME,
+						std::to_string(entityFilterHash) + INDIRECT_BUFFER_NAME,
 						sizeof(DrawIndexedIndirectCommand) * INDIRECT_BATCH_INIT_NUMBER);
 					indirectBuffers.modelInstanceIDBuffer = RENDERER_RESOURCE_MANAGER()->allocate_storage_buffer(
-						entityFilterName + MODEL_INSTANCE_ID_BUFFER_NAME,
+						std::to_string(entityFilterHash) + MODEL_INSTANCE_ID_BUFFER_NAME,
 						sizeof(RendererModelInstanceID) * MODEL_INSTANCES_INIT_NUMBER);
+					
+					if (RENDERER_SUBSETTINGS()->get_scene_culling_settings().isOcclusionCullingEnabled && !indirectBuffers.depthPyramid)
+						indirectBuffers.depthPyramid = std::make_unique<DepthPyramid>(entityFilterHash);
 				}
 			};
 
@@ -224,7 +268,7 @@ namespace ad_astris::renderer::impl
 
 			void subscribe_to_events();
 
-			void update_cpu_arrays();
+			void update_cpu_arrays(rhi::CommandBuffer& cmd);
 			void update_gpu_buffers(rhi::CommandBuffer& cmd);
 	};
 }

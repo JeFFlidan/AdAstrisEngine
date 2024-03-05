@@ -1,5 +1,6 @@
 ﻿#include "culling.h"
 #include "renderer/common.h"
+#include "renderer/utils.h"
 
 using namespace ad_astris;
 using namespace renderer;
@@ -12,6 +13,7 @@ void Culling::prepare_render_pass()
 	rcore::IRenderPass* renderPass = RENDER_GRAPH()->add_new_pass("OpaqueModelsCulling", rcore::RenderGraphQueue::COMPUTE);
 	renderPass->add_storage_buffer_read_write_output(cullingSubmanager->get_indirect_buffer_name(STATIC_OPAQUE_FILTER));
 	renderPass->add_storage_buffer_read_write_output(cullingSubmanager->get_model_instance_id_buffer_name(STATIC_OPAQUE_FILTER));
+	renderPass->add_storage_texture_input(Utils::get_depth_pyramid(STATIC_OPAQUE_FILTER, ecore::MAIN_CAMERA).get_depth_pyramid_name());
 	renderPass->set_executor(this);
 }
 
@@ -21,7 +23,7 @@ void Culling::execute(rhi::CommandBuffer* cmd)
 	RHI()->bind_pipeline(cmd, pipeline);
 
 	CullingSubmanager* cullingSubmanager = SCENE_MANAGER()->get_culling_submanager();
-	IndirectBuffers indirectBuffers = cullingSubmanager->get_scene_indirect_buffers(STATIC_OPAQUE_FILTER, ecore::MAIN_CAMERA);
+	IndirectBuffers& indirectBuffers = cullingSubmanager->get_scene_indirect_buffers(STATIC_OPAQUE_FILTER, ecore::MAIN_CAMERA);
 	rhi::Buffer* cullingIndicesBuffer = cullingSubmanager->get_culling_indices_buffer(STATIC_OPAQUE_FILTER);
 	IndirectBufferIndices indirectBufferIndices;
 	indirectBufferIndices.indirectCommandsBufferIndex = RHI()->get_descriptor_index(indirectBuffers.indirectBuffer);

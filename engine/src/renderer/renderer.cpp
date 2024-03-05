@@ -3,6 +3,7 @@
 #include "application/editor_module.h"
 #include "lighting/deferred_lighting.h"
 #include "compute/culling.h"
+#include "compute/depth_reduce.h"
 #include "transparency/oit.h"
 #include "postprocessing/temporal_filter.h"
 #include "swap_chain_pass.h"
@@ -49,6 +50,9 @@ void Renderer::bake()
 	_renderPassExecutors.emplace_back(new GBuffer(renderingInitContext));
 	_renderPassExecutors.emplace_back(new DeferredLighting(renderingInitContext));
 	_renderPassExecutors.emplace_back(new Culling(renderingInitContext));
+
+	if (RENDERER_SUBSETTINGS()->get_scene_culling_settings().isOcclusionCullingEnabled)
+		_renderPassExecutors.emplace_back(new DepthReduce(renderingInitContext));
 	
 	for (auto& executor : _renderPassExecutors)
 		executor->prepare_render_pass();

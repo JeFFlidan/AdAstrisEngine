@@ -35,5 +35,6 @@ namespace ad_astris::rcore::impl
 			void create_gbuffer_pipeline();
 			void create_deferred_lighting_pipeline();
 			void create_occlusion_culling_pipeline();
+			void create_depth_reduce_pipeline();
 	};
 }

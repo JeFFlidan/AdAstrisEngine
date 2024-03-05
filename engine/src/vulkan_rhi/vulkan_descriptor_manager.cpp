@@ -97,10 +97,8 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* te
 		textureDescriptorIndex = textureView->get_descriptor_index();
 	}
 
-	switch (heapType)
+	if (heapType == TextureDescriptorHeapType::TEXTURES)
 	{
-		case TextureDescriptorHeapType::TEXTURES:
-		{
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageView = textureView->get_handle();
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -114,10 +112,9 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* te
 			writeDescriptorSet.descriptorCount = 1;
 			writeDescriptorSet.pImageInfo = &imageInfo;
 			vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
-			break;
-		}
-		case TextureDescriptorHeapType::STORAGE_TEXTURES:
-		{
+	}
+	if (heapType == TextureDescriptorHeapType::STORAGE_TEXTURES)
+	{
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 			imageInfo.imageView = textureView->get_handle();
@@ -131,8 +128,6 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* te
 			writeDescriptorSet.descriptorCount = 1;
 			writeDescriptorSet.pImageInfo = &imageInfo;
 			vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
-			break;
-		}
 	}
 }
 

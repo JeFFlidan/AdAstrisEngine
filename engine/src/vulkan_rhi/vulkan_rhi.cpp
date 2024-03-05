@@ -197,7 +197,7 @@ void VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::Texture*
 	{
 		_descriptorManager->allocate_bindless_descriptor(get_vk_obj(textureView), TextureDescriptorHeapType::TEXTURES);
 	}
-	else if (has_flag(imgUsage, (VkImageUsageFlags)VK_IMAGE_USAGE_STORAGE_BIT))
+	if (has_flag(imgUsage, (VkImageUsageFlags)VK_IMAGE_USAGE_STORAGE_BIT))
 	{
 		_descriptorManager->allocate_bindless_descriptor(get_vk_obj(textureView), TextureDescriptorHeapType::STORAGE_TEXTURES);
 	}

@@ -777,10 +777,6 @@ VkAccessFlags2 vulkan::get_access(rhi::ResourceLayout resourceLayout)
 	{
 		accessFlags |= VK_ACCESS_2_MEMORY_WRITE_BIT;
 	}
-	if (has_flag(resourceLayout, rhi::ResourceLayout::GENERAL))
-	{
-		accessFlags |= VK_ACCESS_2_SHADER_WRITE_BIT | VK_ACCESS_2_SHADER_READ_BIT;
-	}
 	return accessFlags;
 }
 

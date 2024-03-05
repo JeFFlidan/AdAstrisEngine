@@ -157,4 +157,12 @@ namespace ad_astris::math
 	{
 		return uint32_t(std::floor(std::log2(std::max(width, height)))) + 1;
 	}
+
+	inline uint32_t previous_pow2(uint32_t val)
+	{
+		uint32_t r = 1;
+		while (r * 2 < val)
+			r *= 2;
+		return r;
+	}
 }

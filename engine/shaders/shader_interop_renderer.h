@@ -465,6 +465,8 @@ enum SamplerType
 	SAMPLER_NEAREST_CLAMP,
 	SAMPLER_NEAREST_MIRROR,
 
+	SAMPLER_MINIMUM_NEAREST_CLAMP,
+
 	SAMPLER_COUNT
 };
 
@@ -503,6 +505,7 @@ struct IndirectBufferIndices
 struct CullingParams
 {
 	uint cameraIndex;
+	uint depthPyramidIndex;
 	float lodBase, lodStep;
 	float pyramidWidth, pyramidHeight;
 
@@ -518,8 +521,19 @@ struct CullingParams
 	float aabbmax_x;
 	float aabbmax_y;
 	float aabbmax_z;
+	float3 empty;
 };
 
 static const uint CULLING_GROUP_SIZE = 256;
+
+struct DepthReduceData
+{
+	uint levelWidth;
+	uint levelHeight;
+	uint inDepthTextureIndex;
+	uint outDepthTextureIndex;
+};
+
+static const uint DEPTH_REDUCE_GROUP_SIZE = 32;
 
 #endif // SHADER_INTEROP_RENDERER

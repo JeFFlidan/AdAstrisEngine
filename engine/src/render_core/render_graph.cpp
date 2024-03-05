@@ -414,7 +414,7 @@ void RenderGraph::build_barriers()
 			invalidatingBarrier = rhi::PipelineBarrier::set_texture_barrier(
 				get_physical_texture(storageTextureDesc->get_name()),
 				rhi::ResourceLayout::UNDEFINED,
-				rhi::ResourceLayout::GENERAL);
+				rhi::ResourceLayout::GENERAL | rhi::ResourceLayout::SHADER_WRITE);
 			resourcesWithInvalidatingBarrier.insert(storageTextureDesc->get_logical_index());
 		}
 		

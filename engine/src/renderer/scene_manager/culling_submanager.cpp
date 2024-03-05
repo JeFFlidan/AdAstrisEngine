@@ -20,7 +20,7 @@ CullingSubmanager::CullingSubmanager()
 
 void CullingSubmanager::update(rhi::CommandBuffer& cmdBuffer)
 {
-	update_cpu_arrays();
+	update_cpu_arrays(cmdBuffer);
 	update_gpu_buffers(cmdBuffer);
 }
 
@@ -78,7 +78,7 @@ void CullingSubmanager::add_culling_instance(ecs::Entity entity, uint32_t object
 	cpuIndirectData->cullingInstanceIndices->push_back(&instanceIndices, 1);
 }
 
-void CullingSubmanager::update_cpu_arrays()
+void CullingSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 {
 	for (auto& pair : _sceneCullingContextByEntityFilterHash)
 	{
@@ -95,6 +95,8 @@ void CullingSubmanager::update_cpu_arrays()
 			cullingParams->isFrustumCullingEnabled = sceneCullingSettings.isFrustumCullingEnabled;
 			cullingParams->isOcclusionCullingEnabled = sceneCullingSettings.isOcclusionCullingEnabled;
 			cullingParams->isAABBCheckEnabled = false;
+			IndirectBuffers& indirectBuffers = pair2.second;
+			cullingParams->depthPyramidIndex = RHI()->get_descriptor_index(indirectBuffers.depthPyramid->get_mipmap(0));
 			// TODO write whole cullingParams configuration
 		}
 	}
@@ -164,4 +166,31 @@ void CullingSubmanager::subscribe_to_events()
 		_cameras[event.get_camera_index()] = event.get_camera();
 	};
 	EVENT_MANAGER()->subscribe(delegate1);
+}
+
+DepthPyramid::DepthPyramid(size_t entityFilterHash) : _entityFilterHash(entityFilterHash)
+{
+	_width = math::previous_pow2(IMAGE_WIDTH);
+	_height = math::previous_pow2(IMAGE_HEIGHT);
+	_mipLevels = math::get_mip_levels(_width, _height);
+	RENDERER_RESOURCE_MANAGER()->allocate_gpu_texture(
+		get_str_with_id(DEPTH_PYRAMID_NAME),
+		_width,
+		_height,
+		rhi::Format::R32_SFLOAT,
+		rhi::ResourceUsage::STORAGE_TEXTURE | rhi::ResourceUsage::TRANSFER_SRC | rhi::ResourceUsage::SAMPLED_TEXTURE,
+		rhi::ResourceFlags::UNDEFINED,
+		_mipLevels);
+	
+	RENDERER_RESOURCE_MANAGER()->allocate_texture_view(
+		get_str_with_id(DEPTH_PYRAMID_NAME),
+		get_str_with_id(DEPTH_PYRAMID_NAME));
+
+	for (uint32_t i = 0; i != _mipLevels; ++i)
+	{
+		RENDERER_RESOURCE_MANAGER()->allocate_texture_view(
+			get_str_with_id(DEPTH_PYRAMID_MIPMAP_NAME) + std::to_string(i),
+			get_str_with_id(DEPTH_PYRAMID_NAME),
+			i, 1);
+	}
 }
