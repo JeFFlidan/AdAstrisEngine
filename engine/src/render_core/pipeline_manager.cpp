@@ -107,7 +107,7 @@ void PipelineManager::setup_default_graphics_pipeline_info(rhi::GraphicsPipeline
 	pipelineInfo.depthStencilState.isDepthTestEnabled = false;
 	pipelineInfo.depthStencilState.isDepthWriteEnabled = false;
 	pipelineInfo.depthStencilState.isStencilTestEnabled = false;
-	pipelineInfo.depthStencilState.compareOp = rhi::CompareOp::LESS_OR_EQUAL;
+	pipelineInfo.depthStencilState.compareOp = rhi::CompareOp::GREATER_OR_EQUAL;
 }
 
 void PipelineManager::setup_formats(BuiltinPipelineType type, std::vector<rhi::Format>& colorAttachFormats, rhi::Format& depthAttachFormat)

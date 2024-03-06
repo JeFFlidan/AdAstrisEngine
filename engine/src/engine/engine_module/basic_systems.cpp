@@ -169,7 +169,7 @@ void CameraUpdateSystem::execute(ecs::EngineManagers& managers, tasks::TaskGroup
 			XMStoreFloat3(&cameraComponent.up, up);
 			
 			XMMATRIX view = XMMatrixLookToLH(eye, at, up);
-			XMMATRIX projection = XMMatrixPerspectiveFovLH(XMConvertToRadians(cameraComponent.fov), _width / _height, cameraComponent.zNear, cameraComponent.zFar);
+			XMMATRIX projection = XMMatrixPerspectiveFovLH(XMConvertToRadians(cameraComponent.fov), _width / _height, cameraComponent.zFar, cameraComponent.zNear);
 			XMMATRIX viewProjection = XMMatrixMultiply(view, projection);
 			XMMATRIX invView = XMMatrixInverse(nullptr, view);
 			XMMATRIX invProjection = XMMatrixInverse(nullptr, projection);
