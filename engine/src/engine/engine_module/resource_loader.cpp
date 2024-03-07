@@ -6,7 +6,7 @@
 using namespace ad_astris;
 using namespace engine::impl;
 
-void ResourceLoader::init()
+ResourceLoader::ResourceLoader()
 {
 	subscribe_to_events();
 }

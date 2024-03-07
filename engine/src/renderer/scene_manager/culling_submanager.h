@@ -213,7 +213,14 @@ namespace ad_astris::renderer::impl
 			{
 				std::unique_ptr<RendererArray<DrawIndexedIndirectCommand>> indirectCommands{ nullptr };
 				std::unique_ptr<RendererResourceCollection<CullingInstanceIndices>> cullingInstanceIndices{ nullptr };
-				std::unordered_map<UUID, size_t> indirectBatchIndexByModelUUID;
+				
+				struct IndirectBatchMisc
+				{
+					size_t index;
+					size_t instanceCount;
+				};
+				
+				std::unordered_map<UUID, IndirectBatchMisc> indirectBatchMiscByModelUUID;
 				uint32_t instanceCount{ 0 };
 				size_t entityFilterHash{ 0 };
 			};

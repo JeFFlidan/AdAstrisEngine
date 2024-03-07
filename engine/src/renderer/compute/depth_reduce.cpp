@@ -22,14 +22,10 @@ void DepthReduce::execute(rhi::CommandBuffer* cmd)
 	
 	rhi::Pipeline* pipeline = PIPELINE_MANAGER()->get_builtin_pipeline(rcore::BuiltinPipelineType::DEPTH_REDUCE);
 	RHI()->bind_pipeline(cmd, pipeline);
-	
-	rhi::PipelineBarrier barrier(
-		gDepthStencilTexture,
-		rhi::ResourceLayout::DEPTH_STENCIL,
-		rhi::ResourceLayout::SHADER_READ);
-	RHI()->add_pipeline_barriers(cmd, { barrier });
-	
+
+	rhi::PipelineBarrier barrier;
 	DepthReduceData depthReduceData;
+	
 	for (uint32_t i = 0; i != mipLevels; ++i)
 	{
 		depthReduceData.inDepthTextureIndex = RHI()->get_descriptor_index(!i ? gDepthStencilView : depthPyramid.get_mipmap(i - 1));
@@ -49,10 +45,4 @@ void DepthReduce::execute(rhi::CommandBuffer* cmd)
 			i, 1);
 		RHI()->add_pipeline_barriers(cmd, { barrier });
 	}
-
-	barrier.set_texture_barrier(
-		gDepthStencilTexture,
-		rhi::ResourceLayout::SHADER_READ,
-		rhi::ResourceLayout::DEPTH_STENCIL);
-	RHI()->add_pipeline_barriers(cmd, { barrier });
 }

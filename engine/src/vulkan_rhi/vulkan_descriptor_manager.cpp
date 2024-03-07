@@ -99,35 +99,35 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* te
 
 	if (heapType == TextureDescriptorHeapType::TEXTURES)
 	{
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageView = textureView->get_handle();
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		VkDescriptorImageInfo imageInfo{};
+		imageInfo.imageView = textureView->get_handle();
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-			VkWriteDescriptorSet writeDescriptorSet{};
-			writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			writeDescriptorSet.dstBinding = 0;
-			writeDescriptorSet.dstSet = _imageBindlessPool.get_set();
-			writeDescriptorSet.dstArrayElement = textureDescriptorIndex;
-			writeDescriptorSet.descriptorCount = 1;
-			writeDescriptorSet.pImageInfo = &imageInfo;
-			vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
+		VkWriteDescriptorSet writeDescriptorSet{};
+		writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writeDescriptorSet.dstBinding = 0;
+		writeDescriptorSet.dstSet = _imageBindlessPool.get_set();
+		writeDescriptorSet.dstArrayElement = textureDescriptorIndex;
+		writeDescriptorSet.descriptorCount = 1;
+		writeDescriptorSet.pImageInfo = &imageInfo;
+		vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
 	}
 	if (heapType == TextureDescriptorHeapType::STORAGE_TEXTURES)
 	{
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-			imageInfo.imageView = textureView->get_handle();
+		VkDescriptorImageInfo imageInfo{};
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		imageInfo.imageView = textureView->get_handle();
 
-			VkWriteDescriptorSet writeDescriptorSet{};
-			writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-			writeDescriptorSet.dstBinding = 0;
-			writeDescriptorSet.dstSet = _storageImageBindlessPool.get_set();
-			writeDescriptorSet.dstArrayElement = textureDescriptorIndex;
-			writeDescriptorSet.descriptorCount = 1;
-			writeDescriptorSet.pImageInfo = &imageInfo;
-			vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
+		VkWriteDescriptorSet writeDescriptorSet{};
+		writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		writeDescriptorSet.dstBinding = 0;
+		writeDescriptorSet.dstSet = _storageImageBindlessPool.get_set();
+		writeDescriptorSet.dstArrayElement = textureDescriptorIndex;
+		writeDescriptorSet.descriptorCount = 1;
+		writeDescriptorSet.pImageInfo = &imageInfo;
+		vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
 	}
 }
 

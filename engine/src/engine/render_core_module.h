@@ -112,7 +112,7 @@ namespace ad_astris::rcore
 			virtual void init(rhi::RHI* engineRHI) = 0;
 			virtual void cleanup() = 0;
 		
-			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue, bool isNextFramePreparation = false) = 0;
+			virtual IRenderPass* add_new_pass(const std::string& passName, RenderGraphQueue queue) = 0;
 			virtual IRenderPass* get_pass(const std::string& passName) = 0;
 			virtual void set_swap_chain_input(const std::string& swapChainInputName) = 0;
 			virtual void set_swap_chain_executor(IRenderPassExecutor* executor) = 0;

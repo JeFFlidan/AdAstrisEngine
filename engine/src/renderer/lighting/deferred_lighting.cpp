@@ -61,7 +61,7 @@ void GBuffer::execute(rhi::CommandBuffer* cmd)
 	for (uint32_t i = 0; i != indirectCommandCount; ++i)
 	{
 		RHI()->draw_indexed_indirect(cmd, indirectBuffer, offset, 1, sizeof(DrawIndexedIndirectCommand));
-		offset += i * sizeof(DrawIndexedIndirectCommand);
+		offset += (i + 1) * sizeof(DrawIndexedIndirectCommand);
 	}
 
 	profiler::Profiler::end_gpu_range(rangeID);

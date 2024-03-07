@@ -62,7 +62,7 @@ namespace ad_astris::rcore::impl
 			std::vector<std::unique_ptr<ResourceDesc>> _logicalResources;
 			std::unordered_map<std::string, uint32_t> _logicalResourceIndexByItsName;
 		
-			std::vector<rhi::PipelineBarrier> _invalidatingPipelineBarriers;
+			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _invalidatingPipelineBarriersByPassIndex;
 			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _flushingPipelineBarriersByPassIndex;
 			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _beforeBlitPipelineBarriersByPassIndex;
 			std::unordered_map<uint32_t, std::vector<rhi::PipelineBarrier>> _afterBlitPipelineBarriersByPassIndex;

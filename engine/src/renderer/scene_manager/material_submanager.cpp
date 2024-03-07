@@ -151,7 +151,7 @@ void MaterialSubmanager::create_samplers()
 	RHI()->create_sampler(&_samplers[SAMPLER_NEAREST_MIRROR], &samplerInfo);
 
 	samplerInfo.addressMode = rhi::AddressMode::CLAMP_TO_EDGE;
-	samplerInfo.filter = rhi::Filter::MINIMUM_MIN_MAG_MIP_NEAREST;
+	samplerInfo.filter = rhi::Filter::MINIMUM_MIN_MAG_LINEAR_MIP_NEAREST;
 	RHI()->create_sampler(&_samplers[SAMPLER_MINIMUM_NEAREST_CLAMP], &samplerInfo);
 }
 

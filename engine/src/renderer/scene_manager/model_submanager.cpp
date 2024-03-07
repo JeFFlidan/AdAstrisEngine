@@ -118,32 +118,39 @@ void ModelSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 		{
 			ecore::StaticModel* model = get_static_model_handle(entity).get_resource();
 			ecore::StaticModelData modelData = model->get_model_data();
-			_indirectDrawingSubmanager->add_model(entity, model, vertexArrayOffset_F32PNTC, indexArrayOffset_F32PNTC);
-			if (!is_model_loaded(model->get_uuid()))
+
+			switch (model->get_vertex_format())
 			{
-				switch (model->get_vertex_format())
+				case ecore::model::VertexFormat::F32_PNTC:
 				{
-					case ecore::model::VertexFormat::F32_PNTC:
-					{
-						_vertexArray_F32PNTC.resize(_vertexArray_F32PNTC.size() + modelData.vertexBufferSize);
-						_indexArray_F32PNTC.resize(_indexArray_F32PNTC.size() + modelData.indexBufferSize);
-						memcpy(
-							_vertexArray_F32PNTC.data() + vertexArrayOffset_F32PNTC,
-							modelData.vertexBuffer,
-							modelData.vertexBufferSize);
-						memcpy(_indexArray_F32PNTC.data() + indexArrayOffset_F32PNTC,
-							modelData.indexBuffer,
-							modelData.indexBufferSize);
-						vertexArrayOffset_F32PNTC += modelData.vertexBufferSize;
-						indexArrayOffset_F32PNTC += modelData.indexBufferSize;
-						_loadedModelsVertexArraySize_F32PNTC += modelData.vertexBufferSize;
-						_loadedModelsIndexArraySize_F32PNTC += modelData.indexBufferSize;
+					_indirectDrawingSubmanager->add_model(
+						entity,
+						model,
+						vertexArrayOffset_F32PNTC / sizeof(ecore::model::VertexF32PNTC),
+						indexArrayOffset_F32PNTC / sizeof(uint32_t));
+
+					if (is_model_loaded(model->get_uuid()))
 						break;
-					}
-					case ecore::model::VertexFormat::F32_PC:
-					{
-						//TODO
-					}
+					
+					_vertexArray_F32PNTC.resize(_vertexArray_F32PNTC.size() + modelData.vertexBufferSize);
+					_indexArray_F32PNTC.resize(_indexArray_F32PNTC.size() + modelData.indexBufferSize);
+					memcpy(
+						_vertexArray_F32PNTC.data() + vertexArrayOffset_F32PNTC,
+						modelData.vertexBuffer,
+						modelData.vertexBufferSize);
+					memcpy(_indexArray_F32PNTC.data() + indexArrayOffset_F32PNTC,
+						modelData.indexBuffer,
+						modelData.indexBufferSize);
+					vertexArrayOffset_F32PNTC += modelData.vertexBufferSize;
+					indexArrayOffset_F32PNTC += modelData.indexBufferSize;
+					_loadedModelsVertexArraySize_F32PNTC += modelData.vertexBufferSize;
+					_loadedModelsIndexArraySize_F32PNTC += modelData.indexBufferSize;
+					
+					break;
+				}
+				case ecore::model::VertexFormat::F32_PC:
+				{
+					//TODO
 				}
 			}
 

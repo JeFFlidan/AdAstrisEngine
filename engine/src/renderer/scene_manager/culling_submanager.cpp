@@ -44,8 +44,8 @@ void CullingSubmanager::add_model(
 	uint32_t indexOffset)
 {
 	SceneCullingContext* cullingContext = get_scene_culling_context(entity);
-	auto it = cullingContext->indirectBatchIndexByModelUUID.find(model->get_uuid());
-	if (it == cullingContext->indirectBatchIndexByModelUUID.end())
+	auto it = cullingContext->indirectBatchMiscByModelUUID.find(model->get_uuid());
+	if (it == cullingContext->indirectBatchMiscByModelUUID.end())
 	{
 		DrawIndexedIndirectCommand command;
 		command.firstIndex = indexOffset;
@@ -55,7 +55,7 @@ void CullingSubmanager::add_model(
 		command.firstInstance = cullingContext->instanceCount;
 		uint32_t index = cullingContext->indirectCommands->get_element_count();
 		cullingContext->indirectCommands->push_back(&command, 1);
-		cullingContext->indirectBatchIndexByModelUUID[model->get_uuid()] = index;
+		cullingContext->indirectBatchMiscByModelUUID[model->get_uuid()] = { index, 0 };
 	}
 	
 	++cullingContext->instanceCount;
@@ -73,8 +73,9 @@ void CullingSubmanager::add_culling_instance(ecs::Entity entity, uint32_t object
 	SceneCullingContext* cpuIndirectData = get_scene_culling_context(entity);
 	CullingInstanceIndices instanceIndices;
 	// TODO Add some validation and logging
-	instanceIndices.batchID = cpuIndirectData->indirectBatchIndexByModelUUID[modelUUID];
+	instanceIndices.batchID = cpuIndirectData->indirectBatchMiscByModelUUID[modelUUID].index;
 	instanceIndices.objectID = objectIndex;
+	++cpuIndirectData->indirectBatchMiscByModelUUID[modelUUID].instanceCount;
 	cpuIndirectData->cullingInstanceIndices->push_back(&instanceIndices, 1);
 }
 
@@ -83,6 +84,16 @@ void CullingSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 	for (auto& pair : _sceneCullingContextByEntityFilterHash)
 	{
 		SceneCullingContext& cullingContext = pair.second;
+
+		uint32_t instanceOffset = 0;
+		for (auto& pair2 : cullingContext.indirectBatchMiscByModelUUID)
+		{
+			DrawIndexedIndirectCommand* indirectCommand = cullingContext.indirectCommands->get_data(pair2.second.index);
+			indirectCommand->firstInstance = instanceOffset;
+			instanceOffset += pair2.second.instanceCount;
+			pair2.second.instanceCount = 0;
+		}
+		
 		for (auto& pair2 : cullingContext.indirectBuffersByCameraIndex)
 		{
 			const ecs::Entity camera = _cameras[pair2.first];
@@ -96,7 +107,9 @@ void CullingSubmanager::update_cpu_arrays(rhi::CommandBuffer& cmd)
 			cullingParams->isOcclusionCullingEnabled = sceneCullingSettings.isOcclusionCullingEnabled;
 			cullingParams->isAABBCheckEnabled = false;
 			IndirectBuffers& indirectBuffers = pair2.second;
-			cullingParams->depthPyramidIndex = RHI()->get_descriptor_index(indirectBuffers.depthPyramid->get_mipmap(0));
+			cullingParams->depthPyramidIndex = RHI()->get_descriptor_index(indirectBuffers.depthPyramid->get_texture_view());
+			cullingParams->pyramidWidth = indirectBuffers.depthPyramid->get_width();
+			cullingParams->pyramidHeight = indirectBuffers.depthPyramid->get_height();
 			// TODO write whole cullingParams configuration
 		}
 	}

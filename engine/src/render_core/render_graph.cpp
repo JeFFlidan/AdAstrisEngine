@@ -96,7 +96,11 @@ void RenderGraph::log()
 	for (auto& pair : _flushingPipelineBarriersByPassIndex)
 		flushingBarrierCount += pair.second.size();
 
-	LOG_INFO("RenderGraph::log(): Invalidating barrier count {}", _invalidatingPipelineBarriers.size())
+	uint32_t invalidatingBarrierCount = 0;
+	for (auto& pair : _invalidatingPipelineBarriersByPassIndex)
+		invalidatingBarrierCount += pair.second.size();
+
+	LOG_INFO("RenderGraph::log(): Invalidating barrier count {}", invalidatingBarrierCount)
 	LOG_INFO("RenderGraph::log(): Flushing barrier count {}", flushingBarrierCount)
 }
 
@@ -144,10 +148,13 @@ void RenderGraph::draw(tasks::TaskGroup* taskGroup)
 {
 	rhi::CommandBuffer cmd;
 	_rhi->begin_command_buffer(&cmd);
-	_rhi->add_pipeline_barriers(&cmd, _invalidatingPipelineBarriers);
 
 	for (auto& passIndex : _sortedPasses)
 	{
+		auto it = _invalidatingPipelineBarriersByPassIndex.find(passIndex);
+		if (it != _invalidatingPipelineBarriersByPassIndex.end())
+			_rhi->add_pipeline_barriers(&cmd, it->second);
+		
 		RenderPass* renderPass = _logicalPasses[passIndex].get();
 		if (check_if_graphics(renderPass))
 			_rhi->begin_rendering(&cmd, &_renderingBeginInfoByPassIndex[passIndex]);
@@ -157,9 +164,9 @@ void RenderGraph::draw(tasks::TaskGroup* taskGroup)
 		if (check_if_graphics(renderPass))
 			_rhi->end_rendering(&cmd);
 		
-		auto it = _flushingPipelineBarriersByPassIndex.find(passIndex);
-		if (it != _flushingPipelineBarriersByPassIndex.end())
-			_rhi->add_pipeline_barriers(&cmd, it->second);
+		auto it2 = _flushingPipelineBarriersByPassIndex.find(passIndex);
+		if (it2 != _flushingPipelineBarriersByPassIndex.end())
+			_rhi->add_pipeline_barriers(&cmd, it2->second);
 	}
 
 	rhi::ClearValues clearValues;
@@ -335,7 +342,7 @@ void RenderGraph::build_barriers()
 			TextureDesc* depthTextureDesc = logicalPass->get_depth_stencil_output();
 			if (depthTextureDesc)
 			{
-				_invalidatingPipelineBarriers.emplace_back(
+				_invalidatingPipelineBarriersByPassIndex[passIndex].emplace_back(
 					get_physical_texture(depthTextureDesc->get_name()),
 					rhi::ResourceLayout::UNDEFINED,
 					rhi::ResourceLayout::DEPTH_STENCIL);
@@ -370,7 +377,7 @@ void RenderGraph::build_barriers()
 				}
 			}
 
-			_invalidatingPipelineBarriers.emplace_back(
+			_invalidatingPipelineBarriersByPassIndex[passIndex].emplace_back(
 				get_physical_texture(colorOutput->get_name()),
 				rhi::ResourceLayout::UNDEFINED,
 				rhi::ResourceLayout::COLOR_ATTACHMENT);
@@ -406,7 +413,7 @@ void RenderGraph::build_barriers()
 			if (it != resourcesWithInvalidatingBarrier.end())
 				continue;
 		
-			_invalidatingPipelineBarriers.emplace_back(
+			_invalidatingPipelineBarriersByPassIndex[passIndex].emplace_back(
 				get_physical_texture(storageTextureDesc->get_name()),
 				rhi::ResourceLayout::UNDEFINED,
 				rhi::ResourceLayout::GENERAL | rhi::ResourceLayout::SHADER_WRITE);
@@ -556,7 +563,7 @@ void RenderGraph::clear_collections()
 {
 	_sortedPasses.clear();
 	_passDependencies.clear();
-	_invalidatingPipelineBarriers.clear();
+	_invalidatingPipelineBarriersByPassIndex.clear();
 	_flushingPipelineBarriersByPassIndex.clear();
 	_beforeBlitPipelineBarriersByPassIndex.clear();
 	_afterBlitPipelineBarriersByPassIndex.clear();

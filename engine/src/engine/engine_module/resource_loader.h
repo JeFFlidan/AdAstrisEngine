@@ -7,7 +7,7 @@ namespace ad_astris::engine::impl
 	class ResourceLoader
 	{
 		public:
-			void init();
+			ResourceLoader();
 			void load_new_resources();
 		
 		private:
