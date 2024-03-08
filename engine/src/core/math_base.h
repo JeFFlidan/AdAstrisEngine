@@ -165,4 +165,28 @@ namespace ad_astris::math
 			r *= 2;
 		return r;
 	}
+
+	inline uint32_t saturate(float val)
+	{
+		return std::min(std::max(val, 0.0f), 1.0f);
+	}
+
+	inline uint32_t compress_color(const XMFLOAT3& color)
+	{
+		uint32_t result = 0;
+		result |= (uint32_t)((uint8_t)(saturate(color.x) * 255.0f) << 0);
+		result |= (uint32_t)((uint8_t)(saturate(color.y) * 255.0f) << 8);
+		result |= (uint32_t)((uint8_t)(saturate(color.z) * 255.0f) << 16);
+		return result;
+	}
+
+	inline uint32_t compress_color(const XMFLOAT4& color)
+	{
+		uint32_t result = 0;
+		result |= (uint32_t)((uint8_t)(saturate(color.x) * 255.0f) << 0);
+		result |= (uint32_t)((uint8_t)(saturate(color.y) * 255.0f) << 8);
+		result |= (uint32_t)((uint8_t)(saturate(color.z) * 255.0f) << 16);
+		result |= (uint32_t)((uint8_t)(saturate(color.w) * 255.0f) << 24);
+		return result;
+	}
 }

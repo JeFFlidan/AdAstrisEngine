@@ -5,9 +5,9 @@ using namespace ad_astris;
 
 void GlobalObjects::init_file_system()
 {
-	std::string _projectPath = std::filesystem::current_path().string();
-	_projectPath.erase(_projectPath.find("\\bin"), 4);
-	_globalObjectContext->fileSystem = std::make_unique<io::EngineFileSystem>(_projectPath.c_str());
+	std::string engineRootPath = std::filesystem::current_path().string();
+	engineRootPath.erase(engineRootPath.find("\\bin"), 4);
+	_globalObjectContext->fileSystem = std::make_unique<io::EngineFileSystem>(engineRootPath.c_str());
 }
 
 void GlobalObjects::init_module_manager()

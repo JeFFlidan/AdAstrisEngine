@@ -8,6 +8,7 @@ add_library(stb_image INTERFACE)
 add_library(cgltf INTERFACE)
 add_library(reflection INTERFACE)
 add_library(volk INTERFACE)
+add_library(tinygltf INTERFACE)
 
 add_library(tinyobjloader STATIC)
 add_library(lz4 STATIC)
@@ -22,6 +23,7 @@ target_include_directories(json INTERFACE json)
 target_include_directories(cgltf INTERFACE cgltf)
 target_include_directories(reflection INTERFACE reflection)
 target_include_directories(volk INTERFACE volk vulkan_base)
+target_include_directories(tinygltf INTERFACE tinygltf)
 
 target_sources(tinyobjloader PRIVATE 
 tinyobjloader/tiny_obj_loader.h
