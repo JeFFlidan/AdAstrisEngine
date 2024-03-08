@@ -53,6 +53,8 @@ namespace ad_astris::rhi
 	{
 		UNDEFINED = 0,
 		CUBE_TEXTURE = 1 << 0,
+		RAW_BUFFER = 1 << 1,
+		STRUCTURED_BUFFER = 1 << 2,
 	};
 	
 	enum class LogicOp
@@ -347,6 +349,15 @@ namespace ad_astris::rhi
 		HDR_LINEAR
 	};
 
+	enum class ViewType
+	{
+		AUTO,	// view type will be defined according to the texture or buffer usage and flags
+		SRV,	// shader resource view
+		UAV,	// unordered access view
+		RTV,	// render target view
+		DSV,	// depth stencil view
+	};
+
 	struct ObjectHandle
 	{
 		void* handle{ nullptr };
@@ -375,6 +386,8 @@ namespace ad_astris::rhi
 		uint64_t size{ 0 };
 		ResourceUsage bufferUsage{ ResourceUsage::UNDEFINED };
 		MemoryUsage memoryUsage{ MemoryUsage::AUTO };
+		ResourceFlags flags{ ResourceFlags::UNDEFINED };
+		Format format{ Format::UNDEFINED };
 	};
 	
 	struct Resource : public ObjectHandle
@@ -456,12 +469,27 @@ namespace ad_astris::rhi
 		// if texture aspect is undefined, rhi will automatically set aspect mask.
 		// however, for stencil view it must be set
 		TextureAspect textureAspect{ TextureAspect::UNDEFINED };
+		ViewType type{ ViewType::AUTO };
 	};
 
 	struct TextureView : public ObjectHandle
 	{
 		TextureViewInfo viewInfo;
 		Texture* texture{ nullptr };
+	};
+
+	struct BufferViewInfo
+	{
+		uint64_t offset{ 0 };
+		uint64_t size{ 0 };
+		ViewType type{ ViewType::AUTO };
+		Format newFormat{ Format::UNDEFINED }; 
+	};
+
+	struct BufferView : public ObjectHandle
+	{
+		BufferViewInfo info;
+		Buffer* buffer{ nullptr };
 	};
 
 	struct ShaderInfo

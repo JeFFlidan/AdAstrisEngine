@@ -90,5 +90,36 @@ namespace ad_astris::rhi
 						LOG_FATAL("rhi::Utils::get_format_stride(): Format does not have stride")
 				}
 			}
+
+			static Format get_non_srgb_format(Format format)
+			{
+				switch (format)
+				{
+					case Format::R8_SRGB:
+						return Format::R8_UNORM;
+					case Format::R8G8_SRGB:
+						return Format::R8G8_UNORM;
+					case Format::R8G8B8A8_SRGB:
+						return Format::R8G8B8A8_UNORM;
+					case Format::B8G8R8A8_SRGB:
+						return Format::B8G8R8A8_UNORM;
+					default:
+						return format;
+				}
+			}
+
+			static bool is_format_srgb(Format format)
+			{
+				switch (format)
+				{
+					case Format::R8_SRGB:
+					case Format::R8G8_SRGB:
+					case Format::R8G8B8A8_SRGB:
+					case Format::B8G8R8A8_SRGB:
+						return true;
+					default:
+						return false;
+				}
+			}
 	};
 }

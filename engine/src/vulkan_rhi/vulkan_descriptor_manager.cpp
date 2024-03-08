@@ -1,8 +1,6 @@
-#define NOMINMAX
 #include "vulkan_descriptor_manager.h"
 #include "vulkan_common.h"
 #include "vulkan_buffer.h"
-#include "vulkan_texture.h"
 #include "profiler/logger.h"
 #include "core/utils.h"
 #include <algorithm>
@@ -43,25 +41,51 @@ void VulkanDescriptorManager::cleanup()
 	cleanup_zero_pool();
 }
 
-void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanBuffer* buffer, uint32_t size, uint32_t offset)
+void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanBuffer* buffer, VulkanBufferView* bufferView)
 {
-	uint32_t bufferDescriptorIndex = _storageBufferBindlessPool.allocate();
-	buffer->set_descriptor_index(bufferDescriptorIndex);
-	
-	VkDescriptorBufferInfo bufferInfo;
-	bufferInfo.buffer = buffer->get_handle();
-	bufferInfo.offset = offset;
-	bufferInfo.range = VK_WHOLE_SIZE;
-
 	VkWriteDescriptorSet writeDescriptorSet{};
 	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	writeDescriptorSet.dstBinding = 0;
-	writeDescriptorSet.dstSet = _storageBufferBindlessPool.get_set();
-	writeDescriptorSet.dstArrayElement = bufferDescriptorIndex;
-	writeDescriptorSet.descriptorCount = 1;
-	writeDescriptorSet.pBufferInfo = &bufferInfo;
-	vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
+
+	if (bufferView->is_raw())
+	{
+		uint32_t bufferDescriptorIndex = _storageBufferBindlessPool.allocate();
+		bufferView->set_descriptor_index(bufferDescriptorIndex);
+		if (buffer->get_descriptor_index() == UNDEFINED_DESCRIPTOR)
+		{
+			buffer->set_descriptor_index(bufferDescriptorIndex);
+		}
+		
+		writeDescriptorSet.descriptorType = bufferView->get_descriptor_type();
+		writeDescriptorSet.dstBinding = 0;
+		writeDescriptorSet.dstSet = _storageBufferBindlessPool.get_set();
+		writeDescriptorSet.dstArrayElement = bufferDescriptorIndex;
+		writeDescriptorSet.descriptorCount = 1;
+		writeDescriptorSet.pBufferInfo = &bufferView->get_descriptor_info();
+		vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
+	}
+	else
+	{
+		switch (bufferView->get_descriptor_type())
+		{
+			case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+				writeDescriptorSet.dstSet = _storageTexelBufferBindlessPool.get_set();
+				bufferView->set_descriptor_index(_storageTexelBufferBindlessPool.allocate());
+				break;
+			case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+				writeDescriptorSet.dstSet = _uniformTexelBufferBindlessPool.get_set();
+				bufferView->set_descriptor_index(_uniformTexelBufferBindlessPool.allocate());
+				break;
+			default:
+				LOG_FATAL("VulkanDescriptorManager::allocate_bindless_descriptor(): Failed to allocate descriptor for buffer view")
+		}
+		writeDescriptorSet.descriptorType = bufferView->get_descriptor_type();
+		writeDescriptorSet.dstBinding = 0;
+		writeDescriptorSet.dstArrayElement = bufferView->get_descriptor_index();
+		writeDescriptorSet.descriptorCount = 1;
+		VkBufferView vkBufferView = bufferView->get_handle();
+		writeDescriptorSet.pTexelBufferView = &vkBufferView;
+		vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
+	}
 }
 
 void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanSampler* sampler)

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "api.h"
 #include "vulkan_device.h"
+#include "vulkan_buffer_view.h"
 #include <mutex>
 
 namespace ad_astris::vulkan
@@ -24,7 +24,7 @@ namespace ad_astris::vulkan
 
 			void cleanup();
 		
-			void allocate_bindless_descriptor(VulkanBuffer* buffer, uint32_t size, uint32_t offset);
+			void allocate_bindless_descriptor(VulkanBuffer* buffer, VulkanBufferView* bufferView);
 			void allocate_bindless_descriptor(VulkanSampler* sampler);
 			void allocate_bindless_descriptor(VulkanTextureView* textureView, TextureDescriptorHeapType heapType);
 			void free_bindless_descriptor(VulkanBuffer* vulkanBuffer);

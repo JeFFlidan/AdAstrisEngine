@@ -12,6 +12,7 @@ VulkanObjectPool::VulkanObjectPool()
 	create_pool_for_new_resource<VulkanBuffer>(512);
 	create_pool_for_new_resource<VulkanTexture>(256);
 	create_pool_for_new_resource<VulkanTextureView>(512);
+	create_pool_for_new_resource<VulkanBufferView>(512);
 	create_pool_for_new_resource<VulkanSampler>(256);
 	create_pool_for_new_resource<VulkanQueryPool>(4);
 	create_pool_for_new_resource<VulkanRenderPass>(4);

@@ -39,6 +39,8 @@ namespace ad_astris::rhi
 			virtual void create_texture(Texture* texture) = 0;
 			virtual void create_texture_view(TextureView* textureView, TextureViewInfo* info, Texture* texture) = 0;
 			virtual void create_texture_view(TextureView* textureView, Texture* texture) = 0;
+			virtual void create_buffer_view(BufferView* bufferView, BufferViewInfo* info, Buffer* buffer) = 0;
+			virtual void create_buffer_view(BufferView* bufferView, Buffer* buffer) = 0;
 			virtual void create_sampler(Sampler* sampler, SamplerInfo* info) = 0;
 			virtual void create_shader(Shader* shader, ShaderInfo* shaderInfo) = 0;
 			virtual void create_render_pass(RenderPass* renderPass, RenderPassInfo* passInfo) = 0;
@@ -47,6 +49,7 @@ namespace ad_astris::rhi
 
 			virtual uint32_t get_descriptor_index(Buffer* buffer) = 0;
 			virtual uint32_t get_descriptor_index(TextureView* textureView) = 0;
+			virtual uint32_t get_descriptor_index(BufferView* bufferView) = 0;
 			virtual uint32_t get_descriptor_index(Sampler* sampler) = 0;
 			virtual void bind_uniform_buffer(Buffer* buffer, uint32_t slot, uint32_t size = 0, uint32_t offset = 0) = 0;
 

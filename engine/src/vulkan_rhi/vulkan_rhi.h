@@ -42,6 +42,8 @@ namespace ad_astris::vulkan
 				rhi::TextureViewInfo* viewInfo,
 				rhi::Texture* texture) override;
 			virtual void create_texture_view(rhi::TextureView* textureView, rhi::Texture* texture) override;
+			virtual void create_buffer_view(rhi::BufferView* bufferView, rhi::BufferViewInfo* info, rhi::Buffer* buffer) override;
+			virtual void create_buffer_view(rhi::BufferView* bufferView, rhi::Buffer* buffer) override;
 			virtual void create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo) override;
 			virtual void create_shader(rhi::Shader* shader, rhi::ShaderInfo* shaderInfo) override;
 			virtual void create_render_pass(rhi::RenderPass* renderPass, rhi::RenderPassInfo* passInfo) override;
@@ -50,6 +52,7 @@ namespace ad_astris::vulkan
 
 			virtual uint32_t get_descriptor_index(rhi::Buffer* buffer) override;
 			virtual uint32_t get_descriptor_index(rhi::TextureView* textureView) override;
+			virtual uint32_t get_descriptor_index(rhi::BufferView* bufferView) override;
 			virtual uint32_t get_descriptor_index(rhi::Sampler* sampler) override;
 			virtual void bind_uniform_buffer(rhi::Buffer* buffer, uint32_t slot, uint32_t size, uint32_t offset) override;
 

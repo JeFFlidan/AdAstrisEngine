@@ -115,7 +115,10 @@ void VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 	buffer->type = rhi::Resource::ResourceType::BUFFER;
 
 	if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::STORAGE_BUFFER))
-		_descriptorManager->allocate_bindless_descriptor(vkBuffer, buffer->bufferInfo.size, 0);
+	{
+		VulkanBufferView bufferView(buffer, VK_WHOLE_SIZE, 0);
+		_descriptorManager->allocate_bindless_descriptor(vkBuffer, &bufferView);
+	}
 	
 	if (data == nullptr)
 		return;
@@ -206,6 +209,26 @@ void VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::Texture*
 	_attachmentManager.add_attachment_texture_view(vkTextureView, vkTexture, imgUsage, createInfo);
 }
 
+void VulkanRHI::create_buffer_view(rhi::BufferView* bufferView, rhi::BufferViewInfo* info, rhi::Buffer* buffer)
+{
+	assert(bufferView && info && buffer);
+	bufferView->info = *info;
+	create_buffer_view(bufferView, buffer);
+}
+
+void VulkanRHI::create_buffer_view(rhi::BufferView* bufferView, rhi::Buffer* buffer)
+{
+	assert(bufferView && buffer);
+
+	rhi::BufferViewInfo* viewInfo = &bufferView->info;
+	auto vkBufferView = _vkObjectPool.allocate<VulkanBufferView>(_device.get(), viewInfo, buffer);
+
+	bufferView->handle = vkBufferView;
+	bufferView->buffer = buffer;
+
+	_descriptorManager->allocate_bindless_descriptor(get_vk_obj(buffer), vkBufferView);
+}
+
 void VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo)
 {
 	assert(sampler && sampInfo);
@@ -272,6 +295,11 @@ uint32_t VulkanRHI::get_descriptor_index(rhi::Buffer* buffer)
 uint32_t VulkanRHI::get_descriptor_index(rhi::TextureView* textureView)
 {
 	return get_vk_obj(textureView)->get_descriptor_index();
+}
+
+uint32_t VulkanRHI::get_descriptor_index(rhi::BufferView* bufferView)
+{
+	return get_vk_obj(bufferView)->get_descriptor_index();
 }
 
 uint32_t VulkanRHI::get_descriptor_index(rhi::Sampler* sampler)

@@ -10,6 +10,7 @@
 #include "vulkan_sampler.h"
 #include "vulkan_shader.h"
 #include "vulkan_query_pool.h"
+#include "vulkan_buffer_view.h"
 #include "rhi/resources.h"
 
 #include <iostream>
@@ -106,5 +107,10 @@ namespace ad_astris::vulkan
 	inline VulkanSwapChain* get_vk_obj(const rhi::SwapChain* swapChain)
 	{
 		return static_cast<VulkanSwapChain*>(swapChain->handle);
+	}
+
+	inline VulkanBufferView* get_vk_obj(const rhi::BufferView* bufferView)
+	{
+		return static_cast<VulkanBufferView*>(bufferView->handle);
 	}
 }
