@@ -12,6 +12,7 @@ namespace ad_astris::resource
 	class ResourceAccessor
 	{
 		public:
+			ResourceAccessor() = default;
 			ResourceAccessor(void* resource) : _resource(resource) {}
 
 			T* get_resource()
@@ -24,7 +25,17 @@ namespace ad_astris::resource
 				return nullptr;
 			}
 
-			bool is_valid()
+			const T* get_resource() const
+			{
+				if (is_valid())
+				{
+					return static_cast<T*>(_resource);
+				}
+				LOG_ERROR("ResourceAccessor::get_resource(): Invalid pointer to the resource")
+				return nullptr;
+			}
+
+			bool is_valid() const
 			{
 				if (_resource == nullptr)
 					return false;
@@ -34,7 +45,6 @@ namespace ad_astris::resource
 		private:
 			void* _resource{ nullptr };
 	};
-
 	
 	enum class ResourceType
 	{

@@ -17,7 +17,6 @@ file(GLOB ENGINE_CORE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/file_system/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/profiler/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/resource_manager/*.*
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource_manager/resource_manager_module/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/rhi/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/events/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/multithreading/*.*
