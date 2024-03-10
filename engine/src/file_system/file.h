@@ -12,7 +12,10 @@ namespace ad_astris::io
 	class File
 	{
 		public:
+			File() = default;
+			File(const io::URI& path) : _path(path) { }
 			virtual ~File() {}
+		
 			virtual void serialize(uint8_t*& data, uint64_t& size);
 			virtual void deserialize(uint8_t* data, uint64_t size);
 			virtual void serialize(
@@ -55,7 +58,7 @@ namespace ad_astris::io
 				return Utils::get_file_name(_path);
 			}
 		
-			void set_metadata(std::string& newMetadata)
+			void set_metadata(const std::string& newMetadata)
 			{
 				_metadata = newMetadata;
 			}

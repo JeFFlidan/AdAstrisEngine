@@ -58,28 +58,28 @@ void File::deserialize(
 	uint8_t* inputDataPtr = inputData.data();
 	
 	uint64_t metadataSize = 0;
-	memcpy(inputDataPtr, &metadataSize, sizeof(uint64_t));
+	memcpy(&metadataSize, inputDataPtr, sizeof(uint64_t));
 	inputDataPtr += sizeof(uint64_t);
 	
 	uint64_t compressedBinDataSize = 0;
-	memcpy(inputDataPtr, &compressedBinDataSize, sizeof(uint64_t));
+	memcpy(&compressedBinDataSize, inputDataPtr, sizeof(uint64_t));
 	inputDataPtr += sizeof(uint64_t);
 	
 	uint64_t binDataSize = 0;
-	memcpy(inputDataPtr, &binDataSize, sizeof(uint64_t));
+	memcpy(&binDataSize, inputDataPtr, sizeof(uint64_t));
 	inputDataPtr += sizeof(uint64_t);
 
 	if (metadataSize)
 	{
 		outputMetadata.resize(metadataSize);
-		memcpy(inputDataPtr, outputMetadata.data(), metadataSize);
+		memcpy(outputMetadata.data(), inputDataPtr, metadataSize);
 		inputDataPtr += metadataSize;
 	}
 
 	if (compressedBinDataSize && binDataSize)
 	{
 		std::vector<uint8_t> compressedBin(compressedBinDataSize);
-		memcpy(inputDataPtr, compressedBin.data(), compressedBinDataSize);
+		memcpy(compressedBin.data(), inputDataPtr, compressedBinDataSize);
 		outputBinData.resize(binDataSize);
 		LZ4_decompress_safe(
 			(char*)compressedBin.data(),
