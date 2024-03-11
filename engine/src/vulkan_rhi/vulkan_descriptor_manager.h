@@ -9,12 +9,6 @@ namespace ad_astris::vulkan
 	class VulkanBuffer;
 	class VulkanSampler;
 	class VulkanTextureView;
-
-	enum class TextureDescriptorHeapType
-	{
-		TEXTURES,
-		STORAGE_TEXTURES,
-	};
 	
 	class VulkanDescriptorManager
 	{
@@ -24,9 +18,9 @@ namespace ad_astris::vulkan
 
 			void cleanup();
 		
-			void allocate_bindless_descriptor(VulkanBuffer* buffer, VulkanBufferView* bufferView);
+			void allocate_bindless_descriptor(VulkanBufferView* vkBufferView, rhi::BufferView* bufferView);
 			void allocate_bindless_descriptor(VulkanSampler* sampler);
-			void allocate_bindless_descriptor(VulkanTextureView* textureView, TextureDescriptorHeapType heapType);
+			void allocate_bindless_descriptor(VulkanTextureView* vkTextureView, rhi::TextureView* textureView);
 			void free_bindless_descriptor(VulkanBuffer* vulkanBuffer);
 			VkDescriptorSetLayout get_bindless_descriptor_set_layout(VkDescriptorType descriptorType);
 			VkDescriptorSet get_bindless_descriptor_set(VkDescriptorType descriptorType);

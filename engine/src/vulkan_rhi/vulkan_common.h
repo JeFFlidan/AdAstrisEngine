@@ -58,6 +58,8 @@ namespace ad_astris::vulkan
 	VkImageAspectFlags get_image_aspect(rhi::ResourceUsage usage);
 	VkImageAspectFlags get_image_aspect(rhi::TextureAspect textureAspect);
 	VkQueryType get_query_type(rhi::QueryType queryType);
+	VkComponentSwizzle get_component_swizzle(rhi::ComponentSwizzle swizzle);
+	VkComponentMapping get_component_mapping(const rhi::ComponentMapping& mapping);
 
 	inline VulkanCommandBuffer* get_vk_obj(const rhi::CommandBuffer* cmd)
 	{

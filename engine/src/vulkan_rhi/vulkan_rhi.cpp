@@ -117,7 +117,9 @@ void VulkanRHI::create_buffer(rhi::Buffer* buffer, void* data)
 	if (has_flag(buffer->bufferInfo.bufferUsage, rhi::ResourceUsage::STORAGE_BUFFER))
 	{
 		VulkanBufferView bufferView(buffer, VK_WHOLE_SIZE, 0);
-		_descriptorManager->allocate_bindless_descriptor(vkBuffer, &bufferView);
+		rhi::BufferView rhiBufferView{};
+		_descriptorManager->allocate_bindless_descriptor(&bufferView, &rhiBufferView);
+		vkBuffer->set_descriptor_index(bufferView.get_descriptor_index());
 	}
 	
 	if (data == nullptr)
@@ -196,14 +198,7 @@ void VulkanRHI::create_texture_view(rhi::TextureView* textureView, rhi::Texture*
 	rhi::TextureInfo texInfo = texture->textureInfo;
 	VkImageUsageFlags imgUsage = get_image_usage(texInfo.textureUsage);
 
-	if (has_flag(imgUsage, (VkImageUsageFlags)VK_IMAGE_USAGE_SAMPLED_BIT))
-	{
-		_descriptorManager->allocate_bindless_descriptor(get_vk_obj(textureView), TextureDescriptorHeapType::TEXTURES);
-	}
-	if (has_flag(imgUsage, (VkImageUsageFlags)VK_IMAGE_USAGE_STORAGE_BIT))
-	{
-		_descriptorManager->allocate_bindless_descriptor(get_vk_obj(textureView), TextureDescriptorHeapType::STORAGE_TEXTURES);
-	}
+	_descriptorManager->allocate_bindless_descriptor(vkTextureView, textureView);
 
 	VulkanTexture* vkTexture = get_vk_obj(texture);
 	_attachmentManager.add_attachment_texture_view(vkTextureView, vkTexture, imgUsage, createInfo);
@@ -226,7 +221,7 @@ void VulkanRHI::create_buffer_view(rhi::BufferView* bufferView, rhi::Buffer* buf
 	bufferView->handle = vkBufferView;
 	bufferView->buffer = buffer;
 
-	_descriptorManager->allocate_bindless_descriptor(get_vk_obj(buffer), vkBufferView);
+	_descriptorManager->allocate_bindless_descriptor(vkBufferView, bufferView);
 }
 
 void VulkanRHI::create_sampler(rhi::Sampler* sampler, rhi::SamplerInfo* sampInfo)

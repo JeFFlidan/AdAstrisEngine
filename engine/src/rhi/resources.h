@@ -205,6 +205,21 @@ namespace ad_astris::rhi
 		D16_UNORM_S8_UINT,
 		D24_UNORM_S8_UINT,
 		D32_SFLOAT_S8_UINT,
+
+		BC1_RGBA_UNORM,
+		BC1_RGBA_SRGB_UNORM,
+		BC2_UNORM,
+		BC2_SRGB,
+		BC3_UNORM,
+		BC3_SRGB,
+		BC4_UNORM,
+		BC4_SNORM,
+		BC5_UNORM,
+		BC5_SNORM,
+		BC6H_UFLOAT,
+		BC6H_SFLOAT,
+		BC7_UNORM,
+		BC7_SRGB
 	};
 
 	enum class AddressMode
@@ -351,11 +366,33 @@ namespace ad_astris::rhi
 
 	enum class ViewType
 	{
-		AUTO,	// view type will be defined according to the texture or buffer usage and flags
+		// View type will be defined according to the texture or buffer usage and flags.
+		// Not recommended to use for release versions because it can lead to
+		// overwriting descriptors and undefined behavior
+		AUTO,
 		SRV,	// shader resource view
 		UAV,	// unordered access view
 		RTV,	// render target view
 		DSV,	// depth stencil view
+	};
+
+	enum class ComponentSwizzle
+	{
+		UNDEFINED,
+		ZERO,
+		ONE,
+		R,
+		G,
+		B,
+		A
+	};
+
+	struct ComponentMapping
+	{
+		ComponentSwizzle r{ ComponentSwizzle::UNDEFINED };
+		ComponentSwizzle g{ ComponentSwizzle::UNDEFINED };
+		ComponentSwizzle b{ ComponentSwizzle::UNDEFINED };
+		ComponentSwizzle a{ ComponentSwizzle::UNDEFINED };
 	};
 
 	struct ObjectHandle
@@ -378,6 +415,7 @@ namespace ad_astris::rhi
 		SampleCount samplesCount{ SampleCount::UNDEFINED };
 		TextureDimension textureDimension{ TextureDimension::UNDEFINED };
 		ResourceFlags resourceFlags{ ResourceFlags::UNDEFINED};	// not necessary
+		ComponentMapping componentMapping{ ComponentSwizzle::R, ComponentSwizzle::G, ComponentSwizzle::B, ComponentSwizzle::A };
 	};
 
 	// Think about Format field
@@ -470,6 +508,8 @@ namespace ad_astris::rhi
 		// however, for stencil view it must be set
 		TextureAspect textureAspect{ TextureAspect::UNDEFINED };
 		ViewType type{ ViewType::AUTO };
+		ComponentMapping componentMapping;	// If component mapping is not set, mapping from texture will be used
+		Format format{ Format::UNDEFINED };	// If format is undefined, format from texture will be used
 	};
 
 	struct TextureView : public ObjectHandle
@@ -872,6 +912,7 @@ namespace ad_astris::rhi
 						return arg;
 					
 					LOG_FATAL("PipelineBarrier::get_memory_barrier(): Pipeline barrier type is not MEMORY")
+					return MemoryBarrier{};
 				}, _pipelineBarrier);
 			}
 
@@ -884,6 +925,7 @@ namespace ad_astris::rhi
 						return arg;
 					
 					LOG_FATAL("PipelineBarrier::get_buffer_barrier(): Pipeline barrier type is not BUFFER")
+					return BufferBarrier{};
 				}, _pipelineBarrier);
 			}
 
@@ -896,6 +938,7 @@ namespace ad_astris::rhi
 						return arg;
 					
 					LOG_FATAL("PipelineBarrier::get_texture_barrier(): Pipeline barrier type is not TEXTURE")
+					return TextureBarrier{};
 				}, _pipelineBarrier);
 			}
 
@@ -911,6 +954,7 @@ namespace ad_astris::rhi
 					if constexpr (std::is_same_v<ArgType, TextureBarrier>)
 						return BarrierType::TEXTURE;
 					LOG_FATAL("PipelineBarrier::get_barrier_type(): Failed to retrieve barrier type")
+					return BarrierType::BUFFER;
 				}, _pipelineBarrier);
 			}
 
@@ -991,38 +1035,9 @@ namespace ad_astris::rhi
 	};
 }
 
-template<>
-struct EnableBitMaskOperator<ad_astris::rhi::GpuCapability>
-{
-	static const bool enable = true;
-};
-
-template<>
-struct EnableBitMaskOperator<ad_astris::rhi::ResourceUsage>
-{
-	static const bool enable = true;
-};
-
-template<>
-struct EnableBitMaskOperator<ad_astris::rhi::ResourceFlags>
-{
-	static const bool enable = true;
-};
-
-template<>
-struct EnableBitMaskOperator<ad_astris::rhi::ResourceLayout>
-{
-	static const bool enable = true;
-};
-
-template<>
-struct EnableBitMaskOperator<ad_astris::rhi::ShaderType>
-{
-	static const bool enable = true;
-};
-
-template<>
-struct EnableBitMaskOperator<ad_astris::rhi::RenderingBeginInfoFlags>
-{
-	static const bool enable = true;
-};
+ENABLE_BIT_MASK(ad_astris::rhi::GpuCapability)
+ENABLE_BIT_MASK(ad_astris::rhi::ResourceUsage)
+ENABLE_BIT_MASK(ad_astris::rhi::ResourceFlags)
+ENABLE_BIT_MASK(ad_astris::rhi::ResourceLayout)
+ENABLE_BIT_MASK(ad_astris::rhi::RenderingBeginInfoFlags)
+ENABLE_BIT_MASK(ad_astris::rhi::ShaderType)

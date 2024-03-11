@@ -61,7 +61,8 @@ void VulkanAttachmentManager::recreate_attachments(
 			VkImageViewCreateInfo& viewCreateInfo = imageViewDesc.imageViewCreateInfo;
 			viewCreateInfo.image = texture->get_handle();
 			textureView->create(device, viewCreateInfo);
-			descriptorManager->allocate_bindless_descriptor(textureView, TextureDescriptorHeapType::TEXTURES);
+			// TODO fix
+			//descriptorManager->allocate_bindless_descriptor(textureView, TextureDescriptorHeapType::TEXTURES);
 		}
 	}
 }

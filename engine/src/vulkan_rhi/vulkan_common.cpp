@@ -163,6 +163,35 @@ VkFormat vulkan::get_format(rhi::Format format)
 			return VK_FORMAT_D24_UNORM_S8_UINT;
 		case rhi::Format::D32_SFLOAT_S8_UINT:
 			return VK_FORMAT_D32_SFLOAT_S8_UINT;
+			
+		case rhi::Format::BC1_RGBA_UNORM:
+			return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+		case rhi::Format::BC1_RGBA_SRGB_UNORM:
+			return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
+		case rhi::Format::BC2_UNORM:
+			return VK_FORMAT_BC2_UNORM_BLOCK;
+		case rhi::Format::BC2_SRGB:
+			return VK_FORMAT_BC2_SRGB_BLOCK;
+		case rhi::Format::BC3_UNORM:
+			return VK_FORMAT_BC3_UNORM_BLOCK;
+		case rhi::Format::BC3_SRGB:
+			return VK_FORMAT_BC3_SRGB_BLOCK;
+		case rhi::Format::BC4_UNORM:
+			return VK_FORMAT_BC4_UNORM_BLOCK;
+		case rhi::Format::BC4_SNORM:
+			return VK_FORMAT_BC4_SNORM_BLOCK;
+		case rhi::Format::BC5_UNORM:
+			return VK_FORMAT_BC5_UNORM_BLOCK;
+		case rhi::Format::BC5_SNORM:
+			return VK_FORMAT_BC5_SNORM_BLOCK;
+		case rhi::Format::BC6H_UFLOAT:
+			return VK_FORMAT_BC6H_UFLOAT_BLOCK;
+		case rhi::Format::BC6H_SFLOAT:
+			return VK_FORMAT_BC6H_SFLOAT_BLOCK;
+		case rhi::Format::BC7_UNORM:
+			return VK_FORMAT_BC7_UNORM_BLOCK;
+		case rhi::Format::BC7_SRGB:
+			return VK_FORMAT_BC7_SRGB_BLOCK;
 	}
 
 	return VK_FORMAT_UNDEFINED;
@@ -825,4 +854,36 @@ VkQueryType vulkan::get_query_type(rhi::QueryType queryType)
 		case rhi::QueryType::TIMESTAMP:
 			return VK_QUERY_TYPE_TIMESTAMP;
 	}
+}
+
+VkComponentSwizzle vulkan::get_component_swizzle(rhi::ComponentSwizzle swizzle)
+{
+	switch (swizzle)
+	{
+		case rhi::ComponentSwizzle::R:
+			return VK_COMPONENT_SWIZZLE_R;
+		case rhi::ComponentSwizzle::G:
+			return VK_COMPONENT_SWIZZLE_G;
+		case rhi::ComponentSwizzle::B:
+			return VK_COMPONENT_SWIZZLE_B;
+		case rhi::ComponentSwizzle::A:
+			return VK_COMPONENT_SWIZZLE_A;
+		case rhi::ComponentSwizzle::ONE:
+			return VK_COMPONENT_SWIZZLE_ONE;
+		case rhi::ComponentSwizzle::ZERO:
+			return VK_COMPONENT_SWIZZLE_ZERO;
+		default:
+			LOG_ERROR("vulkan::get_component_swizzle(): Swizzle is undefined")
+			return VK_COMPONENT_SWIZZLE_IDENTITY;
+	}
+}
+
+VkComponentMapping vulkan::get_component_mapping(const rhi::ComponentMapping& mapping)
+{
+	VkComponentMapping vkMapping;
+	vkMapping.r = get_component_swizzle(mapping.r);
+	vkMapping.g = get_component_swizzle(mapping.g);
+	vkMapping.b = get_component_swizzle(mapping.b);
+	vkMapping.a = get_component_swizzle(mapping.a);
+	return vkMapping;
 }

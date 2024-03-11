@@ -18,8 +18,7 @@ VulkanBufferView::VulkanBufferView(VulkanDevice* device, rhi::BufferViewInfo* bu
 }
 
 VulkanBufferView::VulkanBufferView(rhi::Buffer* buffer, uint64_t size, uint64_t offset)
-	: _bufferView(VkDescriptorBufferInfo{ get_vk_obj(buffer)->get_handle(), offset, size }),
-		_descriptorType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+	: _bufferView(VkDescriptorBufferInfo{ get_vk_obj(buffer)->get_handle(), offset, size })
 {
 	
 }
@@ -55,19 +54,6 @@ void VulkanBufferView::create(VulkanDevice* device, rhi::BufferViewInfo* bufferV
 		createInfo.range = bufferViewInfo->size;
 		createInfo.format = get_format(viewFormat);
 		vkCreateBufferView(device->get_device(), &createInfo, nullptr, &std::get<VkBufferView>(_bufferView));
-
-		switch (bufferViewInfo->type)
-		{
-			case rhi::ViewType::SRV:
-				_descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-				break;
-			case rhi::ViewType::UAV:
-				_descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-				break;
-			default:
-				LOG_FATAL("VulkanBufferView::create(): View type is AUTO, RTV or DSV. Failed to create VulkanBufferView.")
-				break;
-		}
 	}
 }
 

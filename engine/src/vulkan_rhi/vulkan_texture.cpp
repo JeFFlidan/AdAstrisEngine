@@ -2,6 +2,7 @@
 #include "vulkan_device.h"
 #include "vulkan_common.h"
 #include "profiler/logger.h"
+#include "rhi/utils.h"
 
 using namespace ad_astris::vulkan;
 
@@ -47,6 +48,12 @@ void VulkanTexture::create_texture(VulkanDevice* device, rhi::TextureInfo* textu
 	if (has_flag(textureInfo->resourceFlags, rhi::ResourceFlags::CUBE_TEXTURE))
 	{
 		outCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	}
+
+	if (has_flag(textureInfo->textureUsage, rhi::ResourceUsage::STORAGE_TEXTURE) &&
+		rhi::Utils::is_format_srgb(textureInfo->format))
+	{
+		outCreateInfo.flags |= VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
 	}
 
 	VkImageUsageFlags imgUsage = get_image_usage(textureInfo->textureUsage);

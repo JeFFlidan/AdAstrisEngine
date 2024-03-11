@@ -41,49 +41,46 @@ void VulkanDescriptorManager::cleanup()
 	cleanup_zero_pool();
 }
 
-void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanBuffer* buffer, VulkanBufferView* bufferView)
+void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanBufferView* vkBufferView, rhi::BufferView* bufferView)
 {
 	VkWriteDescriptorSet writeDescriptorSet{};
 	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 
-	if (bufferView->is_raw())
+	if (vkBufferView->is_raw())
 	{
 		uint32_t bufferDescriptorIndex = _storageBufferBindlessPool.allocate();
-		bufferView->set_descriptor_index(bufferDescriptorIndex);
-		if (buffer->get_descriptor_index() == UNDEFINED_DESCRIPTOR)
-		{
-			buffer->set_descriptor_index(bufferDescriptorIndex);
-		}
+		vkBufferView->set_descriptor_index(bufferDescriptorIndex);
 		
-		writeDescriptorSet.descriptorType = bufferView->get_descriptor_type();
+		writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		writeDescriptorSet.dstBinding = 0;
 		writeDescriptorSet.dstSet = _storageBufferBindlessPool.get_set();
 		writeDescriptorSet.dstArrayElement = bufferDescriptorIndex;
 		writeDescriptorSet.descriptorCount = 1;
-		writeDescriptorSet.pBufferInfo = &bufferView->get_descriptor_info();
+		writeDescriptorSet.pBufferInfo = &vkBufferView->get_descriptor_info();
 		vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
 	}
 	else
 	{
-		switch (bufferView->get_descriptor_type())
+		switch (bufferView->info.type)
 		{
-			case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-				writeDescriptorSet.dstSet = _storageTexelBufferBindlessPool.get_set();
-				bufferView->set_descriptor_index(_storageTexelBufferBindlessPool.allocate());
-				break;
-			case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+			case rhi::ViewType::SRV:
+				writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
 				writeDescriptorSet.dstSet = _uniformTexelBufferBindlessPool.get_set();
-				bufferView->set_descriptor_index(_uniformTexelBufferBindlessPool.allocate());
+				vkBufferView->set_descriptor_index(_uniformTexelBufferBindlessPool.allocate());
+				break;
+			case rhi::ViewType::UAV:
+				writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+				writeDescriptorSet.dstSet = _storageTexelBufferBindlessPool.get_set();
+				vkBufferView->set_descriptor_index(_storageTexelBufferBindlessPool.allocate());
 				break;
 			default:
 				LOG_FATAL("VulkanDescriptorManager::allocate_bindless_descriptor(): Failed to allocate descriptor for buffer view")
 		}
-		writeDescriptorSet.descriptorType = bufferView->get_descriptor_type();
 		writeDescriptorSet.dstBinding = 0;
-		writeDescriptorSet.dstArrayElement = bufferView->get_descriptor_index();
+		writeDescriptorSet.dstArrayElement = vkBufferView->get_descriptor_index();
 		writeDescriptorSet.descriptorCount = 1;
-		VkBufferView vkBufferView = bufferView->get_handle();
-		writeDescriptorSet.pTexelBufferView = &vkBufferView;
+		VkBufferView vkBufferViewHandle = vkBufferView->get_handle();
+		writeDescriptorSet.pTexelBufferView = &vkBufferViewHandle;
 		vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
 	}
 }
@@ -107,24 +104,24 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanSampler* sample
 	vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
 }
 
-void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* textureView, TextureDescriptorHeapType heapType)
+void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* vkTextureView, rhi::TextureView* textureView)
 {
 	uint32_t textureDescriptorIndex;
-	
-	if (textureView->get_descriptor_index() == UNDEFINED_DESCRIPTOR)
-	{
-		textureDescriptorIndex = _imageBindlessPool.allocate();
-		textureView->set_descriptor_index(textureDescriptorIndex);
-	}
-	else
-	{
-		textureDescriptorIndex = textureView->get_descriptor_index();
-	}
 
-	if (heapType == TextureDescriptorHeapType::TEXTURES)
+	auto setSampledImageDescriptor = [&]()
 	{
+		if (vkTextureView->get_descriptor_index() == UNDEFINED_DESCRIPTOR)
+		{
+			textureDescriptorIndex = _imageBindlessPool.allocate();
+			vkTextureView->set_descriptor_index(textureDescriptorIndex);
+		}
+		else
+		{
+			textureDescriptorIndex = vkTextureView->get_descriptor_index();
+		}
+		
 		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageView = textureView->get_handle();
+		imageInfo.imageView = vkTextureView->get_handle();
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		VkWriteDescriptorSet writeDescriptorSet{};
@@ -136,12 +133,23 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* te
 		writeDescriptorSet.descriptorCount = 1;
 		writeDescriptorSet.pImageInfo = &imageInfo;
 		vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
-	}
-	if (heapType == TextureDescriptorHeapType::STORAGE_TEXTURES)
+	};
+
+	auto setStorageImageDescriptor = [&]()
 	{
+		if (vkTextureView->get_descriptor_index() == UNDEFINED_DESCRIPTOR)
+		{
+			textureDescriptorIndex = _storageImageBindlessPool.allocate();
+			vkTextureView->set_descriptor_index(textureDescriptorIndex);
+		}
+		else
+		{
+			textureDescriptorIndex = vkTextureView->get_descriptor_index();
+		}
+		
 		VkDescriptorImageInfo imageInfo{};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-		imageInfo.imageView = textureView->get_handle();
+		imageInfo.imageView = vkTextureView->get_handle();
 
 		VkWriteDescriptorSet writeDescriptorSet{};
 		writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -152,6 +160,28 @@ void VulkanDescriptorManager::allocate_bindless_descriptor(VulkanTextureView* te
 		writeDescriptorSet.descriptorCount = 1;
 		writeDescriptorSet.pImageInfo = &imageInfo;
 		vkUpdateDescriptorSets(_device->get_device(), 1, &writeDescriptorSet, 0, nullptr);
+	};
+
+	switch (textureView->viewInfo.type)
+	{
+		case rhi::ViewType::SRV:
+		case rhi::ViewType::RTV:
+		case rhi::ViewType::DSV:
+			setSampledImageDescriptor();
+			break;
+		case rhi::ViewType::UAV:
+			setStorageImageDescriptor();
+			break;
+		case rhi::ViewType::AUTO:
+			if (has_flag(textureView->texture->textureInfo.textureUsage, rhi::ResourceUsage::SAMPLED_TEXTURE))
+			{
+				setSampledImageDescriptor();
+			}
+			if (has_flag(textureView->texture->textureInfo.textureUsage, rhi::ResourceUsage::STORAGE_TEXTURE))
+			{
+				setStorageImageDescriptor();
+			}
+			break;
 	}
 }
 

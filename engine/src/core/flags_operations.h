@@ -53,3 +53,10 @@ constexpr bool has_flag(E lValue, E rValue)
 {
 	return (lValue & rValue) == rValue;
 }
+
+#define ENABLE_BIT_MASK(Type)				\
+	template<>								\
+	struct EnableBitMaskOperator<Type>		\
+	{										\
+		static const bool enable = true;	\
+	};

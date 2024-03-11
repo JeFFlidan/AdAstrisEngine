@@ -1,5 +1,6 @@
 ﻿#include "vulkan_texture_view.h"
 #include "vulkan_common.h"
+#include "rhi/utils.h"
 
 using namespace ad_astris::vulkan;
 
@@ -47,7 +48,6 @@ void VulkanTextureView::parse_texture_view_info(
 	rhi::TextureInfo textureInfo = texture->textureInfo;
 	VulkanTexture* vkTexture = static_cast<VulkanTexture*>(texture->handle);
 	
-	VkFormat format = get_format(textureInfo.format);
 	VkImageUsageFlags imgUsage = get_image_usage(textureInfo.textureUsage);
 
 	VkImageAspectFlags aspectFlags;
@@ -111,12 +111,13 @@ void VulkanTextureView::parse_texture_view_info(
 		return;
 	}
 	
-	//createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	outCreateInfo.image = vkTexture->get_handle();
-	outCreateInfo.format = format;
+	outCreateInfo.format = viewInfo->format == rhi::Format::UNDEFINED ? get_format(textureInfo.format) : get_format(viewInfo->format);
 	outCreateInfo.subresourceRange.baseMipLevel = viewInfo->baseMipLevel;
 	outCreateInfo.subresourceRange.levelCount = viewInfo->mipLevels;
 	outCreateInfo.subresourceRange.baseArrayLayer = viewInfo->baseLayer;
 	outCreateInfo.subresourceRange.layerCount = viewInfo->layerCount;
 	outCreateInfo.subresourceRange.aspectMask = aspectFlags;
+	const rhi::ComponentMapping& mapping = rhi::Utils::is_component_mapping_valid(viewInfo->componentMapping) ? viewInfo->componentMapping : textureInfo.componentMapping;
+	outCreateInfo.components = get_component_mapping(mapping);
 }

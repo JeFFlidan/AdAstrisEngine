@@ -26,6 +26,7 @@ namespace ad_astris::vulkan
 					if constexpr (std::is_same_v<ArgType, VkBufferView>)
 						return arg;
 					LOG_FATAL("VulkanBufferView::get_handle(): Failed to get VkBufferView")
+					return VkBufferView{};
 				}, _bufferView);
 			}
 
@@ -37,6 +38,7 @@ namespace ad_astris::vulkan
 					if constexpr (std::is_same_v<ArgType, VkDescriptorBufferInfo>)
 						return arg;
 					LOG_FATAL("VulkanBufferView::get_handle(): Failed to get RawBufferDescriptorInfo")
+					return VkDescriptorBufferInfo{};
 				}, _bufferView);
 			}
 
@@ -50,11 +52,8 @@ namespace ad_astris::vulkan
 					return false;
 				}, _bufferView);
 			}
-
-			VkDescriptorType get_descriptor_type() const { return _descriptorType; }
 		
 		private:
 			std::variant<VkBufferView, VkDescriptorBufferInfo> _bufferView;
-			VkDescriptorType _descriptorType;
 	};
 }
