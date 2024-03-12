@@ -549,5 +549,65 @@ namespace ad_astris::rhi
 					mapping.b != ComponentSwizzle::UNDEFINED &&
 					mapping.a != ComponentSwizzle::UNDEFINED;
 			}
+
+			static std::string get_address_mode_str(AddressMode mode)
+			{
+				switch (mode)
+				{
+					case AddressMode::REPEAT:
+						return "repeat";
+					case AddressMode::MIRRORED_REPEAT:
+						return "mirrored_repeat";
+					case AddressMode::CLAMP_TO_EDGE:
+						return "clamp_to_edge";
+					case AddressMode::CLAMP_TO_BORDER:
+						return "clamp_to_border";
+					case AddressMode::MIRROR_CLAMP_TO_EDGE:
+						return "mirror_clamp_to_edge";
+					default:
+						LOG_ERROR("rhi::Utils::get_address_mode_str(): Address mode is undefined")
+						return "undefined";
+				}
+			}
+
+			static AddressMode get_address_mode_enum(const std::string& mode)
+			{
+				if (mode == "repeat")
+					return AddressMode::REPEAT;
+				if (mode == "mirrored_repeat")
+					return AddressMode::MIRRORED_REPEAT;
+				if (mode == "clamp_to_edge")
+					return AddressMode::CLAMP_TO_EDGE;
+				if (mode == "clamp_to_border")
+					return AddressMode::CLAMP_TO_BORDER;
+				if (mode == "mirror_clamp_to_edge")
+					return AddressMode::MIRROR_CLAMP_TO_EDGE;
+				LOG_ERROR("rhi::Utils::get_address_mode_enum(): Address mode is undefined")
+				return AddressMode::UNDEFINED;
+			}
+
+			static bool is_format_block_compressed(Format format)
+			{
+				switch (format)
+				{
+					case Format::BC1_RGBA_UNORM:
+					case Format::BC1_RGBA_SRGB_UNORM:
+					case Format::BC2_UNORM:
+					case Format::BC2_SRGB:
+					case Format::BC3_UNORM:
+					case Format::BC3_SRGB:
+					case Format::BC4_UNORM:
+					case Format::BC4_SNORM:
+					case Format::BC5_UNORM:
+					case Format::BC5_SNORM:
+					case Format::BC6H_UFLOAT:
+					case Format::BC6H_SFLOAT:
+					case Format::BC7_UNORM:
+					case Format::BC7_SRGB:
+						return true;
+					default:
+						return false;
+				}
+			}
 	};
 }

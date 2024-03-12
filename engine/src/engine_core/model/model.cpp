@@ -61,7 +61,7 @@ void Model::serialize(io::File* file)
 	}
 	
 	nlohmann::json metadata;
-	metadata[UUID_KEY] = _modelInfo.uuid;
+	metadata[UUID_KEY] = _uuid;
 	metadata[ORIGINAL_FILE_KEY] = _modelInfo.originalFile;
 	metadata[VERTEX_COUNT_KEY] = _modelInfo.vertexPositions.size();
 	metadata[INDEX_COUNT_KEY] = _modelInfo.indices.size();
@@ -138,7 +138,7 @@ void Model::deserialize(io::File* file, ObjectName* objectName)
 	_name = objectName;
 
 	nlohmann::json metadata = nlohmann::json::parse(file->get_metadata());
-	_modelInfo.uuid = metadata[UUID_KEY];
+	_uuid = metadata[UUID_KEY];
 	_modelInfo.originalFile = metadata[ORIGINAL_FILE_KEY];
 	_modelInfo.materialNames = metadata[MATERIAL_NAMES_KEY].get<std::vector<std::string>>();
 	_modelInfo.sphereBounds.origin = metadata[SPHERE_BOUNDS_ORIGIN_KEY];

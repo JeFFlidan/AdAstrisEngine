@@ -14,6 +14,7 @@ namespace ad_astris::ecore::texture
 	// I have to implement it in the engine
 	enum class RuntimeCompressionMode
 	{
+		DISABLED,
 		DXT1,
 		DXT5
 	};

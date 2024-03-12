@@ -37,8 +37,7 @@ namespace ad_astris::ecore
 		std::vector<Mesh> meshes;
 
 		SphereBounds sphereBounds;
-
-		UUID uuid;
+		
 		std::string originalFile;
 		std::string name;	// This field is used when loaded model is not merged by engine 
 	};
@@ -61,7 +60,7 @@ namespace ad_astris::ecore
 			uint64_t get_size() override;
 			void accept(resource::IResourceVisitor& resourceVisitor) override;
 			bool is_resource() override { return true; }
-			UUID get_uuid() override { return _modelInfo.uuid; }
+			UUID get_uuid() override { return _uuid; }
 			std::string get_description() override { return "Model"; }
 			std::string get_type() override { return "model"; }
 
@@ -69,6 +68,7 @@ namespace ad_astris::ecore
  		
 		private:
 			ModelInfo _modelInfo;
+			UUID _uuid;
 	};
 
 	struct ModelConversionContext
