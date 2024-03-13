@@ -21,6 +21,7 @@ namespace ad_astris::ecore
 		rhi::ComponentMapping mapping;
 		float brightness{ 1.0f };
 		float saturation{ 1.0f };
+		bool is16Bit{ false };
 	};
 	
 	class Texture : public Object

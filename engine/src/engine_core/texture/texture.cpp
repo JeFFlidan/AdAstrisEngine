@@ -20,6 +20,7 @@ constexpr const char* FORMAT_KEY = "format";
 constexpr const char* COMPONENT_MAPPING_KEY = "component_mapping";
 constexpr const char* BRIGHTNESS_KEY = "brightness";
 constexpr const char* SATURATION_KEY = "saturation";
+constexpr const char* IS_16_BIT_KEY = "is_16_bit";
 
 Texture::Texture(const TextureInfo& textureInfo) : _textureInfo(textureInfo)
 {
@@ -55,6 +56,7 @@ void Texture::serialize(io::File* file)
 	metadata[COMPONENT_MAPPING_KEY] = rhi::Utils::get_component_mapping_str(_textureInfo.mapping);
 	metadata[BRIGHTNESS_KEY] = _textureInfo.brightness;
 	metadata[SATURATION_KEY] = _textureInfo.saturation;
+	metadata[IS_16_BIT_KEY] = _textureInfo.is16Bit;
 
 	file->set_binary_blob(blob, _textureInfo.size);
 	file->set_metadata(metadata.dump(JSON_INDENT));
@@ -78,6 +80,7 @@ void Texture::deserialize(io::File* file, ObjectName* objectName)
 	_textureInfo.mapping = rhi::Utils::get_component_mapping(metadata[COMPONENT_MAPPING_KEY]);
 	_textureInfo.brightness = metadata[BRIGHTNESS_KEY];
 	_textureInfo.saturation = metadata[SATURATION_KEY];
+	_textureInfo.is16Bit = metadata[IS_16_BIT_KEY];
 	
 	_textureInfo.data = new uint8_t[file->get_binary_blob_size()];
 	memcpy(_textureInfo.data, file->get_binary_blob(), file->get_binary_blob_size());

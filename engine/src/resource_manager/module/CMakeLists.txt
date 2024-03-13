@@ -16,4 +16,5 @@ include_directories(${DIR_THIRD_PARTY})
 include_directories(${DIR_ENGINE_SRC})
 
 target_link_libraries(${LIBRARY_NAME}
-    engine_core)
+    engine_core
+    basisu)

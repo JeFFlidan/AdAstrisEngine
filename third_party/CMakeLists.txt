@@ -69,3 +69,23 @@ target_sources(glad PRIVATE
     glad/src/glad.c
     )
     
+add_library(zstd STATIC)
+target_include_directories(zstd PUBLIC basis_universal)
+target_sources(zstd PRIVATE 
+    basis_universal/zstd/zstd.h 
+    basis_universal/zstd/zstd.c
+    )
+    
+add_library(basisu STATIC)
+target_include_directories(basisu PUBLIC basis_universal)
+file(GLOB BASISU_FILES
+    basis_universal/zstd/*.h
+    basis_universal/zstd/zstd.с
+    basis_universal/encoder/*.h
+    basis_universal/encoder/*.cpp
+    basis_universal/transcoder/*.h
+    basis_universal/transcoder/*.cpp
+    )
+target_sources(basisu PRIVATE ${BASISU_FILES})
+target_link_libraries(basisu zstd)
+    

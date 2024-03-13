@@ -31,6 +31,8 @@ std::string texture::Utils::get_str_runtime_compression(RuntimeCompressionMode m
 			return "dxt1";
 		case RuntimeCompressionMode::DXT5:
 			return "dxt5";
+		case RuntimeCompressionMode::DISABLED:
+			return "disabled";
 	}
 }
 
@@ -40,6 +42,8 @@ texture::RuntimeCompressionMode texture::Utils::get_enum_runtime_compression(std
 		return RuntimeCompressionMode::DXT1;
 	if (mode == "dxt5")
 		return RuntimeCompressionMode::DXT5;
+	if (mode == "disabled")
+		return RuntimeCompressionMode::DISABLED;
 }
 
 std::string texture::Utils::get_str_tiling_mode(TilingMode mode)
