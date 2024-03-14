@@ -3,10 +3,30 @@
 using namespace ad_astris;
 using namespace resource;
 
+const std::unordered_set<std::string> SUPPORTED_MODEL_FORMATS = {
+	"gltf",
+	"glb",
+	"obj"
+};
+
+const std::unordered_set<std::string> SUPPORTED_IMAGE_FORMATS = {
+	"tga",
+	"png",
+	"tiff",
+	"jpg"
+};
+
 void impl::ResourceManager::init(const experimental::ResourceManagerInitContext& initContext)
 {
 	assert(initContext.globalObjectContext);
 	GlobalObjects::set_global_object_context(initContext.globalObjectContext);
+	_resourcePool = std::make_unique<ResourcePool>();
+	_resourceTable = std::make_unique<ResourceTable>(_resourcePool.get());
+}
+
+void impl::ResourceManager::cleanup()
+{
+	
 }
 
 UUID impl::ResourceManager::convert_to_engine_format(const io::URI& originalResourcePath, const io::URI& engineResourcePath)
@@ -72,4 +92,20 @@ UUID impl::ResourceManager::get_resource_uuid(const std::string& resourceName) c
 bool impl::ResourceManager::is_resource_loaded(UUID uuid) const
 {
 	return false;
+}
+
+bool impl::ResourceManager::is_supported_model_format(const std::string& extension) const
+{
+	auto it = SUPPORTED_MODEL_FORMATS.find(extension);
+	if (it == SUPPORTED_MODEL_FORMATS.end())
+		return false;
+	return true;
+}
+
+bool impl::ResourceManager::is_supported_texture_format(const std::string& extension) const
+{
+	auto it = SUPPORTED_IMAGE_FORMATS.find(extension);
+	if (it == SUPPORTED_IMAGE_FORMATS.end())
+		return false;
+	return true;
 }

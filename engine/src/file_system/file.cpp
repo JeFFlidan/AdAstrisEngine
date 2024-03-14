@@ -1,5 +1,6 @@
 #include "file.h"
 #include "utils.h"
+#include "profiler/logger.h"
 
 #include <lz4/lz4.h>
 
@@ -7,6 +8,11 @@
 
 using namespace ad_astris;
 using namespace io;
+
+File::~File()
+{
+	delete[] _binBlob;
+}
 
 void File::serialize(
 	std::vector<uint8_t>& inputBinData,
@@ -91,11 +97,79 @@ void File::deserialize(
 
 void File::serialize(uint8_t*& data, uint64_t& size)
 {
-	// TODO
+	serialize(&data, &size);
+}
+
+void File::serialize(uint8_t** outputData, uint64_t* outputDataSize) const
+{
+	uint64_t compressedBinDataSize = 0;
+	std::vector<uint8_t> compressedBinData;
+
+	if (_binBlob && _binBlobSize)
+	{
+		uint64_t compressStaging = LZ4_compressBound(_binBlobSize);
+		compressedBinData.resize(compressStaging);
+		compressedBinDataSize = LZ4_compress_default(
+		   (const char*)_binBlob,
+		   (char*)compressedBinData.data(),
+		   _binBlobSize,
+		   compressStaging);
+		compressedBinData.resize(compressedBinDataSize);
+	}
+
+	*outputDataSize = sizeof(uint64_t) * 3 + _metadata.size() + compressedBinDataSize;
+	*outputData = new uint8_t[*outputDataSize];
+
+	uint8_t* tempDataPtr = *outputData;
+	
+	std::vector<uint64_t> sizes = { _metadata.size(), compressedBinDataSize, _binBlobSize };
+	memcpy(tempDataPtr, sizes.data(), sizeof(uint64_t) * sizes.size());
+	tempDataPtr += sizeof(uint64_t) * sizes.size();
+	
+	if (_metadata.size())
+	{
+		memcpy(tempDataPtr, _metadata.c_str(), _metadata.size());
+		tempDataPtr += _metadata.size();
+	}
+
+	if (!compressedBinData.empty())
+	{
+		memcpy(tempDataPtr, compressedBinData.data(), compressedBinDataSize);
+	}
 }
 
 void File::deserialize(uint8_t* data, uint64_t size)
 {
-	// TODO
+	uint8_t* tempInputDataPtr = data;
+	
+	uint64_t metadataSize = 0;
+	memcpy(&metadataSize, tempInputDataPtr, sizeof(uint64_t));
+	tempInputDataPtr += sizeof(uint64_t);
+	
+	uint64_t compressedBinDataSize = 0;
+	memcpy(&compressedBinDataSize, tempInputDataPtr, sizeof(uint64_t));
+	tempInputDataPtr += sizeof(uint64_t);
+	
+	memcpy(&_binBlobSize, tempInputDataPtr, sizeof(uint64_t));
+	tempInputDataPtr += sizeof(uint64_t);
+
+	if (metadataSize)
+	{
+		_metadata.resize(metadataSize);
+		memcpy(_metadata.data(), tempInputDataPtr, metadataSize);
+		tempInputDataPtr += metadataSize;
+	}
+
+	if (compressedBinDataSize && _binBlobSize)
+	{
+		std::vector<uint8_t> compressedBin(compressedBinDataSize);
+		memcpy(compressedBin.data(), tempInputDataPtr, compressedBinDataSize);
+		_binBlob = new uint8_t[_binBlobSize];
+		LZ4_decompress_safe(
+			(char*)compressedBin.data(),
+			(char*)_binBlob,
+			compressedBinDataSize,
+			_binBlobSize);
+	}
 }
 

@@ -58,7 +58,7 @@ namespace ad_astris::ecore
 			}
 
 			virtual void accept(resource::IResourceVisitor& resourceVisitor) { }
-			bool is_dirty() { return _isDirty; }
+			bool is_dirty() const { return _isDirty; }
 			void make_dirty() { _isDirty = true; }
 
 			/** Changes filename in the engine and on disc. 

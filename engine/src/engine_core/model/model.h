@@ -48,7 +48,6 @@ namespace ad_astris::ecore
 			Model() = default;
 			Model(const ModelInfo& modelInfo);
 		
-			ModelInfo& get_model_info() { return _modelInfo; }
 			const ModelInfo& get_model_info() const { return _modelInfo; }
 			SphereBounds& get_sphere_bounds() { return _modelInfo.sphereBounds; }
 			const SphereBounds& get_sphere_bounds() const { return _modelInfo.sphereBounds; }

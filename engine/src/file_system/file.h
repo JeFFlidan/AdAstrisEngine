@@ -14,9 +14,10 @@ namespace ad_astris::io
 		public:
 			File() = default;
 			File(const io::URI& path) : _path(path) { }
-			virtual ~File() {}
+			virtual ~File();
 		
 			virtual void serialize(uint8_t*& data, uint64_t& size);
+			virtual void serialize(uint8_t** outputData, uint64_t* outputDataSize) const;
 			virtual void deserialize(uint8_t* data, uint64_t size);
 			virtual void serialize(
 				std::vector<uint8_t>& inputBinData,
@@ -26,6 +27,7 @@ namespace ad_astris::io
 				std::vector<uint8_t>& inputData,
 				std::vector<uint8_t>& outputBinData,
 				std::string& outputMetadata);
+
 
 			virtual bool is_valid()
 			{

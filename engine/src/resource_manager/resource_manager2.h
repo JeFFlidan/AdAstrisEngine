@@ -21,6 +21,7 @@ namespace ad_astris::resource::experimental
 
 			// Must be called immediately after ResourceManager module is loaded and ResourceManager object is created.
 			virtual void init(const ResourceManagerInitContext& initContext) = 0;
+			virtual void cleanup() = 0;
 
 			/**
 			 * \brief Converts a file from DCC tools to a custom '.aares' file.
@@ -99,6 +100,8 @@ namespace ad_astris::resource::experimental
 			virtual std::string get_resource_name(UUID uuid) const = 0;
 			virtual UUID get_resource_uuid(const std::string& resourceName) const = 0;
 			virtual bool is_resource_loaded(UUID uuid) const = 0;
+			virtual bool is_supported_model_format(const std::string& extension) const = 0;
+			virtual bool is_supported_texture_format(const std::string& extension) const = 0;
 
 			/**
 			 * \brief If Resource has not previously been loaded, it will be loaded automatically. Otherwise method returns

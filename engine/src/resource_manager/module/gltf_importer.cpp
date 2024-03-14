@@ -62,7 +62,12 @@ namespace tinygltf
 	}
 }
 
-bool GLTFImporter::import(const std::string& path, ecore::ModelInfo& outModelInfo)
+bool GLTFImporter::import(
+	const std::string& path,
+	std::vector<ecore::ModelInfo>& outModelInfos,
+	std::vector<ecore::TextureInfo>& outTextureInfos,
+	std::vector<ecore::MaterialInfo>& materialInfos,
+	const ecore::ModelConversionContext& conversionContext)
 {
 	tinygltf::TinyGLTF loader;
 	std::string tinygltfError;
@@ -121,14 +126,20 @@ bool GLTFImporter::import(const std::string& path, ecore::ModelInfo& outModelInf
 
 	for (auto& material : gltfModel.materials)
 	{
-		// TODO 
+		
 	}
 
 	// From WickedEngine
-	const size_t indexRemap[] = { 0, 2, 1 }; 
+	const size_t indexRemap[] = { 0, 2, 1 };
+
+	ecore::ModelInfo mergedModelInfo;
 
 	for (auto& gltfMesh : gltfModel.meshes)
 	{
+		ecore::ModelInfo& outModelInfo = conversionContext.mergeMeshes ? mergedModelInfo : outModelInfos.emplace_back();
+		if (!conversionContext.mergeMeshes)
+			outModelInfo.name = gltfMesh.name;
+		
 		for (auto& primitive : gltfMesh.primitives)
 		{
 			ecore::ModelInfo::Mesh& mesh = outModelInfo.meshes.emplace_back();
@@ -440,6 +451,9 @@ bool GLTFImporter::import(const std::string& path, ecore::ModelInfo& outModelInf
 			}
 		}
 	}
+
+	if (conversionContext.mergeMeshes)
+		outModelInfos.push_back(mergedModelInfo);
 
 	return true;
 }

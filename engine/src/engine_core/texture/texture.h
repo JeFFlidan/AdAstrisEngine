@@ -30,9 +30,52 @@ namespace ad_astris::ecore
 			Texture() = default;
 			Texture(const TextureInfo& textureInfo);
 			~Texture() override;
-
-			TextureInfo& get_texture_info() { return _textureInfo; }
+		
+			void update_texture(uint8_t* textureData, uint64_t sizeInBytes);
+			void destroy_texture_data();
+		
 			const TextureInfo& get_texture_info() const { return _textureInfo; }
+		
+			void change_mipmap_mode(texture::MipmapMode mode)
+			{
+				_isDirty = true;
+				_textureInfo.mipmapMode = mode;
+			}
+		
+			void change_compression_mode(texture::RuntimeCompressionMode& mode)
+			{
+				_isDirty = true;
+				_textureInfo.runtimeCompressionMode = mode;
+			}
+		
+			void change_tiling_x(rhi::AddressMode tiling)
+			{
+				_isDirty = true;
+				_textureInfo.tilingX = tiling;
+			}
+			void change_tiling_y(rhi::AddressMode tiling)
+			{
+				_isDirty = true;
+				_textureInfo.tilingY = tiling;
+			}
+			void change_tiling(rhi::AddressMode tilingX, rhi::AddressMode tilingY)
+			{
+				_isDirty = true;
+				_textureInfo.tilingX = tilingX;
+				_textureInfo.tilingY = tilingY;
+			}
+
+			void set_brightness(float brightness)
+			{
+				_isDirty = true;
+				_textureInfo.brightness = brightness;
+			}
+		
+			void set_saturation(float saturation)
+			{
+				_isDirty = true;
+				_textureInfo.saturation = saturation;
+			}
 
 			void serialize(io::File* file) override;
 			void deserialize(io::File* file, ObjectName* objectName) override;
@@ -42,9 +85,6 @@ namespace ad_astris::ecore
 			UUID get_uuid() override { return _uuid; }
 			std::string get_description() override { return "Texture"; }
 			std::string get_type() override { return "texture"; }
-
-			void update_texture(uint8_t* textureData, uint64_t sizeInBytes);
-			void destroy_texture_data();
 		
 		private:
 			TextureInfo _textureInfo;
