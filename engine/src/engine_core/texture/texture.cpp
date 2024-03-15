@@ -22,9 +22,9 @@ constexpr const char* BRIGHTNESS_KEY = "brightness";
 constexpr const char* SATURATION_KEY = "saturation";
 constexpr const char* IS_16_BIT_KEY = "is_16_bit";
 
-Texture::Texture(const TextureInfo& textureInfo) : _textureInfo(textureInfo)
+Texture::Texture(const TextureInfo& textureInfo, ObjectName* name) : _textureInfo(textureInfo)
 {
-	
+	_name = name;
 }
 
 Texture::~Texture()

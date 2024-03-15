@@ -4,6 +4,8 @@
 #include "engine_core/material/materials.h"
 #include "engine_core/model/static_model.h"
 #include "engine_core/texture/texture2D.h"
+#include "engine_core/model/model.h"
+#include "engine_core/texture/texture.h"
 
 namespace ad_astris::resource::impl
 {
@@ -33,5 +35,17 @@ namespace ad_astris::resource::impl
 
 		private:
 			ecore::Texture2D* _texture;
+	};
+
+	template<typename T>
+	class ResourceEvent
+	{
+		public:
+			ResourceEvent(T* resource) : _resource(resource) { }
+
+			ResourceAccessor<T> get_resource() const { return _resource; }
+
+		private:
+			T* _resource{ nullptr };
 	};
 }

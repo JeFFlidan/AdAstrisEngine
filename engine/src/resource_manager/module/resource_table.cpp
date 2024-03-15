@@ -3,6 +3,7 @@
 #include "engine_core/texture/texture.h"
 #include "engine_core/level/level.h"
 #include "core/global_objects.h"
+#include "resource_manager/resource_events.h"
 
 using namespace ad_astris;
 using namespace resource::impl;
@@ -65,9 +66,91 @@ void ResourceTable::add_resource(const ResourceDesc& resourceDesc)
 	}
 }
 
+void* ResourceTable::load_resource(UUID uuid)
+{
+	auto it = _resourceDescByUUID.find(uuid);
+	if (it == _resourceDescByUUID.end())
+	{
+		LOG_ERROR("ResourceTable::load_resource(): ResourceTable does not have resource with UUID {}", uuid)
+		return nullptr;
+	}
+
+	ResourceDesc& resourceDesc = it->second;
+	if (resourceDesc.resource)
+		return resourceDesc.resource;
+
+	size_t blobSize = 0;
+	uint8_t* blob = static_cast<uint8_t*>(FILE_SYSTEM()->map_to_read(resourceDesc.path, blobSize));
+	io::File file(resourceDesc.path);
+	file.deserialize(blob, blobSize);
+
+	switch (resourceDesc.type)
+	{
+		case ResourceType::MODEL:
+		{
+			resourceDesc.resource = _resourcePool->allocate<ecore::Model>();
+			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
+			ModelLoadedEvent event(static_cast<ecore::Model*>(resourceDesc.resource));
+			EVENT_MANAGER()->enqueue_event(event);
+			break;
+		}
+		case ResourceType::TEXTURE:
+		{
+			resourceDesc.resource = _resourcePool->allocate<ecore::Texture>();
+			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
+			TextureLoadedEvent event(static_cast<ecore::Texture*>(resourceDesc.resource));
+			EVENT_MANAGER()->enqueue_event(event);
+			break;
+		}
+		case ResourceType::LEVEL:
+		{
+			resourceDesc.resource = _resourcePool->allocate<ecore::Level>();
+			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
+			LevelLoadedEvent event(static_cast<ecore::Level*>(resourceDesc.resource));
+			EVENT_MANAGER()->enqueue_event(event);
+			break;
+		}
+		default:
+		{
+			LOG_ERROR("ResourceTable::load_resource: Failed to load resource {} with type {}", resourceDesc.resourceName->get_full_name(), Utils::get_str_resource_type(resourceDesc.type))
+			break;
+		}
+	}
+
+	FILE_SYSTEM()->unmap_after_reading(blob);
+	return resourceDesc.resource;
+}
+
+void ResourceTable::unload_resource(UUID uuid)
+{
+	ResourceDesc* resourceDesc = get_resource_desc(uuid);
+	if (resourceDesc && resourceDesc->resource)
+	{
+		_vtableByResourceType[resourceDesc->type].destroy(resourceDesc->resource);
+		resourceDesc->resource = nullptr;
+	}
+}
+
 void ResourceTable::destroy_resource(UUID uuid)
 {
 	std::scoped_lock<std::mutex> locker(_mutex);
+	auto it = _resourceDescByUUID.find(uuid);
+	if (it == _resourceDescByUUID.end())
+	{
+		LOG_ERROR("ResourceTable::destroy_resource(): ResourceTable does not have resource with UUID {}", uuid)
+		return;
+	}
+
+	ResourceDesc& resourceDesc = it->second;
+	if (resourceDesc.resource)
+	{
+		_vtableByResourceType[resourceDesc.type].destroy(resourceDesc.resource);
+	}
+	remove(resourceDesc.path.c_str());
+	std::string name = resourceDesc.resourceName->get_full_name();
+	_uuidByName.erase(_uuidByName.find(name));
+	_resourceDescByUUID.erase(it);
+	LOG_INFO("ResourceTable::destroy_resource(): Destroyed resource {}", name)
 }
 
 bool ResourceTable::is_resource_loaded(UUID uuid) const
@@ -121,6 +204,18 @@ bool ResourceTable::is_uuid_valid(UUID uuid) const
 	return true;
 }
 
+UUID ResourceTable::get_resource_uuid(const std::string& name) const
+{
+	std::scoped_lock<std::mutex> locker(_mutex);
+	auto it = _uuidByName.find(name);
+	if (it == _uuidByName.end())
+	{
+		LOG_ERROR("ResourceTable::get_resource_uuid(): ResourceTable does not have name {}", name)
+		return UUID();
+	}
+	return it->second;
+}
+
 ResourceDesc* ResourceTable::get_resource_desc(UUID uuid) const
 {
 	std::scoped_lock<std::mutex> locker(_mutex);
@@ -153,19 +248,16 @@ void ResourceTable::setup_resource_vtables()
 	_vtableByResourceType[ResourceType::MODEL] = { [this](ecore::Object* resource)
 	{
 		_resourcePool->free(static_cast<ecore::Model*>(resource));
-		_resourcePool->free(resource->get_name());
 	} };
 
 	_vtableByResourceType[ResourceType::TEXTURE] = { [this](ecore::Object* resource)
 	{
 		_resourcePool->free(static_cast<ecore::Texture*>(resource));
-		_resourcePool->free(resource->get_name());
 	} };
 
 	_vtableByResourceType[ResourceType::LEVEL] = { [this](ecore::Object* resource)
 	{
 		_resourcePool->free(static_cast<ecore::Level*>(resource));
-		_resourcePool->free(resource->get_name());
 	} };
 }
 
@@ -181,8 +273,7 @@ void ResourceTable::load_config()
 			continue;
 		uint32_t nameID = section.get_option_value<uint64_t>("NameID");
 		std::string name = section.get_option_value<std::string>("Name");
-
-		bool builtin = section.get_option_value<bool>("Builtin");
+		
 		ResourceDesc resourceDesc{};
 		resourceDesc.path = io::Utils::get_absolute_path_to_file(FILE_SYSTEM()->get_project_root_path(), section.get_name().c_str());
 		resourceDesc.type = Utils::get_enum_resource_type(section.get_option_value<std::string>("Type"));

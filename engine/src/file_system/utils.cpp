@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "file.h"
 #include "profiler/logger.h"
+#include "core/global_objects.h"
 
 #include <algorithm>
 #include <filesystem>

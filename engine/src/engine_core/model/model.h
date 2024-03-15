@@ -46,9 +46,15 @@ namespace ad_astris::ecore
 	{
 		public:
 			Model() = default;
-			Model(const ModelInfo& modelInfo);
+			Model(const ModelInfo& modelInfo, ObjectName* name);
+
+			void set_info(const ModelInfo& modelInfo)
+			{
+				_isDirty = true;
+				_modelInfo = modelInfo;
+			}
 		
-			const ModelInfo& get_model_info() const { return _modelInfo; }
+			const ModelInfo& get_info() const { return _modelInfo; }
 			SphereBounds& get_sphere_bounds() { return _modelInfo.sphereBounds; }
 			const SphereBounds& get_sphere_bounds() const { return _modelInfo.sphereBounds; }
 		

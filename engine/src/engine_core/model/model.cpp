@@ -47,9 +47,9 @@ uint64_t get_data_from_blob(uint8_t* srcBlob, std::vector<T>& dst, uint64_t vert
 	return offset + vertexCount * sizeof(T);
 }
 
-Model::Model(const ModelInfo& modelInfo) : _modelInfo(modelInfo)
+Model::Model(const ModelInfo& modelInfo, ObjectName* name) : _modelInfo(modelInfo)
 {
-	
+	_name = name;
 }
 
 void Model::serialize(io::File* file)

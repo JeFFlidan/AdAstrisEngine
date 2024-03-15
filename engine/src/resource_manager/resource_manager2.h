@@ -30,11 +30,21 @@ namespace ad_astris::resource::experimental
 			 * \param originalResourcePath must be a valid path to resource with supported formats.
 			 * \param engineResourcePath must be a valid path to the folder where you want to save the new aares file.
 			 * This path must be a relative path that based on folder {project_root_path}/content
-			 * \return UUID for the new resource if everything has been loaded correctly, otherwise UUID is undefined.
+			 * \param conversionContext if nondefault value, must be a valid pointer to appropriate conversion context.
+			 * For example, for ecore::Model it must be ecore::ModelConversionContext object
+			 * \return An array of UUIDs for the new resources if everything has been loaded correctly, otherwise array is empty.
 			 */
-			virtual UUID convert_to_engine_format(const io::URI& originalResourcePath, const io::URI& engineResourcePath) = 0;
+			virtual std::vector<UUID> convert_to_engine_format(
+				const io::URI& originalResourcePath,
+				const io::URI& engineResourcePath,
+				void* conversionContext = nullptr) = 0;
 			virtual void save_resources() const = 0;
+			virtual void save_resource(UUID uuid) const = 0;
+			virtual void save_resource(const std::string& name) const = 0;
+			virtual void unload_resource(UUID uuid) = 0;
+			virtual void unload_resource(const std::string& name) = 0;
 			virtual void destroy_resource(UUID uuid) = 0;
+			virtual void destroy_resource(const std::string& name) = 0;
 
 			/**
 			 * \brief If Model has not previously been loaded, it will be loaded automatically. Otherwise method returns

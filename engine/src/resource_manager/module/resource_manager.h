@@ -12,9 +12,17 @@ namespace ad_astris::resource::impl
 			void init(const experimental::ResourceManagerInitContext& initContext) override;
 			void cleanup() override;
 
-			UUID convert_to_engine_format(const io::URI& originalResourcePath, const io::URI& engineResourcePath) override;
+			std::vector<UUID> convert_to_engine_format(
+				const io::URI& originalResourcePath,
+				const io::URI& engineResourcePath,
+				void* conversionContext) override;
 			void save_resources() const override;
+			void save_resource(UUID uuid) const override;
+			void save_resource(const std::string& name) const override;
+			void unload_resource(UUID uuid) override;
+			void unload_resource(const std::string& name) override;
 			void destroy_resource(UUID uuid) override;
+			void destroy_resource(const std::string& name) override;
 		
 			ResourceAccessor<ecore::Model> get_model(UUID uuid) const override;
 			ResourceAccessor<ecore::Model> get_model(const std::string& modelName) const override;

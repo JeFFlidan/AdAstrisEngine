@@ -28,13 +28,14 @@ namespace ad_astris::ecore
 	{
 		public:
 			Texture() = default;
-			Texture(const TextureInfo& textureInfo);
+			Texture(const TextureInfo& textureInfo, ObjectName* name);
 			~Texture() override;
 		
 			void update_texture(uint8_t* textureData, uint64_t sizeInBytes);
 			void destroy_texture_data();
-		
-			const TextureInfo& get_texture_info() const { return _textureInfo; }
+
+			void set_info(const TextureInfo& textureInfo) { _textureInfo = textureInfo; }
+			const TextureInfo& get_info() const { return _textureInfo; }
 		
 			void change_mipmap_mode(texture::MipmapMode mode)
 			{
