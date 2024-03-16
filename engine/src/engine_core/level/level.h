@@ -9,6 +9,11 @@
 namespace ad_astris::ecore
 {
 	class World;
+
+	struct LevelCreateInfo
+	{
+		
+	};
 	
 	class Level : public Object
 	{

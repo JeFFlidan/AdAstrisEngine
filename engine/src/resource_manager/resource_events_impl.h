@@ -1,11 +1,10 @@
 ﻿#pragma once
 
 #include "resource_formats.h"
+#include "events/event.h"
 #include "engine_core/material/materials.h"
 #include "engine_core/model/static_model.h"
 #include "engine_core/texture/texture2D.h"
-#include "engine_core/model/model.h"
-#include "engine_core/texture/texture.h"
 
 namespace ad_astris::resource::impl
 {
@@ -48,4 +47,14 @@ namespace ad_astris::resource::impl
 		private:
 			T* _resource{ nullptr };
 	};
+	
+#define DECL_RESOURCE_EVENT(EventName, ResourceType) \
+	class EventName : public events::IEvent, public impl::ResourceEvent<ResourceType> \
+	{ \
+		public:\
+			EVENT_TYPE_DECL(EventName)\
+			EventName(ResourceType* resource) : ResourceEvent(resource) { } \
+	};
 }
+
+	

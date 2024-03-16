@@ -18,6 +18,14 @@ std::string Utils::get_str_resource_type(ResourceType type)
 			return "material_template";
 		case ResourceType::SHADER:
 			return "shader";
+		case ResourceType::SCRIPT:
+			return "script";
+		case ResourceType::VIDEO:
+			return "video";
+		case ResourceType::FONT:
+			return "font";
+		case ResourceType::SOUND:
+			return "sound";
 	}
 }
 
@@ -35,4 +43,12 @@ ResourceType Utils::get_enum_resource_type(std::string type)
 		return ResourceType::MATERIAL_TEMPLATE;
 	if (type == "shader")
 		return ResourceType::SHADER;
+	if (type == "script")
+		return ResourceType::SCRIPT;
+	if (type == "font")
+		return ResourceType::FONT;
+	if (type == "video")
+		return ResourceType::VIDEO;
+	if (type == "sound")
+		return ResourceType::SOUND;
 }

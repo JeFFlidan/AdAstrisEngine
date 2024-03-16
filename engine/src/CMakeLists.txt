@@ -12,6 +12,10 @@ file(GLOB ENGINE_CORE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/engine_core/model/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/engine_core/texture/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/engine_core/material/*.*
+    ${CMAKE_CURRENT_SOURCE_DIR}/engine_core/font/*.*
+    ${CMAKE_CURRENT_SOURCE_DIR}/engine_core/video/*.*
+    ${CMAKE_CURRENT_SOURCE_DIR}/engine_core/script/*.*
+    ${CMAKE_CURRENT_SOURCE_DIR}/engine_core/audio/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/ecs/*/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/ecs/*.*
     ${CMAKE_CURRENT_SOURCE_DIR}/file_system/*.*

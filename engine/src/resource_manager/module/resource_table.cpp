@@ -66,7 +66,7 @@ void ResourceTable::add_resource(const ResourceDesc& resourceDesc)
 	}
 }
 
-void* ResourceTable::load_resource(UUID uuid)
+ecore::Object* ResourceTable::load_resource(UUID uuid, ResourceType desiredResourceType)
 {
 	auto it = _resourceDescByUUID.find(uuid);
 	if (it == _resourceDescByUUID.end())
@@ -76,13 +76,30 @@ void* ResourceTable::load_resource(UUID uuid)
 	}
 
 	ResourceDesc& resourceDesc = it->second;
+
+	if (resourceDesc.type != desiredResourceType)
+	{
+		LOG_ERROR("ResourceTable::load_resource(): ResourceDesc type is {}, while passed ResourceType is {}",
+			Utils::get_str_resource_type(resourceDesc.type),
+			Utils::get_str_resource_type(desiredResourceType))
+		return nullptr;
+	}
+	
 	if (resourceDesc.resource)
 		return resourceDesc.resource;
 
 	size_t blobSize = 0;
 	uint8_t* blob = static_cast<uint8_t*>(FILE_SYSTEM()->map_to_read(resourceDesc.path, blobSize));
 	io::File file(resourceDesc.path);
-	file.deserialize(blob, blobSize);
+
+	if (resourceDesc.type != ResourceType::SCRIPT)
+	{
+		file.deserialize(blob, blobSize);
+	}
+	else
+	{
+		file.set_binary_blob(blob, blobSize);
+	}
 
 	switch (resourceDesc.type)
 	{
@@ -107,6 +124,46 @@ void* ResourceTable::load_resource(UUID uuid)
 			resourceDesc.resource = _resourcePool->allocate<ecore::Level>();
 			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
 			LevelLoadedEvent event(static_cast<ecore::Level*>(resourceDesc.resource));
+			EVENT_MANAGER()->enqueue_event(event);
+			break;
+		}
+		case ResourceType::MATERIAL:
+		{
+			resourceDesc.resource = _resourcePool->allocate<ecore::Material>();
+			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
+			MaterialLoadedEvent event(static_cast<ecore::Material*>(resourceDesc.resource));
+			EVENT_MANAGER()->enqueue_event(event);
+			break;
+		}
+		case ResourceType::SCRIPT:
+		{
+			resourceDesc.resource = _resourcePool->allocate<ecore::Script>();
+			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
+			ScriptLoadedEvent event(static_cast<ecore::Script*>(resourceDesc.resource));
+			EVENT_MANAGER()->enqueue_event(event);
+			break;
+		}
+		case ResourceType::VIDEO:
+		{
+			resourceDesc.resource = _resourcePool->allocate<ecore::Video>();
+			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
+			VideoLoadedEvent event(static_cast<ecore::Video*>(resourceDesc.resource));
+			EVENT_MANAGER()->enqueue_event(event);
+			break;
+		}
+		case ResourceType::FONT:
+		{
+			resourceDesc.resource = _resourcePool->allocate<ecore::Font>();
+			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
+			FontLoadedEvent event(static_cast<ecore::Font*>(resourceDesc.resource));
+			EVENT_MANAGER()->enqueue_event(event);
+			break;
+		}
+		case ResourceType::SOUND:
+		{
+			resourceDesc.resource = _resourcePool->allocate<ecore::Sound>();
+			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
+			SoundLoadedEvent event(static_cast<ecore::Sound*>(resourceDesc.resource));
 			EVENT_MANAGER()->enqueue_event(event);
 			break;
 		}
@@ -231,11 +288,6 @@ ResourceDesc* ResourceTable::get_resource_desc(UUID uuid) const
 resource::ResourceType ResourceTable::get_resource_type(UUID uuid) const
 {
 	return get_resource_desc(uuid)->type;
-}
-
-ecore::Object* ResourceTable::get_resource(UUID uuid) const
-{
-	return get_resource_desc(uuid)->resource;
 }
 
 ecore::ObjectName* ResourceTable::get_resource_name(UUID uuid) const

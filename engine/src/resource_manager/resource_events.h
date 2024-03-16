@@ -6,6 +6,13 @@
 #include "engine_core/texture/texture2D.h"
 #include "engine_core/material/shader.h"
 #include "engine_core/level/level.h"
+#include "engine_core/model/model.h"
+#include "engine_core/material/material.h"
+#include "engine_core/video/video.h"
+#include "engine_core/script/script.h"
+#include "engine_core/texture/texture.h"
+#include "engine_core/font/font.h"
+#include "engine_core/audio/sound.h"
 
 namespace ad_astris::resource
 {
@@ -49,59 +56,25 @@ namespace ad_astris::resource
 			ecore::OpaquePBRMaterialHandle _materialHandle;
 	};
 
-	class ModelCreatedEvent : public events::IEvent, public impl::ResourceEvent<ecore::Model>
-	{
-		public:
-			EVENT_TYPE_DECL(ModelCreatedEvent)
-			ModelCreatedEvent(ecore::Model* model) : ResourceEvent(model) { }
-	};
-
-	class ModelRecreatedEvent : public events::IEvent, public impl::ResourceEvent<ecore::Model>
-	{
-		public:
-			EVENT_TYPE_DECL(ModelRecreatedEvent)
-			ModelRecreatedEvent(ecore::Model* model) : ResourceEvent(model) { }
-	};
-	
-	class ModelLoadedEvent : public events::IEvent, public impl::ResourceEvent<ecore::Model>
-	{
-		public:
-			EVENT_TYPE_DECL(ModelLoadedEvent)
-			ModelLoadedEvent(ecore::Model* model) : ResourceEvent(model) { }
-	};
-
-	class TextureCreatedEvent : public events::IEvent, public impl::ResourceEvent<ecore::Texture>
-	{
-		public:
-			EVENT_TYPE_DECL(TextureCreatedEvent)
-			TextureCreatedEvent(ecore::Texture* texture) : ResourceEvent(texture) { }
-	};
-
-	class TextureRecreatedEvent : public events::IEvent, public impl::ResourceEvent<ecore::Texture>
-	{
-		public:
-			EVENT_TYPE_DECL(TextureRecreatedEvent)
-			TextureRecreatedEvent(ecore::Texture* texture) : ResourceEvent(texture) { }
-	};
-	
-	class TextureLoadedEvent : public events::IEvent, public impl::ResourceEvent<ecore::Texture>
-	{
-		public:
-			EVENT_TYPE_DECL(TextureLoadedEvent)
-			TextureLoadedEvent(ecore::Texture* texture) : ResourceEvent(texture) { }
-	};
-
-	class LevelCreatedEvent : public events::IEvent, public impl::ResourceEvent<ecore::Level>
-	{
-		public:
-			EVENT_TYPE_DECL(LevelCreatedEvent)
-			LevelCreatedEvent(ecore::Level* level) : ResourceEvent(level) { }
-	};
-
-	class LevelLoadedEvent : public events::IEvent, public impl::ResourceEvent<ecore::Level>
-	{
-		public:
-		EVENT_TYPE_DECL(LevelLoadedEvent)
-		LevelLoadedEvent(ecore::Level* level) : ResourceEvent(level) { }
-	};
+	DECL_RESOURCE_EVENT(ModelCreatedEvent, ecore::Model)
+	DECL_RESOURCE_EVENT(ModelRecreatedEvent, ecore::Model)
+	DECL_RESOURCE_EVENT(ModelLoadedEvent, ecore::Model)
+	DECL_RESOURCE_EVENT(TextureCreatedEvent, ecore::Texture)
+	DECL_RESOURCE_EVENT(TextureRecreatedEvent, ecore::Texture)
+	DECL_RESOURCE_EVENT(TextureLoadedEvent, ecore::Texture)
+	DECL_RESOURCE_EVENT(LevelCreatedEvent, ecore::Level)
+	DECL_RESOURCE_EVENT(LevelLoadedEvent, ecore::Level)
+	DECL_RESOURCE_EVENT(MaterialCreatedEvent, ecore::Material)
+	DECL_RESOURCE_EVENT(MaterialLoadedEvent, ecore::Material)
+	DECL_RESOURCE_EVENT(ScriptCreatedEvent, ecore::Script)
+	DECL_RESOURCE_EVENT(ScriptLoadedEvent, ecore::Script)
+	DECL_RESOURCE_EVENT(VideoCreatedEvent, ecore::Video)
+	DECL_RESOURCE_EVENT(VideoRecreatedEvent, ecore::Video)
+	DECL_RESOURCE_EVENT(VideoLoadedEvent, ecore::Video)
+	DECL_RESOURCE_EVENT(FontCreatedEvent, ecore::Font)
+	DECL_RESOURCE_EVENT(FontRecreatedEvent, ecore::Font)
+	DECL_RESOURCE_EVENT(FontLoadedEvent, ecore::Font)
+	DECL_RESOURCE_EVENT(SoundCreatedEvent, ecore::Sound)
+	DECL_RESOURCE_EVENT(SoundRecreatedEvent, ecore::Sound)
+	DECL_RESOURCE_EVENT(SoundLoadedEvent, ecore::Sound)
 }

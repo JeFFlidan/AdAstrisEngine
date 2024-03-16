@@ -6,7 +6,7 @@
 
 namespace ad_astris::resource::impl
 {
-	class GLTFImporter
+	class OBJImporter
 	{
 		public:
 			static bool import(

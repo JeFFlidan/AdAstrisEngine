@@ -25,7 +25,7 @@ namespace ad_astris::resource::impl
 			void save_resource(UUID uuid);
 			void save_resources();
 			void add_resource(const ResourceDesc& resourceDesc);
-			void* load_resource(UUID uuid);
+			ecore::Object* load_resource(UUID uuid, ResourceType desiredResourceType);
 			void unload_resource(UUID uuid);
 			void destroy_resource(UUID uuid);
 
@@ -38,7 +38,6 @@ namespace ad_astris::resource::impl
 			UUID get_resource_uuid(const std::string& name) const;
 			ResourceDesc* get_resource_desc(UUID uuid) const;
 			ResourceType get_resource_type(UUID uuid) const;
-			ecore::Object* get_resource(UUID uuid) const;
 			ecore::ObjectName* get_resource_name(UUID uuid) const;
 
 			ResourcePool* get_resource_pool() const { return _resourcePool; }

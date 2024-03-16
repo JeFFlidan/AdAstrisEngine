@@ -1,5 +1,7 @@
 #include "resource_manager.h"
 #include "gltf_importer.h"
+#include "obj_importer.h"
+#include "fbx_importer.h"
 #include "texture_importer.h"
 #include "resource_manager/utils.h"
 #include "resource_manager/resource_events.h"
@@ -19,6 +21,11 @@ const std::unordered_set<std::string> SUPPORTED_IMAGE_FORMATS = {
 	"tiff",
 	"jpg"
 };
+
+const std::unordered_set<std::string> SUPPORTED_SCRIPT_FORMATS = { "lua" };
+const std::unordered_set<std::string> SUPPORTED_VIDEO_FORMATS = { "mp4" };
+const std::unordered_set<std::string> SUPPORTED_FONT_FORMATS = { "ttf" };
+const std::unordered_set<std::string> SUPPORTED_SOUND_FORMATS = { "wav", "ogg" };
 
 void impl::ResourceManager::init(const experimental::ResourceManagerInitContext& initContext)
 {
@@ -95,6 +102,63 @@ void enqueue_event(ecore::Object* resource)
 			}
 			break;
 		}
+		case ResourceType::VIDEO:
+		{
+			switch (eventType)
+			{
+				case EventType::CREATE:
+				{
+					VideoCreatedEvent event(static_cast<ecore::Video*>(resource));
+					EVENT_MANAGER()->enqueue_event(event);
+					break;
+				}
+				case EventType::RECREATE:
+				{
+					VideoRecreatedEvent event(static_cast<ecore::Video*>(resource));
+					EVENT_MANAGER()->enqueue_event(event);
+					break;
+				}
+			}
+			break;
+		}
+		case ResourceType::FONT:
+		{
+			switch (eventType)
+			{
+				case EventType::CREATE:
+				{
+					FontCreatedEvent event(static_cast<ecore::Font*>(resource));
+					EVENT_MANAGER()->enqueue_event(event);
+					break;
+				}
+				case EventType::RECREATE:
+				{
+					FontRecreatedEvent event(static_cast<ecore::Font*>(resource));
+					EVENT_MANAGER()->enqueue_event(event);
+					break;
+				}
+			}
+			break;
+		}
+		case ResourceType::SOUND:
+		{
+			switch (eventType)
+			{
+				case EventType::CREATE:
+				{
+					SoundCreatedEvent event(static_cast<ecore::Sound*>(resource));
+					EVENT_MANAGER()->enqueue_event(event);
+					break;
+				}
+				case EventType::RECREATE:
+				{
+					SoundRecreatedEvent event(static_cast<ecore::Sound*>(resource));
+					EVENT_MANAGER()->enqueue_event(event);
+					break;
+				}
+			}
+			break;
+		}
 		default:
 		{
 			LOG_ERROR("ResourceManager::convert_to_engine_format(): Failed to enqueue event for resource with type {}", Utils::get_str_resource_type(resourceType))
@@ -127,7 +191,7 @@ UUID add_resource_to_table(
 			}
 			default:
 			{
-				LOG_ERROR("ResourceManager::convert_to_engine_format(): Ambigious names for resources of different types")
+				LOG_ERROR("ResourceManager::add_resource_to_table(): Ambigious names for resources of different types")
 				return {};
 			}
 		}
@@ -163,10 +227,16 @@ std::vector<UUID> impl::ResourceManager::convert_to_engine_format(
 	
 	ResourceType resourceType{ ResourceType::UNDEFINED };
 	std::string extension = io::Utils::get_file_extension(originalResourcePath);
-	if (is_supported_model_format(extension))
+	if (is_model_format_supported(extension))
 		resourceType = ResourceType::MODEL;
-	else if (is_supported_texture_format(extension))
+	else if (is_texture_format_supported(extension))
 		resourceType = ResourceType::TEXTURE;
+	else if (is_font_format_supported(extension))
+		resourceType = ResourceType::FONT;
+	else if (is_video_format_supported(extension))
+		resourceType = ResourceType::VIDEO;
+	else if (is_sound_format_supported(extension))
+		resourceType = ResourceType::SOUND;
 
 	std::vector<UUID> outputUUIDs;
 
@@ -183,7 +253,31 @@ std::vector<UUID> impl::ResourceManager::convert_to_engine_format(
 				return {};
 			}
 			ecore::ModelConversionContext* typedContext = static_cast<ecore::ModelConversionContext*>(conversionContext);
-			GLTFImporter::import(originalResourcePath.c_str(), modelInfos, textureInfos, materialInfos, *typedContext);
+
+			if (extension == "gltf" || extension == "glb")
+			{
+				if (!GLTFImporter::import(originalResourcePath.c_str(), modelInfos, textureInfos, materialInfos, *typedContext))
+				{
+					LOG_ERROR("ResourceManager::convert_to_engine_format(): Failed to import 3D model {}", originalResourcePath.c_str())
+					return {};
+				}
+			}
+			else if (extension == "obj")
+			{
+				if (!OBJImporter::import(originalResourcePath.c_str(), modelInfos, textureInfos, materialInfos, *typedContext))
+				{
+					LOG_ERROR("ResourceManager::convert_to_engine_format(): Failed to import 3D model {}", originalResourcePath.c_str())
+					return {};
+				}
+			}
+			else if (extension == "fbx")
+			{
+				if (!FBXImporter::import(originalResourcePath.c_str(), modelInfos, textureInfos, materialInfos, *typedContext))
+				{
+					LOG_ERROR("ResourceManager::convert_to_engine_format(): Failed to import 3D model {}", originalResourcePath.c_str())
+					return {};
+				}
+			}
 
 			for (auto& modelInfo : modelInfos)
 			{
@@ -219,6 +313,21 @@ std::vector<UUID> impl::ResourceManager::convert_to_engine_format(
 				textureInfo,
 				io::Utils::get_file_name(originalResourcePath),
 				engineResourcePath));
+			break;
+		}
+		case ResourceType::VIDEO:
+		{
+			// TODO
+			break;
+		}
+		case ResourceType::FONT:
+		{
+			// TODO
+			break;
+		}
+		case ResourceType::SOUND:
+		{
+			// TODO
 			break;
 		}
 		default:
@@ -267,34 +376,99 @@ void impl::ResourceManager::destroy_resource(const std::string& name)
 	_resourceTable->destroy_resource(get_resource_uuid(name));
 }
 
+ResourceAccessor<ecore::Level> impl::ResourceManager::create_level(const ecore::LevelCreateInfo& createInfo)
+{
+	return nullptr;
+}
+
+ResourceAccessor<ecore::Material> impl::ResourceManager::create_material(const ecore::MaterialCreateInfo& createInfo)
+{
+	return nullptr;
+}
+
+ResourceAccessor<ecore::Script> impl::ResourceManager::create_script(const ecore::ScriptCreateInfo& createInfo)
+{
+	return nullptr;
+}
+
 ResourceAccessor<ecore::Model> impl::ResourceManager::get_model(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid);
+	return _resourceTable->load_resource(uuid, ResourceType::MODEL);
 }
 
 ResourceAccessor<ecore::Model> impl::ResourceManager::get_model(const std::string& modelName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(modelName));
+	return _resourceTable->load_resource(get_resource_uuid(modelName), ResourceType::MODEL);
 }
 
 ResourceAccessor<ecore::Texture> impl::ResourceManager::get_texture(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid);
+	return _resourceTable->load_resource(uuid, ResourceType::TEXTURE);
 }
 
 ResourceAccessor<ecore::Texture> impl::ResourceManager::get_texture(const std::string& textureName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(textureName));
+	return _resourceTable->load_resource(get_resource_uuid(textureName), ResourceType::TEXTURE);
 }
 
 ResourceAccessor<ecore::Level> impl::ResourceManager::get_level(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid);
+	return _resourceTable->load_resource(uuid, ResourceType::LEVEL);
 }
 
 ResourceAccessor<ecore::Level> impl::ResourceManager::get_level(const std::string& levelName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(levelName));
+	return _resourceTable->load_resource(get_resource_uuid(levelName), ResourceType::LEVEL);
+}
+
+ResourceAccessor<ecore::Material> impl::ResourceManager::get_material(UUID uuid) const
+{
+	return _resourceTable->load_resource(uuid, ResourceType::MATERIAL);
+}
+
+ResourceAccessor<ecore::Material> impl::ResourceManager::get_material(const std::string& materialName) const
+{
+	return _resourceTable->load_resource(get_resource_uuid(materialName), ResourceType::MATERIAL);
+}
+
+ResourceAccessor<ecore::Script> impl::ResourceManager::get_script(UUID uuid) const
+{
+	return _resourceTable->load_resource(uuid, ResourceType::SCRIPT);
+}
+
+ResourceAccessor<ecore::Script> impl::ResourceManager::get_script(const std::string& scriptName) const
+{
+	return _resourceTable->load_resource(get_resource_uuid(scriptName), ResourceType::SCRIPT);
+}
+
+ResourceAccessor<ecore::Video> impl::ResourceManager::get_video(UUID uuid) const
+{
+	return _resourceTable->load_resource(uuid, ResourceType::VIDEO);
+}
+
+ResourceAccessor<ecore::Video> impl::ResourceManager::get_video(const std::string& videoName) const
+{
+	return _resourceTable->load_resource(get_resource_uuid(videoName), ResourceType::VIDEO); 
+}
+
+ResourceAccessor<ecore::Font> impl::ResourceManager::get_font(UUID uuid) const
+{
+	return _resourceTable->load_resource(uuid, ResourceType::FONT);
+}
+
+ResourceAccessor<ecore::Font> impl::ResourceManager::get_font(const std::string& fontName) const
+{
+	return _resourceTable->load_resource(get_resource_uuid(fontName), ResourceType::FONT); 
+}
+
+ResourceAccessor<ecore::Sound> impl::ResourceManager::get_sound(UUID uuid) const
+{
+	return _resourceTable->load_resource(uuid, ResourceType::SOUND);
+}
+
+ResourceAccessor<ecore::Sound> impl::ResourceManager::get_sound(const std::string& soundName) const
+{
+	return _resourceTable->load_resource(get_resource_uuid(soundName), ResourceType::SOUND);
 }
 
 ResourceType impl::ResourceManager::get_resource_type(UUID uuid) const
@@ -317,7 +491,7 @@ bool impl::ResourceManager::is_resource_loaded(UUID uuid) const
 	return _resourceTable->is_resource_loaded(uuid);
 }
 
-bool impl::ResourceManager::is_supported_model_format(const std::string& extension) const
+bool impl::ResourceManager::is_model_format_supported(const std::string& extension) const
 {
 	auto it = SUPPORTED_MODEL_FORMATS.find(extension);
 	if (it == SUPPORTED_MODEL_FORMATS.end())
@@ -325,10 +499,42 @@ bool impl::ResourceManager::is_supported_model_format(const std::string& extensi
 	return true;
 }
 
-bool impl::ResourceManager::is_supported_texture_format(const std::string& extension) const
+bool impl::ResourceManager::is_texture_format_supported(const std::string& extension) const
 {
 	auto it = SUPPORTED_IMAGE_FORMATS.find(extension);
 	if (it == SUPPORTED_IMAGE_FORMATS.end())
+		return false;
+	return true;
+}
+
+bool impl::ResourceManager::is_script_format_supported(const std::string& extension) const
+{
+	auto it = SUPPORTED_SCRIPT_FORMATS.find(extension);
+	if (it == SUPPORTED_SCRIPT_FORMATS.end())
+		return false;
+	return true;
+}
+
+bool impl::ResourceManager::is_video_format_supported(const std::string& extension) const
+{
+	auto it = SUPPORTED_VIDEO_FORMATS.find(extension);
+	if (it == SUPPORTED_VIDEO_FORMATS.end())
+		return false;
+	return true;
+}
+
+bool impl::ResourceManager::is_font_format_supported(const std::string& extension) const
+{
+	auto it = SUPPORTED_FONT_FORMATS.find(extension);
+	if (it == SUPPORTED_FONT_FORMATS.end())
+		return false;
+	return true;
+}
+
+bool impl::ResourceManager::is_sound_format_supported(const std::string& extension) const
+{
+	auto it = SUPPORTED_SOUND_FORMATS.find(extension);
+	if (it == SUPPORTED_SOUND_FORMATS.end())
 		return false;
 	return true;
 }
