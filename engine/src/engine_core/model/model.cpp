@@ -12,7 +12,6 @@ constexpr const char* ORIGINAL_FILE_KEY = "original_file";
 constexpr const char* MATERIAL_NAMES_KEY = "material_names";
 constexpr const char* MATERIAL_INDEX_KEY = "material_index";
 constexpr const char* MESHES_KEY = "meshes";
-constexpr const char* MODEL_NAME_KEY = "name";
 constexpr const char* SPHERE_BOUNDS_RADIUS_KEY = "sphere_bounds_radius";
 constexpr const char* SPHERE_BOUNDS_ORIGIN_KEY = "sphere_bounds_origin";
 constexpr const char* INDEX_COUNT_KEY = "index_count";
@@ -80,9 +79,6 @@ void Model::serialize(io::File* file)
 		meshesJson["mesh" + std::to_string(meshCounter++)] = meshJson;
 	}
 	metadata[MESHES_KEY] = meshesJson;
-
-	if (!_modelInfo.name.empty())
-		metadata[MODEL_NAME_KEY] = _modelInfo.name;
 	
 	uint64_t offset = 0;
 	const uint64_t blobSize = get_size();
@@ -143,8 +139,6 @@ void Model::deserialize(io::File* file, ObjectName* objectName)
 	_modelInfo.materialNames = metadata[MATERIAL_NAMES_KEY].get<std::vector<std::string>>();
 	_modelInfo.sphereBounds.origin = metadata[SPHERE_BOUNDS_ORIGIN_KEY];
 	_modelInfo.sphereBounds.radius = metadata[SPHERE_BOUNDS_RADIUS_KEY];
-	if (metadata.contains(MODEL_NAME_KEY))
-		_modelInfo.name = metadata[MODEL_NAME_KEY];
 
 	nlohmann::json meshesJson = metadata[MESHES_KEY];
 	for (auto& pair : meshesJson.items())

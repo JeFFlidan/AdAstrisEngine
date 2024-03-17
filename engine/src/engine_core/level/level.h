@@ -10,9 +10,15 @@ namespace ad_astris::ecore
 {
 	class World;
 
+	struct LevelInfo
+	{
+
+	};
+	
 	struct LevelCreateInfo
 	{
-		
+		io::URI path;
+		std::string name;
 	};
 	
 	class Level : public Object
@@ -24,6 +30,7 @@ namespace ad_astris::ecore
 			Level();
 			// Constructor to create level with default settings
 			Level(io::URI& path, ObjectName* levelName);
+			Level(const LevelInfo& info, ObjectName* name);
 
 			World* get_owning_world();
 			void set_owning_world(World* world);
@@ -37,7 +44,8 @@ namespace ad_astris::ecore
 			ecs::EntityManager* _entityManager{ nullptr };
 			std::vector<ecs::Entity> _entities;
 			
-			level::LevelInfo _levelInfo;
+			level::LevelInfo _levelInfo;		// temp
+			LevelInfo _info;
 			nlohmann::json _entitiesJson;
 		
 		public:

@@ -39,7 +39,6 @@ namespace ad_astris::ecore
 		SphereBounds sphereBounds;
 		
 		std::string originalFile;
-		std::string name;	// This field is used when loaded model is not merged by engine 
 	};
 	
 	class Model : public Object

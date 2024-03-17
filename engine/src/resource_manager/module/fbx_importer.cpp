@@ -5,9 +5,9 @@ using namespace resource::impl;
 
 bool FBXImporter::import(
 	const std::string& path,
-	std::vector<ecore::ModelInfo>& outModelInfos,
-	std::vector<ecore::TextureInfo>& outTextureInfos,
-	std::vector<ecore::MaterialInfo>& materialInfos,
+	std::vector<ModelCreateInfo>& outModelInfos,
+	std::vector<TextureCreateInfo>& outTextureInfos,
+	std::vector<MaterialCreateInfo>& materialInfos,
 	const ecore::ModelConversionContext& conversionContext)
 {
 	return true;

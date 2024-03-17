@@ -21,6 +21,11 @@ Level::Level(io::URI& path, ObjectName* levelName)
 	_isDirty = true;
 }
 
+Level::Level(const LevelInfo& info, ObjectName* name) : _info(info)
+{
+	_name = name;
+}
+
 World* Level::get_owning_world()
 {
 	return _owningWorld;

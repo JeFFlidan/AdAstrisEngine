@@ -1,7 +1,5 @@
 #include "resource_manager.h"
-#include "gltf_importer.h"
-#include "obj_importer.h"
-#include "fbx_importer.h"
+#include "model_importer.h"
 #include "texture_importer.h"
 #include "resource_manager/utils.h"
 #include "resource_manager/resource_events.h"
@@ -205,6 +203,7 @@ UUID add_resource_to_table(
 	resourceDesc.resource->make_dirty();
 	enqueue_event<Resource, EventType::CREATE>(resourceDesc.resource);
 	resourceTable->add_resource(resourceDesc);
+	resourceTable->save_resource(resourceDesc.resource->get_uuid());
 	return resourceDesc.resource->get_uuid();
 }
 
@@ -244,62 +243,39 @@ std::vector<UUID> impl::ResourceManager::convert_to_engine_format(
 	{
 		case ResourceType::MODEL:
 		{
-			std::vector<ecore::ModelInfo> modelInfos;
-			std::vector<ecore::TextureInfo> textureInfos;
-			std::vector<ecore::MaterialInfo> materialInfos;
 			if (!conversionContext)
 			{
 				LOG_ERROR("ResourceManager::convert_to_engine_format(): ModelConversionContext is nullptr")
 				return {};
 			}
-			ecore::ModelConversionContext* typedContext = static_cast<ecore::ModelConversionContext*>(conversionContext);
+			ModelImportContext importContext(conversionContext);
+			ModelImporter::import(originalResourcePath, importContext);
 
-			if (extension == "gltf" || extension == "glb")
-			{
-				if (!GLTFImporter::import(originalResourcePath.c_str(), modelInfos, textureInfos, materialInfos, *typedContext))
-				{
-					LOG_ERROR("ResourceManager::convert_to_engine_format(): Failed to import 3D model {}", originalResourcePath.c_str())
-					return {};
-				}
-			}
-			else if (extension == "obj")
-			{
-				if (!OBJImporter::import(originalResourcePath.c_str(), modelInfos, textureInfos, materialInfos, *typedContext))
-				{
-					LOG_ERROR("ResourceManager::convert_to_engine_format(): Failed to import 3D model {}", originalResourcePath.c_str())
-					return {};
-				}
-			}
-			else if (extension == "fbx")
-			{
-				if (!FBXImporter::import(originalResourcePath.c_str(), modelInfos, textureInfos, materialInfos, *typedContext))
-				{
-					LOG_ERROR("ResourceManager::convert_to_engine_format(): Failed to import 3D model {}", originalResourcePath.c_str())
-					return {};
-				}
-			}
-
-			for (auto& modelInfo : modelInfos)
+			for (auto& modelInfo : importContext.modelCreateInfos)
 			{
 				outputUUIDs.push_back(add_resource_to_table<ecore::Model>(
 					_resourceTable.get(),
-					modelInfo,
+					modelInfo.info,
 					modelInfo.name.empty() ? io::Utils::get_file_name(originalResourcePath) : modelInfo.name,
 					engineResourcePath));
 			}
 
-			for (auto& textureInfo : textureInfos)
+			for (auto& textureInfo : importContext.textureCreateInfos)
 			{
 				outputUUIDs.push_back(add_resource_to_table<ecore::Texture>(
 					_resourceTable.get(),
-					textureInfo,
-					io::Utils::get_file_name(originalResourcePath),
+					textureInfo.info,
+					textureInfo.name,
 					engineResourcePath));
 			}
 
-			for (auto& materialInfo : materialInfos)
+			for (auto& materialInfo : importContext.materialCreateInfos)
 			{
-				// TODO
+				outputUUIDs.push_back(add_resource_to_table<ecore::Material>(
+					_resourceTable.get(),
+					materialInfo.info,
+					materialInfo.name,
+					engineResourcePath));
 			}
 
 			break;
@@ -378,6 +354,14 @@ void impl::ResourceManager::destroy_resource(const std::string& name)
 
 ResourceAccessor<ecore::Level> impl::ResourceManager::create_level(const ecore::LevelCreateInfo& createInfo)
 {
+	ResourceDesc resourceDesc;
+	resourceDesc.type = ResourceType::LEVEL;
+	resourceDesc.path = createInfo.path + "/" + createInfo.name + ".aalevel";
+	resourceDesc.resourceName = _resourcePool->allocate<ecore::ObjectName>(createInfo.name.c_str());
+	ecore::LevelInfo levelInfo;
+	resourceDesc.resource = _resourcePool->allocate<ecore::Level>(levelInfo, resourceDesc.resourceName);
+	_resourceTable->add_resource(resourceDesc);
+	_resourceTable->save_resource(resourceDesc.resource->get_uuid());
 	return nullptr;
 }
 

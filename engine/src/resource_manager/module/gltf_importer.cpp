@@ -64,9 +64,9 @@ namespace tinygltf
 
 bool GLTFImporter::import(
 	const std::string& path,
-	std::vector<ecore::ModelInfo>& outModelInfos,
-	std::vector<ecore::TextureInfo>& outTextureInfos,
-	std::vector<ecore::MaterialInfo>& materialInfos,
+	std::vector<ModelCreateInfo>& outModelInfos,
+	std::vector<TextureCreateInfo>& outTextureInfos,
+	std::vector<MaterialCreateInfo>& materialInfos,
 	const ecore::ModelConversionContext& conversionContext)
 {
 	tinygltf::TinyGLTF loader;
@@ -132,13 +132,14 @@ bool GLTFImporter::import(
 	// From WickedEngine
 	const size_t indexRemap[] = { 0, 2, 1 };
 
-	ecore::ModelInfo mergedModelInfo;
+	ModelCreateInfo mergedModelCreateInfo;
 
 	for (auto& gltfMesh : gltfModel.meshes)
 	{
-		ecore::ModelInfo& outModelInfo = conversionContext.mergeMeshes ? mergedModelInfo : outModelInfos.emplace_back();
+		ModelCreateInfo& outModelCreateInfo = conversionContext.mergeMeshes ? mergedModelCreateInfo : outModelInfos.emplace_back();
+		ecore::ModelInfo& outModelInfo = outModelCreateInfo.info;
 		if (!conversionContext.mergeMeshes)
-			outModelInfo.name = gltfMesh.name;
+			outModelCreateInfo.name = gltfMesh.name;
 		
 		for (auto& primitive : gltfMesh.primitives)
 		{
@@ -453,7 +454,7 @@ bool GLTFImporter::import(
 	}
 
 	if (conversionContext.mergeMeshes)
-		outModelInfos.push_back(mergedModelInfo);
+		outModelInfos.push_back(mergedModelCreateInfo);
 
 	return true;
 }
