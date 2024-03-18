@@ -189,4 +189,41 @@ namespace ad_astris::math
 		result |= (uint32_t)((uint8_t)(saturate(color.w) * 255.0f) << 24);
 		return result;
 	}
+
+	inline XMFLOAT2 max(const XMFLOAT2& vec1, const XMFLOAT2& vec2)
+	{
+		return XMFLOAT2(std::max(vec1.x, vec2.x), std::max(vec1.y, vec2.y));
+	}
+
+	inline XMFLOAT3 max(const XMFLOAT3& vec1, const XMFLOAT3& vec2)
+	{
+		return XMFLOAT3(std::max(vec1.x, vec2.x), std::max(vec1.y, vec2.y), std::max(vec1.z, vec2.z));
+	}
+
+	inline XMFLOAT4 max(const XMFLOAT4& vec1, const XMFLOAT4& vec2)
+	{
+		return XMFLOAT4(std::max(vec1.x, vec2.x), std::max(vec1.y, vec2.y), std::max(vec1.z, vec2.z), std::max(vec1.w, vec2.w));
+	}
+
+	inline XMFLOAT2 min(const XMFLOAT2& vec1, const XMFLOAT2& vec2)
+	{
+		return XMFLOAT2(std::min(vec1.x, vec2.x), std::min(vec1.y, vec2.y));
+	}
+
+	inline XMFLOAT3 min(const XMFLOAT3& vec1, const XMFLOAT3& vec2)
+	{
+		return XMFLOAT3(std::min(vec1.x, vec2.x), std::min(vec1.y, vec2.y), std::min(vec1.z, vec2.z));
+	}
+
+	inline XMFLOAT4 min(const XMFLOAT4& vec1, const XMFLOAT4& vec2)
+	{
+		return XMFLOAT4(std::min(vec1.x, vec2.x), std::min(vec1.y, vec2.y), std::min(vec1.z, vec2.z), std::min(vec1.w, vec2.w));
+	}
+
+	inline XMVECTOR closest_point_on_line_segment(const XMVECTOR& a, const XMVECTOR& b, const XMVECTOR& point)
+	{
+		XMVECTOR ab = XMVectorSubtract(a, b);
+		XMVECTOR d = XMVectorDivide(XMVector3Dot(XMVectorSubtract(point, a), ab), XMVector3Dot(ab, ab));
+		return XMVectorAdd(a, XMVectorMultiply(XMVectorSaturate(d), ab));
+	}
 }
