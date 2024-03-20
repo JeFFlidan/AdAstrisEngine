@@ -20,8 +20,5 @@ namespace ad_astris::resource::impl
 			std::unique_ptr<ResourceManager> _resourceManager{ nullptr };
 	};
 
-	extern "C" RESOURCE_MANAGER_API experimental::IResourceManagerModule* register_module()
-	{
-		return new ResourceManagerModule();
-	}
+	DECL_MODULE_FUNCS(ResourceManager, ResourceManagerModule)
 }

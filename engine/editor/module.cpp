@@ -23,8 +23,5 @@ namespace ad_astris::editor
 		return _editor.get();
 	}
 
-	extern "C" EDITOR_API IEditorModule* register_module()
-	{
-		return new EditorModule();
-	}
+	DECL_MODULE_FUNCS(Editor, EditorModule)
 }

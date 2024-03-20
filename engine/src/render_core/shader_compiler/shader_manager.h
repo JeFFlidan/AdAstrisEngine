@@ -26,7 +26,6 @@ namespace ad_astris::rcore::impl
 		
 		private:
 			rhi::RHI* _rhi{ nullptr };
-			io::FileSystem* _fileSystem{ nullptr };
 			std::unordered_map<std::string, std::unique_ptr<rhi::Shader>> _shaderByRelativePath;
 			std::unique_ptr<IShaderCompiler> _shaderCompiler{ nullptr };
 			ShaderCache _shaderCache;

@@ -11,7 +11,6 @@ namespace ad_astris::rhi
 	struct RHIInitContext
 	{
 		acore::IWindow* window{ nullptr };
-		io::FileSystem* fileSystem{ nullptr };
 		SwapChainInfo* swapChainInfo{ nullptr };
 		GpuPreference gpuPreference{ GpuPreference::DISCRETE };
 		ValidationMode validationMode{ ValidationMode::DISABLED };

@@ -24,8 +24,5 @@ namespace ad_astris::renderer
 		return _renderer.get();
 	}
 
-	extern "C" RENDERER_API IRendererModule* register_module()
-	{
-		return new RendererModule();
-	}
+	DECL_MODULE_FUNCS(Renderer, RendererModule)
 }

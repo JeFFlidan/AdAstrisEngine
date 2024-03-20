@@ -18,7 +18,7 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	ModuleObjects::set_renderer_subsettings(rendererInitContext.projectSettings->get_subsettings<ecore::RendererSubsettings>());
 	_mainWindow = rendererInitContext.mainWindow;
 	
-	init_global_objects(rendererInitContext.globalObjectContext);
+	init_global_objects();
 	init_module_objects();
 	
 	UI_WINDOW_BACKEND()->get_callbacks(rendererInitContext.uiBackendCallbacks); // I must remove this bullshit
@@ -92,9 +92,8 @@ void Renderer::draw(DrawContext& drawContext)
 	get_next_frame_index();
 }
 
-void Renderer::init_global_objects(GlobalObjectContext* context)
+void Renderer::init_global_objects()
 {
-	GlobalObjects::set_global_object_context(context);
 	ecs::set_type_info_table(ECS_TYPE_INFO_TABLE());
 	profiler::Profiler::init(PROFILER_INSTANCE());
 	LOG_INFO("Renderer::init(): Initialized global objects")

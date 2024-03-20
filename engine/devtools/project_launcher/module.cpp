@@ -1,5 +1,6 @@
 #include "project_launcher.h"
 #include "core/module_manager.h"
+#include "core/global_objects.h"
 
 namespace ad_astris::devtools::pl_impl
 {
@@ -23,8 +24,5 @@ namespace ad_astris::devtools::pl_impl
 		return _projectLauncher.get();
 	}
 
-	extern "C" PROJECT_LAUNCHER_API IProjectLauncherModule* register_module()
-	{
-		return new ProjectLauncherModule();
-	}
+	DECL_MODULE_FUNCS(ProjectLauncher, ProjectLauncherModule)
 }

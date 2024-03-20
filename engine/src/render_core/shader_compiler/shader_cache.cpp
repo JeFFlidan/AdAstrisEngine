@@ -8,8 +8,7 @@ using namespace ad_astris;
 using namespace rcore;
 using namespace impl;
 
-ShaderCache::ShaderCache(ShaderCompilerInitContext& initContext)
-	: _fileSystem(initContext.fileSystem), _cacheType(initContext.cacheType)
+ShaderCache::ShaderCache(ShaderCompilerInitContext& initContext) : _cacheType(initContext.cacheType)
 {
 	
 }
@@ -31,7 +30,7 @@ bool ShaderCache::is_shader_outdated(const io::URI& shaderRelativePath, bool isE
 	}
 
 	io::URI shaderMetadataRelativePath = "intermediate/shader_cache/metadata/" + shaderName + ".aameta";
-	io::URI rootPath = isEngineShader ? _fileSystem->get_engine_root_path() : _fileSystem->get_project_root_path();
+	io::URI rootPath = isEngineShader ? FILE_SYSTEM()->get_engine_root_path() : FILE_SYSTEM()->get_project_root_path();
 	
 	io::URI shaderSourceAbsolutePath = io::Utils::get_absolute_path_to_file(rootPath, shaderRelativePath);
 	io::URI shaderBinObjectAbsolutePath = io::Utils::get_absolute_path_to_file(rootPath, shaderBinObjectRelativePath);
@@ -47,7 +46,7 @@ bool ShaderCache::is_shader_outdated(const io::URI& shaderRelativePath, bool isE
 		return true;
 	
 	std::vector<uint8_t> outputData;
-	io::Utils::read_file(_fileSystem, shaderBinObjectMetadataPath, outputData);
+	io::Utils::read_file(FILE_SYSTEM(), shaderBinObjectMetadataPath, outputData);
 	std::string strMetadata;
 	strMetadata.resize(outputData.size());
 	memcpy(strMetadata.data(), outputData.data(), outputData.size());
@@ -72,7 +71,7 @@ bool ShaderCache::is_shader_outdated(const io::URI& shaderRelativePath, bool isE
 void ShaderCache::update_shader_cache(ShaderInputDesc& inputDesc, ShaderOutputDesc& outputDesc, bool isEngineShader)
 {
 	std::string shaderName = io::Utils::get_file_name(inputDesc.shaderPath.c_str());
-	io::URI rootPath = isEngineShader ? _fileSystem->get_engine_root_path() : _fileSystem->get_project_root_path();
+	io::URI rootPath = isEngineShader ? FILE_SYSTEM()->get_engine_root_path() : FILE_SYSTEM()->get_project_root_path();
 
 	io::URI shaderBinObjectRelativePath;
 	get_shader_object_relative_path(shaderName, shaderBinObjectRelativePath);
@@ -81,7 +80,7 @@ void ShaderCache::update_shader_cache(ShaderInputDesc& inputDesc, ShaderOutputDe
 	io::URI shaderBinObjectAbsolutePath = io::Utils::get_absolute_path_to_file(rootPath, shaderBinObjectRelativePath);
 	io::URI shaderBinObjectMetadataPath = io::Utils::get_absolute_path_to_file(rootPath, shaderMetadataRelativePath);
 	
-	io::Utils::write_file(_fileSystem, shaderBinObjectAbsolutePath, outputDesc.data, outputDesc.dataSize);
+	io::Utils::write_file(FILE_SYSTEM(), shaderBinObjectAbsolutePath, outputDesc.data, outputDesc.dataSize);
 
 	nlohmann::json shaderMetadata;
 	for (auto& dependency : outputDesc.dependencies)
@@ -90,16 +89,16 @@ void ShaderCache::update_shader_cache(ShaderInputDesc& inputDesc, ShaderOutputDe
 	}
 
 	std::string strShaderMetadata = shaderMetadata.dump();
-	io::Utils::write_file(_fileSystem, shaderBinObjectMetadataPath, strShaderMetadata.c_str(), strShaderMetadata.size());
+	io::Utils::write_file(FILE_SYSTEM(), shaderBinObjectMetadataPath, strShaderMetadata.c_str(), strShaderMetadata.size());
 }
 
 void ShaderCache::load_shader_bin(const std::string& shaderName, std::vector<uint8_t>& outputData, bool isEngineShader)
 {
 	io::URI relativePath;
 	get_shader_object_relative_path(const_cast<std::string&>(shaderName), relativePath);
-	io::URI absolutePath = isEngineShader ? _fileSystem->get_engine_root_path() : _fileSystem->get_project_root_path();
+	io::URI absolutePath = isEngineShader ? FILE_SYSTEM()->get_engine_root_path() : FILE_SYSTEM()->get_project_root_path();
 	absolutePath = io::Utils::get_absolute_path_to_file(absolutePath, relativePath);
-	io::Utils::read_file(_fileSystem, absolutePath, outputData);
+	io::Utils::read_file(FILE_SYSTEM(), absolutePath, outputData);
 }
 
 void ShaderCache::get_shader_object_relative_path(std::string& shaderName, io::URI& output)

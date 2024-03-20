@@ -28,7 +28,7 @@ namespace ad_astris::devtools
 			virtual ProjectInfo get_project_info() = 0;
 	};
 	
-	class IProjectLauncherModule : IModule
+	class IProjectLauncherModule : public IModule
 	{
 		public:
 			virtual IProjectLauncher* get_project_launcher() = 0;

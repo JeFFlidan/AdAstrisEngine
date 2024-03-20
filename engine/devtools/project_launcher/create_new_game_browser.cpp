@@ -148,6 +148,7 @@ void CreateNewGameBrowser::create_folders(std::string& projectPath, std::string&
 	std::ofstream aaprojectFile(projectPath + "/" + projectName + ".aaproject", std::ios::trunc);
 	std::ofstream resourceTableConfigFile(projectPath + "/configs/resource_table.ini");
 	std::ofstream projectSettingsConfigFile(projectPath + "/configs/project_settings.ini");
+	std::ofstream projectModulesConfigFile(projectPath + "/configs/modules.ini");
 }
 
 NewProjectTemplate CreateNewGameBrowser::get_enum_project_template_type(std::string& projectTemplateName)

@@ -4,7 +4,7 @@
 #include "shader_compiler/shader_manager.h"
 #include "engine/render_core_module.h"
 #include "core/module_manager.h"
-#include "profiler/logger.h"
+#include "core/global_objects.h"
 #include <memory>
 
 namespace ad_astris::rcore
@@ -62,8 +62,5 @@ namespace ad_astris::rcore
 		return _pipelineManager.get();
 	}
 
-	extern "C" RENDER_CORE_API IRenderCoreModule* register_module()
-	{
-		return new RenderCoreModule();
-	}
+	DECL_MODULE_FUNCS(RenderCore, RenderCoreModule)
 }

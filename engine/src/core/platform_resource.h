@@ -5,6 +5,12 @@
 
 namespace ad_astris
 {
+	class PlatformResourcePtr
+	{
+		public:
+			~PlatformResourcePtr() = default;
+	};
+	
 #ifdef _WIN32
 	template <typename WinApiType>
 	struct CleanupResource
@@ -41,7 +47,7 @@ namespace ad_astris
 	};
 
 	template<typename Tag, typename Tag::Resource Invalid, typename Cleanup = CleanupResource<Tag>>
-	class WinApiResourcePtr
+	class WinApiResourcePtr : public PlatformResourcePtr
 	{
 		private:
 			using Resource = typename Tag::Resource;

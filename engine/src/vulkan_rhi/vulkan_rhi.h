@@ -138,7 +138,6 @@ namespace ad_astris::vulkan
 			uint32_t get_current_image_index() const { return _currentImageIndex; }
 		
 		private:
-			io::FileSystem* _fileSystem{ nullptr };
 			std::unique_ptr<VulkanInstance> _instance{ nullptr };
 			std::unique_ptr<VulkanDevice> _device{ nullptr };
 			std::unique_ptr<VulkanCommandManager> _cmdManager{ nullptr };

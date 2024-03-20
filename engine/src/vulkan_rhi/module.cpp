@@ -1,7 +1,7 @@
 #include "vulkan_rhi.h"
 #include "vulkan_ui_window_backend.h"
-
 #include "engine/vulkan_rhi_module.h"
+#include "core/global_objects.h"
 
 namespace ad_astris::vulkan
 {
@@ -33,8 +33,5 @@ namespace ad_astris::vulkan
 		return _backend.get();
 	}
 
-	extern "C" VK_RHI_API IVulkanRHIModule* register_module()
-	{
-		return new VulkanRHIModule();
-	}
+	DECL_MODULE_FUNCS(VulkanRHI, VulkanRHIModule)
 }

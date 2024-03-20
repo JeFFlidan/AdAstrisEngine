@@ -9,7 +9,7 @@ void GLSLInternalCompiler::init(ShaderCompilerInitContext& initContext)
 	
 }
 
-void GLSLInternalCompiler::compile(io::FileSystem* fileSystem, ShaderInputDesc& inputDesc, ShaderOutputDesc& outputDesc)
+void GLSLInternalCompiler::compile(ShaderInputDesc& inputDesc, ShaderOutputDesc& outputDesc)
 {
 	
 }

@@ -1,10 +1,9 @@
 #pragma once
 
 #include "file_system/file_system.h"
-#include "core/module.h"
 #include "rhi/resources.h"
 #include "rhi/engine_rhi.h"
-#include "multithreading/task_composer.h"
+#include "core/global_objects.h"
 
 #include <string>
 #include <unordered_set>
@@ -153,8 +152,6 @@ namespace ad_astris::rcore
 
 	struct ShaderCompilerInitContext
 	{
-		ModuleManager* moduleManager;
-		io::FileSystem* fileSystem;
 		ShaderCacheType cacheType;
 	};
 
@@ -166,8 +163,6 @@ namespace ad_astris::rcore
 
 	struct ShaderManagerInitContext
 	{
-		ModuleManager* moduleManager;
-		io::FileSystem* fileSystem;
 		ShaderCacheType cacheType;
 		rhi::RHI* rhi;
 	};

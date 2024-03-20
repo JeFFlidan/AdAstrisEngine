@@ -9,13 +9,10 @@ using namespace rcore::impl;
 
 void ShaderManager::init(ShaderManagerInitContext& shaderManagerInitContext)
 {
-	_fileSystem = shaderManagerInitContext.fileSystem;
 	_rhi = shaderManagerInitContext.rhi;
 	
 	ShaderCompilerInitContext shaderCompilerInitContext;
 	shaderCompilerInitContext.cacheType = shaderManagerInitContext.cacheType;
-	shaderCompilerInitContext.fileSystem = _fileSystem;
-	shaderCompilerInitContext.moduleManager = shaderManagerInitContext.moduleManager;
 	
 	_shaderCache = ShaderCache(shaderCompilerInitContext);
 	_shaderCompiler = std::make_unique<ShaderCompiler>(shaderCompilerInitContext);
@@ -32,7 +29,7 @@ rhi::Shader* ShaderManager::load_shader(
 	if (it != _shaderByRelativePath.end())
 		return it->second.get();
 
-	io::URI rootPath = isEngineShader ? _fileSystem->get_engine_root_path() : _fileSystem->get_project_root_path();
+	io::URI rootPath = isEngineShader ? FILE_SYSTEM()->get_engine_root_path() : FILE_SYSTEM()->get_project_root_path();
 
 	if (_shaderCache.is_shader_outdated(relativeShaderPath, isEngineShader))
 	{
@@ -70,9 +67,9 @@ rhi::Shader* ShaderManager::load_shader(
 		inputDesc.type = shaderType;
 		inputDesc.minHlslShaderModel = minHlslShaderModel;
 		inputDesc.defines = shaderDefines;
-		inputDesc.includePaths.push_back((_fileSystem->get_engine_root_path() + "/engine/shaders").c_str());
+		inputDesc.includePaths.push_back((FILE_SYSTEM()->get_engine_root_path() + "/engine/shaders").c_str());
 		if (!isEngineShader)
-			inputDesc.includePaths.push_back(_fileSystem->get_project_root_path().c_str());
+			inputDesc.includePaths.push_back(FILE_SYSTEM()->get_project_root_path().c_str());
 
 		ShaderOutputDesc outputDesc;
 		_shaderCompiler->compile(inputDesc, outputDesc);

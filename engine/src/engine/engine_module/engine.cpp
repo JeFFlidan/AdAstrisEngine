@@ -18,7 +18,7 @@ void Engine::init(EngineInitializationContext& engineInitContext)
 {
 	_mainWindow = engineInitContext.mainWindow;
 	
-	init_global_objects(engineInitContext.globalObjectContext);
+	init_global_objects();
 	set_active_camera_delegate();
 	subscribe_to_events();
 	init_module_objects();
@@ -63,10 +63,8 @@ void Engine::save_and_cleanup(bool needToSave)
 	}
 }
 
-void Engine::init_global_objects(GlobalObjectContext* context)
-{
-	GlobalObjects::set_global_object_context(context);
-	
+void Engine::init_global_objects()
+{	
 	GlobalObjects::init_task_composer();
 	LOG_INFO("Engine::init(): Initialized TaskComposer")
 	
@@ -94,10 +92,10 @@ void Engine::init_global_objects(GlobalObjectContext* context)
 void Engine::init_renderer(EngineInitializationContext& engineInitContext)
 {
 	renderer::RendererInitializationContext rendererInitContext;
-	rendererInitContext.globalObjectContext = GlobalObjects::get_global_object_context();
 	rendererInitContext.mainWindow = _mainWindow;
 	rendererInitContext.projectSettings = _project->get_settings();
 	auto rendererModule = MODULE_MANAGER()->load_module<renderer::IRendererModule>("Renderer");
+	rendererModule->set_global_objects();
 	_renderer = rendererModule->get_renderer();
 	_renderer->init(rendererInitContext);
 	engineInitContext.uiBackendCallbacks = rendererInitContext.uiBackendCallbacks;

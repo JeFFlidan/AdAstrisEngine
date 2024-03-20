@@ -23,8 +23,5 @@ namespace ad_astris::engine::impl
 		return _engine.get();
 	}
 
-	extern "C" ENGINE_API IEngineModule* register_module()
-	{
-		return new EngineModule();
-	}
+	DECL_MODULE_FUNCS(Engine, EngineModule)
 }

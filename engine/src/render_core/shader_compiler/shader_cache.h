@@ -20,7 +20,6 @@ namespace ad_astris::rcore::impl
 			}
 
 		private:
-			io::FileSystem* _fileSystem;
 			ShaderCacheType _cacheType;
 
 			void get_shader_object_relative_path(std::string& shaderName, io::URI& output);

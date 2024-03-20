@@ -13,7 +13,6 @@ using namespace impl;
 
 ShaderCompiler::ShaderCompiler(ShaderCompilerInitContext& initContext)
 {
-	_fileSystem = initContext.fileSystem;
 #if defined(DXCOMPILER_ENABLED)
 	_hlslCompiler = std::make_unique<DXInternalCompiler>();
 	_hlslCompiler->init(initContext);
@@ -32,7 +31,7 @@ void ShaderCompiler::compile(ShaderInputDesc& inputDesc, ShaderOutputDesc& outpu
 #if defined(DXCOMPILER_ENABLED)
 	if (inputDesc.format == rhi::ShaderFormat::HLSL6 || inputDesc.format == rhi::ShaderFormat::HLSL_TO_SPIRV)
 	{
-		_hlslCompiler->compile(_fileSystem, inputDesc, outputDesc);
+		_hlslCompiler->compile(inputDesc, outputDesc);
 		return;
 	}
 #endif
@@ -40,7 +39,7 @@ void ShaderCompiler::compile(ShaderInputDesc& inputDesc, ShaderOutputDesc& outpu
 #if defined(GLSL_SUPPORT)
 	if (inputDesc.format == rhi::ShaderFormat::GLSL_TO_HLSL6 || inputDesc.format == rhi::ShaderFormat::GLSL_TO_SPIRV)
 	{
-		_glslCompiler->compile(_fileSystem, inputDesc, outputDesc);
+		_glslCompiler->compile(inputDesc, outputDesc);
 		return;
 	}
 #endif

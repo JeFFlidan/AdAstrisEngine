@@ -13,7 +13,6 @@ namespace ad_astris::rcore::impl
 			virtual void compile(ShaderInputDesc& inputDesc, ShaderOutputDesc& outputDesc) override;
 
 		private:
-			io::FileSystem* _fileSystem{ nullptr };
 			std::unique_ptr<IInternalCompiler> _hlslCompiler{ nullptr };
 #if defined(GLSL_SUPPORT)
 			std::unique_ptr<IInternalCompiler> _glslCompiler{ nullptr };

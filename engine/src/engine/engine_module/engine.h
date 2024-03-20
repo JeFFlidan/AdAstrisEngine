@@ -30,7 +30,7 @@ namespace ad_astris::engine::impl
 			ecs::Entity _activeCamera;
 			events::EventDelegate<ecore::EntityCreatedEvent> _activeCameraDelegate;
 
-			void init_global_objects(GlobalObjectContext* context);
+			void init_global_objects();
 			void init_module_objects();
 			void init_local_objects();
 			void init_renderer(EngineInitializationContext& engineInitContext);

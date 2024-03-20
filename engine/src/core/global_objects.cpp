@@ -12,7 +12,7 @@ void GlobalObjects::init_file_system()
 
 void GlobalObjects::init_module_manager()
 {
-	_globalObjectContext->moduleManager = std::make_unique<ModuleManager>(FILE_SYSTEM());
+	_globalObjectContext->moduleManager = std::make_unique<ModuleManager>();
 }
 
 void GlobalObjects::init_task_composer(uint32_t threadCount)

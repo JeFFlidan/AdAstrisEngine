@@ -10,7 +10,6 @@ namespace ad_astris::editor
 {
 	struct EditorInitContext
 	{
-		GlobalObjectContext* globalObjectContext{ nullptr };
 		acore::IWindow* mainWindow{ nullptr };
 		uicore::ECSUiManager* ecsUiManager{ nullptr };
 		rhi::UIWindowBackendCallbacks* callbacks{ nullptr };

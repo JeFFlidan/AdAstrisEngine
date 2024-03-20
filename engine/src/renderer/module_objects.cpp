@@ -13,6 +13,7 @@ void ModuleObjects::init_rhi_module(acore::IWindow* mainWindow)
 		case ecore::GraphicsAPI::VULKAN:
 		{
 			auto rhiModule = MODULE_MANAGER()->load_module<IVulkanRHIModule>("VulkanRHI");
+			rhiModule->set_global_objects();
 			_rhi = rhiModule->create_vulkan_rhi();
 			_uiWindowBackend = rhiModule->get_ui_window_backend();
 			break;
@@ -31,7 +32,6 @@ void ModuleObjects::init_rhi_module(acore::IWindow* mainWindow)
 
 	rhi::RHIInitContext rhiInitContext;
 	rhiInitContext.window = mainWindow;
-	rhiInitContext.fileSystem = FILE_SYSTEM();
 	rhiInitContext.validationMode = rhi::ValidationMode::ENABLED;
 	rhi::SwapChainInfo swapChainInfo;
 	swapChainInfo.width = _rendererSubsettings->get_render_area_width();
@@ -47,6 +47,7 @@ void ModuleObjects::init_rhi_module(acore::IWindow* mainWindow)
 void ModuleObjects::init_render_core_module()
 {
 	auto rcoreModule = MODULE_MANAGER()->load_module<rcore::IRenderCoreModule>("RenderCore");
+	rcoreModule->set_global_objects();
 	_renderGraph = rcoreModule->get_render_graph();
 	_shaderManager = rcoreModule->get_shader_manager();
 	_rendererResourceManager = rcoreModule->get_renderer_resource_manager();
@@ -64,8 +65,6 @@ void ModuleObjects::init_render_core_module()
 			shaderManagerInitContext.cacheType = rcore::ShaderCacheType::DXIL;
 		break;
 	}
-	shaderManagerInitContext.fileSystem = FILE_SYSTEM();
-	shaderManagerInitContext.moduleManager = MODULE_MANAGER();
 	_shaderManager->init(shaderManagerInitContext);
 
 	rcore::RendererResourceManagerInitContext rendererResourceManagerInitContext;

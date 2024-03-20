@@ -36,6 +36,7 @@ void AdAstrisEngine::save_and_cleanup()
 {
 	_editor->cleanup();
 	_engine->save_and_cleanup(true);
+	MODULE_MANAGER()->cleanup();
 }
 
 void AdAstrisEngine::init_global_objects()
@@ -57,6 +58,7 @@ void AdAstrisEngine::init_global_objects()
 bool AdAstrisEngine::open_project()
 {
 	auto projectLauncherModule = MODULE_MANAGER()->load_module<devtools::IProjectLauncherModule>("ProjectLauncher");
+	projectLauncherModule->set_global_objects();
 	auto projectLauncher = projectLauncherModule->get_project_launcher();
 	projectLauncher->init(FILE_SYSTEM());
 	LOG_INFO("AdAstrisEngine::init(): Loaded and initialized ProjectLauncher module");
@@ -78,6 +80,7 @@ bool AdAstrisEngine::open_project()
 	std::string& fullProjectPath = _projectInfo.projectPath;
 	std::string projectPathWithNoFile = fullProjectPath.substr(0, fullProjectPath.find_last_of("/"));
 	FILE_SYSTEM()->set_project_root_path(projectPathWithNoFile.c_str());
+	MODULE_MANAGER()->load_project_modules_config();
 
 	return true;
 }
@@ -98,18 +101,18 @@ void AdAstrisEngine::init_engine()
 	engine::EngineInitializationContext engineInitializationContext;
 	engineInitializationContext.mainWindow = _mainWindow.get();
 	engineInitializationContext.projectInfo = &_projectInfo;
-	engineInitializationContext.globalObjectContext = _globalObjectContext.get();
 	auto engineModule = MODULE_MANAGER()->load_module<engine::IEngineModule>("Engine");
+	engineModule->set_global_objects();
 	_engine = engineModule->get_engine();
 	_engine->init(engineInitializationContext);
 	LOG_INFO("AdAstrisEngine::init(): Loaded and initalized Engine module")
 	
 	editor::EditorInitContext editorInitContext;
-	editorInitContext.globalObjectContext = _globalObjectContext.get();
 	editorInitContext.mainWindow = _mainWindow.get();
 	editorInitContext.callbacks = &engineInitializationContext.uiBackendCallbacks;
 	editorInitContext.ecsUiManager = ECS_UI_MANAGER();
 	auto editorModule = MODULE_MANAGER()->load_module<editor::IEditorModule>("Editor");
+	editorModule->set_global_objects();
 	_editor = editorModule->get_editor();
 	_editor->init(editorInitContext);
 	

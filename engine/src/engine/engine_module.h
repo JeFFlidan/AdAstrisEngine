@@ -10,7 +10,6 @@ namespace ad_astris::engine
 {
 	struct EngineInitializationContext
 	{
-		GlobalObjectContext* globalObjectContext{ nullptr };
 		acore::IWindow* mainWindow{ nullptr };
 		devtools::ProjectInfo* projectInfo{ nullptr };
 		rhi::UIWindowBackendCallbacks uiBackendCallbacks;	// Need this to setup ui in the application module

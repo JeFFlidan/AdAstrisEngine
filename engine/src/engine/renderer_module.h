@@ -9,7 +9,6 @@ namespace ad_astris::renderer
 {
 	struct RendererInitializationContext
 	{
-		GlobalObjectContext* globalObjectContext{ nullptr };
 		ecore::ProjectSettings* projectSettings{ nullptr };
 		acore::IWindow* mainWindow{ nullptr };
 		rhi::UIWindowBackendCallbacks uiBackendCallbacks;

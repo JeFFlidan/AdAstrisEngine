@@ -11,8 +11,8 @@ using namespace impl;
 
 void DXInternalCompiler::init(ShaderCompilerInitContext& initContext)
 {
-	FARPROC registerFunc = initContext.moduleManager->load_third_party_module("DXCompiler", "DxcCreateInstance");
-	_dxcCreateInstanceProc = reinterpret_cast<DxcCreateInstanceProc>(registerFunc);
+	IModule* module = MODULE_MANAGER()->load_module("DXCompiler");
+	_dxcCreateInstanceProc = static_cast<DxcCreateInstanceProc>(module->get_procedure("DxcCreateInstance").get_address());
 
 	ComPtr<IDxcCompiler3> dxcCompiler;
 	HRESULT result = _dxcCreateInstanceProc(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
@@ -30,7 +30,7 @@ void DXInternalCompiler::init(ShaderCompilerInitContext& initContext)
 	LOG_INFO("DXInternalCompiler::init(): Loaded and initialized DXCompiler module. Version: {}.{}", majorVer, minorVer)
 }
 
-void DXInternalCompiler::compile(io::FileSystem* fileSystem, ShaderInputDesc& inputDesc, ShaderOutputDesc& outputDesc)
+void DXInternalCompiler::compile(ShaderInputDesc& inputDesc, ShaderOutputDesc& outputDesc)
 {
 	std::vector<std::wstring> compileArgs;
 	set_shader_format_flags(inputDesc, compileArgs);
@@ -52,7 +52,7 @@ void DXInternalCompiler::compile(io::FileSystem* fileSystem, ShaderInputDesc& in
 	IncludeHandler includeHandler(inputDesc, outputDesc, dxcUtils);
 
 	std::vector<uint8_t> rawShaderData;
-	io::Utils::read_file(fileSystem, inputDesc.shaderPath, rawShaderData);
+	io::Utils::read_file(FILE_SYSTEM(), inputDesc.shaderPath, rawShaderData);
 	DxcBuffer srcBuffer;
 	srcBuffer.Ptr = rawShaderData.data();
 	srcBuffer.Size = rawShaderData.size();

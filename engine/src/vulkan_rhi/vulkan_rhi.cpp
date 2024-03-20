@@ -27,10 +27,7 @@ constexpr uint32_t MAX_SCISSOR_COUNT = 16;
 void VulkanRHI::init(rhi::RHIInitContext& initContext)
 {
 	assert(initContext.window != nullptr);
-	assert(initContext.fileSystem != nullptr);
 	assert(initContext.swapChainInfo != nullptr);
-	
-	_fileSystem = initContext.fileSystem;
 
 	_instance = std::make_unique<VulkanInstance>(initContext.validationMode);
 	_device = std::make_unique<VulkanDevice>(_instance.get(), initContext.gpuPreference);
@@ -40,7 +37,7 @@ void VulkanRHI::init(rhi::RHIInitContext& initContext)
 	
 	_descriptorManager = std::make_unique<VulkanDescriptorManager>(_device.get(), _mainSwapChain->get_buffers_count());
 	_pipelineLayoutCache = std::make_unique<VulkanPipelineLayoutCache>(_device.get(), _descriptorManager.get());
-	_pipelineCache.load_pipeline_cache(_device.get(), _fileSystem);
+	_pipelineCache.load_pipeline_cache(_device.get());
 
 	print_gpu_info();
 	
@@ -53,7 +50,7 @@ void VulkanRHI::init(rhi::RHIInitContext& initContext)
 // TODO Must test it
 void VulkanRHI::cleanup()
 {
-	_pipelineCache.save_pipeline_cache(_device.get(), _fileSystem);
+	_pipelineCache.save_pipeline_cache(_device.get());
 	_mainSwapChain->destroy(_device.get());
 	_vkObjectPool.cleanup(_device.get());
 	_pipelineCache.destroy(_device.get());

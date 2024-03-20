@@ -18,7 +18,7 @@ namespace ad_astris::rcore::impl
 	{
 		public:
 			virtual void init(ShaderCompilerInitContext& initContext) override;
-			virtual void compile(io::FileSystem* fileSystem, ShaderInputDesc& inputDesc, ShaderOutputDesc& outputDesc) override;
+			virtual void compile(ShaderInputDesc& inputDesc, ShaderOutputDesc& outputDesc) override;
 
 		private:
 			class IncludeHandler : public IDxcIncludeHandler
