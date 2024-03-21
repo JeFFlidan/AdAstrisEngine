@@ -3,10 +3,10 @@ add_compile_definitions(RENDERER_EXPORT)
 set (LIBRARY_NAME renderer)
 
 file(GLOB RENDERER_FILES
-	${DIR_ENGINE_SRC}/renderer/*.cpp
-	${DIR_ENGINE_SRC}/renderer/*.h
-    ${DIR_ENGINE_SRC}/renderer/*/*.cpp
-    ${DIR_ENGINE_SRC}/renderer/*/*.h
+	${DIR_ENGINE_SRC}/renderer/*/*.cpp
+	${DIR_ENGINE_SRC}/renderer/*/*.h
+    ${DIR_ENGINE_SRC}/renderer/*/*/*.cpp
+    ${DIR_ENGINE_SRC}/renderer/*/*/*.h
 )
 
 add_library(${LIBRARY_NAME} SHARED ${RENDERER_FILES})

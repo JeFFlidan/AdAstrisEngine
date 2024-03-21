@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "core/global_objects.h"
-#include "engine/engine_module.h"
+#include "engine/public/engine_module.h"
 #include "application_core/window.h"
 #include "editor_module.h"
 

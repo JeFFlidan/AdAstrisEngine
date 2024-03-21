@@ -3,8 +3,10 @@ add_compile_definitions(VK_RHI_EXPORT)
 set (LIBRARY_NAME vulkan_rhi)
 
 file(GLOB VK_RHI_FILES
-	${DIR_ENGINE_SRC}/vulkan_rhi/*.cpp
-	${DIR_ENGINE_SRC}/vulkan_rhi/*.h
+	${DIR_ENGINE_SRC}/vulkan_rhi/*/*.cpp
+	${DIR_ENGINE_SRC}/vulkan_rhi/*/*.h
+	${DIR_ENGINE_SRC}/vulkan_rhi/*/*/*.cpp
+    ${DIR_ENGINE_SRC}/vulkan_rhi/*/*/*.h
 )
 
 add_library(${LIBRARY_NAME} SHARED ${VK_RHI_FILES})
