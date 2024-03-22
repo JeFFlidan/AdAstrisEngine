@@ -298,7 +298,18 @@ std::vector<UUID> impl::ResourceManager::convert_to_engine_format(
 		}
 		case ResourceType::FONT:
 		{
-			// TODO
+			size_t size = 0;
+			uint8_t* data = static_cast<uint8_t*>(FILE_SYSTEM()->map_to_read(originalResourcePath, size));
+			
+			ecore::FontInfo fontInfo;
+			fontInfo.init(data, size);
+			outputUUIDs.push_back(add_resource_to_table<ecore::Font>(
+				_resourceTable.get(),
+				fontInfo,
+				io::Utils::get_file_name(originalResourcePath),
+				engineResourcePath));
+			
+			FILE_SYSTEM()->unmap_after_reading(data);
 			break;
 		}
 		case ResourceType::SOUND:

@@ -1,12 +1,18 @@
 ﻿#pragma once
 
 #include "engine_core/object.h"
+#include <stb/stb_truetype.h>
 
 namespace ad_astris::ecore
 {
 	struct FontInfo
 	{
-		
+		std::vector<uint8_t> blob;
+		stbtt_fontinfo info;
+		int ascent = 0, descent = 0, lineGap = 0;
+
+		void init();	// Must only be called if blob is filled
+		void init(const uint8_t* fontBlob, size_t fontBlobSize);
 	};
 	
 	class Font : public Object
