@@ -10,7 +10,6 @@ add_library(reflection INTERFACE)
 add_library(volk INTERFACE)
 add_library(tinygltf INTERFACE)
 
-add_library(tinyobjloader STATIC)
 add_library(lz4 STATIC)
 add_library(fmt_lib STATIC)
 add_library(spirv_reflect STATIC)
@@ -24,13 +23,6 @@ target_include_directories(cgltf INTERFACE cgltf)
 target_include_directories(reflection INTERFACE reflection)
 target_include_directories(volk INTERFACE volk vulkan_base)
 target_include_directories(tinygltf INTERFACE tinygltf)
-
-target_sources(tinyobjloader PRIVATE 
-tinyobjloader/tiny_obj_loader.h
-tinyobjloader/tiny_obj_loader.cc
-)
-
-target_include_directories(tinyobjloader PUBLIC tinyobjloader)
 
 target_sources(lz4 PRIVATE
     lz4/lz4.h

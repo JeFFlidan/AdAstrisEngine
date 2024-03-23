@@ -34,14 +34,12 @@ set_target_properties(nfd PROPERTIES IMPORTED_LOCATION ${DIR_THIRD_PARTY}/nfd/nf
 
 target_link_libraries(engine_core
     nfd
-    tinyobjloader 
     inicpp 
     reflection
     glm
     cgltf
     json
     lz4
-    tinyobjloader 
     imgui 
     stb_image
     fmt_lib)
