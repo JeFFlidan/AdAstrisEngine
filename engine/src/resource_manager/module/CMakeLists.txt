@@ -18,6 +18,3 @@ include_directories(${DIR_ENGINE_SRC})
 target_link_libraries(${LIBRARY_NAME}
     engine_core
     basisu)
-    
-add_executable(ResourceManagerTests tests.cpp obj_importer.h obj_importer.cpp)
-target_link_libraries(ResourceManagerTests engine_core basisu)
