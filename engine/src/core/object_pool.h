@@ -2,6 +2,7 @@
 
 #include "pool_allocator.h"
 #include "reflection.h"
+#include <typeindex>
 
 namespace ad_astris
 {
@@ -27,20 +28,19 @@ namespace ad_astris
 			template<typename ResourceType>
 			void create_pool_for_new_resource(uint32_t initialObjectCount = 64)
 			{
-				std::string typeName = get_type_name<ResourceType>();
-				auto it = _poolAllocatorByTypeName.find(typeName);
-				if (it != _poolAllocatorByTypeName.end())
+				auto it = _poolAllocatorByTypeIndex.find(std::type_index(typeid(ResourceType)));
+				if (it != _poolAllocatorByTypeIndex.end())
 				{
 					return;
 				}
 				std::unique_ptr<GeneralPoolAllocator> allocator = std::make_unique<TypedPoolAllocator<ResourceType>>();
 				allocator->allocate_new_pool(initialObjectCount);
-				_poolAllocatorByTypeName[typeName] = std::move(allocator);
+				_poolAllocatorByTypeIndex[std::type_index(typeid(ResourceType))] = std::move(allocator);
 			}
 
 			void cleanup()
 			{
-				for (auto& alloc : _poolAllocatorByTypeName)
+				for (auto& alloc : _poolAllocatorByTypeIndex)
 					alloc.second->cleanup();
 			}
 
@@ -105,16 +105,15 @@ namespace ad_astris
 					}
 			};
 
-			std::unordered_map<std::string, std::unique_ptr<GeneralPoolAllocator>> _poolAllocatorByTypeName;
+			std::unordered_map<std::type_index, std::unique_ptr<GeneralPoolAllocator>> _poolAllocatorByTypeIndex;
 
 			template<typename ResourceType>
 			GeneralPoolAllocator* common_check()
 			{
-				std::string typeName = get_type_name<ResourceType>();
-				auto it = _poolAllocatorByTypeName.find(typeName);
-				if (it == _poolAllocatorByTypeName.end())
+				auto it = _poolAllocatorByTypeIndex.find(std::type_index(typeid(ResourceType)));
+				if (it == _poolAllocatorByTypeIndex.end())
 				{
-					LOG_FATAL("ObjectPool::alocate: Can't allocate resource because there is no pool allocator for type {}", typeName)
+					LOG_FATAL("ObjectPool::alocate: Can't allocate resource because there is no pool allocator for type {}", get_type_name<ResourceType>())
 				}
 				return it->second.get();
 			}

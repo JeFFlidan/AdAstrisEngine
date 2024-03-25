@@ -830,7 +830,7 @@ void VulkanRHI::end_rendering(rhi::CommandBuffer* cmd)
 
 void VulkanRHI::end_rendering(rhi::CommandBuffer* cmd, rhi::SwapChain* swapChain)
 {
-	assert(cmd->handle && swapChain->handle);
+	assert(cmd->handle);
 	vkCmdEndRendering(get_vk_obj(cmd)->get_handle());
 	VulkanSwapChain* vkSwapChain = swapChain ? get_vk_obj(swapChain) : _mainSwapChain.get();
 	vkSwapChain->prepare_for_presenting(get_vk_obj(cmd));
