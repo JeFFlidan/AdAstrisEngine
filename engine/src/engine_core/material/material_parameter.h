@@ -5,7 +5,6 @@
 #include "engine_core/uuid.h"
 #include "core/math_base.h"
 #include <variant>
-#include <string>
 #include <cassert>
 
 namespace ad_astris::ecore
@@ -15,9 +14,10 @@ namespace ad_astris::ecore
 	{
 		public:
 			MaterialParameter(MaterialParameterMetadata* metadata) : _metadata(metadata), _value(metadata->get_default_value()) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, bool value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, int32_t value) : _metadata(metadata), _value(value) { }
+			MaterialParameter(MaterialParameterMetadata* metadata, bool value) : _metadata(metadata), _value(MaterialBool{ (uint32_t)value} ) { }
+			MaterialParameter(MaterialParameterMetadata* metadata, MaterialBool value) : _metadata(metadata), _value(value) { }
 			MaterialParameter(MaterialParameterMetadata* metadata, uint32_t value) : _metadata(metadata), _value(value) { }
+			MaterialParameter(MaterialParameterMetadata* metadata, int32_t value) : _metadata(metadata), _value(value) { }
 			MaterialParameter(MaterialParameterMetadata* metadata, float value) : _metadata(metadata), _value(value) { }
 			MaterialParameter(MaterialParameterMetadata* metadata, UUID value) : _metadata(metadata), _value(value) { }
 			MaterialParameter(MaterialParameterMetadata* metadata, const XMFLOAT2& value) : _metadata(metadata), _value(value) { }
@@ -33,21 +33,7 @@ namespace ad_astris::ecore
 			const MaterialParameterMetadata* get_metadata() const { return _metadata; }
 		
 			template<typename ValueType, typename std::enable_if<
-				std::disjunction<
-					std::is_same<bool, ValueType>,
-					std::is_same<int32_t, ValueType>,
-					std::is_same<uint32_t, ValueType>,
-					std::is_same<float, ValueType>,
-					std::is_same<UUID, ValueType>,
-					std::is_same<XMFLOAT2, ValueType>,
-					std::is_same<XMFLOAT3, ValueType>,
-					std::is_same<XMFLOAT4, ValueType>,
-					std::is_same<XMINT2, ValueType>,
-					std::is_same<XMINT3, ValueType>,
-					std::is_same<XMINT4, ValueType>,
-					std::is_same<XMUINT2, ValueType>,
-					std::is_same<XMUINT3, ValueType>,
-					std::is_same<XMUINT4, ValueType>>::value, int>::type = 0>
+				internal::MaterialParameterTypesPack::has_type<ValueType>(), int>::type = 0>
 			FORCE_INLINE operator ValueType() const
 			{
 				return get<ValueType>();
@@ -57,10 +43,10 @@ namespace ad_astris::ecore
 			FORCE_INLINE T get() const { throw std::runtime_error("ShaderParameter::get(): Unimplemented"); }
 
 			template<>
-			FORCE_INLINE bool get() const
+			FORCE_INLINE MaterialBool get() const
 			{
-				assert(has_value<bool>());
-				return std::get<bool>(_value);
+				assert(has_value<MaterialBool>());
+				return std::get<MaterialBool>(_value);
 			}
 
 			template<>
@@ -164,7 +150,14 @@ namespace ad_astris::ecore
 
 			FORCE_INLINE MaterialParameter& operator=(bool value)
 			{
-				assert(has_value<bool>());
+				assert(has_value<MaterialBool>());
+				_value = MaterialBool{ (uint32_t)value };
+				return *this;
+			}
+
+			FORCE_INLINE MaterialParameter& operator=(MaterialBool value)
+			{
+				assert(has_value<MaterialBool>());
 				_value = value;
 				return *this;
 			}

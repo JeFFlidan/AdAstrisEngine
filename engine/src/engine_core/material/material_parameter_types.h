@@ -2,13 +2,13 @@
 
 #include "core/math_base.h"
 #include "core/template_utils.h"
+#include "engine_core/uuid.h"
 #include <variant>
 
 namespace ad_astris::ecore
 {
 	enum class MaterialParameterType
 	{
-		UNDEFINED,
 		BOOL,
 		INT,
 		UINT,
@@ -22,29 +22,46 @@ namespace ad_astris::ecore
 		UINT4,
 		INT2,
 		INT3,
-		INT4
+		INT4,
+		COUNT	// DON't USE
 	};
 
-	namespace material_utils
+	struct MaterialBool
 	{
-		inline std::map<std::type_index, MaterialParameterType> MATERIAL_PARAMETER_TYPE_BY_INDEX = {
-			{ std::type_index(typeid(bool)), MaterialParameterType::BOOL },
-			{ std::type_index(typeid(int32_t)), MaterialParameterType::INT },
-			{ std::type_index(typeid(uint32_t)), MaterialParameterType::UINT },
-			{ std::type_index(typeid(float)), MaterialParameterType::FLOAT },
-			{ std::type_index(typeid(UUID)), MaterialParameterType::UUID },
-			{ std::type_index(typeid(XMFLOAT2)), MaterialParameterType::FLOAT2 },
-			{ std::type_index(typeid(XMFLOAT3)), MaterialParameterType::FLOAT3 },
-			{ std::type_index(typeid(XMFLOAT4)), MaterialParameterType::FLOAT4 },
-			{ std::type_index(typeid(XMINT2)), MaterialParameterType::INT2 },
-			{ std::type_index(typeid(XMINT3)), MaterialParameterType::INT3 },
-			{ std::type_index(typeid(XMINT4)), MaterialParameterType::INT4 },
-			{ std::type_index(typeid(XMUINT2)), MaterialParameterType::UINT2 },
-			{ std::type_index(typeid(XMUINT3)), MaterialParameterType::UINT3 },
-			{ std::type_index(typeid(XMUINT4)), MaterialParameterType::UINT4 },
+		uint32_t val{ 0 };
+	};
+
+	inline void to_json(nlohmann::json& j, const MaterialBool& value)
+	{
+		j = { { "val", value.val } };
+	}
+
+	inline void from_json(const nlohmann::json& j, MaterialBool& value)
+	{
+		j.at("val").get_to(value.val);
+	}
+
+	namespace internal
+	{
+		// If the parameter type is UUID, when copying the material data to the GPU, that UUID will be replaced by the descriptor index, so the type size of this member in the shader = 4 bytes, not 8
+		inline constexpr uint32_t MATERIAL_PARAMETER_TYPE_SIZES[(int)MaterialParameterType::COUNT] = {
+			sizeof(MaterialBool),
+			sizeof(int32_t),
+			sizeof(uint32_t),
+			sizeof(float),
+			sizeof(uint32_t), // UUID SIZE!!!
+			sizeof(XMFLOAT2),
+			sizeof(XMFLOAT3),
+			sizeof(XMFLOAT4),
+			sizeof(XMUINT2),
+			sizeof(XMUINT3),
+			sizeof(XMUINT4),
+			sizeof(XMINT2),
+			sizeof(XMINT3),
+			sizeof(XMINT4),
 		};
 
-		using MaterialParameterTypesPack = ParameterPack<bool, int32_t, uint32_t, float, UUID, XMFLOAT2, XMFLOAT3, XMFLOAT4, XMUINT2, XMUINT3, XMUINT4, XMINT2, XMINT3, XMINT4>;
+		using MaterialParameterTypesPack = ParameterPack<MaterialBool, int32_t, uint32_t, float, UUID, XMFLOAT2, XMFLOAT3, XMFLOAT4, XMUINT2, XMUINT3, XMUINT4, XMINT2, XMINT3, XMINT4>;
 	}
 	
 	enum class MaterialParameterPrecision
@@ -54,5 +71,6 @@ namespace ad_astris::ecore
 		HALF	// 16 bytes
 	};
 
-	using MaterialParameterValue = material_utils::MaterialParameterTypesPack::Apply<std::variant>;
+	using MaterialParameterValue = internal::MaterialParameterTypesPack::Apply<std::variant>;
+	using MaterialParameterValueSerializer = internal::MaterialParameterTypesPack::Apply<VariantSerializer>;
 }
