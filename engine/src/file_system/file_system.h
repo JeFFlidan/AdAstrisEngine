@@ -61,7 +61,7 @@ namespace ad_astris::io
 				return *this;
 			}
 
-			const std::string& string() { return data; }
+			const std::string& string() const { return data; }
 			const char* c_str() const { return data.c_str(); }
 			bool empty() { return data.empty(); }
 

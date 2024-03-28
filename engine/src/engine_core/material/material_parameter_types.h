@@ -71,5 +71,11 @@ namespace ad_astris::ecore
 		HALF	// 16 bytes
 	};
 
+	NLOHMANN_JSON_SERIALIZE_ENUM(MaterialParameterPrecision, {
+		{MaterialParameterPrecision::UNDEFINED, "UNDEFINED"},
+		{MaterialParameterPrecision::FLOAT, "FLOAT"},
+		{MaterialParameterPrecision::HALF, "HALF"}
+	})
+
 	using MaterialParameterValue = internal::MaterialParameterTypesPack::Apply<std::variant>;
 }

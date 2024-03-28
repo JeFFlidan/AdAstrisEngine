@@ -2,6 +2,7 @@
 
 #include "material_parameter_types.h"
 #include "material_parameter_metadata.h"
+#include "core/common.h"
 #include <variant>
 #include <cassert>
 
