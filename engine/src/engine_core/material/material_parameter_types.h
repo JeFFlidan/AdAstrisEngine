@@ -72,5 +72,4 @@ namespace ad_astris::ecore
 	};
 
 	using MaterialParameterValue = internal::MaterialParameterTypesPack::Apply<std::variant>;
-	using MaterialParameterValueSerializer = internal::MaterialParameterTypesPack::Apply<VariantSerializer>;
 }

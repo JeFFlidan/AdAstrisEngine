@@ -2,8 +2,6 @@
 
 #include "material_parameter_types.h"
 #include "material_parameter_metadata.h"
-#include "engine_core/uuid.h"
-#include "core/math_base.h"
 #include <variant>
 #include <cassert>
 
@@ -14,21 +12,12 @@ namespace ad_astris::ecore
 	{
 		public:
 			MaterialParameter(MaterialParameterMetadata* metadata) : _metadata(metadata), _value(metadata->get_default_value()) { }
+
+			template<typename ValueType, typename std::enable_if<
+				internal::MaterialParameterTypesPack::has_type<ValueType>(), int>::type = 0>
+			MaterialParameter(MaterialParameterMetadata* metadata, ValueType value) : _metadata(metadata), _value(value) { }
+		
 			MaterialParameter(MaterialParameterMetadata* metadata, bool value) : _metadata(metadata), _value(MaterialBool{ (uint32_t)value} ) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, MaterialBool value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, uint32_t value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, int32_t value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, float value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, UUID value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, const XMFLOAT2& value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, const XMFLOAT3& value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, const XMFLOAT4& value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, const XMINT2& value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, const XMINT3& value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, const XMINT4& value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, const XMUINT2& value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, const XMUINT3& value) : _metadata(metadata), _value(value) { }
-			MaterialParameter(MaterialParameterMetadata* metadata, const XMUINT4& value) : _metadata(metadata), _value(value) { }
 
 			const MaterialParameterMetadata* get_metadata() const { return _metadata; }
 		
@@ -39,105 +28,12 @@ namespace ad_astris::ecore
 				return get<ValueType>();
 			}
 
-			template<typename T>
-			FORCE_INLINE T get() const { throw std::runtime_error("ShaderParameter::get(): Unimplemented"); }
-
-			template<>
-			FORCE_INLINE MaterialBool get() const
+			template<typename ValueType, typename std::enable_if<
+				internal::MaterialParameterTypesPack::has_type<ValueType>(), int>::type = 0>
+			FORCE_INLINE ValueType get() const
 			{
-				assert(has_value<MaterialBool>());
-				return std::get<MaterialBool>(_value);
-			}
-
-			template<>
-			FORCE_INLINE int32_t get() const
-			{
-				assert(has_value<int32_t>());
-				return std::get<int32_t>(_value);
-			}
-
-			template<>
-			FORCE_INLINE uint32_t get() const
-			{
-				assert(has_value<uint32_t>());
-				return std::get<uint32_t>(_value);
-			}
-		
-			template<>
-			FORCE_INLINE float get() const
-			{
-				assert(has_value<float>());
-				return std::get<float>(_value);
-			}
-
-			template<>
-			FORCE_INLINE UUID get() const
-			{
-				assert(has_value<UUID>());
-				return std::get<UUID>(_value);
-			}
-
-			template<>
-			FORCE_INLINE XMFLOAT2 get() const
-			{
-				assert(has_value<XMFLOAT2>());
-				return std::get<XMFLOAT2>(_value);
-			}
-
-			template<>
-			FORCE_INLINE XMFLOAT3 get() const
-			{
-				assert(has_value<XMFLOAT3>());
-				return std::get<XMFLOAT3>(_value);
-			}
-
-			template<>
-			FORCE_INLINE XMFLOAT4 get() const
-			{
-				assert(has_value<XMFLOAT4>());
-				return std::get<XMFLOAT4>(_value);
-			}
-	
-			template<>
-			FORCE_INLINE XMINT2 get() const
-			{
-				assert(has_value<XMINT2>());
-				return std::get<XMINT2>(_value);
-			}
-
-			template<>
-			FORCE_INLINE XMINT3 get() const
-			{
-				assert(has_value<XMINT3>());
-				return std::get<XMINT3>(_value);
-			}
-
-			template<>
-			FORCE_INLINE XMINT4 get() const
-			{
-				assert(has_value<XMINT4>());
-				return std::get<XMINT4>(_value);
-			}
-
-			template<>
-			FORCE_INLINE XMUINT2 get() const
-			{
-				assert(has_value<XMUINT2>());
-				return std::get<XMUINT2>(_value);
-			}
-
-			template<>
-			FORCE_INLINE XMUINT3 get() const
-			{
-				assert(has_value<XMUINT3>());
-				return std::get<XMUINT3>(_value);
-			}
-
-			template<>
-			FORCE_INLINE XMUINT4 get() const
-			{
-				assert(has_value<XMUINT4>());
-				return std::get<XMUINT4>(_value);
+				assert(has_value<ValueType>());
+				return std::get<ValueType>(_value);
 			}
 
 			FORCE_INLINE const void* get_ptr() const
@@ -148,108 +44,19 @@ namespace ad_astris::ecore
 				}, _value);
 			}
 
+			template<typename ValueType, typename std::enable_if<
+				internal::MaterialParameterTypesPack::has_type<ValueType>(), int>::type = 0>
+			FORCE_INLINE MaterialParameter& operator=(ValueType value)
+			{
+				assert(has_value<ValueType>());
+				_value = value;
+				return *this;
+			}
+
 			FORCE_INLINE MaterialParameter& operator=(bool value)
 			{
 				assert(has_value<MaterialBool>());
 				_value = MaterialBool{ (uint32_t)value };
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(MaterialBool value)
-			{
-				assert(has_value<MaterialBool>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(int32_t value)
-			{
-				assert(has_value<int32_t>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(uint32_t value)
-			{
-				assert(has_value<uint32_t>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(float value)
-			{
-				assert(has_value<float>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(UUID value)
-			{
-				assert(has_value<UUID>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(XMFLOAT2 value)
-			{
-				assert(has_value<XMFLOAT2>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(const XMFLOAT3& value)
-			{
-				assert(has_value<XMFLOAT3>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(const XMFLOAT4& value)
-			{
-				assert(has_value<XMFLOAT4>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(XMINT2 value)
-			{
-				assert(has_value<XMINT2>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(const XMINT3& value)
-			{
-				assert(has_value<XMINT3>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(const XMINT4& value)
-			{
-				assert(has_value<XMINT4>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(XMUINT2 value)
-			{
-				assert(has_value<XMUINT2>());
-				_value = value;
-				return *this;
-			}
-
-			FORCE_INLINE MaterialParameter& operator=(const XMUINT3& value)
-			{
-				assert(has_value<XMUINT3>());
-				_value = value;
-				return *this;
-			}
-		
-			FORCE_INLINE MaterialParameter& operator=(const XMUINT4& value)
-			{
-				assert(has_value<XMUINT4>());
-				_value = value;
 				return *this;
 			}
 

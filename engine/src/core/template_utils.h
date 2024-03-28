@@ -2,7 +2,6 @@
 
 #include <json/json.hpp>
 #include <variant>
-#include <functional>
 
 namespace ad_astris
 {
@@ -17,34 +16,36 @@ namespace ad_astris
 			return (std::is_same_v<T, TypesPack> || ...);
 		}
 	};
+	
+	constexpr const char* VARIANT_VALUE_KEY = "value";
+	constexpr const char* VARIANT_VALUE_INDEX_KEY = "__variant_index";
 
 	template<typename T, typename ...ARGS>
-	void variant_from_json(const nlohmann::json& j, std::variant<ARGS...>& v)
+	void variant_from_json(const nlohmann::json& j, std::variant<ARGS...>& v, int index)
 	{
-		v = j["value"].get<T>();
+		if (index == j[VARIANT_VALUE_INDEX_KEY].get<int>())
+			v = j[VARIANT_VALUE_KEY].get<T>();
 	}
+}
 
+namespace nlohmann
+{
 	template<typename ...Types>
-	class VariantSerializer
+	struct adl_serializer<std::variant<Types...>>
 	{
-		public:
-			VariantSerializer()
+		static void to_json(json& j, const std::variant<Types...>& v)
+		{
+			std::visit([&](const auto& arg)
 			{
-				size_t i = 0;
-				(void(_funcs[i++] = variant_from_json<Types, Types...>), ...);
-			}
-		
-			void serialize(nlohmann::json& j, const std::variant<Types...>& v)
-			{
-				std::visit([&](const auto& arg){ j["value"] = arg; }, v);
-			}
+				j[ad_astris::VARIANT_VALUE_KEY] = arg;
+				j[ad_astris::VARIANT_VALUE_INDEX_KEY] = v.index();
+			}, v);
+		}
 
-			void deserialie(const nlohmann::json& j, std::variant<Types...>& v, int funcIndex)
-			{
-				_funcs[funcIndex](j, v);
-			}
-
-		private:
-			std::function<void(const nlohmann::json&, std::variant<Types...>&)> _funcs[sizeof...(Types)];
+		static void from_json(const json& j, std::variant<Types...>& v)
+		{
+			int i = 0;
+			(ad_astris::variant_from_json<Types>(j, v, i++), ...);
+		}
 	};
 }
