@@ -9,7 +9,7 @@ namespace ad_astris::ecore
 	class MaterialParameterMetadata
 	{
 		public:
-			NLOHMANN_DEFINE_TYPE_INTRUSIVE(MaterialParameterMetadata, _name, _offset, _defaultValue, _precision);
+			NLOHMANN_DEFINE_TYPE_INTRUSIVE(MaterialParameterMetadata, _name, _offset, _defaultValue, _precision)
 		
 			MaterialParameterMetadata() = default;
 			MaterialParameterMetadata(
@@ -17,9 +17,6 @@ namespace ad_astris::ecore
 				uint32_t offset,
 				const MaterialParameterValue& defaultValue,
 				MaterialParameterPrecision precision) : _name(name), _offset(offset), _defaultValue(defaultValue), _precision(precision) { }
-
-			MaterialParameterMetadata(const MaterialParameterMetadata&) = delete;
-			void operator=(const MaterialParameterMetadata&) = delete;
 
 			void set_name(const std::string& name) { _name = name; }
 			void set_precision(MaterialParameterPrecision precision) { _precision = precision; }

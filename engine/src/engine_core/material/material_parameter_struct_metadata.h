@@ -20,13 +20,15 @@ namespace ad_astris::ecore
 			MaterialParameterStructMetadata(const io::URI& parameterStructPath);
 
 			MaterialParameterStruct* create_struct();
-			void update(const io::URI& newParameterStructPath);
+			void update(const io::URI& newMaterialFolderPath);
+
+			const io::URI& get_material_folder_path() const { return _materialFolderPath; }
 		
 		private:
-			io::URI _parameterStructPath;
+			io::URI _materialFolderPath;
 			std::unordered_map<std::string, uint32_t> _parameterIndexByName;
 			std::vector<std::unique_ptr<MaterialParameterMetadata>> _parameterMetadatas;
-			std::vector<std::unique_ptr<MaterialParameterStruct>> _structs;
+			std::vector<std::unique_ptr<MaterialParameterStruct>> _createdStructs;
 	};
 
 	inline void to_json(nlohmann::json& j, const MaterialParameterStructMetadata& metadata)
@@ -37,18 +39,19 @@ namespace ad_astris::ecore
 			parameterMetadataJsons.push_back(*parameterMetadata);
 		}
 		j["parameter_metadatas"] = parameterMetadataJsons;
-		j["parameter_struct_path"] = metadata._parameterStructPath.string();
+		j["parameter_struct_path"] = metadata._materialFolderPath.string();
 	}
 
 	inline void from_json(const nlohmann::json& j, MaterialParameterStructMetadata& metadata)
 	{
-		std::vector<nlohmann::json> parameterMetadataJsons = j["parameter_metadatas"];
+		std::vector<nlohmann::json> parameterMetadataJsons;
+		j["parameter_metadatas"].get_to(parameterMetadataJsons);
 		for (auto& parameterMetadataJson : parameterMetadataJsons)
 		{
 			MaterialParameterMetadata& paramMetadata = *metadata._parameterMetadatas.emplace_back(new MaterialParameterMetadata());
 			parameterMetadataJson.get_to(paramMetadata);
 			metadata._parameterIndexByName[paramMetadata.get_name()] = metadata._parameterMetadatas.size() - 1; 
 		}
-		metadata._parameterStructPath = j["parameter_struct_path"].get<std::string>();
+		metadata._materialFolderPath = j["parameter_struct_path"].get<std::string>();
 	}
 }
