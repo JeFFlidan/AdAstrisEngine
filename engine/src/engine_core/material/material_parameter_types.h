@@ -2,6 +2,7 @@
 
 #include "core/math_base.h"
 #include "core/template_utils.h"
+#include "core/reflection.h"
 #include "engine_core/uuid.h"
 #include <variant>
 
@@ -71,10 +72,10 @@ namespace ad_astris::ecore
 		HALF	// 16 bytes
 	};
 
-	NLOHMANN_JSON_SERIALIZE_ENUM(MaterialParameterPrecision, {
-		{MaterialParameterPrecision::UNDEFINED, "UNDEFINED"},
-		{MaterialParameterPrecision::FLOAT, "FLOAT"},
-		{MaterialParameterPrecision::HALF, "HALF"}
+	REFLECT_ENUM(MaterialParameterPrecision, {
+		{ MaterialParameterPrecision::UNDEFINED, "undefined" },
+		{ MaterialParameterPrecision::FLOAT, "float" },
+		{ MaterialParameterPrecision::HALF, "half" }
 	})
 
 	using MaterialParameterValue = internal::MaterialParameterTypesPack::Apply<std::variant>;

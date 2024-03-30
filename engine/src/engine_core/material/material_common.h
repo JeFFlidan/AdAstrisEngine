@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/reflection.h"
 #include <string>
 
 namespace ad_astris::ecore::material

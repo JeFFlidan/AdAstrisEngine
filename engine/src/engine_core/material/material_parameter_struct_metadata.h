@@ -6,21 +6,17 @@
 
 namespace ad_astris::ecore
 {
-	class MaterialParameterStructMetadataCreator;
-	class MaterialParameterStructMetadata;
-	
 	class MaterialParameterStructMetadata
 	{
-		friend MaterialParameterStructMetadataCreator;
 		friend void to_json(nlohmann::json& j, const MaterialParameterStructMetadata& metadata);
 		friend void from_json(const nlohmann::json& j, MaterialParameterStructMetadata& metadata);
 		
 		public:
 			MaterialParameterStructMetadata() = default;
-			MaterialParameterStructMetadata(const io::URI& parameterStructPath);
+			MaterialParameterStructMetadata(const io::URI& parameterStructPath, const nlohmann::json& materialMetadata);
 
 			MaterialParameterStruct* create_struct();
-			void update(const io::URI& newMaterialFolderPath);
+			void update(const io::URI& newMaterialFolderPath, const nlohmann::json& materialMetadata);
 
 			const io::URI& get_material_folder_path() const { return _materialFolderPath; }
 		
@@ -29,6 +25,10 @@ namespace ad_astris::ecore
 			std::unordered_map<std::string, uint32_t> _parameterIndexByName;
 			std::vector<std::unique_ptr<MaterialParameterMetadata>> _parameterMetadatas;
 			std::vector<std::unique_ptr<MaterialParameterStruct>> _createdStructs;
+
+			std::string get_struct_fields_data(const std::string& paramStructData) const;
+			void read_material_header(std::string& outParamStructData) const;
+			std::string get_field_name(const std::string& structLine) const;
 	};
 
 	inline void to_json(nlohmann::json& j, const MaterialParameterStructMetadata& metadata)

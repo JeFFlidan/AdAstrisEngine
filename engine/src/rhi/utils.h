@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "resources.h"
+#include "core/reflector/enum_reflector.h"
 
 namespace ad_astris::rhi
 {
@@ -610,4 +611,22 @@ namespace ad_astris::rhi
 				}
 			}
 	};
+
+	REFLECT_ENUM(ShaderType, {
+		{ ShaderType::UNDEFINED, "undefined" },
+		{ ShaderType::VERTEX, "vertex" },
+		{ ShaderType::FRAGMENT, "fragment" },
+		{ ShaderType::TESSELLATION_CONTROL, "tess_control" },
+		{ ShaderType::TESSELLATION_EVALUATION, "tess_eval" },
+		{ ShaderType::GEOMETRY, "geometry" },
+		{ ShaderType::COMPUTE, "compute" },
+		{ ShaderType::MESH, "mesh" },
+		{ ShaderType::TASK, "task" },
+		{ ShaderType::RAY_GENERATION, "ray_generation" },
+		{ ShaderType::RAY_INTERSECTION, "ray_intersection" },
+		{ ShaderType::RAY_ANY_HIT, "ray_any_hit" },
+		{ ShaderType::RAY_CLOSEST_HIT, "ray_closest_hit" },
+		{ ShaderType::RAY_MISS, "ray_miss" },
+		{ ShaderType::RAY_CALLABLE, "ray_callable" }
+	})
 }
