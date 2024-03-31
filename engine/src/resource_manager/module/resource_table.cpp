@@ -2,7 +2,6 @@
 #include "engine_core/model/model.h"
 #include "engine_core/texture/texture.h"
 #include "engine_core/level/level.h"
-#include "core/global_objects.h"
 #include "resource_manager/resource_events.h"
 
 using namespace ad_astris;
@@ -64,118 +63,6 @@ void ResourceTable::add_resource(const ResourceDesc& resourceDesc)
 	{
 		_resourceDescByUUID[resourceDesc.resource->get_uuid()] = resourceDesc;
 	}
-}
-
-ecore::Object* ResourceTable::load_resource(UUID uuid, ResourceType desiredResourceType)
-{
-	auto it = _resourceDescByUUID.find(uuid);
-	if (it == _resourceDescByUUID.end())
-	{
-		LOG_ERROR("ResourceTable::load_resource(): ResourceTable does not have resource with UUID {}", uuid)
-		return nullptr;
-	}
-
-	ResourceDesc& resourceDesc = it->second;
-
-	if (resourceDesc.type != desiredResourceType)
-	{
-		LOG_ERROR("ResourceTable::load_resource(): ResourceDesc type is {}, while passed ResourceType is {}",
-			Utils::get_str_resource_type(resourceDesc.type),
-			Utils::get_str_resource_type(desiredResourceType))
-		return nullptr;
-	}
-	
-	if (resourceDesc.resource)
-		return resourceDesc.resource;
-
-	size_t blobSize = 0;
-	uint8_t* blob = static_cast<uint8_t*>(FILE_SYSTEM()->map_to_read(resourceDesc.path, blobSize));
-	io::File file(resourceDesc.path);
-
-	if (resourceDesc.type != ResourceType::SCRIPT)
-	{
-		file.deserialize(blob, blobSize);
-	}
-	else
-	{
-		file.set_binary_blob(blob, blobSize);
-	}
-
-	switch (resourceDesc.type)
-	{
-		case ResourceType::MODEL:
-		{
-			resourceDesc.resource = _resourcePool->allocate<ecore::Model>();
-			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
-			ModelLoadedEvent event(static_cast<ecore::Model*>(resourceDesc.resource));
-			EVENT_MANAGER()->enqueue_event(event);
-			break;
-		}
-		case ResourceType::TEXTURE:
-		{
-			resourceDesc.resource = _resourcePool->allocate<ecore::Texture>();
-			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
-			TextureLoadedEvent event(static_cast<ecore::Texture*>(resourceDesc.resource));
-			EVENT_MANAGER()->enqueue_event(event);
-			break;
-		}
-		case ResourceType::LEVEL:
-		{
-			resourceDesc.resource = _resourcePool->allocate<ecore::Level>();
-			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
-			LevelLoadedEvent event(static_cast<ecore::Level*>(resourceDesc.resource));
-			EVENT_MANAGER()->enqueue_event(event);
-			break;
-		}
-		case ResourceType::MATERIAL:
-		{
-			resourceDesc.resource = _resourcePool->allocate<ecore::Material>();
-			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
-			MaterialLoadedEvent event(static_cast<ecore::Material*>(resourceDesc.resource));
-			EVENT_MANAGER()->enqueue_event(event);
-			break;
-		}
-		case ResourceType::SCRIPT:
-		{
-			resourceDesc.resource = _resourcePool->allocate<ecore::Script>();
-			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
-			ScriptLoadedEvent event(static_cast<ecore::Script*>(resourceDesc.resource));
-			EVENT_MANAGER()->enqueue_event(event);
-			break;
-		}
-		case ResourceType::VIDEO:
-		{
-			resourceDesc.resource = _resourcePool->allocate<ecore::Video>();
-			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
-			VideoLoadedEvent event(static_cast<ecore::Video*>(resourceDesc.resource));
-			EVENT_MANAGER()->enqueue_event(event);
-			break;
-		}
-		case ResourceType::FONT:
-		{
-			resourceDesc.resource = _resourcePool->allocate<ecore::Font>();
-			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
-			FontLoadedEvent event(static_cast<ecore::Font*>(resourceDesc.resource));
-			EVENT_MANAGER()->enqueue_event(event);
-			break;
-		}
-		case ResourceType::SOUND:
-		{
-			resourceDesc.resource = _resourcePool->allocate<ecore::Sound>();
-			resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
-			SoundLoadedEvent event(static_cast<ecore::Sound*>(resourceDesc.resource));
-			EVENT_MANAGER()->enqueue_event(event);
-			break;
-		}
-		default:
-		{
-			LOG_ERROR("ResourceTable::load_resource: Failed to load resource {} with type {}", resourceDesc.resourceName->get_full_name(), Utils::get_str_resource_type(resourceDesc.type))
-			break;
-		}
-	}
-
-	FILE_SYSTEM()->unmap_after_reading(blob);
-	return resourceDesc.resource;
 }
 
 void ResourceTable::unload_resource(UUID uuid)

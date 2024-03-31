@@ -4,7 +4,10 @@
 #include "engine_core/object.h"
 #include "resource_manager/resource_formats.h"
 #include "file_system/file_system.h"
+#include "resource_manager/utils.h"
+#include "core/global_objects.h"
 #include "core/config_base.h"
+#include "resource_manager/resource_events.h"
 
 namespace ad_astris::resource::impl
 {
@@ -25,7 +28,52 @@ namespace ad_astris::resource::impl
 			void save_resource(UUID uuid);
 			void save_resources();
 			void add_resource(const ResourceDesc& resourceDesc);
-			ecore::Object* load_resource(UUID uuid, ResourceType desiredResourceType);
+
+			template<typename Resource>
+			Resource* load_resource(UUID uuid, ResourceType desiredResourceType)
+			{
+				auto it = _resourceDescByUUID.find(uuid);
+				if (it == _resourceDescByUUID.end())
+				{
+					LOG_ERROR("ResourceTable::load_resource(): ResourceTable does not have resource with UUID {}", uuid)
+					return nullptr;
+				}
+
+				ResourceDesc& resourceDesc = it->second;
+
+				if (resourceDesc.type != desiredResourceType)
+				{
+					LOG_ERROR("ResourceTable::load_resource(): ResourceDesc type is {}, while passed ResourceType is {}",
+						Utils::get_str_resource_type(resourceDesc.type),
+						Utils::get_str_resource_type(desiredResourceType))
+					return nullptr;
+				}
+	
+				if (resourceDesc.resource)
+					return static_cast<Resource*>(resourceDesc.resource);
+
+				size_t blobSize = 0;
+				uint8_t* blob = static_cast<uint8_t*>(FILE_SYSTEM()->map_to_read(resourceDesc.path, blobSize));
+				io::File file(resourceDesc.path);
+
+				if (resourceDesc.type != ResourceType::SCRIPT)
+				{
+					file.deserialize(blob, blobSize);
+				}
+				else
+				{
+					file.set_binary_blob(blob, blobSize);
+				}
+
+				resourceDesc.resource = _resourcePool->allocate<Resource>();
+				resourceDesc.resource->deserialize(&file, resourceDesc.resourceName);
+				ResourceLoadedEvent<Resource> event(static_cast<Resource*>(resourceDesc.resource));
+				EVENT_MANAGER()->enqueue_event(event);
+
+				FILE_SYSTEM()->unmap_after_reading(blob);
+				return static_cast<Resource*>(resourceDesc.resource);
+			}
+		
 			void unload_resource(UUID uuid);
 			void destroy_resource(UUID uuid);
 

@@ -3,6 +3,7 @@
 #include "engine_core/object.h"
 #include "material_parameter_struct.h"
 #include "material_template_types.h"
+#include "material_parameter_struct_metadata.h"
 
 namespace ad_astris::ecore
 {
@@ -10,6 +11,7 @@ namespace ad_astris::ecore
 	{
 		io::URI resourceFolderPath;
 		io::URI materialDataFolderPath;
+		std::string name;
 	};
 
 	struct MaterialTemplateUpdateInfo

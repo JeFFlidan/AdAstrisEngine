@@ -47,14 +47,16 @@ namespace ad_astris::resource::impl
 		private:
 			T* _resource{ nullptr };
 	};
-	
-#define DECL_RESOURCE_EVENT(EventName, ResourceType) \
-	class EventName : public events::IEvent, public impl::ResourceEvent<ResourceType> \
-	{ \
-		public:\
-			EVENT_TYPE_DECL(EventName)\
-			EventName(ResourceType* resource) : ResourceEvent(resource) { } \
-	};
 }
 
-	
+namespace ad_astris::resource
+{
+	template<typename T>
+	class ResourceCreatedEvent { };
+
+	template<typename T>
+	class ResourceRecreatedEvent { };
+
+	template<typename T>
+	class ResourceLoadedEvent { };
+}

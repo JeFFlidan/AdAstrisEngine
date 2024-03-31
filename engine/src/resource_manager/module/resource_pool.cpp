@@ -3,6 +3,7 @@
 #include "engine_core/texture/texture.h"
 #include "engine_core/level/level.h"
 #include "engine_core/material/material.h"
+#include "engine_core/material/material_template.h"
 #include "engine_core/script/script.h"
 #include "engine_core/video/video.h"
 #include "engine_core/font/font.h"
@@ -17,6 +18,7 @@ ResourcePool::ResourcePool()
 	create_pool_for_new_resource<ecore::Texture>(256);
 	create_pool_for_new_resource<ecore::Level>(8);
 	create_pool_for_new_resource<ecore::Material>(256);
+	create_pool_for_new_resource<ecore::MaterialTemplate>(64);
 	create_pool_for_new_resource<ecore::Script>(128);
 	create_pool_for_new_resource<ecore::Video>(32);
 	create_pool_for_new_resource<ecore::Font>(16);

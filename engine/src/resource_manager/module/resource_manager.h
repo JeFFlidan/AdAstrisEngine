@@ -27,6 +27,7 @@ namespace ad_astris::resource::impl
 			ResourceAccessor<ecore::Level> create_level(const ecore::LevelCreateInfo& createInfo) override;
 			ResourceAccessor<ecore::Material> create_material(const ecore::MaterialCreateInfo& createInfo) override;
 			ResourceAccessor<ecore::Script> create_script(const ecore::ScriptCreateInfo& createInfo) override;
+			ResourceAccessor<ecore::MaterialTemplate> create_material_template(const ecore::MaterialTemplateCreateInfo& createInfo) override;
 		
 			ResourceAccessor<ecore::Model> get_model(UUID uuid) const override;
 			ResourceAccessor<ecore::Model> get_model(const std::string& modelName) const override;
@@ -36,6 +37,8 @@ namespace ad_astris::resource::impl
 			ResourceAccessor<ecore::Level> get_level(const std::string& levelName) const override;
 			ResourceAccessor<ecore::Material> get_material(UUID uuid) const override;
 			ResourceAccessor<ecore::Material> get_material(const std::string& materialName) const override;
+			ResourceAccessor<ecore::MaterialTemplate> get_material_template(UUID uuid) const override;
+			ResourceAccessor<ecore::MaterialTemplate> get_material_template(const std::string& materialTemplateName) const override;
 			ResourceAccessor<ecore::Script> get_script(UUID uuid) const override;
 			ResourceAccessor<ecore::Script> get_script(const std::string& scriptName) const override;
 			ResourceAccessor<ecore::Video> get_video(UUID uuid) const override;

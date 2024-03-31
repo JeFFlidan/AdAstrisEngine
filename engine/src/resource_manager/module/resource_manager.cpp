@@ -60,106 +60,18 @@ void enqueue_event(ecore::Object* resource)
 {
 	constexpr ResourceType resourceType = get_resource_type<Resource>(); 
 	
-	switch (resourceType)
+	switch (eventType)
 	{
-		case ResourceType::MODEL:
+		case EventType::CREATE:
 		{
-			switch (eventType)
-			{
-				case EventType::CREATE:
-				{
-					ModelCreatedEvent event(static_cast<ecore::Model*>(resource));
-					EVENT_MANAGER()->enqueue_event(event);
-					break;
-				}
-				case EventType::RECREATE:
-				{
-					ModelRecreatedEvent event(static_cast<ecore::Model*>(resource));
-					EVENT_MANAGER()->enqueue_event(event);
-					break;
-				}
-			}
+			ResourceCreatedEvent<Resource> event(static_cast<Resource*>(resource));
+			EVENT_MANAGER()->enqueue_event(event);
 			break;
 		}
-		case ResourceType::TEXTURE:
+		case EventType::RECREATE:
 		{
-			switch (eventType)
-			{
-				case EventType::CREATE:
-				{
-					TextureCreatedEvent event(static_cast<ecore::Texture*>(resource));
-					EVENT_MANAGER()->enqueue_event(event);
-					break;
-				}
-				case EventType::RECREATE:
-				{
-					TextureRecreatedEvent event(static_cast<ecore::Texture*>(resource));
-					EVENT_MANAGER()->enqueue_event(event);
-					break;
-				}
-			}
-			break;
-		}
-		case ResourceType::VIDEO:
-		{
-			switch (eventType)
-			{
-				case EventType::CREATE:
-				{
-					VideoCreatedEvent event(static_cast<ecore::Video*>(resource));
-					EVENT_MANAGER()->enqueue_event(event);
-					break;
-				}
-				case EventType::RECREATE:
-				{
-					VideoRecreatedEvent event(static_cast<ecore::Video*>(resource));
-					EVENT_MANAGER()->enqueue_event(event);
-					break;
-				}
-			}
-			break;
-		}
-		case ResourceType::FONT:
-		{
-			switch (eventType)
-			{
-				case EventType::CREATE:
-				{
-					FontCreatedEvent event(static_cast<ecore::Font*>(resource));
-					EVENT_MANAGER()->enqueue_event(event);
-					break;
-				}
-				case EventType::RECREATE:
-				{
-					FontRecreatedEvent event(static_cast<ecore::Font*>(resource));
-					EVENT_MANAGER()->enqueue_event(event);
-					break;
-				}
-			}
-			break;
-		}
-		case ResourceType::SOUND:
-		{
-			switch (eventType)
-			{
-				case EventType::CREATE:
-				{
-					SoundCreatedEvent event(static_cast<ecore::Sound*>(resource));
-					EVENT_MANAGER()->enqueue_event(event);
-					break;
-				}
-				case EventType::RECREATE:
-				{
-					SoundRecreatedEvent event(static_cast<ecore::Sound*>(resource));
-					EVENT_MANAGER()->enqueue_event(event);
-					break;
-				}
-			}
-			break;
-		}
-		default:
-		{
-			LOG_ERROR("ResourceManager::convert_to_engine_format(): Failed to enqueue event for resource with type {}", Utils::get_str_resource_type(resourceType))
+			ResourceRecreatedEvent<Resource> event(static_cast<Resource*>(resource));
+			EVENT_MANAGER()->enqueue_event(event);
 			break;
 		}
 	}
@@ -268,7 +180,7 @@ std::vector<UUID> impl::ResourceManager::convert_to_engine_format(
 					textureInfo.name,
 					engineResourcePath));
 			}
-
+			
 			for (auto& materialInfo : importContext.materialCreateInfos)
 			{
 				outputUUIDs.push_back(add_resource_to_table<ecore::Material>(
@@ -373,7 +285,19 @@ ResourceAccessor<ecore::Level> impl::ResourceManager::create_level(const ecore::
 	resourceDesc.resource = _resourcePool->allocate<ecore::Level>(levelInfo, resourceDesc.resourceName);
 	_resourceTable->add_resource(resourceDesc);
 	_resourceTable->save_resource(resourceDesc.resource->get_uuid());
-	return nullptr;
+	return resourceDesc.resource;
+}
+
+ResourceAccessor<ecore::MaterialTemplate> impl::ResourceManager::create_material_template(const ecore::MaterialTemplateCreateInfo& createInfo)
+{
+	ResourceDesc resourceDesc;
+	resourceDesc.type = ResourceType::MATERIAL_TEMPLATE;
+	resourceDesc.path = createInfo.resourceFolderPath + "/" + createInfo.name + ".aares";
+	resourceDesc.resourceName = _resourcePool->allocate<ecore::ObjectName>(createInfo.name.c_str());
+	resourceDesc.resource = _resourcePool->allocate<ecore::MaterialTemplate>(createInfo, resourceDesc.resourceName);
+	_resourceTable->add_resource(resourceDesc);
+	_resourceTable->save_resource(resourceDesc.resource->get_uuid());
+	return resourceDesc.resource;
 }
 
 ResourceAccessor<ecore::Material> impl::ResourceManager::create_material(const ecore::MaterialCreateInfo& createInfo)
@@ -388,82 +312,92 @@ ResourceAccessor<ecore::Script> impl::ResourceManager::create_script(const ecore
 
 ResourceAccessor<ecore::Model> impl::ResourceManager::get_model(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid, ResourceType::MODEL);
+	return _resourceTable->load_resource<ecore::Model>(uuid, ResourceType::MODEL);
 }
 
 ResourceAccessor<ecore::Model> impl::ResourceManager::get_model(const std::string& modelName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(modelName), ResourceType::MODEL);
+	return _resourceTable->load_resource<ecore::Model>(get_resource_uuid(modelName), ResourceType::MODEL);
 }
 
 ResourceAccessor<ecore::Texture> impl::ResourceManager::get_texture(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid, ResourceType::TEXTURE);
+	return _resourceTable->load_resource<ecore::Texture>(uuid, ResourceType::TEXTURE);
 }
 
 ResourceAccessor<ecore::Texture> impl::ResourceManager::get_texture(const std::string& textureName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(textureName), ResourceType::TEXTURE);
+	return _resourceTable->load_resource<ecore::Texture>(get_resource_uuid(textureName), ResourceType::TEXTURE);
 }
 
 ResourceAccessor<ecore::Level> impl::ResourceManager::get_level(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid, ResourceType::LEVEL);
+	return _resourceTable->load_resource<ecore::Level>(uuid, ResourceType::LEVEL);
 }
 
 ResourceAccessor<ecore::Level> impl::ResourceManager::get_level(const std::string& levelName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(levelName), ResourceType::LEVEL);
+	return _resourceTable->load_resource<ecore::Level>(get_resource_uuid(levelName), ResourceType::LEVEL);
 }
 
 ResourceAccessor<ecore::Material> impl::ResourceManager::get_material(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid, ResourceType::MATERIAL);
+	return _resourceTable->load_resource<ecore::Material>(uuid, ResourceType::MATERIAL);
 }
 
 ResourceAccessor<ecore::Material> impl::ResourceManager::get_material(const std::string& materialName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(materialName), ResourceType::MATERIAL);
+	return _resourceTable->load_resource<ecore::Material>(get_resource_uuid(materialName), ResourceType::MATERIAL);
+}
+
+ResourceAccessor<ecore::MaterialTemplate> impl::ResourceManager::get_material_template(UUID uuid) const
+{
+	return _resourceTable->load_resource<ecore::MaterialTemplate>(uuid, ResourceType::MATERIAL_TEMPLATE);
+}
+
+ResourceAccessor<ecore::MaterialTemplate> impl::ResourceManager::get_material_template(const std::string& materialTemplateName) const
+{
+	return _resourceTable->load_resource<ecore::MaterialTemplate>(get_resource_uuid(materialTemplateName), ResourceType::MATERIAL_TEMPLATE);
 }
 
 ResourceAccessor<ecore::Script> impl::ResourceManager::get_script(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid, ResourceType::SCRIPT);
+	return _resourceTable->load_resource<ecore::Script>(uuid, ResourceType::SCRIPT);
 }
 
 ResourceAccessor<ecore::Script> impl::ResourceManager::get_script(const std::string& scriptName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(scriptName), ResourceType::SCRIPT);
+	return _resourceTable->load_resource<ecore::Script>(get_resource_uuid(scriptName), ResourceType::SCRIPT);
 }
 
 ResourceAccessor<ecore::Video> impl::ResourceManager::get_video(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid, ResourceType::VIDEO);
+	return _resourceTable->load_resource<ecore::Video>(uuid, ResourceType::VIDEO);
 }
 
 ResourceAccessor<ecore::Video> impl::ResourceManager::get_video(const std::string& videoName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(videoName), ResourceType::VIDEO); 
+	return _resourceTable->load_resource<ecore::Video>(get_resource_uuid(videoName), ResourceType::VIDEO); 
 }
 
 ResourceAccessor<ecore::Font> impl::ResourceManager::get_font(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid, ResourceType::FONT);
+	return _resourceTable->load_resource<ecore::Font>(uuid, ResourceType::FONT);
 }
 
 ResourceAccessor<ecore::Font> impl::ResourceManager::get_font(const std::string& fontName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(fontName), ResourceType::FONT); 
+	return _resourceTable->load_resource<ecore::Font>(get_resource_uuid(fontName), ResourceType::FONT); 
 }
 
 ResourceAccessor<ecore::Sound> impl::ResourceManager::get_sound(UUID uuid) const
 {
-	return _resourceTable->load_resource(uuid, ResourceType::SOUND);
+	return _resourceTable->load_resource<ecore::Sound>(uuid, ResourceType::SOUND);
 }
 
 ResourceAccessor<ecore::Sound> impl::ResourceManager::get_sound(const std::string& soundName) const
 {
-	return _resourceTable->load_resource(get_resource_uuid(soundName), ResourceType::SOUND);
+	return _resourceTable->load_resource<ecore::Sound>(get_resource_uuid(soundName), ResourceType::SOUND);
 }
 
 ResourceType impl::ResourceManager::get_resource_type(UUID uuid) const
