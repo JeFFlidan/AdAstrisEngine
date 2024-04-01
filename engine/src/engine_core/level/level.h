@@ -47,6 +47,7 @@ namespace ad_astris::ecore
 			level::LevelInfo _levelInfo;		// temp
 			LevelInfo _info;
 			nlohmann::json _entitiesJson;
+			std::vector<uint8_t> _componentsData;
 		
 		public:
 			// ========== Begin Object interface ==========

@@ -3,6 +3,7 @@
 #include "file_system/utils.h"
 #include "resource_manager/resource_visitor.h"
 #include "engine_core/basic_events.h"
+#include "core/global_objects.h"
 #include "core/constants.h"
 
 using namespace ad_astris;
@@ -64,10 +65,21 @@ void Level::serialize(io::File* file)
 	levelMainJson["level_metadata"] = level::Utils::pack_level_info(&_levelInfo);
 
 	nlohmann::json jsonForEntities;
-	level::Utils::build_json_from_entities(jsonForEntities, this);
+	std::vector<uint8_t> componentsBlob;
+
+	for (auto& entity : _entities)
+	{
+		_entityManager->serialize_entity(entity, jsonForEntities, componentsBlob);
+	}
+	
 	levelMainJson["entities"] = jsonForEntities;
 	std::string newMetadata = levelMainJson.dump(JSON_INDENT);
 	file->set_metadata(newMetadata);
+
+	// TEMP!!!
+	uint8_t* blob = new uint8_t[componentsBlob.size()];
+	memcpy(blob, componentsBlob.data(), componentsBlob.size());
+	file->set_binary_blob(blob, componentsBlob.size());
 }
 
 void Level::deserialize(io::File* file, ObjectName* objectName)
@@ -87,13 +99,24 @@ void Level::deserialize(io::File* file, ObjectName* objectName)
 	_levelInfo = level::Utils::unpack_level_info(levelMetadata);
 	
 	_entitiesJson = levelMainJson["entities"];
+	_componentsData.resize(file->get_binary_blob_size());
+	memcpy(_componentsData.data(), file->get_binary_blob(), file->get_binary_blob_size());
 }
 
 void Level::build_entities()
 {
 	if (!_entitiesJson.empty())
 	{
-		level::Utils::build_entities_from_json(_entitiesJson, this);
+		for (auto& info : _entitiesJson.items())
+		{
+			UUID uuid(std::stoull(info.key()));
+			nlohmann::json componentsJson = info.value();
+			ecs::Entity entity = _entityManager->deserialize_entity(uuid, componentsJson, _componentsData);
+			_entities.push_back(entity);
+			EntityCreatedEvent event(entity, _entityManager);
+			EVENT_MANAGER()->enqueue_event(event);
+		}
+		
 		_entitiesJson.clear();
 	}
 }

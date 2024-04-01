@@ -1,6 +1,5 @@
 #pragma once
 
-#include "serializers.h"
 #include "entity_types.h"
 #include "archetype_types.h"
 #include "archetype.h"
@@ -8,7 +7,6 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
-
 
 namespace ad_astris::ecs
 {
@@ -62,14 +60,16 @@ namespace ad_astris::ecs
 			/** Builds one entity with all components and tags based on the info from .aalevel file
 			 * @param uuid must be a valid uuid that was taken from .aalevel file
 			 * @param entityJson fully describes one entity. Must be taken from .aalevel file
+			 * @param componentsData
 			 */
-			Entity build_entity_from_json(UUID& uuid, nlohmann::json& entityJson);
+			Entity deserialize_entity(UUID& uuid, const nlohmann::json& entityJson, const std::vector<uint8_t>& componentsData);
 
 			/** Serializes all entity components and tags to json.
 			 * @param entity should have a valid UUID
-			 * @param levelJson is a main level json consisting entities and value of there components
+			 * @param rootJson is a main level json consisting entities and value of there components
+			 * @param componentsData 
 			 */
-			void build_components_json_from_entity(Entity& entity, nlohmann::json& levelJson);
+			void serialize_entity(Entity& entity, nlohmann::json& rootJson, std::vector<uint8_t>& componentsData);
 
 			/**
 			 * 
@@ -223,43 +223,6 @@ namespace ad_astris::ecs
 			{
 				std::scoped_lock<std::mutex> locker(_entityMutex);
 				return get_archetype(entity).has_tag(tagID);
-			}
-
-			template<typename Component>
-			void register_component(bool serializable)
-			{
-				TYPE_INFO_TABLE->add_component<Component>();
-
-				class TypedSerializer : public serializers::ISerializer									
-				{																							
-					public:																					
-						void serialize(void* component, nlohmann::json& jsonForComponents) override			
-						{																					
-							Component* typedComponent = static_cast<Component*>(component);	
-							std::string typeName = get_type_name<Component>();						
-							jsonForComponents[typeName] = serialization::serialize_to_json(*typedComponent);
-						}
-						void deserialize(													
-							EntityCreationContext& entityCreationContext,					
-							nlohmann::json& componentInfo) override						
-						{																	
-							Component component;									
-							serialization::deserialize_from_json(componentInfo, component);	
-							entityCreationContext.add_component(component);					
-						}
-				};
-
-				if (serializable)
-				{
-					TypedSerializer* serializer = new TypedSerializer();
-					serializers::get_table()->add_serializer<Component>(serializer);
-				}
-			}
-
-			template<typename T>
-			void register_tag()
-			{
-				TYPE_INFO_TABLE->add_tag<T>();
 			}
 
 			bool is_entity_valid(const Entity& entity)

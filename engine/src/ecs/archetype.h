@@ -33,7 +33,7 @@ namespace ad_astris::ecs
 				return _subchunkSize;
 			}
 
-			uint16_t get_structure_size() const
+			uint32_t get_structure_size() const
 			{
 				return _structureSize;
 			}
@@ -41,13 +41,13 @@ namespace ad_astris::ecs
 		private:
 			uint8_t* _startPtr{ nullptr };
 			uint32_t _subchunkSize{ 0 };
-			uint16_t _structureSize{ 0 };
+			uint32_t _structureSize{ 0 };
 	};
 	
 	struct ChunkStructure
 	{
 		std::vector<uint64_t> componentIds;
-		std::unordered_map<uint64_t, uint16_t> componentIdToSize;	// should be sorted
+		std::unordered_map<uint64_t, uint32_t> sizeByComponentID;	// should be sorted
 		std::vector<uint64_t> tagIDs;
 		std::unordered_set<uint64_t> tagIDsSet;
 		uint32_t numEntitiesPerChunk{ 0 };
@@ -156,8 +156,8 @@ namespace ad_astris::ecs
 			template<typename T>
 			bool has_component()
 			{
-				auto it = _chunkStructure.componentIdToSize.find(TypeInfoTable::get_component_id<T>());
-				return it == _chunkStructure.componentIdToSize.end() ? false : true;
+				auto it = _chunkStructure.sizeByComponentID.find(TypeInfoTable::get_component_id<T>());
+				return it == _chunkStructure.sizeByComponentID.end() ? false : true;
 			}
 
 			template<typename T>
@@ -169,7 +169,7 @@ namespace ad_astris::ecs
 
 			FORCE_INLINE bool has_component(uint64_t componentID)
 			{
-				return _chunkStructure.componentIdToSize.find(componentID) != _chunkStructure.componentIdToSize.end();
+				return _chunkStructure.sizeByComponentID.find(componentID) != _chunkStructure.sizeByComponentID.end();
 			}
 
 			FORCE_INLINE bool has_tag(uint64_t tagID)
@@ -177,21 +177,21 @@ namespace ad_astris::ecs
 				return _chunkStructure.tagIDsSet.find(tagID) != _chunkStructure.tagIDsSet.end();
 			}
 		
+			// I use this method for serialization
+			void get_component_by_type_id(
+				Entity& entity,
+				uint32_t columnIndex,
+				uint64_t typeId,
+				uint8_t* tempComponentsArray);
+
+			void* get_component_by_type_id(Entity& entity, uint32_t columnIndex, uint64_t typeID);
+		
 		private:
 			std::unordered_map<Entity, uint16_t> _entityToChunk;
 			std::vector<ArchetypeChunk> _chunks;
 			std::vector<uint32_t> _freeColumns;
 
 			ChunkStructure _chunkStructure;
-
-			// I use this method for serialization
-			void get_component_by_component_type_id(
-				Entity& entity,
-				uint32_t columnIndex,
-				uint64_t typeId,
-				uint8_t* tempComponentsArray);
-
-			void* get_component_by_component_type_id(Entity& entity, uint32_t columnIndex, uint64_t typeID);
 		
 			template<typename T>
 			T* get_converted_component(ArchetypeChunk& chunk, uint64_t columnIndex)

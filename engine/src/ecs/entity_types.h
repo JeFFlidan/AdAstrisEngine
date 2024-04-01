@@ -90,9 +90,9 @@ namespace ad_astris::ecs
 		public:
 			virtual ~IComponent() { }
 		
-			virtual uint64_t get_type_id() = 0;
-			virtual void* get_raw_memory() = 0;
-			virtual uint16_t get_structure_size() = 0;
+			virtual uint64_t get_type_id() const = 0;
+			virtual const void* get_raw_memory() const = 0;
+			virtual uint32_t get_structure_size() const = 0;
 	};
 
 	class UntypedComponent : public IComponent
@@ -106,7 +106,7 @@ namespace ad_astris::ecs
 		public:
 			UntypedComponent() = default;
 			
-			UntypedComponent(void* memory, uint32_t size, uint64_t id) : _memory(memory), _size(size), _id(id)
+			UntypedComponent(const void* memory, uint32_t size, uint64_t id) : _memory(memory), _size(size), _id(id)
 			{
 				
 			}
@@ -115,17 +115,17 @@ namespace ad_astris::ecs
 
 			// ====== Begin IComponent interface ======
 			
-			virtual uint64_t get_type_id() override
+			virtual uint64_t get_type_id() const override
 			{
 				return _id;
 			}
 			
-			virtual void* get_raw_memory() override
+			virtual const void* get_raw_memory() const override
 			{
 				return _memory;
 			}
 			
-			virtual uint16_t get_structure_size() override
+			virtual uint32_t get_structure_size() const override
 			{
 				return _size;
 			}
@@ -133,7 +133,7 @@ namespace ad_astris::ecs
 			// ====== End IComponent interface ======
 
 		protected:
-			void* _memory{ nullptr };
+			const void* _memory{ nullptr };
 			uint32_t _size{ 0 };
 			uint64_t _id{ 0 };
 
@@ -148,9 +148,9 @@ namespace ad_astris::ecs
 			Component() = default;
 			Component(T& component) : _component(component) { }
 		
-			virtual uint64_t get_type_id() { return TypeInfoTable::get_component_id<T>(); }
-			virtual void* get_raw_memory() { return &_component; }
-			virtual uint16_t get_structure_size() { return sizeof(T); }
+			virtual uint64_t get_type_id() const override { return TypeInfoTable::get_component_id<T>(); }
+			virtual const void* get_raw_memory() const override{ return &_component; }
+			virtual uint32_t get_structure_size() const override { return sizeof(T); }
 
 		private:
 			T _component;
@@ -180,6 +180,13 @@ namespace ad_astris::ecs
 					return;
 
 				_tagIDs.push_back(id);
+			}
+
+			void add_tag(uint64_t tagID)
+			{
+				if (!check_tag(tagID))
+					return;
+				_tagIDs.push_back(tagID);
 			}
 		
 			template<typename T>
@@ -219,13 +226,25 @@ namespace ad_astris::ecs
 				((add_component(args)), ...);
 			}
 
+			void add_component(uint64_t componentID, uint32_t componentSize, const void* componentData)
+			{
+				if (!check_component(componentID, componentSize))
+					return;
+
+				_allComponentsSize += componentSize;
+
+				_sizeByTypeID[componentID] = componentSize;
+				_componentsMap[componentID] = std::make_unique<UntypedComponent>(componentData, componentSize, componentID);
+				_componentIDs.push_back(componentID);
+			}
+
 			template<typename T>
 			T get_component()
 			{
 				auto it = _componentsMap.find(TypeInfoTable::get_component_id<T>());
 				if (it == _componentsMap.end())
 					LOG_ERROR("EntityCreationContext::get_component(): Creation context doesn't contain component {}", get_type_name<T>())
-				return *static_cast<T*>(it->second->get_raw_memory());
+				return *static_cast<const T*>(it->second->get_raw_memory());
 			}
 
 			template<typename T>
@@ -292,7 +311,7 @@ namespace ad_astris::ecs
 			uint32_t _allComponentsSize{ 0 };
 			std::vector<uint64_t> _componentIDs;
 			std::unordered_map<uint64_t, std::unique_ptr<IComponent>> _componentsMap;
-			std::unordered_map<uint64_t, uint16_t> _sizeByTypeID;
+			std::unordered_map<uint64_t, uint32_t> _sizeByTypeID;
 			std::vector<uint64_t> _tagIDs;
 
 			bool check_component(uint64_t id, uint32_t size)

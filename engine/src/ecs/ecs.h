@@ -19,7 +19,6 @@ namespace ad_astris::ecs
 	template<typename T>
 	void register_component(EntityManager* entityManager, uicore::ECSUiManager* ecsUiManager)
 	{
-		entityManager->register_component<T>(true);
 		ecsUiManager->register_component<T>();
 	}
 }

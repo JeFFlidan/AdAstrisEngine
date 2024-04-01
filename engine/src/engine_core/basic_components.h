@@ -181,10 +181,5 @@ namespace ad_astris::ecore
 		ecs::register_component<ExtentComponent>(entityManager, ecsUIManager);
 		ecs::register_component<CameraComponent>(entityManager, ecsUIManager);
 		ecs::register_component<IntensityComponent>(entityManager, ecsUIManager);
-		entityManager->register_tag<StaticObjectTag>();
-		entityManager->register_tag<MovableObjectTag>();
-		entityManager->register_tag<PointLightTag>();
-		entityManager->register_tag<DirectionalLightTag>();
-		entityManager->register_tag<SpotLightTag>();
 	}
 }

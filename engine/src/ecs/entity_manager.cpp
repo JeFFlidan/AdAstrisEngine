@@ -1,5 +1,4 @@
 #include "entity_manager.h"
-#include "serializers.h"
 #include "core/utils.h"
 
 using namespace ad_astris::ecs;
@@ -62,8 +61,8 @@ ArchetypeHandle EntityManager::create_archetype(ArchetypeExtensionContext& conte
 		return ArchetypeHandle(inArchIt->first);
 	}
 	
-	auto newComponentIdToSize = oldArchetype._chunkStructure.componentIdToSize;
-	newComponentIdToSize.insert(context._idToSize.begin(), context._idToSize.end());
+	auto newComponentIdToSize = oldArchetype._chunkStructure.sizeByComponentID;
+	newComponentIdToSize.insert(context._sizeByComponentID.begin(), context._sizeByComponentID.end());
 	
 	uint32_t newAllComponentsSize = 0;
 	for (auto& idToSize : newComponentIdToSize)
@@ -73,7 +72,7 @@ ArchetypeHandle EntityManager::create_archetype(ArchetypeExtensionContext& conte
 	
 	ArchetypeCreationContext creationContext;
 	creationContext._componentIDs = std::move(newComponentTypeIDs);
-	creationContext._idToSize = std::move(newComponentIdToSize);
+	creationContext._sizeByComponentID = std::move(newComponentIdToSize);
 	creationContext._allComponentsSize = newAllComponentsSize;
 	creationContext._tagIDs = std::move(newTagTypeIDs);
 
@@ -126,7 +125,7 @@ Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID u
 	
 	ArchetypeCreationContext archetypeContext;
 	archetypeContext._componentIDs = std::move(componentIdsToMove);
-	archetypeContext._idToSize = entityContext._sizeByTypeID;
+	archetypeContext._sizeByComponentID = entityContext._sizeByTypeID;
 	archetypeContext._allComponentsSize = entityContext._allComponentsSize;
 	archetypeContext._tagIDs = std::move(tagIDsToMove);
 	
@@ -148,62 +147,79 @@ Entity EntityManager::create_entity(EntityCreationContext& entityContext, UUID u
 	return entity;
 }
 
-Entity EntityManager::build_entity_from_json(UUID& uuid, nlohmann::json& entityJson)
+size_t get_entity_components_data_size(const ChunkStructure& chunkStructure)
 {
-	nlohmann::json componentsJson = entityJson["components"];
+	const size_t componentCount = chunkStructure.componentIds.size();
+	return chunkStructure.sizeOfOneColumn + sizeof(uint32_t) * componentCount + sizeof(uint64_t) * componentCount;
+}
+
+constexpr const char* COMPONENT_COUNT_KEY = "component_count";
+constexpr const char* COMPONENTS_DATA_OFFSET_KEY = "components_data_offset";
+constexpr const char* TAG_IDS_KEY = "tag_ids";
+
+Entity EntityManager::deserialize_entity(UUID& uuid, const nlohmann::json& entityJson, const std::vector<uint8_t>& componentsData)
+{
 	EntityCreationContext creationContext;
-	
-	for (auto& componentInfo : componentsJson.items())
+	const size_t componentCount = entityJson.at(COMPONENT_COUNT_KEY);
+
+	size_t globalOffset = entityJson.at(COMPONENTS_DATA_OFFSET_KEY);
+	const uint8_t* dataPtr = componentsData.data() + globalOffset;
+
+	size_t offset = 0;
+	for (size_t i = 0; i != componentCount; ++i)
 	{
-		std::string componentName = componentInfo.key();
-		uint64_t typeId = TYPE_INFO_TABLE->get_component_id(componentName);
-		serializers::ISerializer* serializer = serializers::get_table()->get_serializer(typeId);
-		serializer->deserialize(creationContext, componentInfo.value());
+		uint64_t componentID = 0;
+		memcpy(&componentID, dataPtr + offset, sizeof(uint64_t));
+		offset += sizeof(uint64_t);
+		uint32_t componentSize = 0;
+		memcpy(&componentSize, dataPtr + offset, sizeof(uint32_t));
+		offset += sizeof(uint32_t);
+		creationContext.add_component(componentID, componentSize, dataPtr + offset);
+		offset += componentSize;
 	}
 
-	creationContext._tagIDs = entityJson["tag_ids"].get<std::vector<uint64_t>>();
+	creationContext._tagIDs = entityJson.at(TAG_IDS_KEY).get<std::vector<uint64_t>>();
 
 	Entity entity = create_entity(creationContext, uuid);
 	return entity;
 }
 
-void EntityManager::build_components_json_from_entity(Entity& entity, nlohmann::json& levelJson)
+void EntityManager::serialize_entity(Entity& entity, nlohmann::json& rootJson, std::vector<uint8_t>& componentsData)
 {
 	EntityInArchetypeInfo entityInArchetype = _entityToItsInfoInArchetype[entity];
 	Archetype& archetype = _archetypes[entityInArchetype.archetypeId];
-	uint32_t column = entityInArchetype.column;
-	uint32_t componentsNumberInArchetype = archetype._chunkStructure.componentIds.size();
-	uint8_t componentPtr[COMPONENT_SIZE];
-	
-	nlohmann::json componentsJson;
-	
-	for (int i = 0; i != componentsNumberInArchetype; ++i)
-	{
-		//componentsArray += i * constants::MAX_COMPONENT_SIZE;
-		uint64_t typeId = archetype._chunkStructure.componentIds[i];
-		archetype.get_component_by_component_type_id(entity, column, typeId, componentPtr);
-		if (serializers::get_table()->has_serializer(typeId))
-		{
-			serializers::ISerializer* serializer = serializers::get_table()->get_serializer(typeId);
-			serializer->serialize(componentPtr, componentsJson);
-		}
-	}
+	const ChunkStructure& chunkStructure = archetype._chunkStructure;
+	const uint32_t column = entityInArchetype.column;
+	const size_t componentCount = chunkStructure.componentIds.size();
+	const size_t globalOffset = componentsData.size();
 
 	nlohmann::json entityJson;
-	entityJson["components"] = componentsJson;
+	entityJson[COMPONENT_COUNT_KEY] = componentCount;
+	entityJson[COMPONENTS_DATA_OFFSET_KEY] = globalOffset;
 
-	std::vector<uint64_t>& tagIDs = archetype._chunkStructure.tagIDs;
-	std::vector<std::string> tagNames;
-	tagNames.reserve(tagIDs.size());
-	for (auto& tagID : tagIDs)
+	componentsData.resize(componentsData.size() + get_entity_components_data_size(chunkStructure));
+	uint8_t* dataPtr = componentsData.data() + globalOffset;
+	
+	size_t offset = 0;
+	for (size_t i = 0; i != componentCount; ++i)
 	{
-		tagNames.push_back(TYPE_INFO_TABLE->get_tag_name(tagID));
+		uint64_t componentID = chunkStructure.componentIds[i];
+		memcpy(dataPtr + offset, &componentID, sizeof(uint64_t));
+		offset += sizeof(uint64_t);
+		auto it = chunkStructure.sizeByComponentID.find(componentID);
+		assert(it != chunkStructure.sizeByComponentID.end());
+		uint32_t componentSize = it->second;
+		memcpy(dataPtr + offset, &componentSize, sizeof(uint32_t));
+		offset += sizeof(uint32_t);
+		void* componentData = archetype.get_component_by_type_id(entity, column, componentID);
+		memcpy(dataPtr + offset, componentData, componentSize);
+		offset += componentSize;
 	}
-
-	entityJson["tags"] = tagNames;
-	entityJson["tag_ids"] = tagIDs;
+	
+	entityJson[TAG_IDS_KEY] = chunkStructure.tagIDs;
+	
 	std::scoped_lock<std::mutex> locker(_entityMutex);
-	levelJson[std::to_string(entity.get_uuid())] = entityJson;
+	rootJson[std::to_string(entity.get_uuid())] = entityJson;
 }
 
 void EntityManager::destroy_entity(Entity& entity)
@@ -249,5 +265,5 @@ void EntityManager::get_entity_all_component_ids(Entity entity, std::vector<uint
 void* EntityManager::get_entity_component_by_id(Entity entity, uint64_t id)
 {
 	Archetype& archetype = _archetypes[_entityToItsInfoInArchetype[entity].archetypeId];
-	return archetype.get_component_by_component_type_id(entity, _entityToItsInfoInArchetype[entity].column, id);
+	return archetype.get_component_by_type_id(entity, _entityToItsInfoInArchetype[entity].column, id);
 }

@@ -12,7 +12,7 @@ ecs::ArchetypeChunk::ArchetypeChunk(uint32_t chunkSize, ChunkStructure& chunkStr
 	uint32_t prevSubchunkSizes = 0;
 	for (auto& id : chunkStructure.componentIds)
 	{
-		uint16_t structureSize = chunkStructure.componentIdToSize[id];
+		uint32_t structureSize = chunkStructure.sizeByComponentID[id];
 		uint32_t subchunkSize = chunkStructure.numEntitiesPerChunk * structureSize;
 		uint8_t* startPtr = _chunk + prevSubchunkSizes;
 		Subchunk subchunk(startPtr, subchunkSize, structureSize);
@@ -69,7 +69,7 @@ uint8_t* ecs::ArchetypeChunk::get_chunk()
 void ecs::ArchetypeChunk::set_component(uint32_t column, IComponent* component)
 {
 	uint8_t* componentPtr = get_entity_component(column, component->get_type_id());
-	uint8_t* tempPtr = static_cast<uint8_t*>(component->get_raw_memory());
+	const uint8_t* tempPtr = static_cast<const uint8_t*>(component->get_raw_memory());
 	memcpy(componentPtr, tempPtr, component->get_structure_size());
 }
 
@@ -94,7 +94,7 @@ ecs::Archetype::Archetype(ArchetypeCreationContext& context)
 	_chunkStructure.sizeOfOneColumn = context._allComponentsSize;
 	_chunkStructure.numEntitiesPerChunk = context._entityCount;
 	_chunkStructure.componentIds = std::move(context._componentIDs);
-	_chunkStructure.componentIdToSize = std::move(context._idToSize);
+	_chunkStructure.sizeByComponentID = std::move(context._sizeByComponentID);
 	_chunkStructure.tagIDs = std::move(context._tagIDs);
 	for (auto& tagID : _chunkStructure.tagIDs)
 		_chunkStructure.tagIDsSet.insert(tagID);
@@ -216,21 +216,21 @@ void ecs::Archetype::set_components(Entity& entity, uint32_t columnIndex, Entity
 	}
 }
 
-void ecs::Archetype::get_component_by_component_type_id(
+void ecs::Archetype::get_component_by_type_id(
 	Entity& entity,
 	uint32_t columnIndex,
 	uint64_t typeId,
 	uint8_t* tempComponentsArray)
 {
 	ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
-	uint32_t componentSize = _chunkStructure.componentIdToSize[typeId];
+	uint32_t componentSize = _chunkStructure.sizeByComponentID[typeId];
 	void* component = chunk.get_entity_component(columnIndex, typeId);
 	memcpy(tempComponentsArray, component, componentSize);
 }
 
-void* ecs::Archetype::get_component_by_component_type_id(Entity& entity, uint32_t columnIndex, uint64_t typeID)
+void* ecs::Archetype::get_component_by_type_id(Entity& entity, uint32_t columnIndex, uint64_t typeID)
 {
 	ArchetypeChunk& chunk = _chunks[_entityToChunk[entity]];
-	uint32_t componentSize = _chunkStructure.componentIdToSize[typeID];
+	uint32_t componentSize = _chunkStructure.sizeByComponentID[typeID];
 	return chunk.get_entity_component(columnIndex, typeID);
 }

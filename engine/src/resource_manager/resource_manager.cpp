@@ -33,7 +33,7 @@ ResourceAccessor<ecore::Level> ResourceManager::create_level(io::URI& path)
 {
 	std::string strLevelName = io::Utils::get_file_name(path);
 	ecore::ObjectName* levelName = _resourcePool.allocate<ecore::ObjectName>(strLevelName.c_str());
-	io::File* levelFile = _resourcePool.allocate<resource::LevelFile>(path);
+	io::File* levelFile = _resourcePool.allocate<ResourceFile>(path);
 	ecore::Level* level = _resourcePool.allocate<ecore::Level>(path, levelName);
 	level->serialize(levelFile);
 
@@ -61,7 +61,7 @@ ResourceAccessor<ecore::Level> ResourceManager::load_level(io::URI& path)
 	
 	size_t size = 0;
 	uint8_t* data = static_cast<uint8_t*>(_fileSystem->map_to_read(path, size, "rb"));
-	file = _resourcePool.allocate<resource::LevelFile>(path);
+	file = _resourcePool.allocate<ResourceFile>(path);
 	file->deserialize(data, size);
 	_fileSystem->unmap_after_reading(data);
 	

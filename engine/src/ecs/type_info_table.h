@@ -27,28 +27,6 @@ namespace ad_astris::ecs
 				}
 			}
 		
-			uint64_t get_component_id(std::string& typeName)
-			{
-				auto it = _componentIDByName.find(typeName);
-				if (it == _componentIDByName.end())
-					return -1;
-		
-				return it->second;
-			}
-		
-			template<typename T>
-			void add_component()
-			{
-				std::string typeName = get_type_name<T>();
-				if (_componentIDByName.find(typeName) != _componentIDByName.end())
-					return;
-				
-				if constexpr (Reflector::has_attribute<T, EcsComponent>())
-				{
-					_componentIDByName[typeName] = Reflector::get_attribute<T, EcsComponent>().get_id();
-				}
-			}
-			
 			template<typename T>
 			static constexpr uint64_t get_tag_id()
 			{
@@ -62,33 +40,7 @@ namespace ad_astris::ecs
 					return -1;
 				}
 			}
-
-			std::string get_tag_name(uint64_t tagID)
-			{
-				auto it = _tagNameByID.find(tagID);
-				
-				if (it != _tagNameByID.end())
-				{
-					return it->second;
-				}
-				
-				LOG_ERROR("TypeInfoTable::get_tag_name(): Failed to find name for tag with id {}", tagID)
-				return " ";
-			}
-
-			template<typename T>
-			void add_tag()
-			{
-				if constexpr (Reflector::has_attribute<T, EcsTag>())
-				{
-					_tagNameByID[Reflector::get_attribute<T, EcsTag>().get_id()] = get_type_name<T>();
-				}
-				else
-				{
-					LOG_ERROR("TypeInfoTable::add_tag(): {} does not have EcsTag attribute", get_type_name<T>())
-				}
-			}
-				
+	
 			template<typename T>
 			uint32_t get_system_id()
 			{
@@ -130,8 +82,6 @@ namespace ad_astris::ecs
 			}
 
 		private:
-			std::unordered_map<std::string, uint64_t> _componentIDByName;
-			std::unordered_map<uint64_t, std::string> _tagNameByID;
 			std::unordered_map<std::string, uint32_t> _systemIDByName;
 			std::vector<std::string> _systemNames;   // element index = type id
 			uint32_t _systemIDGenerator{ 0 };

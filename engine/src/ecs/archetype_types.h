@@ -53,7 +53,7 @@ namespace ad_astris::ecs
 			}
 			
 		protected:
-			std::unordered_map<uint64_t, uint16_t> _idToSize;
+			std::unordered_map<uint64_t, uint32_t> _sizeByComponentID;
 			uint32_t _allComponentsSize{ 0 };
 			uint32_t _entityCount{ 1024 };
 			std::vector<uint64_t> _componentIDs;
@@ -65,7 +65,7 @@ namespace ad_astris::ecs
 				uint64_t id = TypeInfoTable::get_component_id<T>();
 				uint32_t size = sizeof(T);
 				_allComponentsSize += size;
-				_idToSize[id] = size;
+				_sizeByComponentID[id] = size;
 				_componentIDs.push_back(id);
 			}
 
