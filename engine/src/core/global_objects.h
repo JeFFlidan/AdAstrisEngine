@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "resource_manager/resource_manager.h"
+#include "resource_manager/resource_manager2.h"
 #include "multithreading/task_composer.h"
 #include "events/event_manager.h"
 #include "file_system/file_system.h"

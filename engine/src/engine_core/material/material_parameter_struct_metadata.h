@@ -2,7 +2,8 @@
 
 #include "material_parameter_struct.h"
 #include "material_parameter_metadata.h"
-#include "core/global_objects.h"
+#include "file_system/file_system.h"
+#include "core/custom_objects_to_json.h"
 
 namespace ad_astris::ecore
 {

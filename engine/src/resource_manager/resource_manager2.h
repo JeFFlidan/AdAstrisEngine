@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "resource_formats.h"
-#include "core/global_objects.h"
 #include "core/non_copyable_non_movable.h"
 #include "engine_core/model/model.h"
 #include "engine_core/texture/texture.h"
@@ -15,18 +14,13 @@
 
 namespace ad_astris::resource::experimental
 {
-	struct ResourceManagerInitContext
-	{
-		GlobalObjectContext* globalObjectContext{ nullptr };
-	};
-	
 	class ResourceManager : public NonCopyableNonMovable
 	{
 		public:
 			virtual ~ResourceManager() = default;
 
 			// Must be called immediately after ResourceManager module is loaded and ResourceManager object is created.
-			virtual void init(const ResourceManagerInitContext& initContext) = 0;
+			virtual void init() = 0;
 			virtual void cleanup() = 0;
 
 			/**

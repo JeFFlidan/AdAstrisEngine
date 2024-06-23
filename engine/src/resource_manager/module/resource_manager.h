@@ -9,7 +9,7 @@ namespace ad_astris::resource::impl
 	class RESOURCE_MANAGER_API ResourceManager : public experimental::ResourceManager
 	{
 		public:
-			void init(const experimental::ResourceManagerInitContext& initContext) override;
+			void init() override;
 			void cleanup() override;
 
 			std::vector<UUID> convert_to_engine_format(

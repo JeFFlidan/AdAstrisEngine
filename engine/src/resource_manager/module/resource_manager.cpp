@@ -3,6 +3,7 @@
 #include "texture_importer.h"
 #include "resource_manager/utils.h"
 #include "resource_manager/resource_events.h"
+#include "core/global_objects.h"
 
 using namespace ad_astris;
 using namespace resource;
@@ -25,10 +26,8 @@ const std::unordered_set<std::string> SUPPORTED_VIDEO_FORMATS = { "mp4" };
 const std::unordered_set<std::string> SUPPORTED_FONT_FORMATS = { "ttf" };
 const std::unordered_set<std::string> SUPPORTED_SOUND_FORMATS = { "wav", "ogg" };
 
-void impl::ResourceManager::init(const experimental::ResourceManagerInitContext& initContext)
+void impl::ResourceManager::init()
 {
-	assert(initContext.globalObjectContext);
-	GlobalObjects::set_global_object_context(initContext.globalObjectContext);
 	_resourcePool = std::make_unique<ResourcePool>();
 	_resourceTable = std::make_unique<ResourceTable>(_resourcePool.get());
 	TextureImporter::init();

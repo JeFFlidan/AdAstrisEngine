@@ -1,5 +1,7 @@
 ﻿#include "material_parameter_struct_metadata.h"
 #include "material_parameter_struct_definitions.h"
+#include "core/global_objects.h"
+#include <sstream>
 
 using namespace ad_astris;
 using namespace ecore;

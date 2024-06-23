@@ -3,6 +3,7 @@
 #include "material_parameter_struct_definitions.h"
 #include "rhi/utils.h"
 #include "core/constants.h"
+#include "core/global_objects.h"
 
 using namespace ad_astris;
 using namespace ecore;
