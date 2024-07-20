@@ -3,7 +3,6 @@
 #include "core/global_objects.h"
 #include "engine_core/project_settings/project_settings.h"
 #include "application_core/window.h"
-#include "rhi/ui_window_backend.h"
 
 namespace ad_astris::renderer
 {
@@ -11,7 +10,6 @@ namespace ad_astris::renderer
 	{
 		ecore::ProjectSettings* projectSettings{ nullptr };
 		acore::IWindow* mainWindow{ nullptr };
-		rhi::UIWindowBackendCallbacks uiBackendCallbacks;
 	};
 
 	struct DrawContext

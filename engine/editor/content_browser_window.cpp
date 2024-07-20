@@ -4,9 +4,8 @@
 #include "ui_core/file_explorer.h"
 #include "application_core/editor_events.h"
 #include "ui_core/utils.h"
-#include "resource_manager/utils.h"
-#include "core/config_base.h"
 #include "file_system/utils.h"
+#include "core/global_objects.h"
 #include <imgui/imgui.h>
 #include <filesystem>
 
@@ -14,10 +13,16 @@ using namespace ad_astris;
 using namespace editor;
 using namespace impl;
 
-ContentBrowserWindow::ContentBrowserWindow(UIWindowInitContext& initContext, rhi::GetIconsCallback getIconsCallback)
-	: UIWindowInternal(initContext), _icons(getIconsCallback())
+ContentBrowserWindow::ContentBrowserWindow(UIWindowInitContext& initContext)
+	: UIWindowInternal(initContext)
 {
 	_thumbnailSize = 128;
+
+	_icons[FOLDER] = IMGUI_BACKEND()->get_texture_info(rhi::FOLDER_ICON_NAME);
+	_icons[TEXTURE_FILE] = IMGUI_BACKEND()->get_texture_info(rhi::TEXTURE_ICON_NAME);
+	_icons[MODEL_FILE] = IMGUI_BACKEND()->get_texture_info(rhi::MODEL_ICON_NAME);
+	_icons[MATERIAL_FILE] = IMGUI_BACKEND()->get_texture_info(rhi::MATERIAL_ICON_NAME);
+	_icons[LEVEL_FILE] = IMGUI_BACKEND()->get_texture_info(rhi::LEVEL_ICON_NAME);
 
 	std::vector<uicore::FileFilter> filters = {
 		uicore::FileFilter::PNG,

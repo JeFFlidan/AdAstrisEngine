@@ -109,15 +109,12 @@ void AdAstrisEngine::init_engine()
 	
 	editor::EditorInitContext editorInitContext;
 	editorInitContext.mainWindow = _mainWindow.get();
-	editorInitContext.callbacks = &engineInitializationContext.uiBackendCallbacks;
 	editorInitContext.ecsUiManager = ECS_UI_MANAGER();
 	auto editorModule = MODULE_MANAGER()->load_module<editor::IEditorModule>("Editor");
 	editorModule->set_global_objects();
 	_editor = editorModule->get_editor();
 	_editor->init(editorInitContext);
 	
-	ImGui::SetCurrentContext(engineInitializationContext.uiBackendCallbacks.getContextCallback());
-	rhi::UIWindowBackendCallbacks::ImGuiAllocators imGuiAllocators = engineInitializationContext.uiBackendCallbacks.getImGuiAllocators();
-	ImGui::SetAllocatorFunctions(imGuiAllocators.allocFunc, imGuiAllocators.freeFunc);
+	rhi::init_imgui(IMGUI_BACKEND());
 	LOG_INFO("AdAstrisEngine::init(): Initialized editor")
 }

@@ -15,7 +15,7 @@ void ModuleObjects::init_rhi_module(acore::IWindow* mainWindow)
 			auto rhiModule = MODULE_MANAGER()->load_module<vulkan::IVulkanRHIModule>("VulkanRHI");
 			rhiModule->set_global_objects();
 			_rhi = rhiModule->create_vulkan_rhi();
-			_uiWindowBackend = rhiModule->get_ui_window_backend();
+			_imguiBackend = rhiModule->get_imgui_backend();
 			break;
 		}
 		case ecore::GraphicsAPI::D3D12:
@@ -83,14 +83,15 @@ void ModuleObjects::init_scene_manager()
 	_sceneManager = new SceneManager();
 }
 
-void ModuleObjects::init_ui_window_backend(acore::IWindow* mainWindow)
+void ModuleObjects::init_imgui_backend(acore::IWindow* mainWindow)
 {
-	rhi::UIWindowBackendInitContext uiBackendInitContext;
-	uiBackendInitContext.rhi = RHI();
-	uiBackendInitContext.sampler = SCENE_MANAGER()->get_sampler(SAMPLER_LINEAR_CLAMP);
-	uiBackendInitContext.window = mainWindow;
-	uiBackendInitContext.fileSystem = RESOURCE_MANAGER()->get_file_system();
-	_uiWindowBackend->init(uiBackendInitContext, SCENE_MANAGER()->get_sampler(SAMPLER_LINEAR_CLAMP));
+	rhi::ImGuiBackendInitContext imGuiBackendInitContext;
+	imGuiBackendInitContext.rhi = RHI();
+	imGuiBackendInitContext.sampler = SCENE_MANAGER()->get_sampler(SAMPLER_LINEAR_CLAMP);
+	imGuiBackendInitContext.window = mainWindow;
+	_imguiBackend->init(imGuiBackendInitContext);
+
+	GlobalObjects::set_imgui_backend(_imguiBackend);
 }
 
 void ModuleObjects::cleanup()

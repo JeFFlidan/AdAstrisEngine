@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "rendering_base.h"
-#include "rhi/ui_window_backend.h"
 
 namespace ad_astris::renderer::impl
 {

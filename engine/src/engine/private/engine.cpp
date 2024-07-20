@@ -98,7 +98,6 @@ void Engine::init_renderer(EngineInitializationContext& engineInitContext)
 	rendererModule->set_global_objects();
 	_renderer = rendererModule->get_renderer();
 	_renderer->init(rendererInitContext);
-	engineInitContext.uiBackendCallbacks = rendererInitContext.uiBackendCallbacks;
 	PROFILER_INSTANCE()->set_rhi(_renderer->get_rhi());
 	LOG_INFO("Engine::init(): Loaded and initialized Renderer module")
 }

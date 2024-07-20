@@ -9,7 +9,6 @@
 #include "resource_manager/resource_manager.h"
 #include "render_core/public/render_core_module.h"
 #include "rhi/engine_rhi.h"
-#include "rhi/ui_window_backend.h"
 
 namespace ad_astris::renderer::impl
 {

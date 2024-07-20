@@ -2,6 +2,7 @@
 #include "application_core/editor_events.h"
 #include "engine_core/basic_events.h"
 #include "engine_core/basic_components.h"
+#include "core/global_objects.h"
 #include <imgui/imgui.h>
 #include <imgui/ImGuizmo.h>
 
@@ -9,7 +10,7 @@ using namespace ad_astris;
 using namespace editor;
 using namespace impl;
 
-ViewportWindow::ViewportWindow(UIWindowInitContext& initContext, std::function<uint64_t()> callback) : UIWindowInternal(initContext), _textureCallback(callback)
+ViewportWindow::ViewportWindow(UIWindowInitContext& initContext) : UIWindowInternal(initContext)
 {
 	subscribe_to_events();
 }
@@ -17,7 +18,7 @@ ViewportWindow::ViewportWindow(UIWindowInitContext& initContext, std::function<u
 void ViewportWindow::draw_window(void* data)
 {
 	ImGui::Begin("Viewport");
-	_textureIndex = _textureCallback();
+	_textureIndex = IMGUI_BACKEND()->get_viewport_image_id();
 	ImVec2 newViewportExtent = ImGui::GetContentRegionAvail();
 	if (newViewportExtent.x != _viewportExtent.x || newViewportExtent.y != _viewportExtent.y)
 	{

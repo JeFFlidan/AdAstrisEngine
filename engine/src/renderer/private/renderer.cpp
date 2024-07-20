@@ -21,7 +21,6 @@ void Renderer::init(RendererInitializationContext& rendererInitContext)
 	init_global_objects();
 	init_module_objects();
 	
-	UI_WINDOW_BACKEND()->get_callbacks(rendererInitContext.uiBackendCallbacks); // I must remove this bullshit
 	LOG_INFO("Renderer::init(): Initialized UIBackendCallbacks")
 	
 	_frameData.init();
@@ -35,7 +34,7 @@ void Renderer::cleanup()
 {
 	RHI()->wait_for_gpu();
 	RENDER_GRAPH()->cleanup();
-	UI_WINDOW_BACKEND()->cleanup();
+	IMGUI_BACKEND()->cleanup();
 	RHI()->cleanup();
 	ModuleObjects::cleanup();
 }
@@ -110,7 +109,7 @@ void Renderer::init_module_objects()
 	ModuleObjects::init_scene_manager();
 	LOG_INFO("Renderer::init(): Initialized scene manager")
 
-	ModuleObjects::init_ui_window_backend(_mainWindow);
+	ModuleObjects::init_imgui_backend(_mainWindow);
 	LOG_INFO("Renderer::init(): Initialized ui backend")
 }
 
@@ -122,5 +121,5 @@ void Renderer::get_next_frame_index()
 
 void Renderer::set_backbuffer(const std::string& textureName)
 {
-	UI_WINDOW_BACKEND()->set_backbuffer(RENDERER_RESOURCE_MANAGER()->get_texture_view(textureName), SCENE_MANAGER()->get_sampler(SAMPLER_LINEAR_CLAMP));
+	IMGUI_BACKEND()->set_backbuffer(RENDERER_RESOURCE_MANAGER()->get_texture_view(textureName), SCENE_MANAGER()->get_sampler(SAMPLER_LINEAR_CLAMP));
 }

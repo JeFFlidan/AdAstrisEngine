@@ -7,9 +7,7 @@
 #include "ui_core/utils.h"
 #include "ui_core/docking_window.h"
 #include "resource_manager/resource_events.h"
-#include "ui_core/file_explorer.h"
 #include <imgui/ImGuizmo.h>
-#include <iostream>
 
 using namespace ad_astris;
 using namespace editor;
@@ -18,7 +16,6 @@ using namespace impl;
 void Editor::init(EditorInitContext& initContext)
 {
 	assert(initContext.mainWindow != nullptr);
-	assert(initContext.callbacks != nullptr);
 	assert(initContext.ecsUiManager != nullptr);
 	
 	_fileSystem = FILE_SYSTEM();
@@ -43,19 +40,10 @@ void Editor::init(EditorInitContext& initContext)
 		_resourceDescriptionsByType[resourceInfo.type].push_back(resourceDesc);
 	}
 
-	rhi::UIWindowBackendCallbacks* callbacks = initContext.callbacks;
-	ImGui::SetCurrentContext(callbacks->getContextCallback());
-	_ecsUiManager->set_imgui_context(callbacks->getContextCallback());
-
-	rhi::UIWindowBackendCallbacks::ImGuiAllocators imGuiAllocators = callbacks->getImGuiAllocators();
-	ImGui::SetAllocatorFunctions(imGuiAllocators.allocFunc, imGuiAllocators.freeFunc);
-
-	_getDefaultFontSize14 = initContext.callbacks->getDefaultFont14;
-	_getDefaultFontSize17 = initContext.callbacks->getDefaultFont17;
+	rhi::init_imgui(IMGUI_BACKEND());
+	_ecsUiManager->set_imgui_context(IMGUI_BACKEND()->get_context());
 
 	ImGui::LoadIniSettingsFromDisk((_fileSystem->get_engine_root_path() + "/configs/ui/editor.ini").c_str());
-	
-	_uiBeginFrameCallback = callbacks->beginFrameCallback;
 
 	UIWindowInitContext uiWindowInitContext;
 	uiWindowInitContext.eventManager = _eventManager;
@@ -66,8 +54,8 @@ void Editor::init(EditorInitContext& initContext)
 	
 	auto dockingWindow = std::make_shared<uicore::DockingWindow>();
 	dockingWindow->set_window_size(initContext.mainWindow->get_width(), initContext.mainWindow->get_height());
-	_viewportWindow = std::make_unique<ViewportWindow>(uiWindowInitContext,callbacks->getViewportImageCallback);
-	_contentBrowserWindow = std::make_unique<ContentBrowserWindow>(uiWindowInitContext, callbacks->getContentIcons);
+	_viewportWindow = std::make_unique<ViewportWindow>(uiWindowInitContext);
+	_contentBrowserWindow = std::make_unique<ContentBrowserWindow>(uiWindowInitContext);
 	_propertiesWindow = std::make_unique<PropertiesWindow>(uiWindowInitContext);
 	_outlinerWindow = std::make_unique<OutlinerWindow>(uiWindowInitContext);
 	_materialCreationWindow = std::make_unique<MaterialCreationWindow>(uiWindowInitContext);
@@ -83,10 +71,10 @@ void Editor::cleanup()
 
 void Editor::draw()
 {
-	_uiBeginFrameCallback();
+	IMGUI_BACKEND()->begin_frame();
 	ImGui::NewFrame();
 	ImGuizmo::BeginFrame();
-	ImGui::PushFont(_getDefaultFontSize17());
+	ImGui::PushFont(IMGUI_BACKEND()->get_default_font_17());
 	_dockingWindow.draw_window();
 	_contentBrowserWindow->draw_window();
 	_outlinerWindow->draw_window();

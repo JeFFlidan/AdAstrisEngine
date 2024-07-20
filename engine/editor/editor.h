@@ -31,10 +31,6 @@ namespace ad_astris::editor::impl
 			std::unique_ptr<ContentBrowserWindow> _contentBrowserWindow{ nullptr };
 			std::unique_ptr<MaterialCreationWindow> _materialCreationWindow{ nullptr };
 			std::unique_ptr<ModelCreationWindow> _modelCreationWindow{ nullptr };
-			std::function<void()> _uiBeginFrameCallback{ nullptr };
-			std::function<void()> _setContextCallback{ nullptr };
-			std::function<ImFont*()> _getDefaultFontSize14;
-			std::function<ImFont*()> _getDefaultFontSize17;
 		
 			std::unordered_map<std::string, ResourceInfo> _resourceInfoByRelativePath;
 			std::unordered_map<resource::ResourceType, std::vector<ResourceDesc>> _resourceDescriptionsByType;

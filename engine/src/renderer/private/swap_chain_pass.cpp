@@ -18,5 +18,5 @@ void SwapChainPass::prepare_render_pass()
 void SwapChainPass::execute(rhi::CommandBuffer* cmd)
 {
 	if (_mainWindow->is_running())
-		UI_WINDOW_BACKEND()->draw(cmd);
+		IMGUI_BACKEND()->draw(cmd);
 }

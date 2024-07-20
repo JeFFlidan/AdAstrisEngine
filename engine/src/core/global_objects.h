@@ -11,6 +11,7 @@
 #include "module_manager.h"
 #include "profiler/profiler.h"
 #include "ui_core/ecs_ui_manager.h"
+#include "rhi/imgui_backend.h"
 
 namespace ad_astris
 {
@@ -26,6 +27,7 @@ namespace ad_astris
 		std::unique_ptr<ecs::TypeInfoTable> ecsTypeInfoTable{ nullptr };
 		std::unique_ptr<profiler::ProfilerInstance> profilerInstance{ nullptr };
 		std::unique_ptr<uicore::ECSUiManager> ecsUIManager{ nullptr };
+		rhi::IImGuiBackend* imguiBackend{ nullptr };
 	};
 	
 	class  GlobalObjects
@@ -50,6 +52,11 @@ namespace ad_astris
 			{
 				return _globalObjectContext;
 			}
+
+			static void set_imgui_backend(rhi::IImGuiBackend* imguiBackend)
+			{
+				_globalObjectContext->imguiBackend = imguiBackend;
+			}
 		
 			FORCE_INLINE static io::FileSystem* get_file_system() { return _globalObjectContext->fileSystem.get(); }
 			FORCE_INLINE static tasks::TaskComposer* get_task_composer() { return _globalObjectContext->taskComposer.get(); }
@@ -61,6 +68,7 @@ namespace ad_astris
 			FORCE_INLINE static ModuleManager* get_module_manager() { return _globalObjectContext->moduleManager.get(); }
 			FORCE_INLINE static profiler::ProfilerInstance* get_profiler_instance() { return _globalObjectContext->profilerInstance.get(); }
 			FORCE_INLINE static uicore::ECSUiManager* get_ecs_ui_manager() { return _globalObjectContext->ecsUIManager.get(); }
+			FORCE_INLINE static rhi::IImGuiBackend* get_imgui_backend() { return _globalObjectContext->imguiBackend; }
 		
 		private:
 			inline static GlobalObjectContext* _globalObjectContext{ nullptr };
@@ -78,3 +86,4 @@ namespace ad_astris
 #define PROFILER_INSTANCE() ::ad_astris::GlobalObjects::get_profiler_instance()
 #define ECS_UI_MANAGER() ::ad_astris::GlobalObjects::get_ecs_ui_manager()
 #define ENTITY_MANAGER() WORLD()->get_entity_manager()
+#define IMGUI_BACKEND() ::ad_astris::GlobalObjects::get_imgui_backend()

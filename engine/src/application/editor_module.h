@@ -3,7 +3,6 @@
 #include "core/global_objects.h"
 #include "core/module.h"
 #include "application_core/window.h"
-#include "rhi/ui_window_backend.h"
 #include "ui_core/ecs_ui_manager.h"
 
 namespace ad_astris::editor
@@ -12,7 +11,6 @@ namespace ad_astris::editor
 	{
 		acore::IWindow* mainWindow{ nullptr };
 		uicore::ECSUiManager* ecsUiManager{ nullptr };
-		rhi::UIWindowBackendCallbacks* callbacks{ nullptr };
 	};
 	
 	class IEditor
