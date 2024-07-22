@@ -1,5 +1,6 @@
 ﻿#include "deferred_lighting.h"
 #include "shader_interop_renderer.h"
+#include "renderer/public/attachment_name.h"
 #include "profiler/profiler.h"
 
 using namespace ad_astris;
@@ -8,24 +9,24 @@ using namespace impl;
 
 void GBuffer::prepare_render_pass()
 {
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("gAlbedo", IMAGE_WIDTH, IMAGE_HEIGHT);
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("gNormal", IMAGE_WIDTH, IMAGE_HEIGHT);
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("gSurface", IMAGE_WIDTH, IMAGE_HEIGHT);
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment(AttachmentName::G_ALBEDO, IMAGE_WIDTH, IMAGE_HEIGHT);
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment(AttachmentName::G_NORMAL, IMAGE_WIDTH, IMAGE_HEIGHT);
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment(AttachmentName::G_SURFACE, IMAGE_WIDTH, IMAGE_HEIGHT);
 	//rendererResourceManager->allocate_color_attachment("gVelocity", _mainWindow->get_width(), _mainWindow->get_height());
-	RENDERER_RESOURCE_MANAGER()->allocate_depth_stencil_attachment("gDepthStencil", IMAGE_WIDTH, IMAGE_HEIGHT);
-	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("gAlbedo", "gAlbedo");
-	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("gNormal", "gNormal");
-	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("gSurface", "gSurface");
+	RENDERER_RESOURCE_MANAGER()->allocate_depth_stencil_attachment(AttachmentName::G_DEPTH_STENCIL, IMAGE_WIDTH, IMAGE_HEIGHT);
+	RENDERER_RESOURCE_MANAGER()->allocate_texture_view(AttachmentName::G_ALBEDO, AttachmentName::G_ALBEDO);
+	RENDERER_RESOURCE_MANAGER()->allocate_texture_view(AttachmentName::G_NORMAL, AttachmentName::G_NORMAL);
+	RENDERER_RESOURCE_MANAGER()->allocate_texture_view(AttachmentName::G_SURFACE, AttachmentName::G_SURFACE);
 	//rendererResourceManager->allocate_texture_view("gVelocity", "gVelocity");
-	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("gDepthStencil", "gDepthStencil");
+	RENDERER_RESOURCE_MANAGER()->allocate_texture_view(AttachmentName::G_DEPTH_STENCIL, AttachmentName::G_DEPTH_STENCIL);
 
 	CullingSubmanager* cullingSubmanager = SCENE_MANAGER()->get_culling_submanager();
 	rcore::IRenderPass* renderPass = RENDER_GRAPH()->add_new_pass("gBuffer", rcore::RenderGraphQueue::GRAPHICS);
-	renderPass->add_color_output("gAlbedo");
-	renderPass->add_color_output("gNormal");
-	renderPass->add_color_output("gSurface");
+	renderPass->add_color_output(AttachmentName::G_ALBEDO);
+	renderPass->add_color_output(AttachmentName::G_NORMAL);
+	renderPass->add_color_output(AttachmentName::G_SURFACE);
 	//renderPass->add_color_output("gVelocity");
-	renderPass->set_depth_stencil_output("gDepthStencil");
+	renderPass->set_depth_stencil_output(AttachmentName::G_DEPTH_STENCIL);
 	renderPass->add_indirect_buffer_input(cullingSubmanager->get_indirect_buffer_name(STATIC_OPAQUE_FILTER));
 	renderPass->add_storage_buffer_read_only_input(cullingSubmanager->get_model_instance_id_buffer_name(STATIC_OPAQUE_FILTER));
 	renderPass->set_executor(this);
@@ -69,15 +70,15 @@ void GBuffer::execute(rhi::CommandBuffer* cmd)
 
 void DeferredLighting::prepare_render_pass()
 {
-	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment("DeferredLightingOutput", IMAGE_WIDTH, IMAGE_HEIGHT);
-	RENDERER_RESOURCE_MANAGER()->allocate_texture_view("DeferredLightingOutput", "DeferredLightingOutput");
+	RENDERER_RESOURCE_MANAGER()->allocate_color_attachment(AttachmentName::DEFERRED_LIGHTING_OUTPUT, IMAGE_WIDTH, IMAGE_HEIGHT);
+	RENDERER_RESOURCE_MANAGER()->allocate_texture_view(AttachmentName::DEFERRED_LIGHTING_OUTPUT, AttachmentName::DEFERRED_LIGHTING_OUTPUT);
 
 	rcore::IRenderPass* renderPass = RENDER_GRAPH()->add_new_pass("DeferredLighting", rcore::RenderGraphQueue::GRAPHICS);
-	renderPass->add_color_input("gAlbedo");
-	renderPass->add_color_input("gNormal");
-	renderPass->add_color_input("gSurface");
-	renderPass->set_depth_stencil_input("gDepthStencil");
-	renderPass->add_color_output("DeferredLightingOutput");
+	renderPass->add_color_input(AttachmentName::G_ALBEDO);
+	renderPass->add_color_input(AttachmentName::G_NORMAL);
+	renderPass->add_color_input(AttachmentName::G_SURFACE);
+	renderPass->set_depth_stencil_input(AttachmentName::G_DEPTH_STENCIL);
+	renderPass->add_color_output(AttachmentName::DEFERRED_LIGHTING_OUTPUT);
 	renderPass->set_executor(this);
 
 	PIPELINE_MANAGER()->bind_render_pass_to_pipeline(renderPass, rcore::BuiltinPipelineType::DEFERRED_LIGHTING);
